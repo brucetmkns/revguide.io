@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - HubSpot Helper</title>
+  <link rel="stylesheet" href="../shared.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar (rendered by JS) -->
+    <aside class="sidebar"></aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="settingsSection">
+        <div class="section-header">
+          <div>
+            <h2>Settings</h2>
+            <p class="section-description">Configure your HubSpot Helper extension</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>HubSpot API</h3>
+            <p>Connect to HubSpot to fetch properties for condition building</p>
+            <div class="form-group">
+              <label>Private App Access Token</label>
+              <input type="password" id="apiToken" placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <span class="form-hint">Required scopes: crm.objects.*.read, crm.schemas.*.read</span>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="testApiBtn">Test Connection</button>
+              <button class="btn btn-primary" id="saveApiBtn">Save Token</button>
+            </div>
+            <div id="apiStatus" class="status-message"></div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Display Options</h3>
+            <p>Configure how banners and cards appear in HubSpot</p>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showBanners" checked>
+                <span>Show Banners</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showBattleCards" checked>
+                <span>Show Plays</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showPresentations" checked>
+                <span>Show Media</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showAdminLinks" checked>
+                <span>Show Admin Edit Links</span>
+              </label>
+              <span class="form-hint">Display "Edit in Admin Panel" links on banners, plays, and wiki tooltips</span>
+            </div>
+            <div class="form-group">
+              <label>Banner Position</label>
+              <select id="bannerPosition">
+                <option value="top">Top of page</option>
+                <option value="bottom">Bottom of page</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Import / Export</h3>
+            <p>Backup or restore your rules, plays, and content</p>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="exportBtn">
+                <span class="icon icon-download icon--sm"></span> Export Data
+              </button>
+              <button class="btn btn-secondary" id="importBtn">
+                <span class="icon icon-upload icon--sm"></span> Import Data
+              </button>
+              <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../shared.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

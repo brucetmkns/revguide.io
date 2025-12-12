@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HubSpot Helper - Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>HubSpot Helper</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="#" class="nav-item" data-section="rules">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banner Rules
+        </a>
+        <a href="#" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="#" class="nav-item" data-section="presentations">
+          <span class="nav-icon"><span class="icon icon-presentation-white"></span></span>
+          Media
+        </a>
+        <a href="#" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="#" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="extension-status">
+          <span class="status-dot active"></span>
+          <span>Extension Active</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Home / Onboarding Section -->
+      <section class="content-section active" id="homeSection">
+        <div class="section-header">
+          <div>
+            <h2>Welcome to HubSpot Helper</h2>
+            <p class="section-description">Get started by completing these setup steps</p>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="home-stats">
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-field">
+              <span class="icon icon-book"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeWikiCount">0</span>
+              <span class="stat-label">Wiki Entries</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-general">
+              <span class="icon icon-clipboard-list"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeRulesCount">0</span>
+              <span class="stat-label">Banner Rules</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-sales">
+              <span class="icon icon-layers"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeCardsCount">0</span>
+              <span class="stat-label">Plays</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-marketing">
+              <span class="icon icon-presentation"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homePresentationsCount">0</span>
+              <span class="stat-label">Media</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="onboarding-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="onboardingProgressFill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text"><span id="onboardingProgressText">0</span> of 6 steps completed</span>
+        </div>
+
+        <!-- Onboarding Steps -->
+        <div class="onboarding-steps">
+          <!-- Step 1: Install Plugin -->
+          <div class="onboarding-step completed" data-step="install" id="stepInstall">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Install Plugin</h3>
+                <span class="step-status completed" id="stepInstallStatus">Completed</span>
+              </div>
+              <p>Install the HubSpot Helper Chrome extension to enable contextual guidance on HubSpot pages.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepInstallBtn">Share with Team</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-puzzle icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 2: Connect HubSpot -->
+          <div class="onboarding-step" data-step="api" id="stepApi">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Connect HubSpot API</h3>
+                <span class="step-status" id="stepApiStatus">Not started</span>
+              </div>
+              <p>Connect your HubSpot private app to enable property fetching and field import.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepApiBtn">Configure API</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-link icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 3: Build Your Wiki -->
+          <div class="onboarding-step" data-step="wiki" id="stepWiki">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Build Your Wiki</h3>
+                <span class="step-status" id="stepWikiStatus">Not started</span>
+              </div>
+              <p>Import HubSpot fields or add custom terms to create contextual tooltips for your team.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepWikiImportBtn">Import Fields</button>
+                <button class="btn btn-primary btn-sm" id="stepWikiAddBtn">Add Entry</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-book icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 4: Create Banner Rules -->
+          <div class="onboarding-step" data-step="rules" id="stepRules">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Create Banner Rules</h3>
+                <span class="step-status" id="stepRulesStatus">Not started</span>
+              </div>
+              <p>Display contextual banners on HubSpot records based on property conditions.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepRulesBtn">Create Rule</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-clipboard-list icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 5: Add Plays -->
+          <div class="onboarding-step" data-step="cards" id="stepCards">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Add Plays</h3>
+                <span class="step-status" id="stepCardsStatus">Not started</span>
+              </div>
+              <p>Create plays for competitors, objections, processes, and best practices.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepCardsBtn">Create Play</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-layers icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 6: Invite Team (Coming Soon) -->
+          <div class="onboarding-step disabled" data-step="team" id="stepTeam">
+            <div class="step-number">6</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Invite Your Team</h3>
+                <span class="step-status coming-soon">Coming Soon</span>
+              </div>
+              <p>Share your configuration with team members so everyone has the same context.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" disabled>Invite Team</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-users icon--lg"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Library Promo -->
+        <div class="content-library-promo">
+          <div class="promo-content">
+            <span class="promo-badge">Coming Soon</span>
+            <h3>Content Libraries</h3>
+            <p>Download starter packs to quickly populate your wiki with pre-built HubSpot terminology, sales pipeline stages, and more.</p>
+          </div>
+          <div class="promo-icon">
+            <span class="icon icon-download icon--2xl"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rules List Section -->
+      <section class="content-section" id="rulesSection">
+        <div class="section-header">
+          <div>
+            <h2>Banner Rules</h2>
+            <p class="section-description">Create rules to display contextual banners on HubSpot records</p>
+          </div>
+          <button class="btn btn-primary" id="addRuleBtn">
+            <span class="icon icon-plus"></span> Add Rule
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="rulesSearch" placeholder="Search rules...">
+          <select class="filter-select" id="rulesFilter">
+            <option value="all">All Types</option>
+            <option value="info">Info</option>
+            <option value="success">Success</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="rulesTable">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Object</th>
+                <th>Conditions</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th width="100">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rulesTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <div class="empty-state" id="rulesEmptyState" style="display: none;">
+            <div class="empty-icon"><span class="icon icon-clipboard-list icon--3xl"></span></div>
+            <h3>No rules yet</h3>
+            <p>Create your first banner rule to get started</p>
+            <button class="btn btn-primary" id="createRuleEmptyBtn">Create Rule</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rule Editor Section -->
+      <section class="content-section" id="ruleEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToRules" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Rules
+            </a>
+            <h2 id="ruleEditorTitle">Add Rule</h2>
+          </div>
+        </div>
+
+        <div class="editor-container">
+          <div class="editor-main">
+            <div class="editor-card">
+              <h3>Basic Information</h3>
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label>Rule Name <span class="required">*</span></label>
+                  <input type="text" id="ruleName" placeholder="e.g., High Value Deal Alert">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Priority</label>
+                  <input type="number" id="rulePriority" value="10" min="0" max="100">
+                  <span class="form-hint">Higher priority shows first</span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label>Banner Title</label>
+                  <input type="text" id="ruleTitle" placeholder="e.g., High Value Opportunity">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Banner Type</label>
+                  <select id="ruleType">
+                    <option value="info">Info (Blue)</option>
+                    <option value="success">Success (Green)</option>
+                    <option value="warning">Warning (Orange)</option>
+                    <option value="error">Error (Red)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Message</label>
+                <div class="rich-text-editor">
+                  <div class="rich-text-toolbar">
+                    <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+                      <span class="icon icon-bold"></span>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+                      <span class="icon icon-italic"></span>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+                      <span class="icon icon-underline"></span>
+                    </button>
+                    <span class="toolbar-divider"></span>
+                    <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+                      <span class="icon icon-list"></span>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+                      <span class="icon icon-list-ordered"></span>
+                    </button>
+                    <span class="toolbar-divider"></span>
+                    <button type="button" class="toolbar-btn" data-command="createLink" title="Insert Link">
+                      <span class="icon icon-link"></span>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-command="unlink" title="Remove Link">
+                      <span class="icon icon-unlink"></span>
+                    </button>
+                  </div>
+                  <div id="ruleMessage" class="rich-text-content" contenteditable="true" data-placeholder="Message to display in the banner"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <h3>Conditions</h3>
+              <p class="card-description">Define when this banner should appear</p>
+
+              <div class="form-group">
+                <label>Object Type <span class="required">*</span></label>
+                <select id="ruleObjectType">
+                  <option value="">Select object type...</option>
+                  <option value="contacts">Contacts</option>
+                  <option value="companies">Companies</option>
+                  <option value="deals">Deals</option>
+                  <option value="tickets">Tickets</option>
+                </select>
+                <span class="form-hint">Select an object type to load available properties</span>
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="ruleDisplayOnAll">
+                  <span>Display on all records</span>
+                </label>
+                <span class="form-hint">When enabled, this banner will show on all records of this object type</span>
+              </div>
+
+              <div id="ruleConditionsWrapper">
+                <div class="form-group">
+                  <div class="label-row">
+                    <label>Conditions</label>
+                    <span id="ruleConditionStatus" class="status-text"></span>
+                  </div>
+                  <div class="logic-toggle" id="ruleLogicToggle">
+                    <span class="logic-label">Match:</span>
+                    <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                    <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                  </div>
+                  <div class="conditions-builder" id="ruleConditions">
+                    <!-- Conditions added by JS -->
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="addRuleConditionBtn" disabled>
+                    <span class="icon icon-plus icon--sm"></span> Add Condition
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-sidebar">
+            <div class="editor-card">
+              <h3>Actions</h3>
+              <div class="action-stack">
+                <button class="btn btn-primary btn-full" id="saveRuleBtn">Save Rule</button>
+                <button class="btn btn-secondary btn-full" id="cancelRuleBtn">Cancel</button>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <h3>Preview</h3>
+              <div class="banner-preview" id="rulePreview">
+                <div class="preview-banner info">
+                  <strong>Banner Title</strong>
+                  <p>Your message will appear here</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Plays List Section -->
+      <section class="content-section" id="cardsSection">
+        <div class="section-header">
+          <div>
+            <h2>Plays</h2>
+            <p class="section-description">Create plays for competitors, objections, processes, and best practices</p>
+          </div>
+          <button class="btn btn-primary" id="addCardBtn">
+            <span class="icon icon-plus"></span> Add Play
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="cardsSearch" placeholder="Search plays...">
+          <select class="filter-select" id="cardsFilter">
+            <option value="all">All Types</option>
+            <option value="competitor">Competitor</option>
+            <option value="objection">Objection</option>
+            <option value="tip">Tip</option>
+            <option value="process">Process</option>
+          </select>
+        </div>
+
+        <div class="cards-grid" id="cardsGrid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="cardsEmptyState" style="display: none;">
+          <div class="empty-icon"><span class="icon icon-layers icon--3xl"></span></div>
+          <h3>No plays yet</h3>
+          <p>Create your first play to help your team</p>
+          <button class="btn btn-primary" id="createCardEmptyBtn">Create Play</button>
+        </div>
+      </section>
+
+      <!-- Play Editor Section -->
+      <section class="content-section" id="cardEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToCards" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Plays
+            </a>
+            <h2 id="cardEditorTitle">Add Play</h2>
+          </div>
+        </div>
+
+        <div class="editor-container">
+          <div class="editor-main">
+            <div class="editor-card">
+              <h3>Basic Information</h3>
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label>Card Name <span class="required">*</span></label>
+                  <input type="text" id="cardName" placeholder="e.g., vs. Competitor A">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Card Type</label>
+                  <select id="cardType">
+                    <option value="competitor">Competitor</option>
+                    <option value="objection">Objection Handler</option>
+                    <option value="tip">Tip / Best Practice</option>
+                    <option value="process">Process Guide</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Subtitle</label>
+                <input type="text" id="cardSubtitle" placeholder="e.g., Enterprise CRM competitor">
+              </div>
+
+              <div class="form-group">
+                <label>Link to Full Version</label>
+                <input type="url" id="cardLink" placeholder="https://docs.google.com/document/d/...">
+                <span class="form-hint">Optional URL to full document (Google Doc, Notion, etc.)</span>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <h3>Display Conditions</h3>
+              <p class="card-description">Define when this card should appear</p>
+
+              <div class="form-group">
+                <label>Object Type</label>
+                <select id="cardObjectType">
+                  <option value="">Select object type (optional)...</option>
+                  <option value="contacts">Contacts</option>
+                  <option value="companies">Companies</option>
+                  <option value="deals">Deals</option>
+                  <option value="tickets">Tickets</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="cardDisplayOnAll">
+                  <span>Display on all records</span>
+                </label>
+                <span class="form-hint">When enabled, this card will show on all records of this object type</span>
+              </div>
+
+              <div id="cardConditionsWrapper">
+                <div class="form-group">
+                  <div class="label-row">
+                    <label>Conditions</label>
+                    <span id="cardConditionStatus" class="status-text"></span>
+                  </div>
+                  <div class="logic-toggle" id="cardLogicToggle">
+                    <span class="logic-label">Match:</span>
+                    <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                    <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                  </div>
+                  <div class="conditions-builder" id="cardConditions">
+                    <!-- Conditions added by JS -->
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="addCardConditionBtn" disabled>
+                    <span class="icon icon-plus icon--sm"></span> Add Condition
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <div class="label-row">
+                <h3>Sections</h3>
+                <button class="btn btn-secondary btn-sm" id="addSectionBtn">
+                  <span class="icon icon-plus icon--sm"></span> Add Section
+                </button>
+              </div>
+              <p class="card-description">Add content sections to your play</p>
+              <div class="sections-builder" id="cardSections">
+                <!-- Sections added by JS -->
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-sidebar">
+            <div class="editor-card">
+              <h3>Actions</h3>
+              <div class="action-stack">
+                <button class="btn btn-primary btn-full" id="saveCardBtn">Save Play</button>
+                <button class="btn btn-secondary btn-full" id="cancelCardBtn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Media List Section -->
+      <section class="content-section" id="presentationsSection">
+        <div class="section-header">
+          <div>
+            <h2>Media</h2>
+            <p class="section-description">Embed presentations, videos, and other content on HubSpot records</p>
+          </div>
+          <button class="btn btn-primary" id="addPresentationBtn">
+            <span class="icon icon-plus"></span> Add Media
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="presentationsSearch" placeholder="Search media...">
+        </div>
+
+        <div class="cards-grid" id="presentationsGrid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="presentationsEmptyState" style="display: none;">
+          <div class="empty-icon"><span class="icon icon-presentation icon--3xl"></span></div>
+          <h3>No media yet</h3>
+          <p>Add presentations, videos, or embeddable content to display on HubSpot records</p>
+          <button class="btn btn-primary" id="createPresentationEmptyBtn">Add Media</button>
+        </div>
+      </section>
+
+      <!-- Media Editor Section -->
+      <section class="content-section" id="presentationEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToPresentations" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Media
+            </a>
+            <h2 id="presentationEditorTitle">Add Media</h2>
+          </div>
+        </div>
+
+        <div class="editor-container">
+          <div class="editor-main">
+            <div class="editor-card">
+              <h3>Basic Information</h3>
+              <div class="form-group">
+                <label>Name <span class="required">*</span></label>
+                <input type="text" id="presentationName" placeholder="e.g., Product Overview Deck">
+              </div>
+
+              <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="presentationDescription" placeholder="e.g., Use this deck for initial discovery calls">
+              </div>
+
+              <div class="form-group">
+                <label>Embed URL <span class="required">*</span></label>
+                <input type="url" id="presentationUrl" placeholder="https://docs.google.com/presentation/d/... or video/embed URL">
+                <span class="form-hint">Supports Google Slides, YouTube, Loom, Vimeo, and SharePoint/OneDrive. URLs are converted to embed format automatically.</span>
+                <div class="form-note">
+                  <strong>Note:</strong> Content must allow embedding to work:
+                  <ul>
+                    <li><strong>Google Slides:</strong> Share > "Anyone with the link"</li>
+                    <li><strong>YouTube:</strong> Video must not have embedding disabled</li>
+                    <li><strong>Loom:</strong> Share settings must allow embedding</li>
+                    <li><strong>Other sites:</strong> Must allow iframe embedding (many sites block this for security)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <h3>Display Conditions</h3>
+              <p class="card-description">Define when this media should appear</p>
+
+              <div class="form-group">
+                <label>Object Type</label>
+                <select id="presentationObjectType">
+                  <option value="">Select object type (optional)...</option>
+                  <option value="contacts">Contacts</option>
+                  <option value="companies">Companies</option>
+                  <option value="deals">Deals</option>
+                  <option value="tickets">Tickets</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="presentationDisplayOnAll">
+                  <span>Display on all records</span>
+                </label>
+                <span class="form-hint">When enabled, this media will show on all records of this object type</span>
+              </div>
+
+              <div id="presentationConditionsWrapper">
+                <div class="form-group">
+                  <div class="label-row">
+                    <label>Conditions</label>
+                    <span id="presentationConditionStatus" class="status-text"></span>
+                  </div>
+                  <div class="logic-toggle" id="presentationLogicToggle">
+                    <span class="logic-label">Match:</span>
+                    <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                    <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                  </div>
+                  <div class="conditions-builder" id="presentationConditions">
+                    <!-- Conditions added by JS -->
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="addPresentationConditionBtn" disabled>
+                    <span class="icon icon-plus icon--sm"></span> Add Condition
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-sidebar">
+            <div class="editor-card">
+              <h3>Actions</h3>
+              <div class="action-stack">
+                <button class="btn btn-primary btn-full" id="savePresentationBtn">Save Media</button>
+                <button class="btn btn-secondary btn-full" id="cancelPresentationBtn">Cancel</button>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <h3>Preview</h3>
+              <div class="presentation-preview" id="presentationPreview">
+                <div class="preview-placeholder">
+                  <span class="icon icon-presentation icon--xl"></span>
+                  <p>Enter a URL to preview</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Wiki Section - Two-Pane Layout -->
+      <section class="content-section" id="wikiSection">
+        <!-- Page Header -->
+        <div class="section-header">
+          <div>
+            <h2>Wiki</h2>
+            <p class="section-description">Create a knowledge base of terms and definitions for your team</p>
+          </div>
+          <div class="section-header-actions">
+            <button class="btn btn-secondary" id="importFieldsBtnAdmin">
+              <span class="icon icon-download"></span> Import Fields
+            </button>
+            <button class="btn btn-primary" id="addWikiBtn">
+              <span class="icon icon-plus"></span> Add Entry
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Pane Layout -->
+        <div class="wiki-layout">
+          <!-- Left Navigation Pane -->
+          <aside class="wiki-nav-pane">
+            <!-- Search & Filters -->
+            <div class="wiki-nav-toolbar">
+              <input type="text" class="search-input wiki-nav-search" id="wikiSearch" placeholder="Search wiki entries...">
+              <div class="wiki-nav-filters">
+                <select class="filter-select" id="wikiObjectFilter">
+                  <option value="all">All Objects</option>
+                  <option value="contacts">Contacts</option>
+                  <option value="companies">Companies</option>
+                  <option value="deals">Deals</option>
+                  <option value="tickets">Tickets</option>
+                  <option value="custom">Custom Terms</option>
+                </select>
+                <select class="filter-select" id="wikiFilter">
+                  <option value="all">All Categories</option>
+                  <option value="general">General</option>
+                  <option value="sales">Sales</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="product">Product</option>
+                  <option value="process">Process</option>
+                  <option value="field">HubSpot Fields</option>
+                </select>
+              </div>
+              <div class="wiki-nav-actions">
+                <button class="btn btn-icon btn-sm" id="wikiExpandAllBtn" title="Expand All">
+                  <span class="icon icon-chevrons-down"></span>
+                </button>
+                <button class="btn btn-icon btn-sm" id="wikiCollapseAllBtn" title="Collapse All">
+                  <span class="icon icon-chevrons-up"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Navigation Tree -->
+            <div class="wiki-nav-tree-container">
+              <ul class="wiki-tree" id="wikiNavTree">
+                <!-- Populated by JS -->
+              </ul>
+
+              <!-- Empty State for Nav -->
+              <div class="wiki-nav-empty" id="wikiNavEmpty" style="display: none;">
+                <span class="icon icon-book icon--xl"></span>
+                <p>No entries found</p>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="wiki-nav-stats" id="wikiStats">
+              <span class="wiki-stat"><strong id="wikiTotalCount">0</strong> total</span>
+              <span class="wiki-stat"><strong id="wikiEnabledCount">0</strong> enabled</span>
+              <span class="wiki-stat"><strong id="wikiFieldsCount">0</strong> fields</span>
+            </div>
+          </aside>
+
+          <!-- Right Detail Pane -->
+          <section class="wiki-detail-pane">
+            <!-- Card View -->
+            <div class="wiki-card" id="wikiCard">
+              <!-- Card Header -->
+              <header class="wiki-card-header">
+                <div class="wiki-card-header-main">
+                  <div class="wiki-card-title-row">
+                    <h2 id="wikiCardTitle">Select an Entry</h2>
+                    <button class="status-toggle" id="wikiStatusToggle" style="display: none;">
+                      <span class="status-toggle-dot"></span>
+                      <span class="status-toggle-label">Enabled</span>
+                    </button>
+                  </div>
+                  <div class="wiki-card-meta" id="wikiCardMeta">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <div class="wiki-card-actions" id="wikiCardActions" style="display: none;">
+                  <button class="btn btn-secondary btn-sm" id="duplicateEntryBtn" title="Duplicate">
+                    <span class="icon icon-copy icon--sm"></span> Duplicate
+                  </button>
+                  <button class="btn btn-danger btn-sm" id="deleteEntryBtn" title="Delete">
+                    <span class="icon icon-trash icon--sm"></span> Delete
+                  </button>
+                </div>
+              </header>
+
+              <!-- Tabs -->
+              <nav class="wiki-card-tabs" role="tablist" id="wikiCardTabs">
+                <button role="tab" aria-selected="true" data-tab="content" class="wiki-tab active">Content</button>
+                <button role="tab" aria-selected="false" data-tab="rules" class="wiki-tab">Rules</button>
+                <button role="tab" aria-selected="false" data-tab="usage" class="wiki-tab">Usage</button>
+              </nav>
+
+              <!-- Tab Panels -->
+              <div class="wiki-card-body">
+                <!-- Content Tab -->
+                <section id="tab-content" role="tabpanel" class="wiki-tab-panel">
+                  <div class="wiki-card-empty-state" id="wikiCardEmpty">
+                    <span class="icon icon-book icon--2xl"></span>
+                    <h3>Select a term from the left</h3>
+                    <p>Choose an entry to view or edit its details</p>
+                  </div>
+
+                  <div class="wiki-card-content" id="wikiCardContent" style="display: none;">
+                    <div class="wiki-content-form">
+                      <!-- Term -->
+                      <div class="form-group">
+                        <label>Term / Phrase <span class="required">*</span></label>
+                        <input type="text" id="wikiTerm" placeholder="e.g., MQL, SQL, ACV">
+                        <span class="form-hint">The word or phrase to highlight on HubSpot pages</span>
+                      </div>
+
+                      <!-- Aliases -->
+                      <div class="form-group">
+                        <label>Aliases</label>
+                        <input type="text" id="wikiAliases" placeholder="e.g., Marketing Qualified Lead, marketing-qualified-lead">
+                        <span class="form-hint">Comma-separated alternative terms that should also match this entry</span>
+                      </div>
+
+                      <!-- Definition -->
+                      <div class="form-group">
+                        <label>Definition <span class="required">*</span></label>
+                        <div class="rich-text-editor">
+                          <div class="rich-text-toolbar wiki-toolbar-admin">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+                              <span class="icon icon-bold"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+                              <span class="icon icon-italic"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+                              <span class="icon icon-underline"></span>
+                            </button>
+                            <span class="toolbar-divider"></span>
+                            <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+                              <span class="icon icon-list"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+                              <span class="icon icon-list-ordered"></span>
+                            </button>
+                            <span class="toolbar-divider"></span>
+                            <button type="button" class="toolbar-btn" data-command="createLink" title="Insert Link">
+                              <span class="icon icon-link"></span>
+                            </button>
+                          </div>
+                          <div id="wikiDefinition" class="rich-text-content" contenteditable="true" data-placeholder="Enter the definition or explanation..."></div>
+                        </div>
+                      </div>
+
+                      <!-- Property Values -->
+                      <div class="form-group">
+                        <label>Property Values</label>
+                        <div id="wikiPropertyValues" class="property-values-list">
+                          <!-- Property values added by JS -->
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="addPropertyValueBtn">
+                          <span class="icon icon-plus icon--sm"></span> Add Value
+                        </button>
+                        <span class="form-hint">For picklist properties, add values with their own definitions</span>
+                      </div>
+
+                      <!-- Related Link -->
+                      <div class="form-group">
+                        <label>Related Link</label>
+                        <input type="url" id="wikiLink" placeholder="https://docs.google.com/...">
+                        <span class="form-hint">Optional link to documentation or more details</span>
+                      </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="wiki-content-preview">
+                      <h4>Preview</h4>
+                      <div class="wiki-preview" id="wikiPreview">
+                        <div class="wiki-preview-card">
+                          <div class="wiki-preview-header">
+                            <span class="wiki-preview-term">Term</span>
+                            <span class="wiki-preview-category">Category</span>
+                          </div>
+                          <div class="wiki-preview-content">
+                            <p>Your definition will appear here</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Rules Tab -->
+                <section id="tab-rules" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiRulesEmpty">
+                    <span class="icon icon-settings icon--2xl"></span>
+                    <h3>Select a term to configure rules</h3>
+                    <p>Choose an entry from the left to set up where and how it appears</p>
+                  </div>
+
+                  <div class="wiki-rules-content" id="wikiRulesContent" style="display: none;">
+                    <!-- Where to Show -->
+                    <div class="wiki-rules-section">
+                      <h4>Where to Show</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Category</label>
+                          <select id="wikiCategory">
+                            <option value="general">General</option>
+                            <option value="sales">Sales</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="product">Product</option>
+                            <option value="process">Process</option>
+                            <option value="field">HubSpot Field</option>
+                          </select>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>HubSpot Object</label>
+                          <select id="wikiObjectType">
+                            <option value="">None (Custom Term)</option>
+                            <option value="contacts">Contacts</option>
+                            <option value="companies">Companies</option>
+                            <option value="deals">Deals</option>
+                            <option value="tickets">Tickets</option>
+                          </select>
+                          <span class="form-hint">Associate this entry with a HubSpot object type</span>
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Property Group</label>
+                        <select id="wikiPropertyGroup">
+                          <option value="">Select a property group...</option>
+                        </select>
+                        <span class="form-hint">Optional group name for organization</span>
+                      </div>
+                    </div>
+
+                    <!-- Matching Behavior -->
+                    <div class="wiki-rules-section">
+                      <h4>Matching Behavior</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Match Type</label>
+                          <select id="wikiMatchType">
+                            <option value="exact">Exact match</option>
+                            <option value="case-insensitive">Case-insensitive</option>
+                            <option value="starts-with">Starts with</option>
+                          </select>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>Frequency</label>
+                          <select id="wikiFrequency">
+                            <option value="once">Once per page</option>
+                            <option value="all">Every occurrence</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="wikiIncludeAliases" checked>
+                            <span>Also match aliases</span>
+                          </label>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>Priority</label>
+                          <input type="number" id="wikiPriority" min="0" max="100" value="50" placeholder="0-100">
+                          <span class="form-hint">Higher priority entries match first (0-100)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Visibility Conditions -->
+                    <div class="wiki-rules-section">
+                      <h4>Visibility Conditions</h4>
+
+                      <div class="form-group">
+                        <label>Page Type</label>
+                        <select id="wikiPageType">
+                          <option value="any">Any page</option>
+                          <option value="record">Record detail pages</option>
+                          <option value="index">Index/list pages</option>
+                          <option value="pipeline">Pipeline board</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <label>URL Patterns</label>
+                        <textarea id="wikiUrlPatterns" rows="3" placeholder="/contacts/*&#10;/deals/*&#10;/companies/*/"></textarea>
+                        <span class="form-hint">One pattern per line. Use * as wildcard. Leave empty to match all URLs.</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Usage Tab -->
+                <section id="tab-usage" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiUsageEmpty">
+                    <span class="icon icon-chart icon--2xl"></span>
+                    <h3>Select a term to view usage</h3>
+                    <p>Choose an entry from the left to see its metadata and statistics</p>
+                  </div>
+
+                  <div class="wiki-usage-content" id="wikiUsageContent" style="display: none;">
+                    <div class="wiki-usage-section">
+                      <h4>Entry Information</h4>
+                      <div class="wiki-usage-stats">
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Created</span>
+                          <span class="wiki-usage-stat-value" id="wikiCreatedAt">-</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Last Updated</span>
+                          <span class="wiki-usage-stat-value" id="wikiUpdatedAt">-</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Property Values</span>
+                          <span class="wiki-usage-stat-value" id="wikiValuesCount">0</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Aliases</span>
+                          <span class="wiki-usage-stat-value" id="wikiAliasesCount">0</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="wiki-usage-section wiki-usage-placeholder">
+                      <span class="icon icon-trending-up icon--xl"></span>
+                      <h4>Usage Analytics Coming Soon</h4>
+                      <p>In a future version, this tab will show tooltip usage statistics and recent activity, including how often this term is displayed and clicked.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Save Actions -->
+                <div class="wiki-card-footer" id="wikiCardFooter" style="display: none;">
+                  <button class="btn btn-secondary" id="cancelWikiBtn">Cancel</button>
+                  <button class="btn btn-primary" id="saveWikiBtn">Save Entry</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Import Fields Modal (Admin) -->
+      <div class="modal" id="importFieldsModalAdmin">
+        <div class="modal-content modal-lg">
+          <div class="modal-header">
+            <h2>Import HubSpot Fields</h2>
+            <button class="modal-close" id="closeImportFieldsModalAdmin">
+              <span class="icon icon-x"></span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Object Type</label>
+              <select id="importObjectTypeAdmin" class="full-width">
+                <option value="">Select object type...</option>
+                <option value="contacts">Contacts</option>
+                <option value="companies">Companies</option>
+                <option value="deals">Deals</option>
+                <option value="tickets">Tickets</option>
+              </select>
+            </div>
+            <div id="fieldsLoadingStatusAdmin" class="status-text"></div>
+            <div class="fields-list" id="fieldsListAdmin" style="display: none;">
+              <div class="fields-list-header">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="selectAllFieldsAdmin">
+                  <span>Select All</span>
+                </label>
+                <input type="text" id="fieldsSearchAdmin" placeholder="Search fields..." class="fields-search">
+              </div>
+              <div class="fields-list-items" id="fieldsListItemsAdmin">
+                <!-- Fields populated by JS -->
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelImportFieldsBtnAdmin">Cancel</button>
+            <button class="btn btn-primary" id="confirmImportFieldsBtnAdmin" disabled>Import Selected</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Section -->
+      <section class="content-section" id="settingsSection">
+        <div class="section-header">
+          <div>
+            <h2>Settings</h2>
+            <p class="section-description">Configure your HubSpot Helper extension</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>HubSpot API</h3>
+            <p>Connect to HubSpot to fetch properties for condition building</p>
+            <div class="form-group">
+              <label>Private App Access Token</label>
+              <input type="password" id="apiToken" placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <span class="form-hint">Required scopes: crm.objects.*.read, crm.schemas.*.read</span>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="testApiBtn">Test Connection</button>
+              <button class="btn btn-primary" id="saveApiBtn">Save Token</button>
+            </div>
+            <div id="apiStatus" class="status-message"></div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Display Options</h3>
+            <p>Configure how banners and cards appear in HubSpot</p>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showBanners" checked>
+                <span>Show Banners</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showBattleCards" checked>
+                <span>Show Plays</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="showPresentations" checked>
+                <span>Show Media</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Banner Position</label>
+              <select id="bannerPosition">
+                <option value="top">Top of page</option>
+                <option value="bottom">Bottom of page</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Import / Export</h3>
+            <p>Backup or restore your rules, plays, and content</p>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="exportBtn">
+                <span class="icon icon-download icon--sm"></span> Export Data
+              </button>
+              <button class="btn btn-secondary" id="importBtn">
+                <span class="icon icon-upload icon--sm"></span> Import Data
+              </button>
+              <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

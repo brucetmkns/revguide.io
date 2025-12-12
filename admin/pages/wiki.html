@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki - HubSpot Helper</title>
+  <link rel="stylesheet" href="../shared.css">
+  <link rel="stylesheet" href="rules.css">
+  <link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar (rendered by JS) -->
+    <aside class="sidebar"></aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="wikiSection">
+        <!-- Page Header -->
+        <div class="section-header">
+          <div>
+            <h2>Wiki</h2>
+            <p class="section-description">Create a knowledge base of terms and definitions for your team</p>
+          </div>
+          <div class="section-header-actions">
+            <button class="btn btn-secondary" id="importFieldsBtn">
+              <span class="icon icon-download"></span> Import Fields
+            </button>
+            <button class="btn btn-primary" id="addWikiBtn">
+              <span class="icon icon-plus"></span> Add Entry
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Pane Layout -->
+        <div class="wiki-layout">
+          <!-- Left Navigation Pane -->
+          <aside class="wiki-nav-pane">
+            <!-- Search & Filters -->
+            <div class="wiki-nav-toolbar">
+              <input type="text" class="search-input wiki-nav-search" id="wikiSearch" placeholder="Search wiki entries...">
+              <div class="wiki-nav-filters">
+                <select class="filter-select" id="wikiObjectFilter">
+                  <option value="all">All Objects</option>
+                  <option value="contacts">Contacts</option>
+                  <option value="companies">Companies</option>
+                  <option value="deals">Deals</option>
+                  <option value="tickets">Tickets</option>
+                  <option value="custom">Custom Terms</option>
+                </select>
+                <select class="filter-select" id="wikiFilter">
+                  <option value="all">All Categories</option>
+                  <option value="general">General</option>
+                  <option value="sales">Sales</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="product">Product</option>
+                  <option value="process">Process</option>
+                  <option value="field">HubSpot Fields</option>
+                </select>
+              </div>
+              <div class="wiki-nav-actions">
+                <button class="btn btn-icon btn-sm" id="wikiExpandAllBtn" title="Expand All">
+                  <span class="icon icon-chevrons-down"></span>
+                </button>
+                <button class="btn btn-icon btn-sm" id="wikiCollapseAllBtn" title="Collapse All">
+                  <span class="icon icon-chevrons-up"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Navigation Tree -->
+            <div class="wiki-nav-tree-container">
+              <ul class="wiki-tree" id="wikiNavTree">
+                <!-- Populated by JS -->
+              </ul>
+
+              <!-- Empty State for Nav -->
+              <div class="wiki-nav-empty" id="wikiNavEmpty" style="display: none;">
+                <span class="icon icon-book icon--xl"></span>
+                <p>No entries found</p>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="wiki-nav-stats" id="wikiStats">
+              <span class="wiki-stat"><strong id="wikiTotalCount">0</strong> total</span>
+              <span class="wiki-stat"><strong id="wikiEnabledCount">0</strong> enabled</span>
+              <span class="wiki-stat"><strong id="wikiFieldsCount">0</strong> fields</span>
+            </div>
+          </aside>
+
+          <!-- Right Detail Pane -->
+          <section class="wiki-detail-pane">
+            <!-- Card View -->
+            <div class="wiki-card" id="wikiCard">
+              <!-- Card Header -->
+              <header class="wiki-card-header">
+                <div class="wiki-card-header-main">
+                  <div class="wiki-card-title-row">
+                    <h2 id="wikiCardTitle">Select an Entry</h2>
+                    <button class="status-toggle" id="wikiStatusToggle" style="display: none;">
+                      <span class="status-toggle-dot"></span>
+                      <span class="status-toggle-label">Enabled</span>
+                    </button>
+                  </div>
+                  <div class="wiki-card-meta" id="wikiCardMeta">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <div class="wiki-card-actions" id="wikiCardActions" style="display: none;">
+                  <button class="btn btn-secondary btn-sm" id="duplicateEntryBtn" title="Duplicate">
+                    <span class="icon icon-copy icon--sm"></span> Duplicate
+                  </button>
+                  <button class="btn btn-danger btn-sm" id="deleteEntryBtn" title="Delete">
+                    <span class="icon icon-trash icon--sm"></span> Delete
+                  </button>
+                </div>
+              </header>
+
+              <!-- Tabs -->
+              <nav class="wiki-card-tabs" role="tablist" id="wikiCardTabs">
+                <button role="tab" aria-selected="true" data-tab="content" class="wiki-tab active">Content</button>
+                <button role="tab" aria-selected="false" data-tab="rules" class="wiki-tab">Rules</button>
+                <button role="tab" aria-selected="false" data-tab="usage" class="wiki-tab">Usage</button>
+              </nav>
+
+              <!-- Tab Panels -->
+              <div class="wiki-card-body">
+                <!-- Content Tab -->
+                <section id="tab-content" role="tabpanel" class="wiki-tab-panel">
+                  <div class="wiki-card-empty-state" id="wikiCardEmpty">
+                    <span class="icon icon-book icon--2xl"></span>
+                    <h3>Select a term from the left</h3>
+                    <p>Choose an entry to view or edit its details</p>
+                  </div>
+
+                  <div class="wiki-card-content" id="wikiCardContent" style="display: none;">
+                    <div class="wiki-content-form">
+                      <!-- Title -->
+                      <div class="form-group">
+                        <label>Title <span class="required">*</span></label>
+                        <input type="text" id="wikiTitle" placeholder="e.g., Marketing Qualified Lead">
+                        <span class="form-hint">The display name shown in the navigation tree and tooltip header</span>
+                      </div>
+
+                      <!-- Trigger -->
+                      <div class="form-group">
+                        <label>Trigger Text</label>
+                        <input type="text" id="wikiTrigger" placeholder="e.g., MQL">
+                        <span class="form-hint">Optional: The text to match on HubSpot pages to show the tooltip. Leave empty for glossary-only entries.</span>
+                      </div>
+
+                      <!-- Aliases -->
+                      <div class="form-group">
+                        <label>Aliases</label>
+                        <input type="text" id="wikiAliases" placeholder="e.g., M.Q.L., marketing-qualified-lead">
+                        <span class="form-hint">Comma-separated additional trigger terms that should also show this tooltip</span>
+                      </div>
+
+                      <!-- Definition -->
+                      <div class="form-group">
+                        <label>Definition <span class="required">*</span></label>
+                        <div class="rich-text-editor">
+                          <div class="rich-text-toolbar" id="wikiDefinitionToolbar">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+                              <span class="icon icon-bold"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+                              <span class="icon icon-italic"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+                              <span class="icon icon-underline"></span>
+                            </button>
+                            <span class="toolbar-divider"></span>
+                            <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+                              <span class="icon icon-list"></span>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+                              <span class="icon icon-list-ordered"></span>
+                            </button>
+                            <span class="toolbar-divider"></span>
+                            <button type="button" class="toolbar-btn" data-command="createLink" title="Insert Link">
+                              <span class="icon icon-link"></span>
+                            </button>
+                          </div>
+                          <div id="wikiDefinition" class="rich-text-content" contenteditable="true" data-placeholder="Enter the definition or explanation..."></div>
+                        </div>
+                      </div>
+
+                      <!-- Property Values -->
+                      <div class="form-group">
+                        <label>Property Values</label>
+                        <div id="wikiPropertyValues" class="property-values-list">
+                          <!-- Property values added by JS -->
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="addPropertyValueBtn">
+                          <span class="icon icon-plus icon--sm"></span> Add Value
+                        </button>
+                        <span class="form-hint">For picklist properties, add values with their own definitions</span>
+                      </div>
+
+                      <!-- Related Link -->
+                      <div class="form-group">
+                        <label>Related Link</label>
+                        <input type="url" id="wikiLink" placeholder="https://docs.google.com/...">
+                        <span class="form-hint">Optional link to documentation or more details</span>
+                      </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="wiki-content-preview">
+                      <h4>Preview</h4>
+                      <div class="wiki-preview" id="wikiPreview">
+                        <div class="wiki-preview-card">
+                          <div class="wiki-preview-header">
+                            <span class="wiki-preview-term">Term</span>
+                            <span class="wiki-preview-category">Category</span>
+                          </div>
+                          <div class="wiki-preview-content">
+                            <p>Your definition will appear here</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Rules Tab -->
+                <section id="tab-rules" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiRulesEmpty">
+                    <span class="icon icon-settings icon--2xl"></span>
+                    <h3>Select a term to configure rules</h3>
+                    <p>Choose an entry from the left to set up where and how it appears</p>
+                  </div>
+
+                  <div class="wiki-rules-content" id="wikiRulesContent" style="display: none;">
+                    <!-- Where to Show -->
+                    <div class="wiki-rules-section">
+                      <h4>Where to Show</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Category</label>
+                          <select id="wikiCategory">
+                            <option value="general">General</option>
+                            <option value="sales">Sales</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="product">Product</option>
+                            <option value="process">Process</option>
+                            <option value="field">HubSpot Field</option>
+                          </select>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>HubSpot Object</label>
+                          <select id="wikiObjectType">
+                            <option value="">None (Custom Term)</option>
+                            <option value="contacts">Contacts</option>
+                            <option value="companies">Companies</option>
+                            <option value="deals">Deals</option>
+                            <option value="tickets">Tickets</option>
+                          </select>
+                          <span class="form-hint">Associate this entry with a HubSpot object type</span>
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Property Group</label>
+                        <select id="wikiPropertyGroup">
+                          <option value="">Select a property group...</option>
+                        </select>
+                        <span class="form-hint">Optional group name for organization</span>
+                      </div>
+                    </div>
+
+                    <!-- Matching Behavior -->
+                    <div class="wiki-rules-section">
+                      <h4>Matching Behavior</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Match Type</label>
+                          <select id="wikiMatchType">
+                            <option value="exact">Exact match</option>
+                            <option value="case-insensitive">Case-insensitive</option>
+                            <option value="starts-with">Starts with</option>
+                          </select>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>Frequency</label>
+                          <select id="wikiFrequency">
+                            <option value="once">Once per page</option>
+                            <option value="all">Every occurrence</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="wikiIncludeAliases" checked>
+                            <span>Also match aliases</span>
+                          </label>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>Priority</label>
+                          <input type="number" id="wikiPriority" min="0" max="100" value="50" placeholder="0-100">
+                          <span class="form-hint">Higher priority entries match first (0-100)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Visibility Conditions -->
+                    <div class="wiki-rules-section">
+                      <h4>Visibility Conditions</h4>
+
+                      <div class="form-group">
+                        <label>Page Type</label>
+                        <select id="wikiPageType">
+                          <option value="any">Any page</option>
+                          <option value="record">Record detail pages</option>
+                          <option value="index">Index/list pages</option>
+                          <option value="pipeline">Pipeline board</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <label>URL Patterns</label>
+                        <textarea id="wikiUrlPatterns" rows="3" placeholder="/contacts/*&#10;/deals/*&#10;/companies/*/"></textarea>
+                        <span class="form-hint">One pattern per line. Use * as wildcard. Leave empty to match all URLs.</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Usage Tab -->
+                <section id="tab-usage" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiUsageEmpty">
+                    <span class="icon icon-chart icon--2xl"></span>
+                    <h3>Select a term to view usage</h3>
+                    <p>Choose an entry from the left to see its metadata and statistics</p>
+                  </div>
+
+                  <div class="wiki-usage-content" id="wikiUsageContent" style="display: none;">
+                    <div class="wiki-usage-section">
+                      <h4>Entry Information</h4>
+                      <div class="wiki-usage-stats">
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Created</span>
+                          <span class="wiki-usage-stat-value" id="wikiCreatedAt">-</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Last Updated</span>
+                          <span class="wiki-usage-stat-value" id="wikiUpdatedAt">-</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Property Values</span>
+                          <span class="wiki-usage-stat-value" id="wikiValuesCount">0</span>
+                        </div>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Aliases</span>
+                          <span class="wiki-usage-stat-value" id="wikiAliasesCount">0</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="wiki-usage-section wiki-usage-placeholder">
+                      <span class="icon icon-trending-up icon--xl"></span>
+                      <h4>Usage Analytics Coming Soon</h4>
+                      <p>In a future version, this tab will show tooltip usage statistics and recent activity, including how often this term is displayed and clicked.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Save Actions -->
+                <div class="wiki-card-footer" id="wikiCardFooter" style="display: none;">
+                  <button class="btn btn-secondary" id="cancelWikiBtn">Cancel</button>
+                  <button class="btn btn-primary" id="saveWikiBtn">Save Entry</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Import Fields Modal -->
+  <div class="modal" id="importFieldsModal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2>Import HubSpot Fields</h2>
+        <button class="modal-close" id="closeImportFieldsModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Object Type</label>
+          <select id="importObjectType" class="full-width">
+            <option value="">Select object type...</option>
+            <option value="contacts">Contacts</option>
+            <option value="companies">Companies</option>
+            <option value="deals">Deals</option>
+            <option value="tickets">Tickets</option>
+          </select>
+        </div>
+        <div id="fieldsLoadingStatus" class="status-text"></div>
+        <div class="fields-list" id="fieldsList" style="display: none;">
+          <div class="fields-list-header">
+            <label class="checkbox-label">
+              <input type="checkbox" id="selectAllFields">
+              <span>Select All</span>
+            </label>
+            <input type="text" id="fieldsSearch" placeholder="Search fields..." class="fields-search">
+          </div>
+          <div class="fields-list-items" id="fieldsListItems">
+            <!-- Fields populated by JS -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelImportFieldsBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmImportFieldsBtn" disabled>Import Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared.js"></script>
+  <script src="wiki.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!-- Background circle -->
+  <circle cx="24" cy="24" r="22" fill="#1a2e05"/>
+  <!-- Outer ring -->
+  <circle cx="24" cy="24" r="18" fill="none" stroke="#b2ef63" stroke-width="2.5"/>
+  <!-- Middle ring -->
+  <circle cx="24" cy="24" r="11" fill="none" stroke="#b2ef63" stroke-width="2.5"/>
+  <!-- Center dot -->
+  <circle cx="24" cy="24" r="4" fill="#b2ef63"/>
+</svg>

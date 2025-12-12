@@ -1,0 +1,102 @@
+{
+  "id": "sales-pipeline",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "title": "Appointment Scheduled",
+      "trigger": "Appointment Scheduled",
+      "aliases": ["Discovery Call", "First Meeting"],
+      "definition": "<p>The initial stage when a prospect has agreed to a discovery call or meeting. At this stage, the sales rep should prepare to understand the prospect's needs, challenges, and goals.</p>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Qualified to Buy",
+      "trigger": "Qualified to Buy",
+      "aliases": ["Qualified", "Sales Qualified"],
+      "definition": "<p>The prospect has been vetted and confirmed to have:</p><ul><li><strong>Budget</strong> - Financial resources available</li><li><strong>Authority</strong> - Decision-making power</li><li><strong>Need</strong> - Genuine business problem to solve</li><li><strong>Timeline</strong> - Urgency to implement</li></ul>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Presentation Scheduled",
+      "trigger": "Presentation Scheduled",
+      "aliases": ["Demo Scheduled", "Product Demo"],
+      "definition": "<p>A formal product demonstration or presentation has been scheduled. The sales rep will showcase how the solution addresses the prospect's specific needs and pain points.</p>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Decision Maker Bought-In",
+      "trigger": "Decision Maker Bought-In",
+      "aliases": ["Champion Identified", "Sponsor Confirmed"],
+      "definition": "<p>The key decision maker has expressed positive intent to move forward. This stage indicates strong buying signals and executive sponsorship of the deal.</p>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Contract Sent",
+      "trigger": "Contract Sent",
+      "aliases": ["Proposal Sent", "Quote Sent"],
+      "definition": "<p>A formal proposal, quote, or contract has been sent to the prospect for review. The deal is in the final stages before close, pending signature and approval.</p>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Closed Won",
+      "trigger": "Closed Won",
+      "aliases": ["Won", "Closed-Won"],
+      "definition": "<p>The deal has been successfully closed. The prospect has signed the contract and committed to becoming a customer. This triggers:</p><ul><li>Revenue recognition</li><li>Customer onboarding</li><li>Lifecycle stage update to Customer</li></ul>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Closed Lost",
+      "trigger": "Closed Lost",
+      "aliases": ["Lost", "Closed-Lost"],
+      "definition": "<p>The deal will not close. Common reasons include:</p><ul><li>Lost to competitor</li><li>Budget constraints</li><li>No decision made</li><li>Timing not right</li></ul><p>Always capture the closed lost reason for future analysis.</p>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Amount",
+      "trigger": "Deal Amount",
+      "aliases": ["Amount", "Deal Value", "Revenue"],
+      "definition": "<p>The monetary value associated with a deal. This property is used to calculate pipeline value, forecast revenue, and track sales performance metrics.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Close Date",
+      "trigger": "Close Date",
+      "aliases": ["Expected Close Date", "Closing Date"],
+      "definition": "<p>The anticipated date when the deal is expected to close. This is crucial for forecasting and should be updated as the deal progresses through the pipeline.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Type",
+      "trigger": "Deal Type",
+      "aliases": ["Type of Deal", "Business Type"],
+      "definition": "<p>Categorizes the nature of the deal. Common types include:</p><ul><li><strong>New Business</strong> - First-time customer</li><li><strong>Existing Business</strong> - Expansion or upsell</li><li><strong>Renewal</strong> - Contract renewal</li></ul>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Priority",
+      "trigger": "Deal Priority",
+      "aliases": ["Priority", "Deal Tier"],
+      "definition": "<p>Indicates the relative importance or urgency of a deal. Typically categorized as High, Medium, or Low based on deal size, strategic value, or closing timeline.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Forecast Category",
+      "trigger": "Forecast Category",
+      "aliases": ["Forecast", "Pipeline Forecast"],
+      "definition": "<p>Classifies deals by likelihood to close for revenue forecasting:</p><ul><li><strong>Omit</strong> - Not in forecast</li><li><strong>Pipeline</strong> - Early stage</li><li><strong>Best Case</strong> - Good chance</li><li><strong>Commit</strong> - High confidence</li><li><strong>Closed</strong> - Won or lost</li></ul>",
+      "category": "field",
+      "objectType": "deals"
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - HubSpot Helper</title>
+  <link rel="stylesheet" href="../shared.css">
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar (rendered by JS) -->
+    <aside class="sidebar"></aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="homeSection">
+        <div class="section-header">
+          <div>
+            <h2>Welcome to HubSpot Helper</h2>
+            <p class="section-description">Get started by completing these setup steps</p>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="home-stats">
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-field">
+              <span class="icon icon-book"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeWikiCount">0</span>
+              <span class="stat-label">Wiki Entries</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-general">
+              <span class="icon icon-clipboard-list"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeRulesCount">0</span>
+              <span class="stat-label">Banner Rules</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-sales">
+              <span class="icon icon-layers"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeCardsCount">0</span>
+              <span class="stat-label">Plays</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="onboarding-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="onboardingProgressFill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text"><span id="onboardingProgressText">0</span> of 5 steps completed</span>
+        </div>
+
+        <!-- Onboarding Steps -->
+        <div class="onboarding-steps">
+          <!-- Step 1: Install Plugin -->
+          <div class="onboarding-step completed" data-step="install" id="stepInstall">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Install Plugin</h3>
+                <span class="step-status completed" id="stepInstallStatus">Completed</span>
+              </div>
+              <p>Install the HubSpot Helper Chrome extension to enable contextual guidance on HubSpot pages.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepInstallBtn">Share with Team</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-puzzle icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 2: Connect HubSpot -->
+          <div class="onboarding-step" data-step="api" id="stepApi">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Connect HubSpot API</h3>
+                <span class="step-status" id="stepApiStatus">Not started</span>
+              </div>
+              <p>Connect your HubSpot private app to enable property fetching and field import.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepApiBtn">Configure API</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-link icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 3: Build Your Wiki -->
+          <div class="onboarding-step" data-step="wiki" id="stepWiki">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Build Your Wiki</h3>
+                <span class="step-status" id="stepWikiStatus">Not started</span>
+              </div>
+              <p>Import HubSpot fields or add custom terms to create contextual tooltips for your team.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepWikiImportBtn">Import Fields</button>
+                <button class="btn btn-primary btn-sm" id="stepWikiAddBtn">Add Entry</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-book icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 4: Create Banner Rules -->
+          <div class="onboarding-step" data-step="rules" id="stepRules">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Create Banner Rules</h3>
+                <span class="step-status" id="stepRulesStatus">Not started</span>
+              </div>
+              <p>Display contextual banners on HubSpot records based on property conditions.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepRulesBtn">Create Rule</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-clipboard-list icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 5: Add Plays -->
+          <div class="onboarding-step" data-step="cards" id="stepCards">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Add Plays</h3>
+                <span class="step-status" id="stepCardsStatus">Not started</span>
+              </div>
+              <p>Create plays for competitors, objections, processes, and best practices.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepCardsBtn">Create Play</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-layers icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 6: Invite Team (Coming Soon) -->
+          <div class="onboarding-step disabled" data-step="team" id="stepTeam">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Invite Your Team</h3>
+                <span class="step-status coming-soon">Coming Soon</span>
+              </div>
+              <p>Share your configuration with team members so everyone has the same context.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" disabled>Invite Team</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-users icon--lg"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Library Promo -->
+        <div class="content-library-promo">
+          <div class="promo-content">
+            <span class="promo-badge">New</span>
+            <h3>Content Libraries</h3>
+            <p>Download starter packs to quickly populate your wiki with pre-built HubSpot terminology, sales pipeline stages, and more.</p>
+            <a href="libraries.html" class="btn btn-primary btn-sm" style="margin-top: var(--space-3);">
+              <span class="icon icon-download icon--sm"></span> Browse Libraries
+            </a>
+          </div>
+          <div class="promo-icon">
+            <span class="icon icon-download icon--2xl"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../shared.js"></script>
+  <script src="home.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+{
+  "id": "contact-lifecycle",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "title": "Subscriber",
+      "trigger": "Subscriber",
+      "aliases": ["Subscribers"],
+      "definition": "<p>A contact who has opted in to receive communications from you, typically through a blog subscription or newsletter signup. This is the earliest lifecycle stage.</p>",
+      "category": "marketing",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Lead",
+      "trigger": "Lead",
+      "aliases": ["Leads", "Prospect"],
+      "definition": "<p>A contact who has converted on your website or shown interest beyond subscription. Leads have typically filled out a form, downloaded content, or taken an action indicating interest in your products or services.</p>",
+      "category": "marketing",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Opportunity",
+      "trigger": "Opportunity",
+      "aliases": ["Opportunities"],
+      "definition": "<p>A contact associated with an open deal in your pipeline. This stage indicates active sales engagement and a real chance of becoming a customer.</p>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Customer",
+      "trigger": "Customer",
+      "aliases": ["Customers", "Client"],
+      "definition": "<p>A contact with at least one closed-won deal. Customers are your paying clients and should receive different communications than prospects. Customer retention is typically more cost-effective than new acquisition.</p>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Evangelist",
+      "trigger": "Evangelist",
+      "aliases": ["Evangelists", "Advocate"],
+      "definition": "<p>A customer who actively promotes your brand. Evangelists provide referrals, testimonials, case studies, and positive word-of-mouth. They are your most valuable contacts for organic growth.</p>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Lead Status",
+      "trigger": "Lead Status",
+      "aliases": ["Status"],
+      "definition": "<p>Indicates where a lead is in the qualification process:</p><ul><li><strong>New</strong> - Just entered the system</li><li><strong>Open</strong> - Being actively worked</li><li><strong>In Progress</strong> - Engaged in conversation</li><li><strong>Attempted to Contact</strong> - Outreach made</li><li><strong>Connected</strong> - Conversation established</li><li><strong>Unqualified</strong> - Not a fit</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Original Source",
+      "trigger": "Original Source",
+      "aliases": ["Source", "Lead Source"],
+      "definition": "<p>How the contact first found your business. HubSpot automatically tracks sources including:</p><ul><li>Organic Search</li><li>Paid Search</li><li>Social Media</li><li>Referral</li><li>Direct Traffic</li><li>Offline Sources</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Contact Owner",
+      "trigger": "Contact Owner",
+      "aliases": ["Owner"],
+      "definition": "<p>The HubSpot user responsible for the relationship with this contact. Contact owners receive notifications about their contacts' activities and are accountable for follow-up and engagement.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Create Date",
+      "trigger": "Create Date",
+      "aliases": ["Created Date", "Date Created"],
+      "definition": "<p>The date and time when the contact record was first created in HubSpot. This is automatically set and cannot be modified. Useful for cohort analysis and lead velocity metrics.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Activity Date",
+      "trigger": "Last Activity Date",
+      "aliases": ["Last Activity", "Recent Activity"],
+      "definition": "<p>The most recent date of any logged activity on the contact record, including emails, calls, meetings, notes, and tasks. Helps identify engaged vs. dormant contacts.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    }
+  ]
+}
