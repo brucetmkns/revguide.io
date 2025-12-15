@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Content Libraries
+ * RevGuide - Content Libraries
  * Browse and install pre-built wiki entry packs
  */
 
@@ -46,6 +46,10 @@ const elements = {
  * Initialize the libraries page
  */
 async function init() {
+  // Check authentication (redirects to login if not authenticated)
+  const isAuthenticated = await AdminShared.checkAuth();
+  if (!isAuthenticated) return;
+
   // Cache DOM elements
   cacheElements();
 
@@ -141,8 +145,7 @@ async function loadData() {
     existingWikiEntries = storageData.wikiEntries || [];
 
     // Load installed libraries from storage
-    const result = await chrome.storage.local.get('installedLibraries');
-    installedLibraries = result.installedLibraries || {};
+    installedLibraries = await AdminShared.getInstalledLibraries();
 
     // Fetch manifest from remote
     await fetchManifest();
@@ -672,8 +675,7 @@ async function performInstall() {
     }
 
     // Update installed libraries tracking
-    const result = await chrome.storage.local.get('installedLibraries');
-    const updatedInstalledLibraries = result.installedLibraries || {};
+    const updatedInstalledLibraries = await AdminShared.getInstalledLibraries();
     updatedInstalledLibraries[currentLibrary.id] = {
       version: currentLibrary.version,
       installedAt: Date.now(),
@@ -682,7 +684,7 @@ async function performInstall() {
 
     // Save everything
     await AdminShared.saveStorageData({ wikiEntries });
-    await chrome.storage.local.set({ installedLibraries: updatedInstalledLibraries });
+    await AdminShared.saveInstalledLibraries(updatedInstalledLibraries);
 
     // Update local state
     installedLibraries = updatedInstalledLibraries;
@@ -754,7 +756,7 @@ async function performUninstall() {
 
     // Save everything
     await AdminShared.saveStorageData({ wikiEntries });
-    await chrome.storage.local.set({ installedLibraries });
+    await AdminShared.saveInstalledLibraries(installedLibraries);
 
     // Update local state
     existingWikiEntries = wikiEntries;

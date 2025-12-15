@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - HubSpot Helper</title>
+  <title>Home - RevGuide</title>
   <link rel="stylesheet" href="../shared.css">
   <link rel="stylesheet" href="home.css">
 </head>
@@ -17,7 +17,7 @@
       <section class="content-section active" id="homeSection">
         <div class="section-header">
           <div>
-            <h2>Welcome to HubSpot Helper</h2>
+            <h2>Welcome to RevGuide</h2>
             <p class="section-description">Get started by completing these setup steps</p>
           </div>
         </div>
@@ -58,7 +58,7 @@
           <div class="progress-bar">
             <div class="progress-fill" id="onboardingProgressFill" style="width: 0%"></div>
           </div>
-          <span class="progress-text"><span id="onboardingProgressText">0</span> of 5 steps completed</span>
+          <span class="progress-text"><span id="onboardingProgressText">0</span> of 6 steps completed</span>
         </div>
 
         <!-- Onboarding Steps -->
@@ -71,9 +71,9 @@
                 <h3>Install Plugin</h3>
                 <span class="step-status completed" id="stepInstallStatus">Completed</span>
               </div>
-              <p>Install the HubSpot Helper Chrome extension to enable contextual guidance on HubSpot pages.</p>
+              <p>Install the RevGuide Chrome extension to enable contextual guidance on HubSpot pages.</p>
               <div class="step-actions">
-                <button class="btn btn-secondary btn-sm" id="stepInstallBtn">Share with Team</button>
+                <button class="btn btn-secondary btn-sm" id="stepInstallBtn">Invite Team Members</button>
               </div>
             </div>
             <div class="step-icon">
@@ -154,17 +154,17 @@
             </div>
           </div>
 
-          <!-- Step 6: Invite Team (Coming Soon) -->
-          <div class="onboarding-step disabled" data-step="team" id="stepTeam">
-            <div class="step-number">5</div>
+          <!-- Step 6: Invite Team -->
+          <div class="onboarding-step" data-step="team" id="stepTeam">
+            <div class="step-number">6</div>
             <div class="step-content">
               <div class="step-header">
                 <h3>Invite Your Team</h3>
-                <span class="step-status coming-soon">Coming Soon</span>
+                <span class="step-status" id="stepTeamStatus">Not started</span>
               </div>
               <p>Share your configuration with team members so everyone has the same context.</p>
               <div class="step-actions">
-                <button class="btn btn-secondary btn-sm" disabled>Invite Team</button>
+                <button class="btn btn-primary btn-sm" id="stepTeamBtn">Invite Team</button>
               </div>
             </div>
             <div class="step-icon">
@@ -191,6 +191,7 @@
     </main>
   </div>
 
+  <script src="../supabase.js"></script>
   <script src="../shared.js"></script>
   <script src="home.js"></script>
 </body>

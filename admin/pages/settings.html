@@ -3,8 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings - HubSpot Helper</title>
+  <title>Settings - RevGuide</title>
   <link rel="stylesheet" href="../shared.css">
+  <style>
+    /* Team Members Section */
+    .team-members-section {
+      margin-top: var(--space-8);
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .team-members-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-5);
+    }
+
+    .team-members-header h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-1);
+      color: var(--color-text-primary);
+    }
+
+    .team-members-header p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    /* Status Badges */
+    .badge-pending {
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning);
+    }
+
+    .badge-active {
+      background-color: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    /* Role Badge */
+    .role-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      text-transform: capitalize;
+      background-color: var(--color-bg-muted);
+      color: var(--color-text-secondary);
+    }
+
+    .role-badge.admin {
+      background-color: var(--color-primary-bg);
+      color: var(--color-primary-dark);
+    }
+
+    /* Users Table inside section - remove redundant container styling */
+    .team-members-section .table-container {
+      background: none;
+      box-shadow: none;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    /* Users Table Empty State inside section */
+    .team-members-section .empty-state {
+      margin: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    /* Required asterisk */
+    .required {
+      color: var(--color-danger);
+    }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -17,7 +94,7 @@
         <div class="section-header">
           <div>
             <h2>Settings</h2>
-            <p class="section-description">Configure your HubSpot Helper extension</p>
+            <p class="section-description">Configure your RevGuide extension</p>
           </div>
         </div>
 
@@ -88,10 +165,86 @@
             </div>
           </div>
         </div>
+
+        <!-- Team Members Section -->
+        <div class="team-members-section">
+          <div class="team-members-header">
+            <div>
+              <h3>Team Members</h3>
+              <p>Invite team members to use RevGuide with your shared configuration</p>
+            </div>
+            <button class="btn btn-primary" id="inviteUserBtn">
+              <span class="icon icon-user-plus icon--sm"></span> Invite User
+            </button>
+          </div>
+
+          <!-- Users Table -->
+          <div class="table-container" id="usersTableContainer">
+            <table class="data-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Invited</th>
+                  <th width="80">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="usersEmptyState" style="display: none;">
+            <div class="empty-icon">
+              <span class="icon icon-users icon--2xl"></span>
+            </div>
+            <h3>No team members yet</h3>
+            <p>Invite your team to share your RevGuide configuration and contextual guidance.</p>
+            <button class="btn btn-primary" id="inviteUserEmptyBtn">
+              <span class="icon icon-user-plus icon--sm"></span> Invite Your First User
+            </button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 
+  <!-- Invite User Modal -->
+  <div class="modal" id="inviteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Invite User</h2>
+        <button class="modal-close" id="closeInviteModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Email Address <span class="required">*</span></label>
+          <input type="email" id="inviteEmail" placeholder="colleague@company.com">
+          <span class="form-hint">User will receive an email with instructions to install and activate</span>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="inviteRole">
+            <option value="user">User - Can use the extension</option>
+            <option value="admin">Admin - Can manage content and users</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelInviteBtn">Cancel</button>
+        <button class="btn btn-primary" id="sendInviteBtn">
+          <span class="icon icon-send icon--sm"></span> Send Invitation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../supabase.js"></script>
   <script src="../shared.js"></script>
   <script src="settings.js"></script>
 </body>

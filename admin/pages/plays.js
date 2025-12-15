@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Plays Page
+ * RevGuide - Plays Page
  */
 
 class PlaysPage {
@@ -15,6 +15,10 @@ class PlaysPage {
   }
 
   async init() {
+    // Check authentication (redirects to login if not authenticated)
+    const isAuthenticated = await AdminShared.checkAuth();
+    if (!isAuthenticated) return;
+
     // Render sidebar
     AdminShared.renderSidebar('plays');
 

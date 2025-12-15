@@ -1,7 +1,66 @@
 /**
- * HubSpot Helper - Shared Admin Utilities
+ * RevGuide - Shared Admin Utilities
  * Common functionality for all admin pages
  */
+
+/**
+ * Detect if running in Chrome extension context or web context
+ */
+const isExtensionContext = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
+
+/**
+ * Current user info (populated by checkAuth)
+ */
+let currentUser = null;
+let currentOrganization = null;
+
+/**
+ * Check if user is authenticated
+ * Redirects to login if not authenticated
+ * @returns {Promise<boolean>}
+ */
+async function checkAuth() {
+  // In extension context, skip auth for now (will be added later)
+  if (isExtensionContext) {
+    return true;
+  }
+
+  // In web context, check Supabase session
+  if (typeof RevGuideAuth !== 'undefined') {
+    try {
+      const { data: { session } } = await RevGuideAuth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return false;
+      }
+
+      // Get user profile
+      const { data: profile } = await RevGuideDB.getUserProfile();
+      if (profile) {
+        currentUser = profile;
+        currentOrganization = profile.organizations;
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Auth check failed:', e);
+      window.location.href = 'login.html';
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Sign out the current user
+ */
+async function signOut() {
+  if (typeof RevGuideAuth !== 'undefined') {
+    await RevGuideAuth.signOut();
+    window.location.href = 'login.html';
+  }
+}
 
 /**
  * Renders the sidebar navigation
@@ -14,7 +73,7 @@ function renderSidebar(activePage) {
   sidebar.innerHTML = `
     <div class="sidebar-header">
       <span class="logo-icon"><span class="icon icon-target-white"></span></span>
-      <h1>HubSpot Helper</h1>
+      <h1>RevGuide</h1>
     </div>
     <nav class="sidebar-nav">
       <a href="home.html" class="nav-item${activePage === 'home' ? ' active' : ''}" data-section="home">
@@ -43,46 +102,115 @@ function renderSidebar(activePage) {
       </a>
     </nav>
     <div class="sidebar-footer">
-      <div class="extension-status">
-        <span class="status-dot active"></span>
-        <span>Extension Active</span>
-      </div>
+      ${!isExtensionContext && currentUser ? `
+        <div class="user-info">
+          <div class="user-avatar">${(currentUser.name || currentUser.email || '?')[0].toUpperCase()}</div>
+          <div class="user-details">
+            <span class="user-name">${currentUser.name || currentUser.email?.split('@')[0] || 'User'}</span>
+            <span class="user-org">${currentOrganization?.name || ''}</span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      ` : `
+        <div class="extension-status">
+          <span class="status-dot active"></span>
+          <span>Extension Active</span>
+        </div>
+      `}
     </div>
   `;
 }
 
 /**
- * Load data from Chrome storage
+ * Load data from Chrome storage or Supabase (web context)
  * @returns {Promise<Object>} The stored data
  */
 async function loadStorageData() {
+  const defaults = {
+    rules: [],
+    battleCards: [],
+    presentations: [],
+    wikiEntries: [],
+    invitedUsers: [],
+    settings: {
+      enabled: true,
+      showBanners: true,
+      showBattleCards: true,
+      showPresentations: true,
+      showWiki: true,
+      showAdminLinks: true,
+      bannerPosition: 'top'
+    }
+  };
+
+  // In web context, load from Supabase
+  if (!isExtensionContext && typeof RevGuideDB !== 'undefined') {
+    try {
+      const [wikiResult, bannersResult, playsResult] = await Promise.all([
+        RevGuideDB.getWikiEntries(),
+        RevGuideDB.getBanners(),
+        RevGuideDB.getPlays()
+      ]);
+
+      return {
+        wikiEntries: wikiResult.data || [],
+        rules: bannersResult.data || [],
+        battleCards: playsResult.data || [],
+        presentations: [],
+        invitedUsers: [],
+        settings: defaults.settings
+      };
+    } catch (e) {
+      console.error('Failed to load from Supabase:', e);
+      return defaults;
+    }
+  }
+
+  // In extension context, use Chrome storage
   return new Promise((resolve) => {
-    chrome.storage.local.get({
-      rules: [],
-      battleCards: [],
-      presentations: [],
-      wikiEntries: [],
-      settings: {
-        enabled: true,
-        showBanners: true,
-        showBattleCards: true,
-        showPresentations: true,
-        showWiki: true,
-        showAdminLinks: true,
-        bannerPosition: 'top'
-      }
-    }, (data) => {
+    chrome.storage.local.get(defaults, (data) => {
       resolve(data);
     });
   });
 }
 
 /**
- * Save data to Chrome storage
+ * Save data to Chrome storage or Supabase (web context)
  * @param {Object} data - The data to save
  * @returns {Promise<void>}
  */
 async function saveStorageData(data) {
+  // In web context, save to Supabase
+  if (!isExtensionContext && typeof RevGuideDB !== 'undefined') {
+    try {
+      // Save wiki entries
+      if (data.wikiEntries !== undefined) {
+        // Note: For now, we handle individual creates/updates in page JS
+        // This function will be enhanced for bulk operations later
+        console.log('Wiki entries will be synced individually');
+      }
+      // Save banners (rules)
+      if (data.rules !== undefined) {
+        console.log('Banners will be synced individually');
+      }
+      // Save plays (battleCards)
+      if (data.battleCards !== undefined) {
+        console.log('Plays will be synced individually');
+      }
+      return;
+    } catch (e) {
+      console.error('Failed to save to Supabase:', e);
+      throw e;
+    }
+  }
+
+  // In extension context, use Chrome storage
   // If wikiEntries are being saved, also build and cache the term map
   if (data.wikiEntries) {
     const cacheData = buildWikiTermMapCache(data.wikiEntries);
@@ -93,6 +221,42 @@ async function saveStorageData(data) {
 
   return new Promise((resolve) => {
     chrome.storage.local.set(data, resolve);
+  });
+}
+
+/**
+ * Get installed libraries tracking data
+ * @returns {Promise<Object>}
+ */
+async function getInstalledLibraries() {
+  // In web context, installed libraries could be stored in Supabase (future)
+  // For now, use localStorage as fallback
+  if (!isExtensionContext) {
+    const stored = localStorage.getItem('revguide-installed-libraries');
+    return stored ? JSON.parse(stored) : {};
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get('installedLibraries', (result) => {
+      resolve(result.installedLibraries || {});
+    });
+  });
+}
+
+/**
+ * Save installed libraries tracking data
+ * @param {Object} libraries
+ * @returns {Promise<void>}
+ */
+async function saveInstalledLibraries(libraries) {
+  // In web context, use localStorage as fallback
+  if (!isExtensionContext) {
+    localStorage.setItem('revguide-installed-libraries', JSON.stringify(libraries));
+    return;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ installedLibraries: libraries }, resolve);
   });
 }
 
@@ -266,7 +430,11 @@ function escapeHtml(text) {
  * Notify content script of data changes
  */
 function notifyContentScript() {
-  chrome.runtime.sendMessage({ action: 'refreshUI' });
+  // Only works in extension context
+  if (isExtensionContext) {
+    chrome.runtime.sendMessage({ action: 'refreshUI' });
+  }
+  // In web context, Supabase realtime handles sync
 }
 
 /**
@@ -280,6 +448,14 @@ async function fetchProperties(objectType, propertiesCache = {}) {
     return propertiesCache[objectType];
   }
 
+  // In web context, properties will be fetched via Nango OAuth (future)
+  if (!isExtensionContext) {
+    // Return empty array for now - Nango integration will be added
+    console.log('Property fetching not yet available in web context (Nango OAuth required)');
+    return [];
+  }
+
+  // In extension context, use background script
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
       { action: 'fetchObjectProperties', objectType },
@@ -396,6 +572,144 @@ function filterSearchableOptions(container, query) {
     const matches = !normalizedQuery || label.includes(normalizedQuery) || value.includes(normalizedQuery);
     option.style.display = matches ? 'flex' : 'none';
   });
+}
+
+/**
+ * Initialize a play select dropdown
+ * @param {HTMLElement} selectEl - The .play-select element
+ * @param {Array} plays - Array of play objects from battleCards storage
+ * @param {Function} onChange - Callback when selection changes
+ */
+function initPlaySelect(selectEl, plays, onChange = null) {
+  const trigger = selectEl.querySelector('.play-select-trigger');
+  const dropdown = selectEl.querySelector('.play-select-dropdown');
+  const searchInput = selectEl.querySelector('.play-select-input');
+  const optionsContainer = selectEl.querySelector('.play-select-options');
+  const labelSpan = trigger.querySelector('.select-label');
+
+  // Build options HTML
+  const optionsHtml = `
+    <div class="play-select-option" data-value="" data-label="None">
+      <span class="option-label">None</span>
+      <span class="option-subtitle">No related play</span>
+    </div>
+    ${plays.map(p => `
+      <div class="play-select-option" data-value="${p.id}" data-label="${escapeHtml(p.name)}">
+        <span class="option-label">${escapeHtml(p.name)}</span>
+        <span class="option-subtitle">${escapeHtml(p.subtitle || CARD_TYPE_LABELS[p.cardType] || p.cardType || '')}</span>
+      </div>
+    `).join('')}
+  `;
+  optionsContainer.innerHTML = optionsHtml;
+
+  // Toggle dropdown
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = selectEl.classList.contains('open');
+
+    // Close all other dropdowns
+    document.querySelectorAll('.play-select.open, .searchable-select.open').forEach(el => {
+      el.classList.remove('open');
+    });
+
+    if (!isOpen) {
+      selectEl.classList.add('open');
+      searchInput.value = '';
+      filterPlayOptions(optionsContainer, '');
+      searchInput.focus();
+    }
+  });
+
+  // Search filter
+  searchInput.addEventListener('input', () => {
+    filterPlayOptions(optionsContainer, searchInput.value);
+  });
+
+  // Option selection
+  optionsContainer.addEventListener('click', (e) => {
+    const option = e.target.closest('.play-select-option');
+    if (option) {
+      const value = option.dataset.value;
+      const label = option.dataset.label;
+
+      trigger.dataset.value = value;
+      labelSpan.textContent = label || 'None';
+
+      // Update selected state
+      optionsContainer.querySelectorAll('.play-select-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === value);
+      });
+
+      selectEl.classList.remove('open');
+
+      if (onChange) onChange(value);
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!selectEl.contains(e.target)) {
+      selectEl.classList.remove('open');
+    }
+  });
+
+  // Keyboard navigation
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      selectEl.classList.remove('open');
+    }
+  });
+}
+
+/**
+ * Filter play select options
+ * @param {HTMLElement} container
+ * @param {string} query
+ */
+function filterPlayOptions(container, query) {
+  const normalizedQuery = query.toLowerCase().trim();
+  container.querySelectorAll('.play-select-option').forEach(option => {
+    const label = (option.dataset.label || '').toLowerCase();
+    const subtitle = option.querySelector('.option-subtitle')?.textContent?.toLowerCase() || '';
+    const matches = !normalizedQuery || label.includes(normalizedQuery) || subtitle.includes(normalizedQuery);
+    option.style.display = matches ? 'flex' : 'none';
+  });
+}
+
+/**
+ * Set the selected play in a play select dropdown
+ * @param {HTMLElement} selectEl - The .play-select element
+ * @param {string} playId - The play ID to select (or empty string for none)
+ * @param {Array} plays - Array of play objects
+ */
+function setPlaySelectValue(selectEl, playId, plays) {
+  const trigger = selectEl.querySelector('.play-select-trigger');
+  const labelSpan = trigger.querySelector('.select-label');
+  const optionsContainer = selectEl.querySelector('.play-select-options');
+
+  trigger.dataset.value = playId || '';
+
+  if (playId) {
+    const play = plays.find(p => p.id === playId);
+    labelSpan.textContent = play ? play.name : 'Unknown Play';
+  } else {
+    labelSpan.textContent = 'None';
+  }
+
+  // Update selected state
+  optionsContainer.querySelectorAll('.play-select-option').forEach(opt => {
+    opt.classList.toggle('selected', opt.dataset.value === (playId || ''));
+  });
+}
+
+/**
+ * Get the selected play ID from a play select dropdown
+ * @param {HTMLElement} selectEl - The .play-select element
+ * @returns {string} The selected play ID or empty string
+ */
+function getPlaySelectValue(selectEl) {
+  const trigger = selectEl.querySelector('.play-select-trigger');
+  return trigger.dataset.value || '';
 }
 
 /**
@@ -684,9 +998,11 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
           <p>${escapeHtml(message)}</p>
         </div>
         <div class="confirm-dialog-footer">
-          ${showCancel ? `<button class="btn btn-secondary confirm-dialog-cancel">${escapeHtml(cancelLabel)}</button>` : ''}
           <button class="btn btn-secondary confirm-dialog-secondary">${escapeHtml(secondaryLabel)}</button>
-          <button class="btn btn-primary confirm-dialog-primary">${escapeHtml(primaryLabel)}</button>
+          <div class="confirm-dialog-actions">
+            ${showCancel ? `<button class="btn btn-secondary confirm-dialog-cancel">${escapeHtml(cancelLabel)}</button>` : ''}
+            <button class="btn btn-primary confirm-dialog-primary">${escapeHtml(primaryLabel)}</button>
+          </div>
         </div>
       </div>
     `;
@@ -725,9 +1041,19 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
 
 // Export for use in page scripts
 window.AdminShared = {
+  // Context detection
+  isExtensionContext,
+  // Auth
+  checkAuth,
+  signOut,
+  get currentUser() { return currentUser; },
+  get currentOrganization() { return currentOrganization; },
+  // UI
   renderSidebar,
   loadStorageData,
   saveStorageData,
+  getInstalledLibraries,
+  saveInstalledLibraries,
   buildWikiTermMapCache,
   generateId,
   showToast,
@@ -737,6 +1063,10 @@ window.AdminShared = {
   fetchProperties,
   initSearchableSelect,
   filterSearchableOptions,
+  initPlaySelect,
+  filterPlayOptions,
+  setPlaySelectValue,
+  getPlaySelectValue,
   addCondition,
   getConditions,
   getLogic,
@@ -745,6 +1075,7 @@ window.AdminShared = {
   toggleConditionsWrapper,
   initRichTextEditor,
   convertToEmbedUrl,
+  // Constants
   OPERATORS,
   TYPE_LABELS,
   TYPE_COLORS,

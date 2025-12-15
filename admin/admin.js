@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Admin Panel
+ * RevGuide - Admin Panel
  * Full-featured UI for managing rules, plays, wiki, and media
  */
 
@@ -147,7 +147,7 @@ class AdminPanel {
     document.getElementById('stepInstallBtn').addEventListener('click', () => {
       // Copy install instructions or show share dialog
       const extensionUrl = chrome.runtime.getURL('');
-      const shareText = `Install HubSpot Helper to get contextual guidance on HubSpot records:\n\n1. Download the extension files\n2. Go to chrome://extensions/\n3. Enable "Developer mode"\n4. Click "Load unpacked" and select the folder`;
+      const shareText = `Install RevGuide to get contextual guidance on HubSpot records:\n\n1. Download the extension files\n2. Go to chrome://extensions/\n3. Enable "Developer mode"\n4. Click "Load unpacked" and select the folder`;
 
       if (navigator.clipboard) {
         navigator.clipboard.writeText(shareText).then(() => {
@@ -1638,7 +1638,7 @@ class AdminPanel {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hubspot-helper-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `revguide-export-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }

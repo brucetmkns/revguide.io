@@ -2,10 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=home.html">
-  <title>Redirecting...</title>
+  <title>RevGuide</title>
+  <script src="../supabase.js"></script>
+  <script>
+    // Check auth and redirect appropriately
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Wait a bit for Supabase to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        const { data: { session } } = await RevGuideAuth.getSession();
+        if (session) {
+          window.location.href = 'home.html';
+        } else {
+          window.location.href = 'login.html';
+        }
+      } catch (e) {
+        // If Supabase fails, go to login
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
 </head>
 <body>
-  <p>Redirecting to <a href="home.html">Home</a>...</p>
+  <p>Loading...</p>
 </body>
 </html>

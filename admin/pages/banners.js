@@ -1,10 +1,11 @@
 /**
- * HubSpot Helper - Banners Page
+ * RevGuide - Banners Page
  */
 
 class BannersPage {
   constructor() {
     this.rules = [];
+    this.plays = [];
     this.propertiesCache = {};
     this.currentProperties = [];
     this.editingRuleId = null;
@@ -14,12 +15,23 @@ class BannersPage {
   }
 
   async init() {
+    // Check authentication (redirects to login if not authenticated)
+    const isAuthenticated = await AdminShared.checkAuth();
+    if (!isAuthenticated) return;
+
     // Render sidebar
     AdminShared.renderSidebar('banners');
 
     // Load data
     const data = await AdminShared.loadStorageData();
     this.rules = data.rules || [];
+    this.plays = data.battleCards || [];
+
+    // Initialize play select dropdown
+    const playSelectEl = document.getElementById('ruleRelatedPlay');
+    if (playSelectEl) {
+      AdminShared.initPlaySelect(playSelectEl, this.plays);
+    }
 
     // Check for action param (e.g., from home page)
     const urlParams = new URLSearchParams(window.location.search);
@@ -226,6 +238,12 @@ class BannersPage {
     // Toggle embed fields visibility
     this.toggleEmbedFields();
 
+    // Set related play
+    const playSelectEl = document.getElementById('ruleRelatedPlay');
+    if (playSelectEl) {
+      AdminShared.setPlaySelectValue(playSelectEl, rule?.relatedPlayId || '', this.plays);
+    }
+
     const objectType = rule?.objectTypes?.[0] || rule?.objectType || '';
     const objectTypeMap = { contact: 'contacts', company: 'companies', deal: 'deals', ticket: 'tickets' };
     const mappedType = objectTypeMap[objectType] || objectType;
@@ -268,6 +286,7 @@ class BannersPage {
   }
 
   getCurrentFormData() {
+    const playSelectEl = document.getElementById('ruleRelatedPlay');
     return JSON.stringify({
       name: document.getElementById('ruleName').value,
       title: document.getElementById('ruleTitle').value,
@@ -279,7 +298,8 @@ class BannersPage {
       tabVisibility: document.getElementById('ruleTabVisibility').value,
       logic: AdminShared.getLogic('ruleLogicToggle'),
       conditions: AdminShared.getConditions('ruleConditions'),
-      embedUrl: document.getElementById('ruleEmbedUrl').value
+      embedUrl: document.getElementById('ruleEmbedUrl').value,
+      relatedPlayId: playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : ''
     });
   }
 
@@ -461,6 +481,10 @@ class BannersPage {
     const tabVisibilityInput = document.getElementById('ruleTabVisibility').value.trim();
     const tabVisibility = tabVisibilityInput ? String(tabVisibilityInput) : 'all';
 
+    // Get related play
+    const playSelectEl = document.getElementById('ruleRelatedPlay');
+    const relatedPlayId = playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : '';
+
     const rule = {
       id: this.editingRuleId || 'rule_' + Date.now(),
       name,
@@ -474,6 +498,7 @@ class BannersPage {
       logic,
       displayOnAll,
       tabVisibility,
+      relatedPlayId,
       enabled: true,
       createdAt: Date.now()
     };

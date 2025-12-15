@@ -1,5 +1,5 @@
 /* ============================================
-   HubSpot Helper - Shared Admin Styles
+   RevGuide - Shared Admin Styles
    ============================================
    Shared styles for all admin pages.
    Each page imports this file.
@@ -75,6 +75,62 @@
   gap: var(--space-2);
   font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* User Info in Sidebar (Web mode) */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.user-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-inverse);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-org {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-btn {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s;
+}
+
+.logout-btn:hover {
+  color: var(--color-text-inverse);
 }
 
 
@@ -518,12 +574,18 @@
 
 .confirm-dialog-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
   background: var(--color-bg-subtle);
   border-top: 1px solid var(--color-border);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: var(--space-3);
 }
 
 

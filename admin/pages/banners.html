@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Banners - HubSpot Helper</title>
+  <title>Banners - RevGuide</title>
   <link rel="stylesheet" href="../shared.css">
   <link rel="stylesheet" href="banners.css">
 </head>
@@ -136,6 +136,31 @@
                     </div>
                   </div>
 
+                  <div class="form-group">
+                    <label>Related Play</label>
+                    <div class="play-select" id="ruleRelatedPlay">
+                      <button type="button" class="play-select-trigger" data-value="">
+                        <span class="select-label">None</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      <div class="play-select-dropdown">
+                        <div class="play-select-search">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                          </svg>
+                          <input type="text" placeholder="Search plays..." class="play-select-input">
+                        </div>
+                        <div class="play-select-options">
+                          <!-- Populated by JS -->
+                        </div>
+                      </div>
+                    </div>
+                    <span class="form-hint">Link a play to this banner. When triggered by rules, viewers can open the play in the sidepanel.</span>
+                  </div>
+
                   <div class="form-group" id="messageGroup">
                     <label>Message</label>
                     <div class="rich-text-editor">
@@ -254,6 +279,7 @@
     </main>
   </div>
 
+  <script src="../supabase.js"></script>
   <script src="../shared.js"></script>
   <script src="banners.js"></script>
 </body>

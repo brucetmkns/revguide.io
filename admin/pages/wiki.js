@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Wiki Page
+ * RevGuide - Wiki Page
  * Two-Pane Layout with Navigation Tree and Card View
  */
 
@@ -15,10 +15,16 @@ class WikiPage {
     this.activeTab = 'content';
     this.isCreatingNew = false;
     this.hasUnsavedChanges = false;
+    this.isSelectMode = false;
+    this.selectedEntryIds = new Set();
     this.init();
   }
 
   async init() {
+    // Check authentication (redirects to login if not authenticated)
+    const isAuthenticated = await AdminShared.checkAuth();
+    if (!isAuthenticated) return;
+
     // Render sidebar
     AdminShared.renderSidebar('wiki');
 
@@ -89,6 +95,7 @@ class WikiPage {
 
     // Save/Cancel
     document.getElementById('saveWikiBtn').addEventListener('click', () => this.saveWikiEntry());
+    document.getElementById('saveEntryBtnTop').addEventListener('click', () => this.saveWikiEntry());
     document.getElementById('cancelWikiBtn').addEventListener('click', () => this.cancelEditing());
 
     // Preview updates
@@ -126,9 +133,6 @@ class WikiPage {
       this.updatePreview();
     });
 
-    // Property values
-    document.getElementById('addPropertyValueBtn').addEventListener('click', () => this.addPropertyValue());
-
     // Object type change - load property groups
     document.getElementById('wikiObjectType').addEventListener('change', (e) => {
       this.loadPropertyGroups(e.target.value);
@@ -141,6 +145,12 @@ class WikiPage {
     document.getElementById('importObjectType').addEventListener('change', (e) => this.loadFieldsForImport(e.target.value));
     document.getElementById('selectAllFields').addEventListener('change', (e) => this.toggleAllFields(e.target.checked));
     document.getElementById('fieldsSearch').addEventListener('input', (e) => this.filterFieldsList(e.target.value));
+
+    // Multi-select mode
+    document.getElementById('wikiSelectModeBtn').addEventListener('click', () => this.toggleSelectMode());
+    document.getElementById('wikiSelectAll').addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
+    document.getElementById('wikiDeleteSelectedBtn').addEventListener('click', () => this.deleteSelectedEntries());
+    document.getElementById('wikiCancelSelectBtn').addEventListener('click', () => this.exitSelectMode());
   }
 
   // ============ RENDERING ============
@@ -199,9 +209,19 @@ class WikiPage {
     navTree.style.display = 'block';
     navEmpty.style.display = 'none';
 
-    // Group entries by object type, then by property group
+    // Separate parent entries from child entries
+    const parentEntries = filtered.filter(e => !e.parentId);
+    const childEntriesMap = new Map();
+    filtered.filter(e => e.parentId).forEach(child => {
+      if (!childEntriesMap.has(child.parentId)) {
+        childEntriesMap.set(child.parentId, []);
+      }
+      childEntriesMap.get(child.parentId).push(child);
+    });
+
+    // Group parent entries by object type, then by property group
     const groups = {};
-    filtered.forEach(entry => {
+    parentEntries.forEach(entry => {
       const objectType = entry.objectType || 'custom';
       const propertyGroup = entry.propertyGroup || 'Other';
 
@@ -232,9 +252,15 @@ class WikiPage {
       const propertyGroups = Object.keys(groups[objectType]).sort();
       const totalCount = Object.values(groups[objectType]).reduce((sum, arr) => sum + arr.length, 0);
 
+      // Get all entry IDs under this object type for group selection
+      const objectEntryIds = Object.values(groups[objectType]).flat().map(e => e.id);
+      const objectAllChecked = objectEntryIds.length > 0 && objectEntryIds.every(id => this.selectedEntryIds.has(id));
+      const objectSomeChecked = objectEntryIds.some(id => this.selectedEntryIds.has(id));
+
       html += `
         <li class="wiki-node wiki-node-object" data-object="${objectType}">
           <div class="wiki-node-header">
+            ${this.isSelectMode ? `<input type="checkbox" class="wiki-group-checkbox" data-object="${objectType}" ${objectAllChecked ? 'checked' : ''} ${objectSomeChecked && !objectAllChecked ? 'data-indeterminate="true"' : ''}>` : ''}
             <button class="wiki-node-toggle" aria-expanded="true">
               <span class="icon icon-chevron-right"></span>
             </button>
@@ -247,9 +273,16 @@ class WikiPage {
       propertyGroups.forEach(groupName => {
         const entriesInGroup = groups[objectType][groupName];
 
+        // Get all entry IDs under this group for group selection
+        const groupEntryIds = entriesInGroup.map(e => e.id);
+        const groupAllChecked = groupEntryIds.length > 0 && groupEntryIds.every(id => this.selectedEntryIds.has(id));
+        const groupSomeChecked = groupEntryIds.some(id => this.selectedEntryIds.has(id));
+        const groupKey = `${objectType}:${this.slugify(groupName)}`;
+
         html += `
-          <li class="wiki-node wiki-node-group" data-group="${this.slugify(groupName)}">
+          <li class="wiki-node wiki-node-group" data-group="${this.slugify(groupName)}" data-object="${objectType}">
             <div class="wiki-node-header">
+              ${this.isSelectMode ? `<input type="checkbox" class="wiki-group-checkbox" data-group-key="${groupKey}" ${groupAllChecked ? 'checked' : ''} ${groupSomeChecked && !groupAllChecked ? 'data-indeterminate="true"' : ''}>` : ''}
               <button class="wiki-node-toggle" aria-expanded="true">
                 <span class="icon icon-chevron-right"></span>
               </button>
@@ -261,16 +294,61 @@ class WikiPage {
 
         entriesInGroup.forEach(entry => {
           const isSelected = entry.id === this.selectedEntryId;
+          const isChecked = this.selectedEntryIds.has(entry.id);
           const statusClass = entry.enabled !== false ? 'status-dot--enabled' : 'status-dot--disabled';
           const hasTrigger = entry.trigger && entry.trigger.trim();
+          const children = childEntriesMap.get(entry.id) || [];
+          const hasChildren = children.length > 0;
 
-          html += `
-            <li class="wiki-node-term ${isSelected ? 'is-selected' : ''} ${!hasTrigger ? 'no-trigger' : ''}" data-id="${entry.id}">
-              <span class="status-dot ${statusClass}"></span>
-              <span class="wiki-term-text">${AdminShared.escapeHtml(entry.title)}</span>
-              ${!hasTrigger ? '<span class="wiki-term-badge">No tooltip</span>' : ''}
-            </li>
-          `;
+          if (hasChildren) {
+            // Entry with children - render as expandable node
+            html += `
+              <li class="wiki-node wiki-node-entry" data-id="${entry.id}">
+                <div class="wiki-node-header wiki-node-term ${isSelected ? 'is-selected' : ''} ${!hasTrigger ? 'no-trigger' : ''}">
+                  ${this.isSelectMode ? `<input type="checkbox" class="wiki-entry-checkbox" data-id="${entry.id}" ${isChecked ? 'checked' : ''}>` : ''}
+                  <button class="wiki-node-toggle" aria-expanded="true">
+                    <span class="icon icon-chevron-right"></span>
+                  </button>
+                  <span class="status-dot ${statusClass}"></span>
+                  <span class="wiki-term-text">${AdminShared.escapeHtml(entry.title)}</span>
+                  <span class="wiki-node-count">${children.length}</span>
+                  ${!hasTrigger ? '<span class="wiki-term-badge">No tooltip</span>' : ''}
+                </div>
+                <ul class="wiki-node-children">
+            `;
+
+            // Render children
+            children.forEach(child => {
+              const childIsSelected = child.id === this.selectedEntryId;
+              const childIsChecked = this.selectedEntryIds.has(child.id);
+              const childStatusClass = child.enabled !== false ? 'status-dot--enabled' : 'status-dot--disabled';
+              const childHasTrigger = child.trigger && child.trigger.trim();
+
+              html += `
+                <li class="wiki-node-term wiki-node-child ${childIsSelected ? 'is-selected' : ''} ${!childHasTrigger ? 'no-trigger' : ''}" data-id="${child.id}">
+                  ${this.isSelectMode ? `<input type="checkbox" class="wiki-entry-checkbox" data-id="${child.id}" ${childIsChecked ? 'checked' : ''}>` : ''}
+                  <span class="status-dot ${childStatusClass}"></span>
+                  <span class="wiki-term-text">${AdminShared.escapeHtml(child.title)}</span>
+                  ${!childHasTrigger ? '<span class="wiki-term-badge">No tooltip</span>' : ''}
+                </li>
+              `;
+            });
+
+            html += `
+                </ul>
+              </li>
+            `;
+          } else {
+            // Entry without children - render as simple term
+            html += `
+              <li class="wiki-node-term ${isSelected ? 'is-selected' : ''} ${!hasTrigger ? 'no-trigger' : ''}" data-id="${entry.id}">
+                ${this.isSelectMode ? `<input type="checkbox" class="wiki-entry-checkbox" data-id="${entry.id}" ${isChecked ? 'checked' : ''}>` : ''}
+                <span class="status-dot ${statusClass}"></span>
+                <span class="wiki-term-text">${AdminShared.escapeHtml(entry.title)}</span>
+                ${!hasTrigger ? '<span class="wiki-term-badge">No tooltip</span>' : ''}
+              </li>
+            `;
+          }
         });
 
         html += `
@@ -305,8 +383,8 @@ class WikiPage {
       });
     });
 
-    // Click on node header to expand/collapse
-    navTree.querySelectorAll('.wiki-node-header').forEach(header => {
+    // Click on node header to expand/collapse (only for object and group nodes, not entry nodes)
+    navTree.querySelectorAll('.wiki-node-object > .wiki-node-header, .wiki-node-group > .wiki-node-header').forEach(header => {
       header.addEventListener('click', () => {
         const toggle = header.querySelector('.wiki-node-toggle');
         if (toggle) {
@@ -317,7 +395,31 @@ class WikiPage {
 
     // Click on term to select
     navTree.querySelectorAll('.wiki-node-term').forEach(term => {
-      term.addEventListener('click', async () => {
+      term.addEventListener('click', async (e) => {
+        // If clicking on toggle button, don't select (let toggle handle it)
+        if (e.target.closest('.wiki-node-toggle')) {
+          return;
+        }
+
+        // If clicking on checkbox in select mode, handle separately
+        if (e.target.classList.contains('wiki-entry-checkbox')) {
+          return;
+        }
+
+        // Get the entry ID - either from the term itself or from parent .wiki-node-entry
+        const entryId = term.dataset.id || term.closest('.wiki-node-entry')?.dataset.id;
+        if (!entryId) return;
+
+        // If in select mode, toggle checkbox instead of selecting
+        if (this.isSelectMode) {
+          const checkbox = term.querySelector('.wiki-entry-checkbox');
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            this.handleEntryCheckboxChange(entryId, checkbox.checked);
+          }
+          return;
+        }
+
         if (this.hasUnsavedChanges) {
           const result = await AdminShared.showConfirmDialog({
             title: 'Unsaved Changes',
@@ -328,15 +430,38 @@ class WikiPage {
           });
 
           if (result === 'primary') {
-            await this.saveEntry();
+            await this.saveWikiEntry();
           } else if (result === 'cancel') {
             return;
           }
           // 'secondary' = discard and continue
         }
         this.hasUnsavedChanges = false;
-        this.selectEntry(term.dataset.id);
+        this.selectEntry(entryId);
       });
+    });
+
+    // Checkbox change events in select mode
+    navTree.querySelectorAll('.wiki-entry-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        this.handleEntryCheckboxChange(checkbox.dataset.id, checkbox.checked);
+      });
+    });
+
+    // Group checkbox change events in select mode
+    navTree.querySelectorAll('.wiki-group-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        this.handleGroupCheckboxChange(checkbox, checkbox.checked);
+      });
+      // Set indeterminate state
+      if (checkbox.dataset.indeterminate === 'true') {
+        checkbox.indeterminate = true;
+      }
     });
   }
 
@@ -436,10 +561,6 @@ class WikiPage {
     document.getElementById('wikiDefinition').innerHTML = entry?.definition || '';
     document.getElementById('wikiLink').value = entry?.link || '';
 
-    // Property values
-    this.editingPropertyValues = entry?.propertyValues ? JSON.parse(JSON.stringify(entry.propertyValues)) : [];
-    this.renderPropertyValues();
-
     // Rules tab fields
     document.getElementById('wikiCategory').value = entry?.category || 'general';
     document.getElementById('wikiObjectType').value = entry?.objectType || '';
@@ -463,7 +584,6 @@ class WikiPage {
     // Created/Updated dates
     const createdEl = document.getElementById('wikiCreatedAt');
     const updatedEl = document.getElementById('wikiUpdatedAt');
-    const valuesCountEl = document.getElementById('wikiValuesCount');
     const aliasesCountEl = document.getElementById('wikiAliasesCount');
 
     createdEl.textContent = entry.createdAt
@@ -474,7 +594,6 @@ class WikiPage {
       ? new Date(entry.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       : 'Never';
 
-    valuesCountEl.textContent = entry.propertyValues?.length || 0;
     aliasesCountEl.textContent = entry.aliases?.length || 0;
   }
 
@@ -580,10 +699,13 @@ class WikiPage {
     this.selectedEntryId = entryId;
     this.isCreatingNew = false;
     this.hasUnsavedChanges = false;
+    this.updateSaveButtonIcon();
 
     // Update nav tree selection
     document.querySelectorAll('.wiki-node-term').forEach(node => {
-      node.classList.toggle('is-selected', node.dataset.id === entryId);
+      // Get entry ID from node itself or parent .wiki-node-entry
+      const nodeEntryId = node.dataset.id || node.closest('.wiki-node-entry')?.dataset.id;
+      node.classList.toggle('is-selected', nodeEntryId === entryId);
     });
 
     // Re-render card
@@ -604,7 +726,7 @@ class WikiPage {
       });
 
       if (result === 'primary') {
-        await this.saveEntry();
+        await this.saveWikiEntry();
       } else if (result === 'cancel') {
         return;
       }
@@ -613,7 +735,8 @@ class WikiPage {
 
     this.selectedEntryId = null;
     this.isCreatingNew = true;
-    this.hasUnsavedChanges = false;
+    this.hasUnsavedChanges = true; // New entries are unsaved
+    this.updateSaveButtonIcon();
 
     // Clear nav selection
     document.querySelectorAll('.wiki-node-term').forEach(node => {
@@ -656,6 +779,18 @@ class WikiPage {
 
   markUnsavedChanges() {
     this.hasUnsavedChanges = true;
+    this.updateSaveButtonIcon();
+  }
+
+  updateSaveButtonIcon() {
+    const icon = document.getElementById('saveEntryBtnTopIcon');
+    if (!icon) return;
+
+    if (this.hasUnsavedChanges) {
+      icon.className = 'icon icon-save icon--sm';
+    } else {
+      icon.className = 'icon icon-check icon--sm';
+    }
   }
 
   async cancelEditing() {
@@ -669,7 +804,7 @@ class WikiPage {
       });
 
       if (result === 'primary') {
-        await this.saveEntry();
+        await this.saveWikiEntry();
         return;
       } else if (result === 'cancel') {
         return;
@@ -712,68 +847,6 @@ class WikiPage {
     this.render();
   }
 
-  renderPropertyValues() {
-    const container = document.getElementById('wikiPropertyValues');
-    if (!this.editingPropertyValues || this.editingPropertyValues.length === 0) {
-      container.innerHTML = '<p class="form-hint" style="margin: 0;">No property values defined.</p>';
-      return;
-    }
-
-    container.innerHTML = this.editingPropertyValues.map((value, index) => `
-      <div class="property-value-item" data-index="${index}">
-        <div class="form-group">
-          <label>Value</label>
-          <input type="text" class="pv-value" value="${AdminShared.escapeHtml(value.value || '')}" placeholder="e.g., Option A">
-        </div>
-        <div class="form-group">
-          <label>Label</label>
-          <input type="text" class="pv-label" value="${AdminShared.escapeHtml(value.label || '')}" placeholder="Display label">
-        </div>
-        <div class="form-group" style="flex: 2;">
-          <label>Description</label>
-          <input type="text" class="pv-description" value="${AdminShared.escapeHtml(value.description || '')}" placeholder="What this value means">
-        </div>
-        <button type="button" class="btn-remove-value" data-index="${index}">
-          <span class="icon icon-x icon--sm"></span>
-        </button>
-      </div>
-    `).join('');
-
-    // Bind events
-    container.querySelectorAll('.btn-remove-value').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.index);
-        this.editingPropertyValues.splice(index, 1);
-        this.renderPropertyValues();
-        this.markUnsavedChanges();
-      });
-    });
-
-    container.querySelectorAll('.property-value-item').forEach((item, index) => {
-      item.querySelector('.pv-value').addEventListener('input', (e) => {
-        this.editingPropertyValues[index].value = e.target.value;
-        this.markUnsavedChanges();
-      });
-      item.querySelector('.pv-label').addEventListener('input', (e) => {
-        this.editingPropertyValues[index].label = e.target.value;
-        this.markUnsavedChanges();
-      });
-      item.querySelector('.pv-description').addEventListener('input', (e) => {
-        this.editingPropertyValues[index].description = e.target.value;
-        this.markUnsavedChanges();
-      });
-    });
-  }
-
-  addPropertyValue() {
-    if (!this.editingPropertyValues) {
-      this.editingPropertyValues = [];
-    }
-    this.editingPropertyValues.push({ value: '', label: '', description: '' });
-    this.renderPropertyValues();
-    this.markUnsavedChanges();
-  }
-
   async saveWikiEntry() {
     // Gather data from Content tab
     const title = document.getElementById('wikiTitle').value.trim();
@@ -810,7 +883,6 @@ class WikiPage {
 
     // Process data
     const aliases = aliasesStr ? aliasesStr.split(',').map(a => a.trim()).filter(a => a) : [];
-    const propertyValues = (this.editingPropertyValues || []).filter(v => v.value || v.label);
     const urlPatterns = urlPatternsStr ? urlPatternsStr.split('\n').map(p => p.trim()).filter(p => p) : [];
 
     if (link && !link.startsWith('https://') && !link.startsWith('http://')) {
@@ -843,7 +915,6 @@ class WikiPage {
     entry.category = category;
     entry.objectType = objectType || null;
     entry.propertyGroup = propertyGroup || null;
-    entry.propertyValues = propertyValues.length > 0 ? propertyValues : null;
     entry.definition = definition;
     entry.link = link || null;
     entry.updatedAt = Date.now();
@@ -870,6 +941,7 @@ class WikiPage {
     AdminShared.notifyContentScript();
 
     this.hasUnsavedChanges = false;
+    this.updateSaveButtonIcon();
 
     // Re-render
     this.render();
@@ -941,6 +1013,227 @@ class WikiPage {
     AdminShared.showToast('Wiki entry deleted', 'success');
   }
 
+  // ============ MULTI-SELECT MODE ============
+
+  toggleSelectMode() {
+    this.isSelectMode = !this.isSelectMode;
+    if (this.isSelectMode) {
+      this.enterSelectMode();
+    } else {
+      this.exitSelectMode();
+    }
+  }
+
+  enterSelectMode() {
+    this.isSelectMode = true;
+    this.selectedEntryIds.clear();
+
+    // Show bulk actions bar
+    document.getElementById('wikiBulkActions').style.display = 'flex';
+    document.getElementById('wikiSelectModeBtn').classList.add('active');
+
+    // Toggle icon to checked state
+    const icon = document.getElementById('wikiSelectModeIcon');
+    icon.classList.remove('icon-square');
+    icon.classList.add('icon-check-square');
+
+    // Update UI
+    this.updateSelectionCount();
+    this.renderNavTree();
+  }
+
+  exitSelectMode() {
+    this.isSelectMode = false;
+    this.selectedEntryIds.clear();
+
+    // Hide bulk actions bar
+    document.getElementById('wikiBulkActions').style.display = 'none';
+    document.getElementById('wikiSelectModeBtn').classList.remove('active');
+    document.getElementById('wikiSelectAll').checked = false;
+
+    // Toggle icon back to unchecked state
+    const icon = document.getElementById('wikiSelectModeIcon');
+    icon.classList.remove('icon-check-square');
+    icon.classList.add('icon-square');
+
+    // Re-render without checkboxes
+    this.renderNavTree();
+  }
+
+  handleEntryCheckboxChange(entryId, isChecked) {
+    if (isChecked) {
+      this.selectedEntryIds.add(entryId);
+    } else {
+      this.selectedEntryIds.delete(entryId);
+    }
+    this.updateSelectionCount();
+    this.updateSelectAllState();
+    this.updateGroupCheckboxStates();
+  }
+
+  handleGroupCheckboxChange(checkbox, isChecked) {
+    // Get all entry IDs under this group/object type
+    const entryIds = this.getEntryIdsForGroupCheckbox(checkbox);
+
+    entryIds.forEach(id => {
+      if (isChecked) {
+        this.selectedEntryIds.add(id);
+      } else {
+        this.selectedEntryIds.delete(id);
+      }
+    });
+
+    this.updateSelectionCount();
+    this.updateSelectAllState();
+    // Re-render to update all checkbox states
+    this.renderNavTree();
+  }
+
+  getEntryIdsForGroupCheckbox(checkbox) {
+    const objectType = checkbox.dataset.object;
+    const groupKey = checkbox.dataset.groupKey;
+
+    // Get current visible entries
+    const visibleEntryIds = new Set(this.getVisibleEntryIds());
+
+    if (groupKey) {
+      // This is a property group checkbox
+      const [objType, groupSlug] = groupKey.split(':');
+      const groupNode = checkbox.closest('.wiki-node-group');
+      const entryCheckboxes = groupNode.querySelectorAll('.wiki-entry-checkbox');
+      return Array.from(entryCheckboxes)
+        .map(cb => cb.dataset.id)
+        .filter(id => visibleEntryIds.has(id));
+    } else if (objectType) {
+      // This is an object type checkbox
+      const objectNode = checkbox.closest('.wiki-node-object');
+      const entryCheckboxes = objectNode.querySelectorAll('.wiki-entry-checkbox');
+      return Array.from(entryCheckboxes)
+        .map(cb => cb.dataset.id)
+        .filter(id => visibleEntryIds.has(id));
+    }
+
+    return [];
+  }
+
+  updateGroupCheckboxStates() {
+    // Update all group checkboxes based on their children's state
+    document.querySelectorAll('.wiki-group-checkbox').forEach(checkbox => {
+      const entryIds = this.getEntryIdsForGroupCheckbox(checkbox);
+      const allChecked = entryIds.length > 0 && entryIds.every(id => this.selectedEntryIds.has(id));
+      const someChecked = entryIds.some(id => this.selectedEntryIds.has(id));
+
+      checkbox.checked = allChecked;
+      checkbox.indeterminate = someChecked && !allChecked;
+    });
+  }
+
+  toggleSelectAll(checked) {
+    // Get all visible (filtered) entry IDs
+    const visibleEntryIds = this.getVisibleEntryIds();
+
+    if (checked) {
+      visibleEntryIds.forEach(id => this.selectedEntryIds.add(id));
+    } else {
+      visibleEntryIds.forEach(id => this.selectedEntryIds.delete(id));
+    }
+
+    // Update checkboxes in the tree
+    document.querySelectorAll('.wiki-entry-checkbox').forEach(cb => {
+      cb.checked = checked;
+    });
+
+    this.updateSelectionCount();
+  }
+
+  getVisibleEntryIds() {
+    const search = document.getElementById('wikiSearch').value.toLowerCase().trim();
+    const categoryFilter = document.getElementById('wikiFilter').value;
+    const objectFilter = document.getElementById('wikiObjectFilter').value;
+
+    return this.wikiEntries.filter(entry => {
+      // Search filter
+      if (search) {
+        const titleMatch = (entry.title || '').toLowerCase().includes(search);
+        const triggerMatch = (entry.trigger || '').toLowerCase().includes(search);
+        const aliasMatch = (entry.aliases || []).some(a => a.toLowerCase().includes(search));
+        const defMatch = this.stripHtml(entry.definition || '').toLowerCase().includes(search);
+        if (!titleMatch && !triggerMatch && !aliasMatch && !defMatch) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (categoryFilter !== 'all' && entry.category !== categoryFilter) {
+        return false;
+      }
+
+      // Object filter
+      if (objectFilter !== 'all') {
+        if (objectFilter === 'custom') {
+          if (entry.objectType) return false;
+        } else {
+          if (entry.objectType !== objectFilter) return false;
+        }
+      }
+
+      return true;
+    }).map(e => e.id);
+  }
+
+  updateSelectionCount() {
+    const count = this.selectedEntryIds.size;
+    document.getElementById('wikiSelectedCount').textContent = `${count} selected`;
+    document.getElementById('wikiDeleteSelectedBtn').disabled = count === 0;
+  }
+
+  updateSelectAllState() {
+    const visibleEntryIds = this.getVisibleEntryIds();
+    const allSelected = visibleEntryIds.length > 0 && visibleEntryIds.every(id => this.selectedEntryIds.has(id));
+    const someSelected = visibleEntryIds.some(id => this.selectedEntryIds.has(id));
+
+    const selectAllCheckbox = document.getElementById('wikiSelectAll');
+    selectAllCheckbox.checked = allSelected;
+    selectAllCheckbox.indeterminate = someSelected && !allSelected;
+  }
+
+  async deleteSelectedEntries() {
+    const count = this.selectedEntryIds.size;
+    if (count === 0) return;
+
+    const result = await AdminShared.showConfirmDialog({
+      title: 'Delete Selected Entries',
+      message: `Are you sure you want to delete ${count} wiki ${count === 1 ? 'entry' : 'entries'}? This action cannot be undone.`,
+      primaryLabel: 'Delete',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (result !== 'primary') {
+      return;
+    }
+
+    // Remove selected entries
+    this.wikiEntries = this.wikiEntries.filter(e => !this.selectedEntryIds.has(e.id));
+
+    // Clear selection if current entry was deleted
+    if (this.selectedEntryIds.has(this.selectedEntryId)) {
+      this.selectedEntryId = this.wikiEntries.length > 0 ? this.wikiEntries[0].id : null;
+    }
+
+    // Save
+    await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
+    AdminShared.notifyContentScript();
+
+    // Exit select mode
+    this.exitSelectMode();
+
+    // Re-render
+    this.render();
+
+    AdminShared.showToast(`${count} wiki ${count === 1 ? 'entry' : 'entries'} deleted`, 'success');
+  }
+
   // ============ IMPORT FIELDS ============
 
   openImportFieldsModal() {
@@ -951,6 +1244,7 @@ class WikiPage {
     document.getElementById('selectAllFields').checked = false;
     document.getElementById('fieldsSearch').value = '';
     document.getElementById('confirmImportFieldsBtn').disabled = true;
+    document.getElementById('importDropdownValues').checked = false;
     this.importFieldsData = [];
 
     document.getElementById('importFieldsModal').classList.add('open');
@@ -965,10 +1259,12 @@ class WikiPage {
     const statusEl = document.getElementById('fieldsLoadingStatus');
     const fieldsList = document.getElementById('fieldsList');
     const fieldsListItems = document.getElementById('fieldsListItems');
+    const importOptions = document.getElementById('fieldsImportOptions');
     this.currentImportObjectType = objectType;
 
     if (!objectType) {
       fieldsList.style.display = 'none';
+      importOptions.style.display = 'none';
       statusEl.textContent = '';
       return;
     }
@@ -976,6 +1272,7 @@ class WikiPage {
     statusEl.textContent = 'Loading fields...';
     statusEl.className = 'status-text';
     fieldsList.style.display = 'none';
+    importOptions.style.display = 'none';
 
     try {
       const properties = await AdminShared.fetchProperties(objectType, this.propertiesCache);
@@ -991,40 +1288,120 @@ class WikiPage {
         }
       }
 
-      fieldsListItems.innerHTML = properties.map(prop => {
-        const existingEntry = existingByText.get(prop.label.toLowerCase()) || existingByText.get(prop.name.toLowerCase());
-        const isImported = !!existingEntry;
-        const needsUpdate = existingEntry && (!existingEntry.objectType || !existingEntry.propertyGroup);
+      // Group properties by property group
+      const groupedProperties = {};
+      for (const prop of properties) {
+        const groupName = prop.groupName
+          ? prop.groupName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          : 'Other';
+        if (!groupedProperties[groupName]) {
+          groupedProperties[groupName] = [];
+        }
+        groupedProperties[groupName].push(prop);
+      }
 
-        let badgeHtml = '';
-        let itemClass = '';
-        if (isImported && needsUpdate) {
-          badgeHtml = '<span class="field-badge field-badge-update">Update available</span>';
-          itemClass = 'needs-update';
-        } else if (isImported) {
-          badgeHtml = '<span class="field-badge">Already added</span>';
-          itemClass = 'already-imported';
+      // Sort groups alphabetically, but put "Other" last
+      const sortedGroups = Object.keys(groupedProperties).sort((a, b) => {
+        if (a === 'Other') return 1;
+        if (b === 'Other') return -1;
+        return a.localeCompare(b);
+      });
+
+      // Build tree HTML
+      let treeHtml = '';
+      for (const groupName of sortedGroups) {
+        const groupProps = groupedProperties[groupName];
+        const groupId = `import-group-${groupName.toLowerCase().replace(/\s+/g, '-')}`;
+
+        // Count non-imported fields in this group
+        const availableCount = groupProps.filter(prop => {
+          const existingEntry = existingByText.get(prop.label.toLowerCase()) || existingByText.get(prop.name.toLowerCase());
+          return !existingEntry || !existingEntry.objectType || !existingEntry.propertyGroup;
+        }).length;
+
+        treeHtml += `
+          <div class="fields-tree-node" data-group="${AdminShared.escapeHtml(groupName)}">
+            <div class="fields-tree-header" data-group-id="${groupId}">
+              <button type="button" class="fields-tree-toggle" aria-expanded="true">
+                <span class="icon icon-chevron-right"></span>
+              </button>
+              <label class="checkbox-label fields-tree-label">
+                <input type="checkbox" class="fields-group-checkbox" data-group="${AdminShared.escapeHtml(groupName)}">
+                <span class="fields-tree-name">${AdminShared.escapeHtml(groupName)}</span>
+                <span class="fields-tree-count">${availableCount}/${groupProps.length}</span>
+              </label>
+            </div>
+            <div class="fields-tree-children" id="${groupId}">
+        `;
+
+        for (const prop of groupProps) {
+          const existingEntry = existingByText.get(prop.label.toLowerCase()) || existingByText.get(prop.name.toLowerCase());
+          const isImported = !!existingEntry;
+          const needsUpdate = existingEntry && (!existingEntry.objectType || !existingEntry.propertyGroup);
+          const hasOptions = prop.options && prop.options.length > 0;
+
+          let badgeHtml = '';
+          let itemClass = '';
+          if (isImported && needsUpdate) {
+            badgeHtml = '<span class="field-badge field-badge-update">Update available</span>';
+            itemClass = 'needs-update';
+          } else if (isImported) {
+            badgeHtml = '<span class="field-badge">Already added</span>';
+            itemClass = 'already-imported';
+          }
+          if (hasOptions) {
+            badgeHtml += '<span class="field-badge field-badge-dropdown">Dropdown</span>';
+          }
+
+          treeHtml += `
+            <label class="field-item ${itemClass}" data-name="${prop.name}" data-label="${AdminShared.escapeHtml(prop.label)}" data-existing-id="${existingEntry?.id || ''}" data-group="${AdminShared.escapeHtml(groupName)}" data-has-options="${hasOptions}">
+              <input type="checkbox" class="field-checkbox" value="${prop.name}" ${isImported && !needsUpdate ? 'disabled' : ''}>
+              <div class="field-info">
+                <span class="field-label">${AdminShared.escapeHtml(prop.label)}</span>
+                <span class="field-name">${prop.name}</span>
+              </div>
+              ${badgeHtml}
+            </label>
+          `;
         }
 
-        return `
-          <label class="field-item ${itemClass}" data-name="${prop.name}" data-label="${AdminShared.escapeHtml(prop.label)}" data-existing-id="${existingEntry?.id || ''}">
-            <input type="checkbox" class="field-checkbox" value="${prop.name}" ${isImported && !needsUpdate ? 'disabled' : ''}>
-            <div class="field-info">
-              <span class="field-label">${AdminShared.escapeHtml(prop.label)}</span>
-              <span class="field-name">${prop.name}</span>
+        treeHtml += `
             </div>
-            ${badgeHtml}
-          </label>
+          </div>
         `;
-      }).join('');
+      }
+
+      fieldsListItems.innerHTML = treeHtml;
 
       fieldsList.style.display = 'block';
-      statusEl.textContent = `${properties.length} fields found`;
+      importOptions.style.display = 'block';
+      statusEl.textContent = `${properties.length} fields found in ${sortedGroups.length} groups`;
       statusEl.className = 'status-text success';
       setTimeout(() => { statusEl.textContent = ''; }, 3000);
 
+      // Add event listeners for field checkboxes
       fieldsListItems.querySelectorAll('.field-checkbox').forEach(cb => {
-        cb.addEventListener('change', () => this.updateImportButtonState());
+        cb.addEventListener('change', () => {
+          this.updateImportButtonState();
+          this.updateGroupCheckboxState(cb.closest('.field-item').dataset.group);
+        });
+      });
+
+      // Add event listeners for group checkboxes
+      fieldsListItems.querySelectorAll('.fields-group-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => this.toggleGroupFields(e.target));
+      });
+
+      // Add event listeners for tree toggles
+      fieldsListItems.querySelectorAll('.fields-tree-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const node = btn.closest('.fields-tree-node');
+          const children = node.querySelector('.fields-tree-children');
+          const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+          btn.setAttribute('aria-expanded', !isExpanded);
+          children.style.display = isExpanded ? 'none' : 'block';
+        });
       });
 
     } catch (err) {
@@ -1033,20 +1410,84 @@ class WikiPage {
     }
   }
 
+  toggleGroupFields(groupCheckbox) {
+    const groupName = groupCheckbox.dataset.group;
+    const checked = groupCheckbox.checked;
+    const items = document.querySelectorAll(`#fieldsListItems .field-item[data-group="${groupName}"]`);
+
+    items.forEach(item => {
+      const cb = item.querySelector('.field-checkbox');
+      if (!cb.disabled) {
+        cb.checked = checked;
+      }
+    });
+
+    this.updateImportButtonState();
+  }
+
+  updateGroupCheckboxState(groupName) {
+    const items = document.querySelectorAll(`#fieldsListItems .field-item[data-group="${groupName}"]`);
+    const groupCb = document.querySelector(`.fields-group-checkbox[data-group="${groupName}"]`);
+    if (!groupCb) return;
+
+    const enabledItems = Array.from(items).filter(item => !item.querySelector('.field-checkbox').disabled);
+    const checkedItems = enabledItems.filter(item => item.querySelector('.field-checkbox').checked);
+
+    if (checkedItems.length === 0) {
+      groupCb.checked = false;
+      groupCb.indeterminate = false;
+    } else if (checkedItems.length === enabledItems.length) {
+      groupCb.checked = true;
+      groupCb.indeterminate = false;
+    } else {
+      groupCb.checked = false;
+      groupCb.indeterminate = true;
+    }
+  }
+
   toggleAllFields(checked) {
     document.querySelectorAll('#fieldsListItems .field-checkbox:not(:disabled)').forEach(cb => {
       cb.checked = checked;
+    });
+    // Update all group checkboxes
+    document.querySelectorAll('#fieldsListItems .fields-group-checkbox').forEach(gcb => {
+      this.updateGroupCheckboxState(gcb.dataset.group);
     });
     this.updateImportButtonState();
   }
 
   filterFieldsList(query) {
     const normalizedQuery = query.toLowerCase().trim();
+
+    // Filter individual field items and track which groups have matches
     document.querySelectorAll('#fieldsListItems .field-item').forEach(item => {
       const label = item.dataset.label.toLowerCase();
       const name = item.dataset.name.toLowerCase();
-      const matches = !normalizedQuery || label.includes(normalizedQuery) || name.includes(normalizedQuery);
+      const group = (item.dataset.group || '').toLowerCase();
+      const matches = !normalizedQuery || label.includes(normalizedQuery) || name.includes(normalizedQuery) || group.includes(normalizedQuery);
       item.style.display = matches ? 'flex' : 'none';
+    });
+
+    // Show/hide group nodes - show if group name matches OR has visible children
+    document.querySelectorAll('#fieldsListItems .fields-tree-node').forEach(node => {
+      const groupName = (node.dataset.group || '').toLowerCase();
+      const groupNameMatches = normalizedQuery && groupName.includes(normalizedQuery);
+
+      // If group name matches, show all children
+      if (groupNameMatches) {
+        node.style.display = 'block';
+        node.querySelectorAll('.field-item').forEach(item => {
+          item.style.display = 'flex';
+        });
+      } else {
+        // Otherwise, check if any children are visible
+        const visibleChildren = node.querySelectorAll('.field-item[style*="flex"], .field-item:not([style*="display"])');
+        const hasVisibleChildren = Array.from(visibleChildren).some(child => {
+          const display = window.getComputedStyle(child).display;
+          return display !== 'none';
+        });
+        node.style.display = hasVisibleChildren ? 'block' : 'none';
+      }
     });
   }
 
@@ -1060,6 +1501,7 @@ class WikiPage {
   async importSelectedFields() {
     const checkedItems = document.querySelectorAll('#fieldsListItems .field-item:has(.field-checkbox:checked)');
     const objectType = document.getElementById('importObjectType').value;
+    const importDropdownValues = document.getElementById('importDropdownValues').checked;
 
     if (checkedItems.length === 0) {
       alert('Please select at least one field to import');
@@ -1068,6 +1510,7 @@ class WikiPage {
 
     let newCount = 0;
     let updateCount = 0;
+    let childCount = 0;
     let firstNewId = null;
 
     for (const item of checkedItems) {
@@ -1108,6 +1551,8 @@ class WikiPage {
         ? prop.groupName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
         : null;
 
+      let parentId = existingId || null;
+
       if (existingId) {
         const existingIndex = this.wikiEntries.findIndex(e => e.id === existingId);
         if (existingIndex !== -1) {
@@ -1120,10 +1565,12 @@ class WikiPage {
           }
           existing.updatedAt = Date.now();
           updateCount++;
+          parentId = existingId;
         }
       } else {
         const newId = 'wiki_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         if (!firstNewId) firstNewId = newId;
+        parentId = newId;
 
         this.wikiEntries.push({
           id: newId,
@@ -1141,6 +1588,45 @@ class WikiPage {
         });
         newCount++;
       }
+
+      // Import dropdown values as nested wiki entries if option is checked
+      if (importDropdownValues && prop.options && prop.options.length > 0 && parentId) {
+        for (const opt of prop.options) {
+          // Check if this dropdown value already exists as a child entry
+          const existingChild = this.wikiEntries.find(e =>
+            e.parentId === parentId &&
+            (e.title?.toLowerCase() === opt.label.toLowerCase() ||
+             e.aliases?.some(a => a.toLowerCase() === opt.value.toLowerCase()))
+          );
+
+          if (!existingChild) {
+            const childId = 'wiki_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+            // Build definition for the dropdown value
+            let childDefinition = `<p><strong>${AdminShared.escapeHtml(opt.label)}</strong></p>`;
+            childDefinition += `<p>Value: <code>${opt.value}</code></p>`;
+            if (opt.description) {
+              childDefinition += `<p>${AdminShared.escapeHtml(opt.description)}</p>`;
+            }
+            childDefinition += `<p>Parent field: ${AdminShared.escapeHtml(prop.label)}</p>`;
+
+            this.wikiEntries.push({
+              id: childId,
+              parentId: parentId,  // Link to parent property
+              title: opt.label,
+              trigger: opt.label,
+              aliases: [opt.value],  // API value as alias
+              category: 'field',
+              objectType: objectType || null,
+              definition: childDefinition,
+              link: '',
+              enabled: true,
+              createdAt: Date.now()
+            });
+            childCount++;
+          }
+        }
+      }
     }
 
     await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
@@ -1155,12 +1641,13 @@ class WikiPage {
     AdminShared.notifyContentScript();
 
     let message = '';
-    if (newCount > 0 && updateCount > 0) {
-      message = `Imported ${newCount} new field(s) and updated ${updateCount} existing entry(ies)`;
-    } else if (newCount > 0) {
-      message = `Imported ${newCount} field(s) as wiki entries`;
-    } else if (updateCount > 0) {
-      message = `Updated ${updateCount} existing wiki entry(ies)`;
+    const parts = [];
+    if (newCount > 0) parts.push(`${newCount} field(s)`);
+    if (updateCount > 0) parts.push(`updated ${updateCount} existing`);
+    if (childCount > 0) parts.push(`${childCount} dropdown value(s)`);
+
+    if (parts.length > 0) {
+      message = `Imported ${parts.join(', ')}`;
     }
     AdminShared.showToast(message, 'success');
   }

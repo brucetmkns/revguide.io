@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wiki - HubSpot Helper</title>
+  <title>Wiki - RevGuide</title>
   <link rel="stylesheet" href="../shared.css">
   <link rel="stylesheet" href="rules.css">
   <link rel="stylesheet" href="wiki.css">
@@ -59,11 +59,35 @@
                 </select>
               </div>
               <div class="wiki-nav-actions">
-                <button class="btn btn-icon btn-sm" id="wikiExpandAllBtn" title="Expand All">
-                  <span class="icon icon-chevrons-down"></span>
+                <button class="btn btn-icon btn-sm" id="wikiSelectModeBtn" data-tooltip="Select multiple entries" data-tooltip-position="left">
+                  <span class="icon icon-square" id="wikiSelectModeIcon"></span>
                 </button>
-                <button class="btn btn-icon btn-sm" id="wikiCollapseAllBtn" title="Collapse All">
-                  <span class="icon icon-chevrons-up"></span>
+                <div class="wiki-nav-actions-right">
+                  <button class="btn btn-icon btn-sm" id="wikiExpandAllBtn" data-tooltip="Expand all groups">
+                    <span class="icon icon-chevrons-down"></span>
+                  </button>
+                  <button class="btn btn-icon btn-sm" id="wikiCollapseAllBtn" data-tooltip="Collapse all groups" data-tooltip-position="right">
+                    <span class="icon icon-chevrons-up"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bulk Actions Bar (hidden by default) -->
+            <div class="wiki-bulk-actions" id="wikiBulkActions" style="display: none;">
+              <div class="wiki-bulk-actions-row">
+                <label class="wiki-select-all-label">
+                  <input type="checkbox" id="wikiSelectAll">
+                  <span>Select All</span>
+                </label>
+                <span class="wiki-selected-count" id="wikiSelectedCount">0 selected</span>
+              </div>
+              <div class="wiki-bulk-buttons">
+                <button class="btn btn-danger btn-sm" id="wikiDeleteSelectedBtn" disabled>
+                  <span class="icon icon-trash icon--sm"></span> Delete
+                </button>
+                <button class="btn btn-secondary btn-sm" id="wikiCancelSelectBtn">
+                  Cancel
                 </button>
               </div>
             </div>
@@ -108,6 +132,9 @@
                   </div>
                 </div>
                 <div class="wiki-card-actions" id="wikiCardActions" style="display: none;">
+                  <button class="btn btn-primary btn-sm" id="saveEntryBtnTop" title="Save">
+                    <span class="icon icon-save icon--sm" id="saveEntryBtnTopIcon"></span> Save
+                  </button>
                   <button class="btn btn-secondary btn-sm" id="duplicateEntryBtn" title="Duplicate">
                     <span class="icon icon-copy icon--sm"></span> Duplicate
                   </button>
@@ -185,18 +212,6 @@
                           </div>
                           <div id="wikiDefinition" class="rich-text-content" contenteditable="true" data-placeholder="Enter the definition or explanation..."></div>
                         </div>
-                      </div>
-
-                      <!-- Property Values -->
-                      <div class="form-group">
-                        <label>Property Values</label>
-                        <div id="wikiPropertyValues" class="property-values-list">
-                          <!-- Property values added by JS -->
-                        </div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="addPropertyValueBtn">
-                          <span class="icon icon-plus icon--sm"></span> Add Value
-                        </button>
-                        <span class="form-hint">For picklist properties, add values with their own definitions</span>
                       </div>
 
                       <!-- Related Link -->
@@ -353,10 +368,6 @@
                           <span class="wiki-usage-stat-value" id="wikiUpdatedAt">-</span>
                         </div>
                         <div class="wiki-usage-stat">
-                          <span class="wiki-usage-stat-label">Property Values</span>
-                          <span class="wiki-usage-stat-value" id="wikiValuesCount">0</span>
-                        </div>
-                        <div class="wiki-usage-stat">
                           <span class="wiki-usage-stat-label">Aliases</span>
                           <span class="wiki-usage-stat-value" id="wikiAliasesCount">0</span>
                         </div>
@@ -413,18 +424,28 @@
             </label>
             <input type="text" id="fieldsSearch" placeholder="Search fields..." class="fields-search">
           </div>
-          <div class="fields-list-items" id="fieldsListItems">
-            <!-- Fields populated by JS -->
+          <div class="fields-tree" id="fieldsListItems">
+            <!-- Fields populated by JS in tree structure -->
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelImportFieldsBtn">Cancel</button>
-        <button class="btn btn-primary" id="confirmImportFieldsBtn" disabled>Import Selected</button>
+      <div class="modal-footer modal-footer-import">
+        <label class="checkbox-label fields-import-option" id="fieldsImportOptions" style="display: none;">
+          <input type="checkbox" id="importDropdownValues">
+          <span>Import dropdown values as nested entries</span>
+          <span class="help-icon" data-tooltip="For dropdown/enumeration fields, each option value will be created as a child entry under the property" data-tooltip-position="top">
+            <span class="icon icon-info icon--sm"></span>
+          </span>
+        </label>
+        <div class="modal-footer-buttons">
+          <button class="btn btn-secondary" id="cancelImportFieldsBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmImportFieldsBtn" disabled>Import Selected</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <script src="../supabase.js"></script>
   <script src="../shared.js"></script>
   <script src="wiki.js"></script>
 </body>
