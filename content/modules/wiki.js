@@ -1,30 +1,22 @@
 /**
- * HubSpot Helper - Wiki Module
+ * RevGuide - Wiki Module
  *
  * Handles wiki/glossary term highlighting and tooltips on HubSpot pages.
- * Scans the page for property labels that match wiki entries and adds
+ * Scans the page for text that matches wiki entries and adds
  * clickable icons that show definition tooltips.
  *
  * Features:
- * - Matches property labels to wiki terms and aliases
- * - Adds lightbulb icons next to matching labels
- * - Shows tooltip with definition on icon click
- * - Supports record pages, index/list pages, import pages, and more
- * - Handles lazy-loaded content via observers and scroll listeners
- * - Prevents duplicate icons and infinite loops
- * - Uses term map caching for performance
+ * - Single-pass TreeWalker scanning (Supered-style, fast & consistent)
+ * - Shows first instance of each term per section (sidebar, middle pane, etc.)
+ * - Sorts triggers by length (longest first) to avoid partial matches
+ * - Zero-width character normalization for reliable matching
+ * - Handles lazy-loaded content via MutationObserver
+ * - Prevents duplicate icons
  *
- * Detection Methods (in order of execution):
- * - Method 1: CSS selector-based - targets sidebar labels, form labels, filters
- * - Method 2: Sidebar list items - targets li elements in left sidebar
- * - Method 3: UI patterns - targets menus, dropdowns, table header TEXT containers
- * - Method 4: Property name patterns - aggressive scan of left sidebar spans/divs
- * - Method 5: Left sidebar scan - catches edge cases with exact text matching
- * - Method 6: TreeWalker text scanner - fallback for pages where CSS fails
- *
- * IMPORTANT: Table headers have deeply nested structures. Target the innermost
- * text container (TruncateDiv, truncated-object-label), NOT the th/columnheader
- * directly. See LEARNINGS.md for details.
+ * Architecture:
+ * - Single efficient DOM traversal using TreeWalker
+ * - Section-based deduplication (one icon per term per section)
+ * - Pre-sorted term list for accurate matching
  *
  * Dependencies:
  * - Uses shared utilities (escapeHtml) from main content.js
@@ -33,7 +25,6 @@
  * Usage:
  *   const wiki = new WikiModule(helper);
  *   wiki.apply();           // Apply highlighting
- *   wiki.applyForIndex();   // Apply for index pages with multi-pass
  *   wiki.remove();          // Remove all highlighting
  *   wiki.cleanup();         // Full cleanup including observers
  */
@@ -44,7 +35,6 @@ class WikiModule {
    * @param {Object} helper.settings - User settings including showWiki
    * @param {Array} helper.wikiEntries - Array of wiki entry objects
    * @param {Function} helper.escapeHtml - HTML escape utility
-   * @param {Function} helper.isIndexPage - Check if on index page
    */
   constructor(helper) {
     this.helper = helper;
@@ -53,673 +43,228 @@ class WikiModule {
     this.wikiHighlightsApplied = false;
     this.isApplyingWikiHighlights = false;
     this.wikiUpdateTimeout = null;
-    this.currentTooltipEntryId = null; // Track which entry's tooltip is open
+    this.currentTooltipEntryId = null;
 
-    // Cache for term map to avoid rebuilding on every apply
-    this.termMapCache = null;
-    this.termMapCacheKey = null;
+    // Cache for sorted term list
+    this.sortedTermsCache = null;
+    this.sortedTermsCacheKey = null;
 
-    // Bind the outside click handler so we can remove it later
+    // Track processed elements to avoid duplicates
+    this.processedElements = new WeakSet();
+
+    // Bind handlers
     this.handleOutsideTooltipClick = this.handleOutsideTooltipClick.bind(this);
   }
 
-  // ============ PROPERTY LABEL SELECTORS ============
-  // These selectors target HubSpot DOM elements that contain property labels
+  // ============ TEXT NORMALIZATION ============
 
   /**
-   * Get CSS selectors for property label elements
-   * @returns {string[]} Array of CSS selectors
+   * Normalize text for matching (Supered-style)
+   * Strips zero-width characters, trims, and lowercases
+   * @param {string} text - Text to normalize
+   * @returns {string} Normalized text
    */
-  getPropertyLabelSelectors() {
+  normalizeText(text) {
+    if (!text) return '';
+    return text
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width chars
+      .trim()
+      .toLowerCase();
+  }
+
+  // ============ SECTION DETECTION ============
+
+  /**
+   * Define HubSpot page sections for deduplication
+   * Each term should only show once per section
+   */
+  getSectionSelectors() {
     return [
-      // HubSpot property labels
-      '[data-selenium-test*="property-label"]',
-      '[class*="PropertyLabel"]',
-      '[class*="property-label"]',
-      'label[class*="UIForm"]',
-      // Sidebar property labels (left panel)
-      '[data-test-id="left-sidebar"] [class*="label"]',
-      '[data-test-id="left-sidebar"] [class*="Label"]',
-      // Property row labels
-      '[data-selenium-test="property-input"] [class*="label"]',
-      // Pipeline/Stage labels in header area
-      '[data-test-id="pipeline-stage-label"]',
-      '[data-test-id="pipeline-label"]',
-      // Card-based property labels (newer HubSpot UI)
-      '[data-test-id="left-sidebar"] [class*="truncate"]',
-      '[data-test-id="left-sidebar"] [class*="Truncate"]',
-      '[data-test-id="left-sidebar"] [class*="private-truncated"]',
-      // Property list items - the label part
-      '[data-test-id="left-sidebar"] [class*="property"] span:first-child',
-      '[data-test-id="left-sidebar"] [class*="Property"] span:first-child',
-      // Highlighted property sidebar specific
-      '[data-selenium-test="highlightedPropertySidebar"] [class*="label"]',
-      '[data-selenium-test="highlightedPropertySidebar"] [class*="Label"]',
-      '[data-selenium-test="highlightedPropertySidebar"] [class*="truncate"]',
-      // Generic HubSpot form labels
-      '[class*="UIFormControl"] label',
-      '[class*="FormLabel"]',
-      // Filter panel labels
-      '[data-test-id="filter-panel"] label',
-      '[data-test-id="filter-panel"] [class*="label"]',
-      '[data-test-id="filter-panel"] [class*="Label"]',
-      '[class*="FilterEditor"] label',
-      '[class*="FilterEditor"] [class*="label"]',
-      '[class*="filter-property"] label',
-      '[class*="filter-property"] [class*="label"]',
-      '[class*="FilterProperty"] label',
-      '[class*="FilterProperty"] span',
-      // Quick filters / saved filters
-      '[data-test-id="quick-filter"]',
-      '[class*="QuickFilter"] span',
-      // Property filter dropdowns
-      '[class*="propertyFilter"] label',
-      '[class*="PropertyFilter"] label',
-      '[data-selenium-test*="filter"] label',
-      // Generic filter labels
-      '[class*="filter"] label:not([class*="input"])',
-      '[class*="Filter"] label:not([class*="input"])',
-      // Filter dropdown buttons
-      '[class*="DropdownButtonLabel"] [class*="TruncateString"] span:not([class])',
-      '[class*="AbstractDropdown"] [class*="TruncateStringInner"] span',
-      '[data-dropdown="true"] [class*="TruncateStringInner"] span',
-      '[class*="FilterEditor"] [class*="TruncateString"] span:not([class])',
-      // Internationalized strings (card titles, sidebar labels, etc.)
-      'i18n-string',
-      '[data-locale-at-render]',
-      // Card titles and sidebar card headers
-      '[class*="CardTitle"]',
-      '[class*="card-title"]',
-      '[class*="SidebarCard"] [class*="title"]',
-      '[class*="SidebarCard"] [class*="Title"]',
-      '[class*="IntegrationCard"] [class*="title"]',
-      '[class*="IntegrationCard"] [class*="Title"]'
+      { name: 'left-sidebar', selector: '[data-test-id="left-sidebar"]' },
+      { name: 'middle-pane', selector: '[data-test-id="middle-pane"]' },
+      { name: 'right-sidebar', selector: '[data-test-id="right-sidebar"]' },
+      { name: 'header', selector: '[data-test-id="record-header"], header, [role="banner"]' },
+      { name: 'modal', selector: '[role="dialog"], [class*="Modal"], [class*="modal"]' },
+      { name: 'dropdown', selector: '[role="listbox"], [role="menu"], [class*="Dropdown"]' },
+      { name: 'filter-panel', selector: '[data-test-id="filter-panel"], [class*="FilterEditor"]' },
+      { name: 'nav', selector: '[data-menu-item-level="secondary"]' },
+      { name: 'table', selector: 'table, [role="grid"], [class*="Table"]' },
+      { name: 'main', selector: 'main, [role="main"]' },
+      { name: 'body', selector: 'body' } // Fallback
     ];
+  }
+
+  /**
+   * Get the section name for an element
+   * @param {HTMLElement} element - Element to check
+   * @returns {string} Section name
+   */
+  getSectionForElement(element) {
+    if (!element) return 'unknown';
+
+    const sections = this.getSectionSelectors();
+    for (const { name, selector } of sections) {
+      if (element.closest(selector)) {
+        return name;
+      }
+    }
+    return 'body';
+  }
+
+  // ============ TERM MAP BUILDING ============
+
+  /**
+   * Build sorted list of terms for matching
+   * Sorted by length (longest first) to avoid partial matches
+   * @param {Array} entries - Enabled wiki entries
+   * @returns {Array} Array of { term, entry } sorted by term length desc
+   */
+  buildSortedTermList(entries) {
+    // Generate cache key
+    const cacheKey = entries.map(e => `${e.id}:${e.trigger || e.term}`).join('|');
+
+    if (this.sortedTermsCache && this.sortedTermsCacheKey === cacheKey) {
+      return this.sortedTermsCache;
+    }
+
+    const termList = [];
+
+    for (const entry of entries) {
+      // Skip entries without a trigger
+      if (!entry.trigger && !entry.term) continue;
+
+      const primaryTrigger = entry.trigger || entry.term;
+      const triggers = [primaryTrigger, ...(entry.aliases || [])];
+
+      for (const trigger of triggers) {
+        if (trigger && trigger.trim()) {
+          const normalized = this.normalizeText(trigger);
+          if (normalized.length >= 2) {
+            termList.push({ term: normalized, entry });
+          }
+        }
+      }
+    }
+
+    // Sort by length descending (longest first)
+    termList.sort((a, b) => b.term.length - a.term.length);
+
+    this.sortedTermsCache = termList;
+    this.sortedTermsCacheKey = cacheKey;
+    this.log('Built sorted term list:', termList.length, 'terms');
+
+    return termList;
+  }
+
+  /**
+   * Invalidate term cache
+   */
+  invalidateTermMapCache() {
+    this.sortedTermsCache = null;
+    this.sortedTermsCacheKey = null;
+    this.log('Term cache invalidated');
   }
 
   // ============ MAIN APPLY METHOD ============
 
   /**
-   * Apply wiki highlighting to the page
-   * Scans for property labels and adds icons to matching terms
-   * Does NOT remove existing highlights - just adds to new elements
+   * Apply wiki highlighting using single-pass TreeWalker
+   * Shows first instance of each term per section
    */
   apply() {
-    // Prevent re-entry
     if (this.isApplyingWikiHighlights) {
-      this.log('Already applying wiki highlights, skipping');
+      this.log('Already applying, skipping');
       return;
     }
 
     this.isApplyingWikiHighlights = true;
-    this.log('>>> applyWikiHighlighting() starting');
+    this.log('>>> apply() starting');
 
     try {
-      // Disconnect observer while we work
+      // Disconnect observer while working
       if (this.wikiObserver) {
         this.wikiObserver.disconnect();
       }
 
-      // DON'T remove existing highlights - just scan for new ones
-      // This prevents the infinite loop of remove -> observer -> apply -> remove
-
       const wikiEntries = this.helper.wikiEntries || [];
       const enabledEntries = wikiEntries.filter(e => e.enabled !== false);
-      this.log('Wiki entries to highlight (enabled):', enabledEntries.length);
 
       if (enabledEntries.length === 0) {
-        this.log('No enabled wiki entries, exiting');
+        this.log('No enabled wiki entries');
         return;
       }
 
-      // Build term map (term/alias -> entry) - uses caching
-      const termMap = this.buildTermMap(enabledEntries);
-      // Note: buildTermMap() logs when cache is built/rebuilt
+      // Build sorted term list
+      const sortedTerms = this.buildSortedTermList(enabledEntries);
 
-      // Track ALL processed elements across all methods AND across apply() calls
-      // Use persistent WeakSet so elements aren't re-processed on observer triggers
-      if (!this.processedElements) {
-        this.processedElements = new WeakSet();
-      }
+      // Track which terms we've shown in each section
+      // Key: "sectionName:termId" -> true
+      const shownInSection = new Map();
 
-      let totalHighlights = 0;
+      // Collect matches first, then apply (avoid DOM modification during walk)
+      const matches = this.scanForMatches(sortedTerms, shownInSection);
 
-      // Method 1: Property label selectors
-      totalHighlights += this.applyMethod1(termMap);
+      this.log('Found', matches.length, 'matches to highlight');
 
-      // Method 2: Sidebar list items
-      totalHighlights += this.applyMethod2(termMap);
-
-      // Method 3: Supered-wrapped elements
-      totalHighlights += this.applyMethod3(termMap);
-
-      // Method 4: Specific property name patterns
-      totalHighlights += this.applyMethod4(termMap);
-
-      // Method 5: Aggressive scan of left sidebar
-      totalHighlights += this.applyMethod5(termMap);
-
-      // Method 6: Text node scanner for pages where CSS selectors miss content
-      // Only run if Methods 1-5 found few highlights AND we're on a non-record page
-      const isRecordPage = !!document.querySelector('[data-test-id="left-sidebar"]');
-      if (totalHighlights < 5 && !isRecordPage) {
-        this.log('Method 6: Running text scanner (few highlights on non-record page)');
-        totalHighlights += this.applyMethod6TextNodeScanner(termMap);
+      // Apply icons to matches
+      let highlights = 0;
+      for (const match of matches) {
+        try {
+          if (match.type === 'textNode') {
+            this.wrapTextNodeWithIcon(match.node, match.entry);
+          } else {
+            this.addIconToElement(match.element, match.entry);
+          }
+          highlights++;
+        } catch (e) {
+          this.log('Error applying icon:', e.message);
+        }
       }
 
       this.wikiHighlightsApplied = true;
-      if (totalHighlights > 0) {
-        this.log('Wiki highlighting applied, new highlights:', totalHighlights);
+      if (highlights > 0) {
+        this.log('Applied', highlights, 'wiki highlights');
       }
 
     } catch (error) {
-      this.log('Error applying wiki highlights:', error.message);
-      console.error('[HubSpot Helper] Wiki apply error:', error);
+      this.log('Error in apply():', error.message);
+      console.error('[RevGuide] Wiki apply error:', error);
     } finally {
-      // Always reset flag and reconnect observer
       this.isApplyingWikiHighlights = false;
       this.reconnectObserver();
     }
   }
 
   /**
-   * Apply wiki highlighting for index pages
-   * Uses smart timing: immediate first pass, then follow-up only if content is still loading
-   *
-   * OPTIMIZATION: Reduced from 3 fixed passes to adaptive timing:
-   * - Immediate first pass (no delay)
-   * - Second pass at 800ms only if HubSpot loaders are detected
-   * - Third pass at 2000ms only if content count increased (lazy loading happening)
+   * Single-pass TreeWalker scan for all matching text
+   * @param {Array} sortedTerms - Sorted term list
+   * @param {Map} shownInSection - Track shown terms per section
+   * @returns {Array} Array of matches
    */
-  applyForIndex() {
-    this.log('applyWikiHighlightingForIndex called');
+  scanForMatches(sortedTerms, shownInSection) {
+    const matches = [];
 
-    if (this.helper.settings.showWiki === false) {
-      this.log('Wiki disabled, skipping index highlighting');
-      return;
-    }
-    if (!this.helper.wikiEntries || this.helper.wikiEntries.length === 0) {
-      this.log('No wiki entries, skipping index highlighting');
-      return;
-    }
-
-    // Immediate first pass - no delay with pre-built cache
-    this.log('Index wiki pass 1 (immediate)');
-    const firstPassHighlights = this.apply();
-
-    // Check if HubSpot is still loading content
-    const hasLoadingIndicators = () => {
-      return document.querySelector(
-        '[data-loading="true"], .loading, .private-loading, ' +
-        '[data-selenium-test="loading-skeleton"], .UITableCell--loading, ' +
-        '.skeleton-loader, [aria-busy="true"]'
-      );
-    };
-
-    // Track content count to detect lazy loading
-    let lastContentCount = document.querySelectorAll('td, [role="cell"], [role="row"]').length;
-
-    // Second pass - only if loading indicators are present
-    setTimeout(() => {
-      if (hasLoadingIndicators()) {
-        this.log('Index wiki pass 2 (800ms) - loading detected');
-        this.apply();
-      } else {
-        // Check if content count changed (lazy loading without visible indicator)
-        const currentCount = document.querySelectorAll('td, [role="cell"], [role="row"]').length;
-        if (currentCount > lastContentCount) {
-          this.log('Index wiki pass 2 (800ms) - new content detected');
-          this.apply();
-        }
-      }
-      lastContentCount = document.querySelectorAll('td, [role="cell"], [role="row"]').length;
-    }, 800);
-
-    // Third pass - only if content is still being added
-    setTimeout(() => {
-      const currentCount = document.querySelectorAll('td, [role="cell"], [role="row"]').length;
-      if (currentCount > lastContentCount || hasLoadingIndicators()) {
-        this.log('Index wiki pass 3 (2000ms) - additional content detected');
-        this.apply();
-      }
-    }, 2000);
-  }
-
-  // ============ HIGHLIGHTING METHODS ============
-
-  /**
-   * Check if an element has already been processed (has wiki icon)
-   * Comprehensive check that handles various DOM structures
-   * @param {HTMLElement} element - Element to check
-   * @returns {boolean} True if already processed
-   */
-  isAlreadyProcessed(element) {
-    if (!element) return true;
-
-    // Check if element itself is one of our elements
-    if (element.classList?.contains('hshelper-wiki-icon') ||
-        element.classList?.contains('hshelper-wiki-wrapper') ||
-        element.classList?.contains('hshelper-trigger-root') ||
-        element.hasAttribute?.('data-hshelper-root')) {
-      return true;
-    }
-
-    // Check if element is inside one of our wrappers
-    if (element.closest('.hshelper-wiki-wrapper, .hshelper-trigger-root, [data-hshelper-root], .hshelper-container')) {
-      return true;
-    }
-
-    // Check if element already has an icon inside it
-    if (element.querySelector('.hshelper-wiki-icon')) {
-      return true;
-    }
-
-    // Check if element's parent is a wrapper (element was already wrapped)
-    const parent = element.parentElement;
-    if (parent?.classList?.contains('hshelper-wiki-wrapper') ||
-        parent?.classList?.contains('hshelper-trigger-root') ||
-        parent?.hasAttribute?.('data-hshelper-root')) {
-      return true;
-    }
-
-    // Check if there's already an icon as a sibling (for elements that weren't wrapped)
-    if (parent) {
-      const siblings = Array.from(parent.children);
-      if (siblings.some(s => s.classList?.contains('hshelper-wiki-icon'))) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Build a map of trigger terms/aliases to wiki entries
-   * Only includes entries that have a trigger set (glossary-only entries are excluded)
-   *
-   * OPTIMIZATION: Uses pre-built cache from chrome.storage when available.
-   * The cache is built when wiki entries are saved in the admin panel (see shared.js).
-   * This eliminates the need to rebuild the map on every page load.
-   *
-   * @param {Array} entries - Enabled wiki entries (used as fallback if cache unavailable)
-   * @returns {Map} Map of lowercase trigger -> entry
-   */
-  buildTermMap(entries) {
-    // FAST PATH: Use pre-built cache from storage/session if available
-    const prebuiltCache = this.helper.wikiTermMapCache;
-    const entriesById = this.helper.wikiEntriesById;
-
-    if (prebuiltCache && entriesById && Object.keys(prebuiltCache).length > 0) {
-      // Check if we already converted this cache to a Map
-      if (this.termMapCache && this.termMapCacheKey === 'prebuilt') {
-        this.log('Using pre-built term map from cache (instant)', this.termMapCache.size, 'terms');
-        return this.termMapCache;
-      }
-
-      // Convert the pre-built cache (Object with trigger -> entryId) to Map with trigger -> entry
-      const termMap = new Map();
-      for (const [trigger, entryId] of Object.entries(prebuiltCache)) {
-        const entry = entriesById[entryId];
-        if (entry) {
-          termMap.set(trigger, entry);
-        }
-      }
-
-      // Cache the converted Map
-      this.termMapCache = termMap;
-      this.termMapCacheKey = 'prebuilt';
-      this.log('Loaded pre-built term map with', termMap.size, 'terms (from storage cache)');
-      return termMap;
-    }
-
-    // FALLBACK: Build map from entries array (for backwards compatibility or if cache is missing)
-    // Generate cache key based on entry count and IDs (lightweight check)
-    const cacheKey = entries.map(e => `${e.id}:${e.trigger || e.term}:${(e.aliases || []).length}`).join('|');
-
-    // Return cached map if entries haven't changed
-    if (this.termMapCache && this.termMapCacheKey === cacheKey) {
-      this.log('Using cached term map with', this.termMapCache.size, 'terms');
-      return this.termMapCache;
-    }
-
-    // Build new term map
-    const termMap = new Map();
-    for (const entry of entries) {
-      // Skip entries without a trigger (glossary-only entries)
-      if (!entry.trigger && !entry.term) continue;
-
-      // Support both new (trigger) and legacy (term) fields
-      const primaryTrigger = entry.trigger || entry.term;
-      const triggers = [primaryTrigger, ...(entry.aliases || [])];
-
-      for (const trigger of triggers) {
-        if (trigger && trigger.trim()) {
-          termMap.set(trigger.toLowerCase().trim(), entry);
-        }
-      }
-    }
-
-    // Cache the result
-    this.termMapCache = termMap;
-    this.termMapCacheKey = cacheKey;
-    this.log('Term map built from entries with', termMap.size, 'terms (fallback path)');
-
-    return termMap;
-  }
-
-  /**
-   * Invalidate the term map cache
-   * Called when wiki entries are updated via storage change listener
-   */
-  invalidateTermMapCache() {
-    this.termMapCache = null;
-    this.termMapCacheKey = null;
-    this.log('Term map cache invalidated');
-  }
-
-  /**
-   * Method 1: Find property labels using CSS selectors
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod1(termMap) {
-    const selectors = this.getPropertyLabelSelectors();
-    const propertyLabels = document.querySelectorAll(selectors.join(', '));
-    this.log('Method 1: Found', propertyLabels.length, 'property label elements');
-
-    const processedTexts = new Set();
-    let highlights = 0;
-
-    for (const label of propertyLabels) {
-      // Skip already processed elements (comprehensive check)
-      if (this.isAlreadyProcessed(label)) continue;
-
-      // Skip if we've already processed this exact element (persists across apply() calls)
-      if (this.processedElements?.has(label)) continue;
-
-      // For table cells, also check the cell itself
-      const tableCell = label.closest('th, td, [role="columnheader"], [role="cell"]');
-      if (tableCell && this.processedElements?.has(tableCell)) continue;
-
-      // Get text content
-      let text = this.getDirectTextContent(label).trim().toLowerCase();
-      if (!text) {
-        text = label.textContent?.trim().toLowerCase() || '';
-      }
-      if (!text) continue;
-
-      // Strip trailing parenthetical counts like "(1)" or "(23)" for card titles
-      // e.g., "Q360 Links (1)" -> "Q360 Links"
-      const textWithoutCount = text.replace(/\s*\(\d+\)\s*$/, '').trim();
-
-      // Skip if element has child with same text (want innermost only)
-      const childWithSameText = Array.from(label.querySelectorAll('span, div')).find(
-        child => child.textContent?.trim().toLowerCase() === text && !this.isAlreadyProcessed(child)
-      );
-      if (childWithSameText) continue;
-
-      // Deduplicate by text + parent context
-      const parentKey = label.closest('th, td, button, [role="columnheader"], li')?.textContent?.trim().substring(0, 50) || '';
-      const uniqueKey = `${text}::${parentKey}`;
-      if (processedTexts.has(uniqueKey)) continue;
-
-      // Check for match - try both with and without count
-      let entry = termMap.get(text);
-      if (!entry && textWithoutCount !== text) {
-        entry = termMap.get(textWithoutCount);
-      }
-      if (entry) {
-        const triggerText = entry.trigger || entry.term || '';
-        this.log(`Method 1 match: "${text}" → trigger "${triggerText}" (title: ${entry.title || 'none'})`);
-        processedTexts.add(uniqueKey);
-        // Mark both the element AND its table cell as processed
-        this.processedElements?.add(label);
-        if (tableCell) this.processedElements?.add(tableCell);
-        this.addIconToElement(label, entry);
-        highlights++;
-      }
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Method 2: Find list items in sidebars
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod2(termMap) {
-    const sidebarListItems = document.querySelectorAll(
-      '[data-test-id="left-sidebar"] li, ' +
-      '[data-selenium-test="highlightedPropertySidebar"] li'
-    );
-    this.log('Method 2: Found', sidebarListItems.length, 'sidebar list items');
-
-    let highlights = 0;
-
-    for (const li of sidebarListItems) {
-      if (this.isAlreadyProcessed(li)) continue;
-
-      const labelEl = li.querySelector('[class*="label"], [class*="Label"], span:first-child');
-      if (!labelEl || this.isAlreadyProcessed(labelEl)) continue;
-
-      const labelText = this.getDirectTextContent(labelEl).trim().toLowerCase();
-      if (!labelText) continue;
-
-      const entry = termMap.get(labelText);
-      if (entry) {
-        this.addIconToElement(labelEl, entry);
-        highlights++;
-      }
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Method 3: Find elements in common HubSpot UI patterns
-   * Targets table cells, menu items, dropdown options, buttons with text
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod3(termMap) {
-    // Target common UI patterns across all HubSpot pages
-    // NOTE: We do NOT target th/td directly - the text is buried in nested elements
-    // and prepending to th/td breaks layout. Let Method 6 handle table header text.
-    const uiElements = document.querySelectorAll([
-      // Menu and dropdown items
-      '[role="menuitem"]',
-      '[role="option"]',
-      '[role="listbox"] [role="option"]',
-      '[class*="MenuItem"]',
-      '[class*="DropdownItem"]',
-      '[class*="SelectOption"]',
-      // Generic text containers in HubSpot UI
-      '[class*="UIText"]',
-      '[class*="Text__"]',
-      '[class*="Label__"]',
-      // Import page specific
-      '[class*="mapping"] label',
-      '[class*="Mapping"] label',
-      '[class*="column-name"]',
-      '[class*="ColumnName"]',
-      '[class*="property-name"]',
-      '[class*="PropertyName"]',
-      // Table header text containers (the actual text, not the th itself)
-      '[data-test-id*="truncated-object-label"]',
-      '[class*="TruncateDiv"]',
-      '[class*="TruncateString"] > span > span'
-    ].join(', '));
-
-    this.log('Method 3: Found', uiElements.length, 'UI pattern elements');
-
-    let highlights = 0;
-
-    for (const el of uiElements) {
-      if (this.isAlreadyProcessed(el)) continue;
-
-      // Skip if we've already processed this exact element (persists across apply() calls)
-      if (this.processedElements?.has(el)) continue;
-
-      // For table cells, check if the cell itself was already processed
-      const tableCell = el.closest('th, td, [role="columnheader"], [role="cell"]');
-      if (tableCell && this.processedElements?.has(tableCell)) continue;
-
-      // Get text - for table headers, use full textContent
-      let text = el.textContent?.trim().toLowerCase() || '';
-      if (!text || text.length > 60 || text.length < 2) continue;
-
-      // Strip trailing counts like "(1)"
-      const textWithoutCount = text.replace(/\s*\(\d+\)\s*$/, '').trim();
-
-      let entry = termMap.get(text);
-      if (!entry && textWithoutCount !== text) {
-        entry = termMap.get(textWithoutCount);
-      }
-
-      if (entry) {
-        const triggerText = entry.trigger || entry.term || '';
-        this.log(`Method 3 match: "${text}" → trigger "${triggerText}" (title: ${entry.title || 'none'})`);
-        // Mark both the element AND its table cell as processed
-        this.processedElements?.add(el);
-        if (tableCell) this.processedElements?.add(tableCell);
-        this.addIconToElement(el, entry);
-        highlights++;
-      }
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Method 4: Find standalone property name elements
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod4(termMap) {
-    const propertyNameElements = document.querySelectorAll(
-      '[data-test-id="left-sidebar"] span, ' +
-      '[data-test-id="left-sidebar"] div'
-    );
-    this.log('Method 4: Found', propertyNameElements.length, 'potential property name elements');
-
-    let highlights = 0;
-
-    for (const el of propertyNameElements) {
-      if (this.isAlreadyProcessed(el)) continue;
-      if (el.children.length > 2) continue;
-      if (el.closest('[contenteditable="true"]')) continue;
-      if (el.closest('input, textarea, select')) continue;
-
-      const text = this.getDirectTextContent(el).trim();
-      if (!text || text.length > 50) continue;
-
-      const entry = termMap.get(text.toLowerCase());
-      if (entry) {
-        const fullText = el.textContent.trim().toLowerCase();
-        const termText = (entry.trigger || entry.term || '').toLowerCase();
-
-        if (fullText === termText ||
-            fullText === termText + ':' ||
-            fullText.match(new RegExp(`^${this.escapeRegex(termText)}\\s*[:)]?\\s*$`, 'i'))) {
-          this.addIconToElement(el, entry);
-          highlights++;
-        }
-      }
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Method 5: Aggressive scan of all text elements in left sidebar
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod5(termMap) {
-    const leftSidebar = document.querySelector('[data-test-id="left-sidebar"]');
-    if (!leftSidebar) return 0;
-
-    const allTextElements = leftSidebar.querySelectorAll('span, div, p, td, th, dt, dd, h1, h2, h3, h4, h5, h6');
-    this.log('Method 5: Scanning', allTextElements.length, 'text elements in left sidebar');
-
-    let highlights = 0;
-
-    for (const el of allTextElements) {
-      if (this.isAlreadyProcessed(el)) continue;
-      if (el.children.length > 3) continue;
-      if (el.closest('[contenteditable="true"]')) continue;
-      if (el.closest('input, textarea, select, button')) continue;
-      if (el.closest('[class*="value"]') || el.closest('[class*="Value"]')) continue;
-
-      const text = this.getDirectTextContent(el).trim();
-      if (!text || text.length > 40 || text.length < 2) continue;
-      if (/^[\$\€\£]/.test(text)) continue;
-      if (/^\d+[\.,]?\d*%?$/.test(text)) continue;
-
-      const entry = termMap.get(text.toLowerCase());
-      if (entry) {
-        const trimmedText = el.textContent.trim().toLowerCase();
-        const termLower = (entry.trigger || entry.term || '').toLowerCase();
-
-        if (trimmedText === termLower ||
-            trimmedText === termLower + ':' ||
-            trimmedText.startsWith(termLower + ' ') ||
-            trimmedText.startsWith(termLower + ':')) {
-          this.addIconToElement(el, entry);
-          highlights++;
-          this.log('Method 5 match:', text, '→', entry.trigger || entry.term);
-        }
-      }
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Method 6: Text Node Scanner (SUpered-style)
-   * Scans ALL text nodes in the document using TreeWalker for maximum coverage
-   * This catches triggers in places the CSS selectors might miss (import pages, modals, etc.)
-   * @param {Map} termMap - Term to entry map
-   * @returns {number} Number of highlights added
-   */
-  applyMethod6TextNodeScanner(termMap) {
-    this.log('Method 6: Starting text node scan across document');
-    this.log('Method 6: Looking for triggers:', Array.from(termMap.keys()).slice(0, 10).join(', '), termMap.size > 10 ? `... and ${termMap.size - 10} more` : '');
-
-    let highlights = 0;
-    let scannedNodes = 0;
-    let potentialMatches = 0;
-    const processedNodes = new WeakSet();
-
-    // Elements to skip scanning inside
+    // Tags to skip entirely
     const skipTags = new Set([
-      'SCRIPT', 'STYLE', 'INPUT', 'TEXTAREA', 'SELECT', 'NOSCRIPT',
-      'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'CODE', 'PRE'
+      'SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'OBJECT',
+      'EMBED', 'SVG', 'CODE', 'PRE', 'INPUT', 'TEXTAREA', 'SELECT'
     ]);
 
-    // Classes that indicate our own elements or editable content
-    const skipClasses = [
-      'hshelper-', 'wiki-tooltip'
-    ];
-
-    // Create TreeWalker to find all text nodes
+    // Create TreeWalker
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: (node) => {
-          // Skip empty or whitespace-only nodes
-          const text = node.textContent.trim();
-          if (!text || text.length < 2 || text.length > 100) {
+          const text = node.textContent;
+          if (!text || text.trim().length < 2 || text.trim().length > 100) {
             return NodeFilter.FILTER_REJECT;
           }
 
-          // Skip if parent is in skip list
           const parent = node.parentElement;
           if (!parent) return NodeFilter.FILTER_REJECT;
 
-          // Skip certain tag types
+          // Skip certain tags
           if (skipTags.has(parent.tagName)) {
             return NodeFilter.FILTER_REJECT;
           }
@@ -730,22 +275,11 @@ class WikiModule {
           }
 
           // Skip our own elements
-          if (parent.closest('[data-hshelper-root]') ||
-              parent.closest('.hshelper-wiki-wrapper') ||
-              parent.closest('.hshelper-wiki-icon') ||
-              parent.closest('.hshelper-wiki-tooltip') ||
-              parent.closest('.hshelper-container')) {
+          if (parent.closest('[data-hshelper-root], .hshelper-wiki-wrapper, .hshelper-wiki-icon, .hshelper-wiki-tooltip')) {
             return NodeFilter.FILTER_REJECT;
           }
 
-          // Skip elements with skip classes
-          // Note: className can be SVGAnimatedString for SVG elements, so convert to string
-          const classString = typeof parent.className === 'string' ? parent.className : (parent.className?.baseVal || '');
-          if (skipClasses.some(cls => classString.includes(cls))) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // Skip if already has our icon nearby
+          // Skip if already has our icon
           if (parent.querySelector('.hshelper-wiki-icon')) {
             return NodeFilter.FILTER_REJECT;
           }
@@ -755,198 +289,170 @@ class WikiModule {
       }
     );
 
-    // Collect matching nodes (don't modify DOM while walking)
-    const matches = [];
-    const rejectedContexts = [];
-
+    // Walk all text nodes
     while (walker.nextNode()) {
-      scannedNodes++;
       const textNode = walker.currentNode;
-      if (processedNodes.has(textNode)) continue;
+      const parent = textNode.parentElement;
 
-      const text = textNode.textContent.trim();
-      const lowerText = text.toLowerCase();
+      if (this.processedElements.has(parent)) continue;
 
-      // Check for exact match with trigger
-      const entry = termMap.get(lowerText);
-      if (entry) {
-        potentialMatches++;
-        const parent = textNode.parentElement;
+      const normalizedText = this.normalizeText(textNode.textContent);
+      if (!normalizedText) continue;
 
-        // Skip if parent element was already processed by another method
-        if (parent && this.processedElements?.has(parent)) continue;
+      // Pre-process the text once (strip trailing colons and counts)
+      // This handles cases like "Contacts (2)" → "contacts" or "Deal Stage:" → "deal stage"
+      const textToMatch = normalizedText
+        .replace(/\s*:\s*$/, '')           // Remove trailing colon
+        .replace(/\s*\(\d+\)\s*$/, '');    // Remove trailing count like "(3)"
 
-        // Also check if parent's table cell was already processed
-        const tableCell = parent?.closest('th, td, [role="columnheader"], [role="cell"]');
-        if (tableCell && this.processedElements?.has(tableCell)) continue;
+      // Check against all terms (sorted by length, longest first)
+      for (const { term, entry } of sortedTerms) {
+        // EXACT MATCH ONLY - the cleaned text must equal the term
+        // This prevents "Company" from matching "Company Domain Name"
+        if (textToMatch === term) {
+          // Get section for deduplication
+          const section = this.getSectionForElement(parent);
+          const sectionKey = `${section}:${entry.id}`;
 
-        // Verify this is a "label-like" context, not random text in a paragraph
-        if (this.isLikelyLabelContext(parent, text)) {
-          matches.push({ node: textNode, entry, text, parent });
-          processedNodes.add(textNode);
-        } else {
-          // Log rejected matches for debugging
-          rejectedContexts.push({ text, tag: parent?.tagName, class: parent?.className?.substring(0, 50) });
+          // Skip if we've already shown this term in this section
+          if (shownInSection.has(sectionKey)) {
+            this.log(`Skip duplicate: "${term}" already shown in ${section}`);
+            continue;
+          }
+
+          // Verify this is a label-like context
+          if (!this.isLikelyLabelContext(parent, textNode.textContent.trim())) {
+            this.log(`Skip context: "${textNode.textContent.trim()}" not label-like (tag: ${parent.tagName}, class: ${parent.className?.substring?.(0, 50) || ''})`);
+            continue;
+          }
+
+          // Record that we're showing this term in this section
+          shownInSection.set(sectionKey, true);
+          this.processedElements.add(parent);
+
+          matches.push({
+            type: 'textNode',
+            node: textNode,
+            entry,
+            section,
+            text: textNode.textContent.trim()
+          });
+
+          this.log(`Match: "${textNode.textContent.trim()}" → ${entry.trigger || entry.term} (section: ${section})`);
+
+          // Found a match for this text node, move to next node
+          break;
         }
       }
     }
 
-    this.log(`Method 6: Scanned ${scannedNodes} text nodes, ${potentialMatches} potential matches, ${matches.length} accepted`);
-    if (rejectedContexts.length > 0 && rejectedContexts.length <= 5) {
-      this.log('Method 6: Rejected contexts:', rejectedContexts);
-    } else if (rejectedContexts.length > 5) {
-      this.log(`Method 6: Rejected ${rejectedContexts.length} contexts (too many to show)`);
-    }
-
-    // Now apply highlights to collected matches
-    for (const match of matches) {
-      try {
-        // Mark the parent element as processed before wrapping
-        if (match.parent) {
-          this.processedElements?.add(match.parent);
-        }
-        this.wrapTextNodeWithIcon(match.node, match.entry);
-        highlights++;
-        this.log(`Method 6 match: "${match.text}" → ${match.entry.trigger || match.entry.term}`);
-      } catch (e) {
-        this.log('Method 6: Error wrapping node:', e.message);
-      }
-    }
-
-    return highlights;
+    return matches;
   }
 
   /**
-   * Check if an element is likely a label context (not just random paragraph text)
-   * Made more permissive to catch labels across all HubSpot pages
-   * @param {HTMLElement} element - Parent element of the text node
-   * @param {string} text - The text content
-   * @returns {boolean} True if likely a label context
+   * Check if element is in a label-like context
+   * @param {HTMLElement} element - Parent element
+   * @param {string} text - Text content
+   * @returns {boolean}
    */
   isLikelyLabelContext(element, text) {
     if (!element) return false;
 
-    // Check tag name - these are typically label-like (expanded list)
-    const labelTags = new Set(['SPAN', 'DIV', 'LABEL', 'TH', 'TD', 'DT', 'DD', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'A', 'P', 'STRONG', 'B', 'EM']);
+    // Skip primary nav (but allow secondary nav)
+    const navItem = element.closest('[data-location="vertical-nav"], [class*="VerticalNav"]');
+    if (navItem) {
+      const menuLevel = element.closest('[data-menu-item-level]')?.getAttribute('data-menu-item-level');
+      if (menuLevel !== 'secondary') {
+        return false;
+      }
+    }
+
+    // Accept common label tags
+    const labelTags = new Set([
+      'SPAN', 'DIV', 'LABEL', 'TH', 'TD', 'DT', 'DD', 'LI',
+      'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'A', 'P', 'STRONG', 'B'
+    ]);
     if (!labelTags.has(element.tagName)) return false;
 
-    // Skip if it's inside a very large paragraph of text (likely article content)
+    // Skip large text blocks
     const fullText = element.textContent.trim();
-    if (fullText.length > 500) return false;
+    if (fullText.length > 300) return false;
 
-    // Check if our text is the main content of this element (not buried in larger text)
+    // Check if our text is a significant part of the element
     const textRatio = text.length / fullText.length;
-    const isMainContent = textRatio > 0.3; // More permissive ratio
+    if (textRatio < 0.2 && fullText.length > 100) return false;
 
-    // Skip if our text is a tiny part of a larger text block
-    if (!isMainContent && fullText.length > 100) return false;
-
-    // Check for label-like classes (expanded list)
-    const className = element.className?.toLowerCase() || '';
-    const labelIndicators = [
-      'label', 'title', 'header', 'name', 'property', 'field', 'column',
-      'filter', 'select', 'option', 'button', 'trigger', 'truncate',
-      'text', 'content', 'item', 'card', 'cell', 'row', 'menu', 'dropdown'
-    ];
-    const hasLabelClass = labelIndicators.some(ind => className.includes(ind));
-
-    // Check for HubSpot-specific attributes
-    const hasHubSpotAttr = element.hasAttribute('data-test-id') ||
-                           element.hasAttribute('data-selenium-test') ||
-                           element.hasAttribute('data-dropdown') ||
-                           element.hasAttribute('role') ||
-                           element.hasAttribute('aria-label');
-
-    // Check parent and grandparent context
-    const parent = element.parentElement;
-    const grandparent = parent?.parentElement;
-    const parentClass = (parent?.className?.toLowerCase() || '') + ' ' + (grandparent?.className?.toLowerCase() || '');
-    const hasLabelParent = labelIndicators.some(ind => parentClass.includes(ind));
-
-    // Check if element is relatively small (label-like)
-    const isSmallElement = element.childNodes.length <= 5;
-
-    // Accept if it has clear label indicators
-    if (hasLabelClass || hasHubSpotAttr || hasLabelParent) return true;
-
-    // Accept if it's a small element where our text is significant content
-    if (isSmallElement && isMainContent) return true;
-
-    // Accept table cells, list items, and definition lists
-    if (element.closest('th, td, li, dt, dd')) return true;
-
-    // Accept elements in HubSpot UI areas (expanded selectors)
-    if (element.closest('[data-test-id], [data-selenium-test], [role], [data-dropdown], [class*="Button"], [class*="Select"], [class*="Menu"], [class*="Card"], [class*="Item"]')) {
+    // Accept elements in HubSpot UI areas
+    if (element.closest('[data-test-id], [data-selenium-test], [role], [class*="Label"], [class*="label"], [class*="Property"], [class*="Filter"], [class*="Card"], [class*="Menu"]')) {
       return true;
     }
 
-    // Accept if parent chain has any interactive element
-    if (element.closest('button, a, [onclick], [tabindex]')) return true;
+    // Accept table cells, list items
+    if (element.closest('th, td, li, dt, dd')) return true;
 
-    // Default: accept if text is short and element is small (likely a UI label)
-    if (text.length <= 50 && isSmallElement) return true;
+    // Accept small elements where text is main content
+    if (element.childNodes.length <= 5 && textRatio > 0.3) return true;
 
-    return false;
+    // Accept interactive elements
+    if (element.closest('button, a, [tabindex]')) return true;
+
+    // Default: accept short text in small elements
+    return text.length <= 50 && element.childNodes.length <= 5;
   }
 
   /**
-   * Wrap a text node with our trigger icon (SUpered-style wrapper)
-   * @param {Node} textNode - The text node to wrap
-   * @param {Object} entry - The wiki entry
+   * Apply for index pages with multiple passes for lazy loading
    */
-  wrapTextNodeWithIcon(textNode, entry) {
-    const parent = textNode.parentElement;
-    if (!parent) return;
+  applyForIndex() {
+    this.log('applyForIndex called');
 
-    // Don't wrap if parent already has our icon
-    if (parent.querySelector('.hshelper-wiki-icon')) return;
+    if (this.helper.settings.showWiki === false) return;
+    if (!this.helper.wikiEntries?.length) return;
 
-    // Create wrapper span (SUpered-style)
-    const wrapper = document.createElement('span');
-    wrapper.className = 'hshelper-wiki-wrapper hshelper-trigger-root';
-    wrapper.setAttribute('data-hshelper-root', 'true');
-    wrapper.setAttribute('data-hshelper-trigger', entry.trigger || entry.term || '');
-    wrapper.setAttribute('data-hshelper-content-id', entry.id || '');
-    wrapper.style.cssText = 'display: inline !important; position: relative !important;';
+    // Immediate pass
+    this.apply();
 
-    // Create icon
-    const displayTitle = entry.title || entry.trigger || entry.term;
-    const icon = document.createElement('span');
-    icon.className = 'hshelper-wiki-icon';
-    icon.title = `Wiki: ${displayTitle}`;
-    icon.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7cb342">
-        <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
-      </svg>
-    `;
+    // Check for loading indicators
+    const hasLoading = () => document.querySelector(
+      '[data-loading="true"], .loading, [aria-busy="true"], .skeleton-loader'
+    );
 
-    // Click handler
-    icon.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.showTooltip(entry, icon);
-    });
+    // Second pass if loading
+    setTimeout(() => {
+      if (hasLoading()) {
+        this.log('Index pass 2 - loading detected');
+        this.processedElements = new WeakSet(); // Reset for new content
+        this.apply();
+      }
+    }, 800);
 
-    // Build wrapper content
-    wrapper.appendChild(icon);
-    wrapper.appendChild(document.createTextNode(textNode.textContent));
-
-    // Replace text node with wrapper
-    parent.replaceChild(wrapper, textNode);
+    // Third pass for slow loading
+    setTimeout(() => {
+      if (hasLoading()) {
+        this.log('Index pass 3 - still loading');
+        this.processedElements = new WeakSet();
+        this.apply();
+      }
+    }, 2000);
   }
 
   // ============ DOM MANIPULATION ============
 
   /**
-   * Add wiki icon to an element
-   * @param {HTMLElement} element - The element to add icon to
-   * @param {Object} entry - The wiki entry
+   * Wrap a text node with icon
+   * @param {Node} textNode - Text node to wrap
+   * @param {Object} entry - Wiki entry
    */
-  addIconToElement(element, entry) {
+  wrapTextNodeWithIcon(textNode, entry) {
+    const parent = textNode.parentElement;
+    if (!parent) return;
+    if (parent.querySelector('.hshelper-wiki-icon')) return;
+
+    const displayTitle = entry.title || entry.trigger || entry.term;
+
+    // Create icon
     const icon = document.createElement('span');
     icon.className = 'hshelper-wiki-icon';
-    // Use title for display, fall back to trigger or legacy term
-    const displayTitle = entry.title || entry.trigger || entry.term;
     icon.title = `Wiki: ${displayTitle}`;
     icon.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7cb342">
@@ -954,61 +460,83 @@ class WikiModule {
       </svg>
     `;
 
-    // Click handler for tooltip
     icon.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.showTooltip(entry, icon);
     });
 
-    // Wrap element with icon before text
+    // Create container
+    const iconContainer = document.createElement('span');
+    iconContainer.className = 'hshelper-wiki-icon-container';
+    iconContainer.appendChild(icon);
+
+    // Create wrapper
     const wrapper = document.createElement('span');
-    wrapper.className = 'hshelper-wiki-wrapper';
-    wrapper.style.cssText = 'display: inline-flex !important; align-items: center !important;';
+    wrapper.className = 'hshelper-wiki-wrapper hshelper-trigger-root';
+    wrapper.setAttribute('data-hshelper-root', 'true');
+    wrapper.setAttribute('data-hshelper-trigger', entry.trigger || entry.term || '');
+    wrapper.setAttribute('data-hshelper-content-id', entry.id || '');
+    wrapper.style.cssText = 'font-size: inherit !important; line-height: inherit !important; display: inline-block !important; position: relative !important; padding-left: 1.15em !important;';
+
+    wrapper.appendChild(iconContainer);
+    wrapper.appendChild(document.createTextNode(textNode.textContent));
+
+    parent.replaceChild(wrapper, textNode);
+  }
+
+  /**
+   * Add icon to an element
+   * @param {HTMLElement} element - Element to add icon to
+   * @param {Object} entry - Wiki entry
+   */
+  addIconToElement(element, entry) {
+    const displayTitle = entry.title || entry.trigger || entry.term;
+
+    const icon = document.createElement('span');
+    icon.className = 'hshelper-wiki-icon';
+    icon.title = `Wiki: ${displayTitle}`;
+    icon.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7cb342">
+        <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
+      </svg>
+    `;
+
+    icon.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.showTooltip(entry, icon);
+    });
+
+    const iconContainer = document.createElement('span');
+    iconContainer.className = 'hshelper-wiki-icon-container';
+    iconContainer.appendChild(icon);
+
+    const wrapper = document.createElement('span');
+    wrapper.className = 'hshelper-wiki-wrapper hshelper-trigger-root';
+    wrapper.setAttribute('data-hshelper-root', 'true');
+    wrapper.setAttribute('data-hshelper-trigger', entry.trigger || entry.term || '');
+    wrapper.setAttribute('data-hshelper-content-id', entry.id || '');
+    wrapper.style.cssText = 'font-size: inherit !important; line-height: inherit !important; display: inline-block !important; position: relative !important; padding-left: 1.15em !important;';
+
+    wrapper.appendChild(iconContainer);
     element.parentNode.insertBefore(wrapper, element);
-    wrapper.appendChild(icon);
     wrapper.appendChild(element);
-  }
-
-  /**
-   * Get direct text content of element (not from nested children)
-   * @param {HTMLElement} element - The element
-   * @returns {string} Direct text content
-   */
-  getDirectTextContent(element) {
-    let text = '';
-    for (const node of element.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        text += node.textContent;
-      }
-    }
-    return text;
-  }
-
-  /**
-   * Escape special regex characters
-   * @param {string} string - String to escape
-   * @returns {string} Escaped string
-   */
-  escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   // ============ TOOLTIP ============
 
   /**
-   * Show wiki tooltip for an entry
-   * @param {Object} entry - Wiki entry object
-   * @param {HTMLElement} targetElement - Element to position tooltip near
+   * Show wiki tooltip
+   * @param {Object} entry - Wiki entry
+   * @param {HTMLElement} targetElement - Element to position near
    */
   showTooltip(entry, targetElement) {
-    // If clicking the same entry's icon, toggle off
     if (this.currentTooltipEntryId === entry.id) {
       this.hideTooltip();
       return;
     }
 
-    // Remove existing tooltip (different entry)
     this.hideTooltip();
 
     const tooltip = document.createElement('div');
@@ -1017,10 +545,8 @@ class WikiModule {
 
     const category = entry.category || 'general';
     const categoryClass = `wiki-category-${category}`;
-    // Use title for display, fall back to trigger or legacy term
     const displayTitle = entry.title || entry.trigger || entry.term;
 
-    // Admin edit link
     const showAdminLinks = this.helper.settings.showAdminLinks !== false;
     const editLinkHtml = showAdminLinks ? `
       <a href="#" class="wiki-tooltip-edit" data-entry-id="${entry.id}" title="Edit in Admin Panel">
@@ -1029,7 +555,6 @@ class WikiModule {
       </a>
     ` : '';
 
-    // Learn more link
     const learnMoreHtml = entry.link ? `
       <a href="${this.helper.escapeHtml(entry.link)}" class="wiki-tooltip-learn" target="_blank" rel="noopener noreferrer">
         Learn more
@@ -1037,7 +562,6 @@ class WikiModule {
       </a>
     ` : '';
 
-    // Footer (only show if we have edit link or learn more)
     const footerHtml = (showAdminLinks || entry.link) ? `
       <div class="wiki-tooltip-footer">
         ${editLinkHtml}
@@ -1045,7 +569,6 @@ class WikiModule {
       </div>
     ` : '';
 
-    // Category icon based on type
     const categoryIcons = {
       general: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
       sales: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
@@ -1073,14 +596,13 @@ class WikiModule {
 
     document.body.appendChild(tooltip);
 
-    // Position tooltip
+    // Position
     const rect = targetElement.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
 
     let top = rect.bottom + 8;
     let left = rect.left;
 
-    // Adjust if off-screen
     if (left + tooltipRect.width > window.innerWidth - 16) {
       left = window.innerWidth - tooltipRect.width - 16;
     }
@@ -1093,12 +615,12 @@ class WikiModule {
     tooltip.style.top = `${top + window.scrollY}px`;
     tooltip.style.left = `${left}px`;
 
-    // Close button handler
+    // Close button
     tooltip.querySelector('.wiki-tooltip-close').addEventListener('click', () => {
       this.hideTooltip();
     });
 
-    // Admin edit link handler
+    // Edit link
     const editLink = tooltip.querySelector('.wiki-tooltip-edit');
     if (editLink) {
       editLink.addEventListener('click', (e) => {
@@ -1110,44 +632,34 @@ class WikiModule {
       });
     }
 
-    // Track which entry's tooltip is open
     this.currentTooltipEntryId = entry.id;
     this.wikiTooltipActive = true;
 
-    // Close on click outside (delay to avoid catching the opening click)
     setTimeout(() => {
       document.addEventListener('click', this.handleOutsideTooltipClick);
     }, 150);
   }
 
   /**
-   * Handle click outside tooltip to close it
-   * @param {Event} e - Click event
+   * Handle click outside tooltip
    */
   handleOutsideTooltipClick(e) {
     const tooltip = document.getElementById('hshelper-wiki-tooltip');
     if (!tooltip) return;
 
-    // Don't close if clicking inside tooltip
     if (tooltip.contains(e.target)) return;
-
-    // Don't close if clicking on a wiki icon or its children (SVG)
     if (e.target.closest('.hshelper-wiki-icon')) return;
-
-    // Don't close if clicking on a wiki term
-    if (e.target.classList.contains('hshelper-wiki-term')) return;
 
     this.hideTooltip();
   }
 
   /**
-   * Hide the wiki tooltip
+   * Hide tooltip
    */
   hideTooltip() {
     const tooltip = document.getElementById('hshelper-wiki-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
+    if (tooltip) tooltip.remove();
+
     document.removeEventListener('click', this.handleOutsideTooltipClick);
     this.wikiTooltipActive = false;
     this.currentTooltipEntryId = null;
@@ -1156,45 +668,39 @@ class WikiModule {
   // ============ REMOVAL ============
 
   /**
-   * Remove all wiki highlighting from the page
+   * Remove all wiki highlighting
    */
   remove() {
-    // Remove tooltip
     this.hideTooltip();
+    this.processedElements = new WeakSet();
 
-    // Clear processed elements tracking (for fresh start on page navigation)
-    this.processedElements = null;
+    // Remove standalone icons
+    document.querySelectorAll('.hshelper-wiki-icon:not(.hshelper-wiki-wrapper .hshelper-wiki-icon)').forEach(icon => icon.remove());
 
-    // Remove standalone icons (that aren't inside wrappers)
-    const standaloneIcons = document.querySelectorAll('.hshelper-wiki-icon:not(.hshelper-wiki-wrapper .hshelper-wiki-icon)');
-    for (const icon of standaloneIcons) {
-      icon.remove();
-    }
-
-    // Unwrap wiki wrappers (including new trigger-root style wrappers)
-    const wikiWrappers = document.querySelectorAll('.hshelper-wiki-wrapper, .hshelper-trigger-root, [data-hshelper-root]');
-    for (const wrapper of wikiWrappers) {
+    // Unwrap wrappers
+    document.querySelectorAll('.hshelper-wiki-wrapper, .hshelper-trigger-root, [data-hshelper-root]').forEach(wrapper => {
       const parent = wrapper.parentNode;
-      if (!parent) continue;
+      if (!parent) return;
 
-      // Find the text content (skip icons)
       let textContent = '';
+      const isOurElement = (el) => {
+        return el.classList?.contains('hshelper-wiki-icon') ||
+               el.classList?.contains('hshelper-wiki-icon-container');
+      };
+
       for (const child of wrapper.childNodes) {
         if (child.nodeType === Node.TEXT_NODE) {
           textContent += child.textContent;
-        } else if (child.nodeType === Node.ELEMENT_NODE && !child.classList.contains('hshelper-wiki-icon')) {
+        } else if (child.nodeType === Node.ELEMENT_NODE && !isOurElement(child)) {
           textContent += child.textContent;
         }
       }
 
-      // Replace wrapper with text node
       if (textContent) {
-        const textNode = document.createTextNode(textContent);
-        parent.replaceChild(textNode, wrapper);
+        parent.replaceChild(document.createTextNode(textContent), wrapper);
       } else {
-        // If no text content, just move children up
         while (wrapper.firstChild) {
-          if (!wrapper.firstChild.classList?.contains('hshelper-wiki-icon')) {
+          if (!isOurElement(wrapper.firstChild)) {
             parent.insertBefore(wrapper.firstChild, wrapper);
           } else {
             wrapper.firstChild.remove();
@@ -1202,22 +708,13 @@ class WikiModule {
         }
         wrapper.remove();
       }
-    }
+    });
 
-    // Restore highlighted terms (legacy)
-    const highlightedTerms = document.querySelectorAll('.hshelper-wiki-term');
-    for (const span of highlightedTerms) {
-      let textContent = '';
-      for (const child of span.childNodes) {
-        if (child.nodeType === Node.TEXT_NODE) {
-          textContent += child.textContent;
-        }
-      }
-      const text = document.createTextNode(textContent || span.textContent);
-      if (span.parentNode) {
-        span.parentNode.replaceChild(text, span);
-      }
-    }
+    // Legacy cleanup
+    document.querySelectorAll('.hshelper-wiki-term').forEach(span => {
+      const text = document.createTextNode(span.textContent);
+      span.parentNode?.replaceChild(text, span);
+    });
 
     this.wikiHighlightsApplied = false;
   }
@@ -1225,123 +722,67 @@ class WikiModule {
   // ============ OBSERVERS ============
 
   /**
-   * Set up MutationObserver to watch for new content
-   * Now watches document.body for maximum coverage (like SUpered)
-   * Called during initial setup on record pages
+   * Set up MutationObserver
    */
   setupObserver() {
-    // Track last apply time to prevent rapid re-applies
     this.lastApplyTime = 0;
-    const MIN_APPLY_INTERVAL = 3000; // Minimum 3 seconds between applies
+    const MIN_INTERVAL = 2000;
 
     this.wikiObserver = new MutationObserver((mutations) => {
-      // Skip if we're currently applying (flag is set)
       if (this.isApplyingWikiHighlights) return;
 
-      // Check if all mutations are our own elements (added or removed)
+      // Skip our own mutations
       const isOwnMutation = mutations.every(m => {
-        // Check added nodes
-        const addedAreOwn = Array.from(m.addedNodes).every(n => {
-          if (n.nodeType !== Node.ELEMENT_NODE) return true; // Text nodes are fine
-
-          // Check if it's one of our elements
-          if (n.classList?.contains('hshelper-wiki-icon') ||
-              n.classList?.contains('hshelper-wiki-wrapper') ||
-              n.classList?.contains('hshelper-wiki-tooltip') ||
-              n.classList?.contains('hshelper-trigger-root') ||
-              n.classList?.contains('hshelper-container')) {
-            return true;
-          }
-          if (n.hasAttribute?.('data-hshelper-root')) return true;
-          return false;
-        });
-
-        // Check removed nodes
-        const removedAreOwn = Array.from(m.removedNodes).every(n => {
+        const checkNodes = (nodes) => Array.from(nodes).every(n => {
           if (n.nodeType !== Node.ELEMENT_NODE) return true;
-          if (n.classList?.contains('hshelper-wiki-icon') ||
-              n.classList?.contains('hshelper-wiki-wrapper') ||
-              n.classList?.contains('hshelper-wiki-tooltip') ||
-              n.classList?.contains('hshelper-trigger-root') ||
-              n.classList?.contains('hshelper-container')) {
-            return true;
-          }
-          if (n.hasAttribute?.('data-hshelper-root')) return true;
-          return false;
+          return n.classList?.contains('hshelper-wiki-icon') ||
+                 n.classList?.contains('hshelper-wiki-wrapper') ||
+                 n.classList?.contains('hshelper-wiki-tooltip') ||
+                 n.hasAttribute?.('data-hshelper-root');
         });
-
-        return addedAreOwn && removedAreOwn;
+        return checkNodes(m.addedNodes) && checkNodes(m.removedNodes);
       });
 
       if (isOwnMutation) return;
 
-      // Check if any meaningful element nodes were added (not just removed or text changes)
-      let hasNewElements = false;
-      let meaningfulAdditions = 0;
-
-      for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0) {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const tagName = node.tagName;
-              // Skip trivial elements
-              if (tagName === 'STYLE' || tagName === 'SCRIPT' || tagName === 'LINK' ||
-                  tagName === 'BR' || tagName === 'HR') {
-                continue;
-              }
-              // Skip our own elements
-              if (node.classList?.contains('hshelper-wiki-icon') ||
-                  node.classList?.contains('hshelper-wiki-wrapper') ||
-                  node.hasAttribute?.('data-hshelper-root')) {
-                continue;
-              }
-              meaningfulAdditions++;
-              hasNewElements = true;
+      // Check for meaningful additions
+      let hasNewContent = false;
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName;
+            if (tag !== 'STYLE' && tag !== 'SCRIPT' && tag !== 'LINK') {
+              hasNewContent = true;
+              break;
             }
           }
         }
+        if (hasNewContent) break;
       }
 
-      // Only trigger if we have meaningful additions
-      if (hasNewElements && meaningfulAdditions > 0) {
-        // Check if enough time has passed since last apply
+      if (hasNewContent) {
         const now = Date.now();
-        const timeSinceLastApply = now - this.lastApplyTime;
+        const elapsed = now - this.lastApplyTime;
 
-        if (timeSinceLastApply < MIN_APPLY_INTERVAL) {
-          // Too soon, just debounce
-          clearTimeout(this.wikiUpdateTimeout);
-          this.wikiUpdateTimeout = setTimeout(() => {
-            if (this.helper.settings.showWiki !== false && this.helper.wikiEntries?.length > 0) {
-              this.lastApplyTime = Date.now();
-              this.apply();
-            }
-          }, MIN_APPLY_INTERVAL - timeSinceLastApply);
-        } else {
-          // Enough time has passed, debounce with shorter delay
-          clearTimeout(this.wikiUpdateTimeout);
-          this.wikiUpdateTimeout = setTimeout(() => {
-            if (this.helper.settings.showWiki !== false && this.helper.wikiEntries?.length > 0) {
-              this.lastApplyTime = Date.now();
-              this.apply();
-            }
-          }, 500);
-        }
+        clearTimeout(this.wikiUpdateTimeout);
+        this.wikiUpdateTimeout = setTimeout(() => {
+          if (this.helper.settings.showWiki !== false && this.helper.wikiEntries?.length) {
+            this.lastApplyTime = Date.now();
+            this.apply();
+          }
+        }, elapsed < MIN_INTERVAL ? MIN_INTERVAL - elapsed : 300);
       }
     });
 
-    // Attach observer to document.body for full coverage
     this.attachObserver();
   }
 
   /**
-   * Attach observer to specific HubSpot containers for better performance
-   * Watching document.body is too expensive - causes slow page loads
+   * Attach observer to containers
    */
   attachObserver() {
     if (!this.wikiObserver) return;
 
-    // Find specific containers to observe (more targeted = better performance)
     const containers = [
       document.querySelector('[data-test-id="left-sidebar"]'),
       document.querySelector('[data-test-id="middle-pane"]'),
@@ -1351,91 +792,82 @@ class WikiModule {
     ].filter(Boolean);
 
     if (containers.length === 0) {
-      // Fallback: observe body but only if no specific containers found
-      if (!document.body._hshelperWikiObserverAttached) {
+      if (!document.body._hshelperObserved) {
         this.wikiObserver.observe(document.body, { childList: true, subtree: true });
-        document.body._hshelperWikiObserverAttached = true;
-        this.log('Wiki observer attached to document.body (fallback)');
+        document.body._hshelperObserved = true;
+        this.log('Observer attached to body (fallback)');
       }
       return;
     }
 
-    for (const container of containers) {
-      if (!container._hshelperWikiObserverAttached) {
-        this.wikiObserver.observe(container, { childList: true, subtree: true });
-        container._hshelperWikiObserverAttached = true;
+    for (const c of containers) {
+      if (!c._hshelperObserved) {
+        this.wikiObserver.observe(c, { childList: true, subtree: true });
+        c._hshelperObserved = true;
       }
     }
-    this.log('Wiki observer attached to', containers.length, 'specific containers');
+    this.log('Observer attached to', containers.length, 'containers');
   }
 
   /**
-   * Reconnect observer after DOM modifications
+   * Reconnect observer
    */
   reconnectObserver() {
     if (!this.wikiObserver) return;
 
-    // Reset flags on containers
     const containers = [
       document.querySelector('[data-test-id="left-sidebar"]'),
       document.querySelector('[data-test-id="middle-pane"]'),
       document.querySelector('[data-test-id="right-sidebar"]'),
       document.querySelector('main'),
-      document.querySelector('[role="main"]')
+      document.querySelector('[role="main"]'),
+      document.body
     ].filter(Boolean);
 
-    for (const container of containers) {
-      container._hshelperWikiObserverAttached = false;
-    }
-    if (document.body) {
-      document.body._hshelperWikiObserverAttached = false;
+    for (const c of containers) {
+      c._hshelperObserved = false;
     }
 
-    // Reattach using the same logic as attachObserver
     this.attachObserver();
   }
 
   /**
    * Set up scroll listener for index pages
-   * Index pages use scroll instead of MutationObserver to avoid infinite loops
    */
   setupScrollListener() {
-    let scrollTimeout = null;
+    let timeout = null;
+
     const handleScroll = () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
         if (this.helper.settings.showWiki !== false &&
-            this.helper.wikiEntries?.length > 0 &&
+            this.helper.wikiEntries?.length &&
             !this.isApplyingWikiHighlights) {
-          this.log('Scroll detected, checking for new content to highlight');
+          this.log('Scroll detected, applying');
           this.apply();
         }
       }, 1000);
     };
 
-    const scrollContainer = document.querySelector('[data-test-id="index-page"]') ||
-                            document.querySelector('[class*="IndexPage"]') ||
-                            document.querySelector('main') ||
-                            window;
+    const container = document.querySelector('[data-test-id="index-page"]') ||
+                      document.querySelector('main') ||
+                      window;
 
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-      this.log('Scroll listener attached for index page');
-    }
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    this.log('Scroll listener attached');
   }
 
   // ============ UTILITY ============
 
   /**
-   * Log message with prefix
-   * @param {...any} args - Arguments to log
+   * Log with prefix
    */
   log(...args) {
-    console.log('[HubSpot Helper]', ...args);
+    console.log('[RevGuide Wiki]', ...args);
   }
 
   /**
-   * Full cleanup - remove highlighting and disconnect observers
+   * Full cleanup
    */
   cleanup() {
     this.remove();
@@ -1447,7 +879,7 @@ class WikiModule {
   }
 }
 
-// Export for use in content.js
+// Export
 if (typeof window !== 'undefined') {
   window.WikiModule = WikiModule;
 }

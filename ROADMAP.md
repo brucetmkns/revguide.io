@@ -1,14 +1,33 @@
 # Product Roadmap
 
-This document outlines the product roadmap for HubSpot Helper, from current Chrome extension to full SaaS platform.
+This document outlines the product roadmap for RevGuide, from current Chrome extension to full SaaS platform.
 
 ---
 
-## Current State: v1.9.3 (Chrome Extension) - MVP BETA READY
+## Current State: v1.9.7 (Chrome Extension) - MVP BETA READY
 
 A fully functional Chrome extension with local storage, ready for beta testers.
 
-### Wiki Tooltip Caching (v1.9.3) - NEW
+### Rebrand to RevGuide (v1.9.7) - NEW
+- **Product renamed** from "HubSpot Helper" to "RevGuide"
+- **New API endpoint**: `https://revguide-api.revguide.workers.dev`
+- **Updated branding** across all UI, documentation, and code
+
+### HubSpot Import Enhancements (v1.9.5)
+- **Tree-structured import**: Properties grouped by HubSpot property groups with collapsible nodes
+- **Group-level selection**: Select/deselect all fields in a property group at once
+- **Search across groups**: Filter by field name, label, or property group name
+- **Nested dropdown values**: Import dropdown options as child wiki entries under their property
+- **Parent-child relationships**: Child entries linked via `parentId` for true hierarchy
+- **Wiki tree nesting**: Entries with children display as expandable nodes in navigation
+
+### Related Play for Banners (v1.9.4)
+- **Link plays to banners**: Associate any play with a banner via searchable dropdown
+- **"Open Play" button**: Appears on banners with a linked play
+- **Smart play loading**: Plays appear in sidepanel even if they don't match current record's rules
+- **Seamless UX**: Clicking "Open Play" opens the sidepanel, navigates to the play, and highlights it
+
+### Wiki Tooltip Caching (v1.9.3)
 - **Pre-built term map cache**: Term map built when wiki entries are saved, not on every page load
 - **Session storage layer**: Cache stored in sessionStorage for instant subsequent page loads
 - **Adaptive scan timing**: Immediate first pass, smart follow-up only when HubSpot is loading
@@ -229,17 +248,17 @@ Pre-configured wiki content packs that users can download and import:
 ### 1.2 Features
 
 #### Content Library Browser
-- [ ] In-app library browser in Admin Panel
-- [ ] Preview pack contents before downloading
-- [ ] One-click import of entire packs
-- [ ] Selective import (choose specific entries)
-- [ ] Version tracking for pack updates
+- [x] In-app library browser in Admin Panel
+- [x] Preview pack contents before downloading
+- [x] One-click import of entire packs
+- [x] Selective import (choose specific entries)
+- [x] Version tracking for pack updates
 
 #### Pack Management
-- [ ] Merge with existing wiki entries (skip duplicates)
-- [ ] Option to overwrite or keep existing definitions
-- [ ] Track which entries came from packs
-- [ ] Notification when pack updates are available
+- [x] Merge with existing wiki entries (skip duplicates)
+- [x] Option to overwrite or keep existing definitions
+- [x] Track which entries came from packs
+- [x] Notification when pack updates are available
 
 #### Community Packs (Future)
 - [ ] User-submitted content packs
@@ -268,7 +287,7 @@ content-library/
   "name": "Sales Pipeline Starter Pack",
   "version": "1.0.0",
   "description": "Standard sales stages, deal properties, and pipeline terminology",
-  "author": "HubSpot Helper",
+  "author": "RevGuide",
   "entries": [
     {
       "term": "Deal Stage",
@@ -415,129 +434,226 @@ Extension → Background.js → Supabase API → Postgres
 
 ---
 
-## Phase 3: Multi-Portal for Consultants
+## Phase 3: Multi-Portal for Consultants (Local)
 
-**Goal:** Enable HubSpot consultants/agencies to manage multiple client portals with shared template libraries.
+**Goal:** Enable HubSpot consultants/agencies to manage multiple client portals with reusable content libraries, all within the Chrome extension (before SaaS).
 
-### 3.1 Enhanced Data Model
+**Full Implementation Details:** See [docs/MULTI_PORTAL_DEV.md](docs/MULTI_PORTAL_DEV.md)
+
+### 3.1 Core Concept: Consultants as Library Authors
+
+Rather than complex linked/synced content, consultants create their own libraries using the existing library infrastructure. Libraries can be installed (copied) to any portal on demand.
 
 ```
-accounts (new)
-├── id (uuid)
-├── name
-├── type (direct | consultant)
-└── created_at
-
-organizations (updated)
-├── account_id (fk) ← NEW
-├── hubspot_portal_id ← NEW
-└── ... existing fields
-
-library_templates (new)
-├── id (uuid)
-├── account_id (fk)
-├── type (rule | card | presentation)
-├── name
-├── content (jsonb)
-└── created_at
-
-organization_content (new)
-├── id (uuid)
-├── organization_id (fk)
-├── template_id (fk, nullable)
-├── type
-├── content (jsonb)
-├── overrides (jsonb)
-└── is_linked (boolean)
+LIBRARIES
+├── Pre-built (GitHub) - HubSpot Basics, Sales Pipeline, etc.
+└── My Libraries (Consultant-created)
+    ├── "Agency Standard Playbook"
+    └── "SaaS Onboarding Kit"
+           ↓
+    Install to portal (creates copy)
+           ↓
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│  Portal A   │  │  Portal B   │  │  Portal C   │
+│  (copy)     │  │  (copy)     │  │  (empty)    │
+└─────────────┘  └─────────────┘  └─────────────┘
 ```
 
-### 3.2 Features
+### 3.2 User Modes
 
-#### Account Types
-- [ ] **Direct accounts**: Single organization (Phase 2 behavior)
-- [ ] **Consultant accounts**: Multiple organizations under one account
+| Mode | Who | Capabilities |
+|------|-----|--------------|
+| **Consultant** (default) | Agency users, freelancers | Portal switcher, My Libraries, create/manage libraries |
+| **Single Portal** | End clients, internal teams | One portal only, no switcher, simplified UI |
 
-#### Multi-Organization Management
-- [ ] Switch between client organizations in dashboard
-- [ ] Organization selector in extension (auto-detect by portal ID)
-- [ ] Per-organization HubSpot API tokens
-- [ ] Aggregate analytics across organizations
+### 3.3 Implementation Phases
 
-#### Template Library
-- [ ] Create templates at account level
-- [ ] Push templates to selected organizations
-- [ ] Template linking: changes propagate automatically
-- [ ] Per-org overrides without breaking link
-- [ ] Unlink to make independent copy
+#### Phase 3.1: Portal Detection & Registry
+- [ ] Auto-detect portal ID from HubSpot URL
+- [ ] Portal registry with name, API token, color identifier
+- [ ] Portal selector dropdown in admin panel header
+- [ ] Per-portal isolated storage (portalData structure)
+- [ ] Migration path for existing users (move to 'default' portal)
+- [ ] Content script loads active portal's data
 
-#### Portal Auto-Detection
-- [ ] Extract HubSpot portal ID from URL
-- [ ] Match portal ID to organization
-- [ ] Load correct org's content automatically
-- [ ] Handle unlinked portals gracefully
+#### Phase 3.2: My Libraries (Consultant Library Creation)
+- [ ] "My Libraries" section in Libraries page
+- [ ] Create library: select items from current portal
+- [ ] Edit library: add/remove items, update name/description
+- [ ] Library versioning (semver format)
+- [ ] Export library to JSON file (backup/sharing)
+- [ ] Import library from JSON file
+- [ ] Delete library with confirmation
 
-#### Consultant Dashboard
-- [ ] Client overview with content counts
-- [ ] Bulk operations across organizations
-- [ ] Template usage analytics
-- [ ] White-label option (custom branding)
+#### Phase 3.3: Install Libraries to Portals
+- [ ] Install library to current portal
+- [ ] Install to different portal via dropdown
+- [ ] Duplicate handling options (skip existing / overwrite)
+- [ ] Track installed libraries per portal (version, date)
+- [ ] Update detection (compare installed vs library version)
+- [ ] Update options: "Add new only" vs "Full sync"
+- [ ] Quick setup modal when switching to empty portal
 
-### 3.3 Pricing
+#### Phase 3.4: Single Portal Mode & Polish
+- [ ] User mode toggle in Settings
+- [ ] Hide portal selector in Single Portal mode
+- [ ] Hide My Libraries section in Single Portal mode
+- [ ] Storage limit handling (request unlimitedStorage permission)
 
-| Plan | Price | Includes |
-|------|-------|----------|
-| Team | $29/mo | 1 organization, unlimited users |
-| Consultant | $99/mo | 5 organizations, template library |
-| Agency | $249/mo | 20 organizations, white-label, priority support |
-| Enterprise | Custom | Unlimited orgs, SSO, dedicated support |
+### 3.4 Data Structure
+
+```javascript
+{
+  userMode: "consultant" | "single_portal",
+  activePortalId: "12345678",
+  portals: {
+    "12345678": { name: "Client A", apiToken: "...", color: "#ff7a59" }
+  },
+  myLibraries: [
+    { id, name, version, content: { wikiEntries, battleCards, rules } }
+  ],
+  portalData: {
+    "12345678": {
+      wikiEntries: [...],
+      battleCards: [...],
+      rules: [...],
+      installedLibraries: [{ id, version, installedAt }]
+    }
+  }
+}
+```
+
+### 3.5 Key Decisions
+
+- **No live linking** - Libraries are templates; installs create independent copies
+- **Updates are explicit** - User chooses when to update, with options for handling conflicts
+- **Consultant is default** - Single Portal mode is opt-in for simpler use cases
+- **Local storage only** - This phase is Chrome extension only (SaaS adds cloud sync later)
 
 ---
 
-## Phase 4: Advanced Features (Future)
+## Phase 4: AI Chat Assistant
 
-### AI-Driven Field Suggestions (Conversational CRM Updates)
+**Goal:** Add an AI-powered Chat tab to the sidepanel for contextual assistance, content recommendations, and conversational field updates.
 
-**Goal:** Enable users to chat with the sidepanel and have AI identify which HubSpot fields should be updated based on their conversation.
+**Full Implementation Details:** See [docs/AI_CHAT_DEV.md](docs/AI_CHAT_DEV.md)
 
-#### User Flow
-1. User interacts with the sidepanel (chat/conversation)
-2. AI analyzes the conversation context and current record state
-3. AI identifies relevant fields that should be updated (e.g., "Based on our conversation, it sounds like we should update these 4 fields:")
-4. User reviews suggested field updates with pre-filled values
-5. User clicks "Yes, update these" to save all changes to HubSpot
+### 4.1 Core Concept: Hybrid AI + Smart Prompts
 
-#### Features
-- [ ] Chat interface in sidepanel
-- [ ] AI context analysis (conversation + current record properties)
-- [ ] Smart field detection from conversation (e.g., "they mentioned closing next week" → closedate)
-- [ ] Confidence scoring for suggestions
-- [ ] Batch field update confirmation UI
-- [ ] Learning from user corrections to improve suggestions
+The Chat tab provides two types of intelligence:
+1. **Smart Prompts** - Automated suggestions based on record analysis (missing fields, matching content)
+2. **Conversational AI** - Natural language queries answered by Claude/GPT with knowledge base context
 
-#### Technical Requirements
-- [ ] LLM integration (Claude/OpenAI API)
-- [ ] Conversation history storage
-- [ ] Field mapping intelligence
-- [ ] Property type awareness (dates, numbers, picklists)
-- [ ] Privacy controls for conversation data
-
-#### Example Interaction
 ```
-User: "Had a great call with Acme Corp. They're interested in the Enterprise plan,
-       budget is around $50k, and they want to close by end of Q1."
-
-AI: "Great call! Based on our conversation, I can update these fields:
-     • Amount: $50,000
-     • Deal Stage: Qualified to Buy
-     • Close Date: March 31, 2025
-     • Notes: Great call - interested in Enterprise plan
-
-     Would you like me to save these to HubSpot?"
-
-User: [Clicks "Yes, Update"]
+┌─────────────────────────────────────────┐
+│  Chat                              (3)  │  ← Badge shows suggestions
+├─────────────────────────────────────────┤
+│  💡 3 suggestions available        ▾    │  ← Collapsible
+│  ┌─────────────────────────────────┐    │
+│  │ ⚠ Missing: Next Step           │    │
+│  │ ⚠ Missing: Close Date          │    │
+│  │ 📄 Try: Ultimate Guide to...   │    │
+│  └─────────────────────────────────┘    │
+├─────────────────────────────────────────┤
+│                                         │
+│  [User bubble] What can I send them?    │
+│                                         │
+│  [AI bubble] Based on their Casino      │
+│  Marketing industry, try the Ultimate   │
+│  Guide to Guest Experience...           │
+│                                         │
+├─────────────────────────────────────────┤
+│  [Ask about this record...        ] [➤] │
+└─────────────────────────────────────────┘
 ```
+
+### 4.2 Two-Tier AI System
+
+| Mode | Who Pays | Prompts | Customization |
+|------|----------|---------|---------------|
+| **RevGuide Credits** | User buys credit packs | Proprietary (hidden) | None |
+| **Own API Key** | User's Anthropic/OpenAI bill | Visible/editable | Full |
+
+### 4.3 Features
+
+#### Smart Suggestions (Proactive)
+- [ ] Analyze record on Chat tab open
+- [ ] Detect missing required fields
+- [ ] Recommend content based on industry/stage
+- [ ] Identify matching plays from knowledge base
+- [ ] Show badge count on Chat tab
+- [ ] Collapsible suggestion cards
+
+#### Conversational AI
+- [ ] Chat interface with message bubbles
+- [ ] Context-aware responses (uses record properties + knowledge base)
+- [ ] Content recommendations ("What should I send this client?")
+- [ ] Answer questions about the record
+- [ ] Natural language field updates
+
+#### Field Updates with Confirmation
+- [ ] Parse update intent from conversation
+- [ ] Show confirmation modal with field/value list
+- [ ] Apply changes via HubSpot API on confirm
+- [ ] Auto-refresh page after save
+
+### 4.4 Implementation Phases
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 4.1 | Manifest + AI settings in sidepanel | Planned |
+| 4.2 | Background script AI handlers | Planned |
+| 4.3 | Chat tab UI + ChatModule class | Planned |
+| 4.4 | Smart suggestions system | Planned |
+| 4.5 | Field update confirmation flow | Planned |
+| 4.6 | Polish (error handling, loading states) | Planned |
+
+### 4.5 Example Interactions
+
+**Content Recommendation:**
+```
+User: "What info can I send this client?"
+
+AI: "Based on their Casino Marketing industry and Consideration stage,
+the Ultimate Guide to Guest Experience would be relevant.
+Want me to draft an intro email with the link?"
+```
+
+**Field Update:**
+```
+User: "Update the amount to $75,000"
+
+AI: "I'll update the Amount field to $75,000."
+
+[Confirmation Modal]
+Amount → $75,000
+[Cancel] [Apply Changes]
+```
+
+**Smart Prompt:**
+```
+Badge: "3 suggestions"
+User clicks →
+
+"Acme Corp is missing some key fields:
+• Next Step (required for forecasting)
+• Close Date (helps with pipeline reports)
+
+Would you like me to suggest values?"
+```
+
+### 4.6 Technical Requirements
+
+- [ ] Anthropic API integration (Claude)
+- [ ] OpenAI API integration (GPT-4)
+- [ ] Bundled proprietary prompts
+- [ ] Knowledge base context building
+- [ ] Message history management
+- [ ] Rate limiting
 
 ---
+
+## Phase 5: Advanced Features (Future)
 
 ### Analytics & Insights
 - [ ] Banner impression tracking
@@ -599,6 +715,40 @@ User: [Clicks "Yes, Update"]
 ---
 
 ## Completed Features
+
+### v1.9.5
+- [x] **HubSpot Import Tree View with Property Groups**
+  - Import modal displays properties grouped by HubSpot property groups
+  - Collapsible tree structure matching wiki navigation pattern
+  - Group checkboxes to select/deselect all fields at once
+  - Search filters across field names, labels, and property group names
+  - "Dropdown" badge identifies enumeration/picklist fields
+  - Available/total count per group (e.g., "5/8")
+- [x] **Import Dropdown Values as Nested Wiki Entries**
+  - New checkbox option in import modal footer
+  - Each dropdown option becomes a child wiki entry under the property
+  - Child entries linked via `parentId` for true parent-child relationship
+  - Children appear nested under parent in wiki navigation tree
+- [x] **Nested Entry Display in Wiki Tree**
+  - Entries with children render as expandable nodes
+  - Separate toggle (expand/collapse) from selection (edit entry)
+  - Child count badge shown on parent entries
+  - Full selection styling (green highlight) for parent entries
+- [x] **Removed Property Values Section**
+  - Manual Property Values editing removed from Content tab
+  - Values shown in Definition section instead
+  - Dropdown values should be imported as nested entries
+
+### v1.9.4
+- [x] **Related Play for Banners**
+  - New "Related Play" dropdown in Banner editor (Content tab)
+  - Searchable dropdown showing all plays with names and subtypes
+  - "Open Play" button appears on banners with a linked play
+  - Smart play loading: Plays appear even if they don't match current record's rules
+  - "Related Play from Banner" header for plays opened via banner link
+  - Play card auto-expands and highlights with animation
+  - Files added/updated: `admin/shared.js`, `admin/pages/banners.html`, `admin/pages/banners.js`, `admin/pages/banners.css`, `content/modules/banners.js`, `content/content.css`, `background/background.js`, `sidepanel/sidepanel.js`, `sidepanel/sidepanel.css`
+  - New data field: `relatedPlayId` on banner/rule objects
 
 ### v1.9.3
 - [x] **Wiki Tooltip Caching Optimization**

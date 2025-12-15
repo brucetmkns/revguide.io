@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide covers how to install HubSpot Helper as a Chrome extension.
+This guide covers how to install RevGuide as a Chrome extension.
 
 ## Method 1: Developer Mode (Current)
 
@@ -20,29 +20,29 @@ git clone <repository-url>
 2. Enable **Developer mode** (toggle in top-right corner)
 3. Click **Load unpacked**
 4. Select the `plugin` folder containing `manifest.json`
-5. The HubSpot Helper icon will appear in your Chrome toolbar
+5. The RevGuide icon will appear in your Chrome toolbar
 
 ### Step 3: Pin the Extension (Recommended)
 
 1. Click the puzzle piece icon in Chrome toolbar
-2. Find "HubSpot Helper"
+2. Find "RevGuide"
 3. Click the pin icon to keep it visible
 
 ## Method 2: Chrome Web Store (Coming Soon)
 
 Once published to the Chrome Web Store:
 
-1. Visit the [HubSpot Helper](https://chrome.google.com/webstore/detail/hubspot-helper/...) page
+1. Visit the [RevGuide](https://chrome.google.com/webstore/detail/revguide/...) page
 2. Click **Add to Chrome**
 3. Confirm the installation
 
 ## Initial Setup
 
-After installation, complete these steps to get the most out of HubSpot Helper:
+After installation, complete these steps to get the most out of RevGuide:
 
 ### 1. Open the Admin Panel
 
-- Click the HubSpot Helper icon in Chrome toolbar
+- Click the RevGuide icon in Chrome toolbar
 - Click **Open Admin Panel** (gear icon)
 
 ### 2. Connect HubSpot API (Optional but Recommended)
@@ -112,7 +112,7 @@ To verify the extension is working:
 
 - Ensure you're on a HubSpot record page (URL contains `/record/`)
 - Refresh the page after installing/updating the extension
-- Check Chrome DevTools console for `[HubSpot Helper]` log messages
+- Check Chrome DevTools console for `[RevGuide]` log messages
 
 ### No Banners or Plays Appearing
 
@@ -137,7 +137,7 @@ To verify the extension is working:
 ### Developer Mode
 1. Pull/download the latest code
 2. Go to `chrome://extensions/`
-3. Click the refresh icon on the HubSpot Helper card
+3. Click the refresh icon on the RevGuide card
 
 ### Chrome Web Store
 Updates are automatic when published to the store.
@@ -145,7 +145,7 @@ Updates are automatic when published to the store.
 ## Uninstalling
 
 1. Go to `chrome://extensions/`
-2. Find HubSpot Helper
+2. Find RevGuide
 3. Click **Remove**
 4. Confirm removal
 
@@ -159,3 +159,88 @@ For teams, consider:
 - Sharing exported configurations via Import/Export
 - Creating documentation for your specific rules and plays
 - Designating an admin to manage the extension content
+
+### Team Invitations (Email)
+
+RevGuide includes a team invitation feature that sends installation emails:
+
+1. Go to **Settings** in the Admin Panel
+2. Click **Invite Team Members**
+3. Enter email address and select role (Admin or User)
+4. Click **Send Invitation**
+
+**Note:** The invitation email feature requires the Cloudflare Worker API to be deployed. See the [API Setup](#api-setup-for-developers) section below.
+
+## API Setup (For Developers)
+
+RevGuide uses a Cloudflare Worker to send team invitation emails via [Resend](https://resend.com).
+
+### Prerequisites
+
+- [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works)
+- [Resend account](https://resend.com) with verified domain
+- Node.js installed locally
+
+### Deployment Steps
+
+1. **Install Wrangler CLI**
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. **Login to Cloudflare**
+   ```bash
+   wrangler login
+   ```
+
+3. **Set up a workers.dev subdomain** (if you don't have one)
+   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+   - Navigate to Workers & Pages
+   - Set up your subdomain (e.g., `yourname.workers.dev`)
+
+4. **Configure the Resend API Key**
+   ```bash
+   cd api
+   npx wrangler secret put RESEND_API_KEY
+   # Paste your Resend API key when prompted
+   ```
+
+5. **Update the from email** (optional)
+
+   Edit `api/invite-worker.js` and update `CONFIG.fromEmail` to use your verified domain:
+   ```javascript
+   fromEmail: 'RevGuide <team@yourdomain.com>'
+   ```
+
+6. **Deploy the Worker**
+   ```bash
+   npx wrangler deploy
+   ```
+
+7. **Update the extension** (if using a different URL)
+
+   If your worker URL differs from the default, update `background/background.js`:
+   ```javascript
+   const INVITE_API_URL = 'https://your-worker.your-subdomain.workers.dev/api/invite';
+   ```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/invite` | POST | Send invitation email |
+| `/health` | GET | Health check |
+
+### Testing the API
+
+```bash
+# Health check
+curl https://revguide-api.revguide.workers.dev/health
+
+# Send test invitation (requires valid Resend API key)
+curl -X POST https://revguide-api.revguide.workers.dev/api/invite \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "role": "user"}'
+```
+
+See [api/README.md](api/README.md) for more details.

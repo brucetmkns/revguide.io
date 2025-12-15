@@ -1,6 +1,172 @@
 # Changelog
 
-All notable changes to HubSpot Helper will be documented in this file.
+All notable changes to RevGuide will be documented in this file.
+
+## [1.9.9] - 2025-12-15
+
+### Changed
+- **Complete Wiki Scanner Rewrite (Supered-Style TreeWalker)**
+  - Replaced 7 separate CSS selector methods with single-pass TreeWalker
+  - ~45% less code (~875 lines vs ~1600 lines)
+  - Faster and more consistent text matching across all HubSpot pages
+  - Fixed false positives: "Company" no longer matches "Company Domain Name"
+
+- **Section-Based Deduplication**
+  - Wiki icons now show first instance of each term PER SECTION, not every instance
+  - Sections: left-sidebar, middle-pane, right-sidebar, header, modal, dropdown, filter-panel, nav, table, main
+  - Reduces visual clutter while maintaining coverage
+
+- **Exact Match Only**
+  - Changed from `includes()` to exact `===` matching
+  - Prevents shorter terms from matching longer text (e.g., "Deal" won't match "Deal Stage")
+  - Still handles trailing colons and parenthetical counts like "(3)"
+
+### Added
+- **Text Normalization**
+  - Strips zero-width characters (`\u200B-\u200D`, `\uFEFF`) before matching
+  - More reliable matching when HubSpot injects invisible chars
+
+- **Sorted Term List**
+  - Terms sorted by length (longest first)
+  - Ensures most specific match wins when multiple terms could apply
+
+### Technical
+- New `scanForMatches()` - single TreeWalker scan returning all matches
+- New `getSectionForElement()` - determines which page section an element is in
+- New `buildSortedTermList()` - creates length-sorted term array with caching
+- Simplified `isLikelyLabelContext()` - fewer checks needed with exact matching
+- Backup of old wiki.js saved to `backups/` directory
+
+---
+
+## [1.9.8] - 2025-12-15
+
+### Added
+- **Wiki Tooltips on Secondary Navigation Menu Items**
+  - Tooltips now appear on HubSpot's secondary nav items (Contacts, Companies, Deals, Tickets, etc.)
+  - MutationObserver detects when lazy-loaded nav items appear on hover/expand
+  - Observer attached to `document.body` to catch nav menu rendering outside main nav container
+
+### Changed
+- **Improved Icon Positioning (Supered-Style)**
+  - Updated wiki icon wrapper to use `padding-left` + absolute positioning
+  - Icons now scale with font size using `em` units
+  - More consistent positioning across various HubSpot UI elements
+  - New `.hshelper-wiki-icon-container` class for absolute positioning
+
+### Technical
+- Added `applyMethodSecondaryNav()` - dedicated method for secondary nav items
+- Added `setupNavObserver()` - watches for lazy-loaded nav menu items
+- Method 3 now explicitly skips `[data-menu-item-level="secondary"]` elements to avoid duplicates
+- Updated `addIconToElement()` and `wrapTextNodeWithIcon()` to use new icon container structure
+- Updated `isAlreadyProcessed()` to include `.hshelper-wiki-icon-container` checks
+- Updated `remove()` to properly unwrap icon containers during cleanup
+
+---
+
+## [1.9.7] - 2025-12-14
+
+### Changed
+- **Rebranded from "HubSpot Helper" to "RevGuide"**
+  - Updated extension name in manifest.json
+  - Updated all UI text, page titles, and branding across admin panel, sidepanel, and content scripts
+  - Updated console log prefixes from `[HubSpot Helper]` to `[RevGuide]`
+  - Updated export filenames to `revguide-backup-*.json` and `revguide-export-*.json`
+  - Renamed Cloudflare Worker from `hubspot-helper-api` to `revguide-api`
+  - Deployed new worker to `https://revguide-api.revguide.workers.dev`
+  - Updated all documentation (README, CHANGELOG, ROADMAP, INSTALL, PRIVACY, LEARNINGS)
+  - Updated website landing page references
+
+---
+
+## [1.9.6] - 2025-12-14
+
+### Changed
+- **Sidepanel Now Opens on Non-HubSpot Pages**
+  - Clicking the extension icon on non-HubSpot pages now opens the sidepanel instead of doing nothing
+  - Opens to Plays tab by default, showing friendly "Not a HubSpot Page" message
+  - "Open Admin Panel" button to access full configuration
+  - "Settings" button to switch to the Settings tab
+  - Provides clear feedback that the extension is working
+
+### Technical
+- Removed `chrome.sidePanel.setOptions({ enabled: false })` for non-HubSpot tabs
+- Extension icon click handler now always opens sidepanel to Plays tab regardless of page URL
+- Added `not-hubspot-actions` button container in sidepanel HTML
+- Added click handlers for new action buttons in sidepanel.js
+
+---
+
+## [1.9.5] - 2025-12-12
+
+### Added
+- **HubSpot Import Tree View with Property Groups**
+  - Import modal now displays properties grouped by HubSpot property groups
+  - Collapsible tree structure matching the wiki navigation pattern
+  - Group checkboxes to select/deselect all fields in a group at once
+  - Search now filters across field names, labels, AND property group names
+  - "Dropdown" badge identifies enumeration/picklist fields
+  - Shows available/total count per group (e.g., "5/8")
+
+- **Import Dropdown Values as Nested Wiki Entries**
+  - New checkbox option: "Import dropdown values as nested entries"
+  - When enabled, each dropdown option becomes a child wiki entry under the property
+  - Child entries linked via `parentId` for true parent-child relationship
+  - Children appear nested under their parent in the wiki navigation tree
+  - Each child entry includes value, label, and parent field reference in definition
+
+- **Nested Entry Display in Wiki Tree**
+  - Wiki entries with children now render as expandable nodes
+  - Click toggle arrow to expand/collapse children
+  - Click entry name to select and edit (separate from toggle)
+  - Child count badge shown on parent entries
+  - Full selection styling (green highlight) for parent entries
+
+### Removed
+- **Property Values Section from Wiki Editor**
+  - Removed the manual "Property Values" editing section from Content tab
+  - Values are already shown in the Definition section
+  - Dropdown values should now be imported as nested wiki entries instead
+  - Removed Property Values count from Usage tab stats
+
+### Technical
+- `loadFieldsForImport()` now groups properties by `groupName` and renders tree HTML
+- Added `toggleGroupFields()` and `updateGroupCheckboxState()` for group selection
+- `filterFieldsList()` updated to show groups when group name matches search
+- `renderNavTree()` separates parent entries from child entries via `parentId`
+- `selectEntry()` updated to find entry ID from parent `.wiki-node-entry` element
+- New CSS for `.wiki-node-entry`, `.fields-tree`, `.fields-tree-node` styling
+- Import options moved to modal footer for better visibility
+
+---
+
+## [1.9.4] - 2025-12-12
+
+### Added
+- **Related Play for Banners**
+  - New "Related Play" dropdown in Banner editor (Content tab)
+  - Link any play to a banner for quick access from HubSpot pages
+  - Searchable dropdown with play names and subtitles
+  - "Open Play" button appears on banners that have a linked play
+  - Clicking "Open Play" opens the sidepanel and navigates directly to that play
+
+- **Smart Play Loading in Sidepanel**
+  - Plays linked to banners are shown even if they don't match the current record's rules
+  - "Related Play from Banner" header indicates plays opened via banner link
+  - Play card automatically expands and highlights with animation
+  - Solves the UX issue where banner and play might have different targeting rules
+
+### Technical
+- Added `relatedPlayId` field to banner/rule data structure
+- New `initPlaySelect()`, `setPlaySelectValue()`, `getPlaySelectValue()` functions in `admin/shared.js`
+- Added `.play-select*` CSS classes in `admin/pages/banners.css`
+- `openPlayInSidepanel()` method in `content/modules/banners.js` fetches play data directly from storage
+- Background script handles `openSidePanelToPlay` action with play data passthrough
+- Sidepanel `focusOnPlay()` dynamically adds play card if not in current matching cards
+- Added `.hshelper-banner-play-btn` styling in `content/content.css`
+- Added `.related-play-header` and highlight animation in `sidepanel/sidepanel.css`
+
+---
 
 ## [1.9.3] - 2025-12-12
 

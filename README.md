@@ -1,4 +1,4 @@
-# HubSpot Helper
+# RevGuide
 
 A Chrome extension that displays contextual banners, plays, wiki tooltips, and embedded media on HubSpot CRM record pages based on configurable rules.
 
@@ -8,6 +8,7 @@ A Chrome extension that displays contextual banners, plays, wiki tooltips, and e
 - Display contextual banners (info, success, warning, error, embed) on HubSpot records
 - **Rich text messages** with bold, italic, underline, bullet lists, and links
 - **Embed type** for media content (Google Slides, YouTube, Loom, Vimeo, OneDrive, SharePoint)
+- **Related Play**: Link a play to any banner; clicking "Open Play" opens the sidepanel directly to that play
 - **Tabbed editor interface**: Content, Rules, and Usage tabs
 - Configure conditions based on any HubSpot property
 - **"Display on all records"** option to show on all records of an object type
@@ -23,7 +24,9 @@ A Chrome extension that displays contextual banners, plays, wiki tooltips, and e
 - **Tabbed navigation**: Plays tab + Settings tab with icon-based UI
 - **Dual entry points**:
   - Click the **floating action button (FAB)** on HubSpot pages → Opens to Plays tab
-  - Click the **extension icon** in toolbar → Opens to Settings tab
+  - Click the **extension icon** in toolbar → Opens to Settings tab (works on any page)
+- **Non-HubSpot page support**: Extension icon opens sidepanel with "Not a HubSpot Page" message and quick access buttons to Admin Panel and Settings
+- **Smart play loading**: Plays linked to banners appear even if they don't match current record's rules
 - **Object type filtering**: Plays display only on matching record types (contact, company, deal, ticket)
 - **Live updates**: Sidepanel content updates automatically when navigating between records
 - **Media sections**: Embed Loom, YouTube, Vimeo, or Google Drive videos directly in plays
@@ -40,11 +43,13 @@ A Chrome extension that displays contextual banners, plays, wiki tooltips, and e
 - **Flexible entry types**: Entries with triggers show tooltips; entries without triggers are glossary-only
 - **Separate title and trigger**: Display name can differ from the text that triggers the tooltip
 - Import HubSpot fields directly with object type and property group metadata
-- **Hierarchical organization**: Object > Property Group > Entry > Values
-- Define cards for individual property values (e.g., explain what each pipeline stage means)
+- **Tree-structured import**: Properties grouped by HubSpot property groups with group-level selection
+- **Nested dropdown values**: Import dropdown/enumeration options as child wiki entries under their property
+- **Hierarchical organization**: Object > Property Group > Entry > Child Entries
 - Rich text definitions with formatting, lists, and links
 - Filter and search wiki entries by object type, category, or title
 - Two-pane layout with navigation tree and detail card
+- **Automatic timestamps**: `createdAt` and `updatedAt` tracked automatically on all entries
 - **Content Libraries** (coming soon): Download starter packs to quickly populate your wiki
 
 ### Admin Panel
@@ -109,6 +114,7 @@ To enable property dropdowns and full deal data fetching:
    - **Banner Name**: Internal identifier
    - **Banner Title**: Displayed in the banner header
    - **Banner Type**: Info (blue), Success (green), Warning (orange), Error (red), or Embed (media)
+   - **Related Play**: (Optional) Select a play to link; an "Open Play" button will appear on the banner
    - **Message**: Banner content (supports rich text: bold, italic, lists, links) - hidden for Embed type
    - **Embed URL**: For Embed type, paste a Google Slides, YouTube, Loom, Vimeo, OneDrive, or SharePoint URL
 4. **Rules tab** - Configure display conditions:
@@ -117,6 +123,8 @@ To enable property dropdowns and full deal data fetching:
    - **Show on Tab Position**: Enter tab number (1, 2, 3, etc.) or leave empty for all tabs
    - **Conditions**: Property-based rules with AND/OR logic (disabled if "Display on all records" is checked)
 5. Click "Save Banner"
+
+**Tip:** The Related Play feature is useful when you want to show a banner with a quick message, but also provide access to more detailed information in a play. The play doesn't need to match the same rules as the banner - clicking "Open Play" will always show the linked play.
 
 ### Creating a Play
 1. Go to Admin Panel → Plays
@@ -154,10 +162,12 @@ To enable property dropdowns and full deal data fetching:
 ### Importing HubSpot Fields
 1. Go to Admin Panel → Wiki → "Import Fields"
 2. Select an Object Type (Contacts, Companies, Deals, Tickets)
-3. Check the fields you want to import
-4. Click "Import Selected"
-5. Fields are imported with their label, object type, and property group
-6. Edit imported fields to add definitions and value explanations
+3. Fields are displayed in a tree grouped by HubSpot property groups
+4. Use group checkboxes to select entire groups, or check individual fields
+5. Optionally check "Import dropdown values as nested entries" to create child entries for each dropdown option
+6. Click "Import Selected"
+7. Fields are imported with their label, object type, and property group
+8. Dropdown values (if enabled) appear as nested entries under their parent property
 
 ### Condition Operators
 | Operator | Description |
@@ -223,6 +233,20 @@ plugin/
 │   └── icons.js               # Icon utility functions
 │
 ├── icons/                     # Extension icons (16, 48, 128px PNG + SVG)
+│
+├── api/                       # Cloudflare Worker for backend services
+│   ├── invite-worker.js       # Invitation email API (Resend integration)
+│   ├── wrangler.toml          # Cloudflare Worker configuration
+│   └── README.md              # API setup and deployment guide
+│
+├── website/                   # Landing page (revguide.io)
+│   ├── index.html             # Main landing page
+│   ├── styles.css             # Landing page styles
+│   └── script.js              # Landing page scripts
+│
+├── docs/                      # Development documentation
+│   ├── AI_CHAT_DEV.md         # AI chat feature specification
+│   └── MULTI_PORTAL_DEV.md    # Multi-portal/team feature specification
 │
 ├── backups/                   # Version backups (not in production)
 │
@@ -361,20 +385,20 @@ All data is stored in Chrome's `chrome.storage.local`:
   }
 }
 
-// Wiki entry structure (v1.7.1+)
+// Wiki entry structure (v1.9.5+)
 wikiEntry: {
   id: 'wiki_123',
-  title: 'Marketing Qualified Lead',  // Required - display name
+  parentId: null,                      // Optional - links to parent entry for nested values
+  title: 'Marketing Qualified Lead',   // Required - display name
   trigger: 'MQL',                      // Optional - text to match for tooltip
   aliases: ['M.Q.L.'],                 // Optional - additional triggers
   category: 'sales',
   objectType: 'contacts',
   propertyGroup: 'Lead Information',
   definition: '<p>Rich text definition...</p>',
-  propertyValues: [...],               // Optional - value-specific definitions
   enabled: true,
   createdAt: 1234567890,
-  updatedAt: 1234567890
+  updatedAt: 1234567890                // Auto-updated on save
 }
 
 ## Development
@@ -413,6 +437,60 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [ROADMAP.md](ROADMAP.md) 
 - [PRIVACY.md](PRIVACY.md) - Privacy policy
 - [HUBSPOT_DOM_STRUCTURE.md](HUBSPOT_DOM_STRUCTURE.md) - HubSpot DOM reference for developers
 - [LEARNINGS.md](LEARNINGS.md) - Development lessons learned, code patterns, and debugging tips
+- [api/README.md](api/README.md) - API setup and deployment guide
+
+## Team Invitations API
+
+RevGuide includes a Cloudflare Worker API for sending team invitation emails via [Resend](https://resend.com).
+
+### Architecture
+
+```
+┌─────────────────────┐      ┌─────────────────────────────────┐      ┌─────────────┐
+│  Chrome Extension   │ ──── │  Cloudflare Worker              │ ──── │   Resend    │
+│  (Settings Page)    │ POST │  revguide-api.revguide.workers.dev │      │   Email API │
+└─────────────────────┘      └─────────────────────────────────┘      └─────────────┘
+```
+
+### API Endpoint
+
+**Production URL:** `https://revguide-api.revguide.workers.dev`
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/invite` | POST | Send invitation email to a team member |
+| `/health` | GET | Health check endpoint |
+
+### Setup
+
+1. **Get a Resend API Key**
+   - Sign up at [resend.com](https://resend.com)
+   - Create an API key
+   - Verify your sending domain
+
+2. **Configure the Worker**
+   ```bash
+   cd api
+   npx wrangler secret put RESEND_API_KEY
+   # Paste your Resend API key when prompted
+   ```
+
+3. **Deploy**
+   ```bash
+   npx wrangler deploy
+   ```
+
+See [api/README.md](api/README.md) for detailed setup instructions.
+
+### Email Templates
+
+Invitation emails are sent with:
+- HTML and plain text versions
+- Role-based messaging (Admin vs User)
+- Chrome Web Store installation link
+- RevGuide branding
+
+Templates can be customized in `api/invite-worker.js`.
 
 ## License
 

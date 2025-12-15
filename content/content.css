@@ -1,5 +1,5 @@
 /* ============================================
-   HubSpot Helper - Content Script Styles
+   RevGuide - Content Script Styles
    ============================================
    Styles for UI injected into HubSpot pages.
    Uses .hshelper- prefix to avoid conflicts.
@@ -263,6 +263,34 @@
 .hshelper-banner-close svg {
   width: 16px;
   height: 16px;
+}
+
+/* Related Play Button */
+.hshelper-banner-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: #b2ef63;
+  color: #1a2e05;
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: "Lexend Deca", Helvetica, Arial, sans-serif;
+}
+
+.hshelper-banner-play-btn:hover {
+  background-color: #9ed654;
+}
+
+.hshelper-banner-play-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 
@@ -1014,37 +1042,48 @@
   color: #558b2f;
 }
 
-/* Wiki icon wrapper (for prepended icons) */
+/* Wiki icon wrapper (for prepended icons) - Supered-style positioning */
 .hshelper-wiki-wrapper {
-  display: inline-flex !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  display: inline-block !important;
+  position: relative !important;
+  padding-left: 1.15em !important;
+  vertical-align: baseline !important;
+}
+
+/* Container for the icon - positioned in the reserved padding space */
+.hshelper-wiki-icon-container {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
   align-items: center !important;
-  vertical-align: middle !important;
+  margin-left: 0 !important;
 }
 
 .hshelper-wiki-icon {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  vertical-align: middle;
   cursor: pointer;
-  margin-right: 4px;
   flex-shrink: 0;
   line-height: 1;
+  width: 1em;
+  height: 1em;
 }
 
 .hshelper-wiki-icon svg {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: 1em;
+  height: 1em;
+  transition: all 0.15s ease;
 }
 
 .hshelper-wiki-icon:hover svg {
-  color: #558b2f !important;
-  transform: scale(1.1);
-}
-
-.hshelper-wiki-icon svg {
-  transition: all 0.15s ease;
+  fill: #558b2f !important;
+  transform: scale(1.15);
 }
 
 

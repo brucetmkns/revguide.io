@@ -1,0 +1,11 @@
+name = "revguide-api"
+main = "invite-worker.js"
+compatibility_date = "2024-01-01"
+
+# Workers Paid plan is required for this
+# workers_dev = true
+
+# Custom domain (optional - configure in Cloudflare dashboard)
+# routes = [
+#   { pattern = "api.supered.io/*", zone_name = "supered.io" }
+# ]

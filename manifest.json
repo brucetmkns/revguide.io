@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "HubSpot Helper",
-  "version": "1.7.1",
+  "name": "RevGuide",
+  "version": "1.9.9",
   "description": "Surface plays, recommendations, and contextual help on HubSpot records based on property rules",
   "permissions": [
     "storage",
@@ -12,7 +12,8 @@
   ],
   "host_permissions": [
     "https://*.hubspot.com/*",
-    "https://api.hubapi.com/*"
+    "https://api.hubapi.com/*",
+    "https://api.resend.com/*"
   ],
   "action": {
     "default_icon": {

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if already logged in
   const { data: { session } } = await RevGuideAuth.getSession();
   if (session) {
-    window.location.href = 'home.html';
+    window.location.href = '/home';
     return;
   }
 
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(async () => {
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
-        window.location.href = 'home.html';
+        window.location.href = '/home';
       } else {
         showMessage('Authentication failed. Please try again.', 'error');
       }

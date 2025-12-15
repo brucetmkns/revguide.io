@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Banners Module
+ * RevGuide - Banners Module
  *
  * Handles the rendering and management of contextual banners/alerts
  * that appear at the top of HubSpot record pages based on rule conditions.
@@ -32,6 +32,7 @@ class BannersModule {
     this.helper = helper;
     this.activeBanners = new Map();
     this.dismissedBanners = new Set();
+    this.playsCache = null; // Cache for plays lookup
 
     // Banner type icons (SVG)
     this.icons = {
@@ -109,12 +110,22 @@ class BannersModule {
       </a>
     ` : '';
 
+    // Build related play button if a play is linked
+    console.log('[RevGuide] Banner rule:', rule.id, 'relatedPlayId:', rule.relatedPlayId);
+    const relatedPlayBtn = rule.relatedPlayId ? `
+      <button class="hshelper-banner-play-btn" data-play-id="${rule.relatedPlayId}" title="Open linked play in sidepanel">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+        Open Play
+      </button>
+    ` : '';
+
     banner.innerHTML = `
       <div class="hshelper-banner-icon">${this.icons[rule.type] || this.icons.info}</div>
       <div class="hshelper-banner-content">
         <div class="hshelper-banner-title">${this.helper.escapeHtml(rule.title || rule.name)}${adminEditLink}</div>
         <div class="hshelper-banner-message">${this.helper.sanitizeRichText(rule.message || '')}</div>
         ${rule.actions ? this.renderActions(rule.actions) : ''}
+        ${relatedPlayBtn}
       </div>
       <button class="hshelper-banner-close" aria-label="Dismiss">×</button>
     `;
@@ -138,6 +149,16 @@ class BannersModule {
         e.preventDefault();
         e.stopPropagation();
         this.openAdminEditor('banners', rule.id);
+      });
+    }
+
+    // Handle related play button click
+    const playBtn = banner.querySelector('.hshelper-banner-play-btn');
+    if (playBtn) {
+      playBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openPlayInSidepanel(rule.relatedPlayId);
       });
     }
 
@@ -281,6 +302,36 @@ class BannersModule {
   }
 
   /**
+   * Open a specific play in the sidepanel
+   * @param {string} playId - The ID of the play to open
+   */
+  openPlayInSidepanel(playId) {
+    console.log('[RevGuide] Opening play in sidepanel:', playId);
+
+    // Fetch the play data directly from storage to ensure it's available
+    // even if it doesn't match the current record's rules
+    chrome.storage.local.get(['battleCards'], (data) => {
+      const play = (data.battleCards || []).find(p => p.id === playId);
+
+      if (!play) {
+        console.log('[RevGuide] Play not found:', playId);
+        return;
+      }
+
+      // Send the play data along with the open request
+      chrome.runtime.sendMessage({
+        action: 'openSidePanelToPlay',
+        playId: playId,
+        playData: play
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.log('[RevGuide] Error opening sidepanel to play:', chrome.runtime.lastError.message);
+        }
+      });
+    });
+  }
+
+  /**
    * Render action buttons HTML
    * @param {Array} actions - Array of action objects
    * @returns {string} HTML string for action buttons
@@ -314,7 +365,7 @@ class BannersModule {
         navigator.clipboard.writeText(action.text || '');
         break;
       default:
-        console.log('[HubSpot Helper] Unknown action type:', action.type);
+        console.log('[RevGuide] Unknown action type:', action.type);
     }
   }
 

@@ -30,7 +30,7 @@ async function checkAuth() {
     try {
       const { data: { session } } = await RevGuideAuth.getSession();
       if (!session) {
-        window.location.href = 'login.html';
+        window.location.href = '/login';
         return false;
       }
 
@@ -44,7 +44,7 @@ async function checkAuth() {
       return true;
     } catch (e) {
       console.error('Auth check failed:', e);
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return false;
     }
   }
@@ -58,7 +58,7 @@ async function checkAuth() {
 async function signOut() {
   if (typeof RevGuideAuth !== 'undefined') {
     await RevGuideAuth.signOut();
-    window.location.href = 'login.html';
+    window.location.href = '/login';
   }
 }
 
@@ -70,33 +70,36 @@ function renderSidebar(activePage) {
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar) return;
 
+  // Use clean URLs in web context, .html in extension context
+  const getUrl = (page) => isExtensionContext ? `${page}.html` : `/${page}`;
+
   sidebar.innerHTML = `
     <div class="sidebar-header">
       <span class="logo-icon"><span class="icon icon-target-white"></span></span>
       <h1>RevGuide</h1>
     </div>
     <nav class="sidebar-nav">
-      <a href="home.html" class="nav-item${activePage === 'home' ? ' active' : ''}" data-section="home">
+      <a href="${getUrl('home')}" class="nav-item${activePage === 'home' ? ' active' : ''}" data-section="home">
         <span class="nav-icon"><span class="icon icon-home-white"></span></span>
         Home
       </a>
-      <a href="banners.html" class="nav-item${activePage === 'banners' ? ' active' : ''}" data-section="banners">
+      <a href="${getUrl('banners')}" class="nav-item${activePage === 'banners' ? ' active' : ''}" data-section="banners">
         <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
         Banners
       </a>
-      <a href="plays.html" class="nav-item${activePage === 'plays' ? ' active' : ''}" data-section="cards">
+      <a href="${getUrl('plays')}" class="nav-item${activePage === 'plays' ? ' active' : ''}" data-section="cards">
         <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
         Plays
       </a>
-      <a href="wiki.html" class="nav-item${activePage === 'wiki' ? ' active' : ''}" data-section="wiki">
+      <a href="${getUrl('wiki')}" class="nav-item${activePage === 'wiki' ? ' active' : ''}" data-section="wiki">
         <span class="nav-icon"><span class="icon icon-book-white"></span></span>
         Wiki
       </a>
-      <a href="libraries.html" class="nav-item${activePage === 'libraries' ? ' active' : ''}" data-section="libraries">
+      <a href="${getUrl('libraries')}" class="nav-item${activePage === 'libraries' ? ' active' : ''}" data-section="libraries">
         <span class="nav-icon"><span class="icon icon-download-white"></span></span>
         Libraries
       </a>
-      <a href="settings.html" class="nav-item${activePage === 'settings' ? ' active' : ''}" data-section="settings">
+      <a href="${getUrl('settings')}" class="nav-item${activePage === 'settings' ? ' active' : ''}" data-section="settings">
         <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
         Settings
       </a>

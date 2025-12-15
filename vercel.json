@@ -1,6 +1,14 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/admin/pages/index.html" }
+    { "source": "/", "destination": "/admin/pages/index.html" },
+    { "source": "/login", "destination": "/admin/pages/login.html" },
+    { "source": "/signup", "destination": "/admin/pages/signup.html" },
+    { "source": "/home", "destination": "/admin/pages/home.html" },
+    { "source": "/wiki", "destination": "/admin/pages/wiki.html" },
+    { "source": "/banners", "destination": "/admin/pages/banners.html" },
+    { "source": "/plays", "destination": "/admin/pages/plays.html" },
+    { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
+    { "source": "/settings", "destination": "/admin/pages/settings.html" }
   ],
   "headers": [
     {

@@ -194,7 +194,7 @@ remove() {
 ## Debugging Tips
 
 ### Console Logging
-The extension uses `[HubSpot Helper]` prefix for all logs. Filter by this in DevTools.
+The extension uses `[RevGuide]` prefix for all logs. Filter by this in DevTools.
 
 ### Common Issues Checklist
 1. **Tooltip not showing**: Check if entry has `trigger` field set (not just `title`)
@@ -240,37 +240,115 @@ The extension uses `[HubSpot Helper]` prefix for all logs. Filter by this in Dev
 
 ---
 
-## Wiki Tooltip System Architecture
+## Wiki Tooltip System Architecture (Refactored v1.9.7)
 
-### Multi-Method Detection Approach
-**Lesson**: A single detection approach cannot work across all HubSpot page types. Use multiple complementary methods.
+### Single-Pass TreeWalker Approach (Supered-Style)
+**Lesson**: Multiple querySelectorAll passes are slow and inconsistent. A single TreeWalker pass is faster and more reliable.
 
-**The 6 Methods Explained**:
+**Problem with old multi-method approach**:
+- 7 separate methods with complex CSS selectors
+- Multiple DOM traversals (6-7 querySelectorAll + 1 TreeWalker)
+- Duplicate detection logic repeated in each method
+- Still missed content in some areas
 
-| Method | Target | Works Best For | Why It Exists |
-|--------|--------|---------------|---------------|
-| 1 | CSS selectors | Sidebar labels, form labels, filters | Predictable class names in these areas |
-| 2 | Sidebar `<li>` items | Left sidebar property lists | Specific container structure |
-| 3 | UI patterns | Menus, dropdowns, table header text | Semantic roles and HubSpot components |
-| 4 | Sidebar spans/divs | Edge cases | Direct text content matching |
-| 5 | Left sidebar scan | Remaining misses | Aggressive fallback for sidebar |
-| 6 | TreeWalker | Import pages, modals, any text | CSS selectors miss dynamically rendered content |
+**New architecture** (inspired by Supered extension):
+```javascript
+// Single TreeWalker pass over ALL text nodes
+const walker = document.createTreeWalker(
+  document.body,
+  NodeFilter.SHOW_TEXT,
+  { acceptNode: (node) => /* filter logic */ }
+);
 
-**Method 6 (TreeWalker) Details**:
-- Only runs when Methods 1-5 find < 5 matches AND not on record pages
-- Scans ALL text nodes in document.body
-- Uses `isLikelyLabelContext()` to filter out paragraph text
-- More expensive but catches content other methods miss
+while (walker.nextNode()) {
+  const text = normalizeText(node.textContent);
+  // Check against sorted terms (longest first)
+  for (const { term, entry } of sortedTerms) {
+    if (text === term) {
+      // Match found - check section deduplication
+    }
+  }
+}
+```
+
+**Key improvements**:
+| Aspect | Old (7 methods) | New (TreeWalker) |
+|--------|-----------------|------------------|
+| DOM passes | 7+ querySelectorAll calls | 1 TreeWalker pass |
+| Code size | ~1600 lines | ~875 lines |
+| Matching | `includes()` (partial) | `===` (exact only) |
+| Deduplication | Per-element tracking | Per-section tracking |
+
+### Exact Match Only - Critical Fix
+**Lesson**: Using `includes()` causes false positives. "Company" matches "Company Domain Name".
+
+**Problem**: When sorted by length (longest first), a shorter term can still match if using `includes()`:
+```javascript
+// WRONG - "company domain name".includes("company") === true
+if (normalizedText.includes(term)) { ... }
+
+// CORRECT - exact match only
+const textToMatch = normalizedText
+  .replace(/\s*:\s*$/, '')        // Remove trailing colon
+  .replace(/\s*\(\d+\)\s*$/, ''); // Remove count like "(3)"
+if (textToMatch === term) { ... }
+```
+
+**Why sort by length still matters**: Even with exact matching, sorting ensures if you have both "Deal" and "Deal Stage" as triggers, longer terms get checked first so each text node matches the most specific term.
+
+### Section-Based Deduplication
+**Lesson**: Show first instance of each term per section, not every instance on the page.
+
+**Sections defined**:
+- `left-sidebar` - Property panel
+- `middle-pane` - Main content area
+- `right-sidebar` - Activity/timeline
+- `header` - Record header
+- `modal` - Dialogs/overlays
+- `dropdown` - Open menus
+- `filter-panel` - Filter editors
+- `nav` - Navigation items
+- `table` - Data tables
+- `main` - Fallback main area
+
+**Implementation**:
+```javascript
+const shownInSection = new Map();
+
+for (const match of matches) {
+  const section = getSectionForElement(match.parent);
+  const key = `${section}:${entry.id}`;
+
+  if (shownInSection.has(key)) continue; // Already shown in this section
+
+  shownInSection.set(key, true);
+  // Add icon...
+}
+```
+
+### Text Normalization (Supered-Style)
+**Lesson**: Zero-width characters and inconsistent whitespace cause match failures.
+
+**Pattern**:
+```javascript
+normalizeText(text) {
+  return text
+    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width chars
+    .trim()
+    .toLowerCase();
+}
+```
 
 ### Performance Optimizations
-**Lesson**: With 1400+ wiki terms, efficiency matters.
+**Lesson**: With 1000+ wiki terms, efficiency matters.
 
 **Implemented optimizations**:
-1. **Term map caching**: Build Map once, reuse across apply() calls
-2. **Processed elements tracking**: WeakSet prevents re-processing
-3. **Conditional Method 6**: Only runs when other methods insufficient
-4. **Debounced observer**: 500ms-3000ms delays prevent rapid re-applies
-5. **Skip trivial mutations**: Ignore style/script changes in observer
+1. **Sorted term list**: Sort by length DESC, cache result
+2. **Exact matching**: `===` is faster than `includes()` + avoids false positives
+3. **Single DOM pass**: One TreeWalker vs 7+ querySelectorAll
+4. **Section deduplication**: Fewer icons to render
+5. **WeakSet tracking**: Prevents re-processing same elements
+6. **Debounced observer**: 2000ms minimum between re-applies
 
 ---
 
@@ -416,6 +494,77 @@ invalidateTermMapCache() {
   this.termMapCacheKey = null;
 }
 ```
+
+---
+
+## Observer Attachment Points
+
+### Dynamic Content Renders as Siblings, Not Children
+**Lesson**: HubSpot often renders dynamic content (menus, modals, popovers) as siblings to their trigger containers, not inside them.
+
+**Problem**: Attaching MutationObserver to a specific container misses content that renders elsewhere in the DOM.
+
+**Example**: Secondary navigation menus are rendered outside the main `VerticalNav` container. An observer on the nav container sees nothing.
+
+**Solution**: When targeting lazy-loaded content, attach observer to `document.body` unless you're certain about the render location.
+
+```javascript
+// WRONG - misses content rendered as siblings
+navContainer.observe(navElement, { childList: true, subtree: true });
+
+// CORRECT - catches content anywhere
+observer.observe(document.body, { childList: true, subtree: true });
+```
+
+**Trade-off**: More events to filter, but guarantees you catch the content.
+
+---
+
+## Icon Insertion Without Layout Breakage
+
+### Padding + Absolute Positioning
+**Lesson**: Inserting icons inline (`display: inline-flex`) can break text flow and layouts. Use reserved space with absolute positioning instead.
+
+**Problem**: Adding an icon element inline shifts text, changes line heights, and can break HubSpot's CSS expectations.
+
+**Solution**: Create space with `padding-left`, position icon absolutely within that space.
+
+```html
+<span style="padding-left: 1.15em; position: relative; display: inline-block;">
+  <span style="position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center;">
+    <icon/>
+  </span>
+  Original Text
+</span>
+```
+
+**Benefits**:
+- `em` units scale with font size
+- Doesn't shift text flow
+- Works across different HubSpot components
+- Icon vertically centered regardless of line height
+
+---
+
+## Targeting Text in Complex Structures
+
+### Target Innermost Text Container
+**Lesson**: HubSpot wraps text in multiple layers of divs/spans. Always target the innermost container.
+
+**Problem**: Targeting outer containers (like `<th>`) places icons at wrong position and breaks layout.
+
+**Pattern**: Look for classes containing `Truncate`, `Label`, `Text` - these are usually the innermost text wrappers.
+
+```javascript
+// WRONG - targets structural container
+'[role="columnheader"]'
+
+// CORRECT - targets actual text wrapper
+'[class*="TruncateDiv"]'
+'[class*="TruncateString"] > span > span'
+```
+
+See `docs/HUBSPOT_DOM.md` for detailed DOM structures.
 
 ---
 

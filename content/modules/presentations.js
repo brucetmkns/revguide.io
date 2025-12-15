@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Presentations Module
+ * RevGuide - Presentations Module
  *
  * Handles the display of embedded presentations/media content on HubSpot record pages.
  * Shows collapsible cards with embedded iframes for presentations that match
@@ -243,7 +243,7 @@ class PresentationsModule {
    * @param {...any} args - Arguments to log
    */
   log(...args) {
-    console.log('[HubSpot Helper]', ...args);
+    console.log('[RevGuide]', ...args);
   }
 }
 

@@ -1,7 +1,7 @@
 /**
- * HubSpot Helper - Content Script (Main Orchestrator)
+ * RevGuide - Content Script (Main Orchestrator)
  *
- * This is the main entry point for the HubSpot Helper Chrome extension.
+ * This is the main entry point for the RevGuide Chrome extension.
  * It coordinates all feature modules and handles page detection, data loading,
  * and SPA navigation for HubSpot CRM pages.
  *
@@ -40,7 +40,7 @@
   // ============ DEBUG CONFIGURATION ============
   // Set to true for verbose logging during development
   const DEBUG = true;
-  const log = (...args) => DEBUG && console.log('[HubSpot Helper]', ...args);
+  const log = (...args) => DEBUG && console.log('[RevGuide]', ...args);
 
   // ============ RULES ENGINE ============
   /**

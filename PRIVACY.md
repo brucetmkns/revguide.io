@@ -4,13 +4,13 @@
 
 ## Overview
 
-HubSpot Helper is a Chrome extension that provides contextual guidance, plays, and recommendations on HubSpot CRM record pages. This privacy policy explains how we handle your data.
+RevGuide is a Chrome extension that provides contextual guidance, plays, and recommendations on HubSpot CRM record pages. This privacy policy explains how we handle your data.
 
 ## Data Collection
 
 ### What We Collect
 
-HubSpot Helper collects and stores the following data **locally on your device**:
+RevGuide collects and stores the following data **locally on your device**:
 
 - **Configuration Data**: Banners, plays, and wiki entries you create
 - **Settings**: Your preferences for display options and feature toggles
@@ -96,4 +96,4 @@ For privacy-related questions or concerns, please open an issue on our GitHub re
 
 ---
 
-**Summary:** HubSpot Helper stores all data locally on your device. We do not collect, transmit, or share any personal information or HubSpot data.
+**Summary:** RevGuide stores all data locally on your device. We do not collect, transmit, or share any personal information or HubSpot data.

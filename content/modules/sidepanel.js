@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Side Panel Module
+ * RevGuide - Side Panel Module
  *
  * Handles the Floating Action Button (FAB) and side panel functionality
  * for displaying battle cards (plays) on HubSpot record pages.
@@ -214,7 +214,7 @@ class SidePanelModule {
    * @param {...any} args - Arguments to log
    */
   log(...args) {
-    console.log('[HubSpot Helper]', ...args);
+    console.log('[RevGuide]', ...args);
   }
 }
 

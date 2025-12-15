@@ -1,37 +1,14 @@
 /**
- * HubSpot Helper - Background Service Worker
+ * RevGuide - Background Service Worker
  * Handles messaging between sidepanel and content scripts
  */
 
-console.log('[HubSpot Helper] Service worker starting...');
+console.log('[RevGuide] Service worker starting...');
 
 // Check if URL is a HubSpot page
 function isHubSpotUrl(url) {
   return url && url.includes('hubspot.com');
 }
-
-// Listen for tab activation - disable sidepanel for non-HubSpot tabs
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (tab.url && !isHubSpotUrl(tab.url)) {
-      await chrome.sidePanel.setOptions({ tabId: activeInfo.tabId, enabled: false });
-    }
-  } catch (err) {
-    // Ignore errors for special tabs
-  }
-});
-
-// Listen for tab URL changes - disable sidepanel when navigating away from HubSpot
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.url && !isHubSpotUrl(changeInfo.url)) {
-    try {
-      await chrome.sidePanel.setOptions({ tabId: tabId, enabled: false });
-    } catch (err) {
-      // Ignore errors
-    }
-  }
-});
 
 // Listen for installation
 chrome.runtime.onInstalled.addListener((details) => {
@@ -42,20 +19,15 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 // Open side panel when extension icon is clicked
 chrome.action.onClicked.addListener((tab) => {
-  console.log('[HubSpot Helper] Extension icon clicked, tab:', tab.id, tab.url);
+  console.log('[RevGuide] Extension icon clicked, tab:', tab.id, tab.url);
 
-  if (!isHubSpotUrl(tab.url)) {
-    console.log('[HubSpot Helper] Not a HubSpot page');
-    return;
-  }
+  // Always open to Plays tab - it will show "Not a HubSpot Page" state on non-HubSpot pages
+  chrome.storage.local.set({ sidepanelOpenTab: 'plays' });
 
-  // Store flag to open settings tab (icon click = settings)
-  chrome.storage.local.set({ sidepanelOpenTab: 'settings' });
-
-  // Open sidepanel
+  // Always open sidepanel - it will show appropriate content based on the page
   chrome.sidePanel.open({ tabId: tab.id })
-    .then(() => console.log('[HubSpot Helper] Side panel opened via icon'))
-    .catch(err => console.error('[HubSpot Helper] Error opening side panel:', err));
+    .then(() => console.log('[RevGuide] Side panel opened via icon'))
+    .catch(err => console.error('[RevGuide] Error opening side panel:', err));
 });
 
 // Initialize sample rules and plays
@@ -64,7 +36,7 @@ async function initializeSampleData() {
     {
       id: 'rule_test_always',
       name: 'Test Banner (Always Shows)',
-      title: 'HubSpot Helper is Working!',
+      title: 'RevGuide is Working!',
       message: 'This test banner confirms the extension is running. You can delete this banner in the admin panel.',
       type: 'success',
       enabled: true,
@@ -288,7 +260,7 @@ async function initializeSampleData() {
     }
   });
 
-  console.log('[HubSpot Helper] Sample data initialized with wiki cache');
+  console.log('[RevGuide] Sample data initialized with wiki cache');
 }
 
 /**
@@ -351,20 +323,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Forward card updates to sidepanel
   if (request.action === 'updateSidePanelCards') {
     // The sidepanel should receive this directly, but log it for debugging
-    console.log('[HubSpot Helper] Card update received, cards:', request.cards?.length);
+    console.log('[RevGuide] Card update received, cards:', request.cards?.length);
     return false;
   }
 
   // Open the side panel (from FAB click)
   if (request.action === 'openSidePanel') {
-    console.log('[HubSpot Helper] Received openSidePanel request from tab:', sender.tab?.id);
+    console.log('[RevGuide] Received openSidePanel request from tab:', sender.tab?.id);
     // Set flag to open plays tab (FAB click = plays) - do this sync
     chrome.storage.local.set({ sidepanelOpenTab: 'plays' });
     // Open side panel synchronously in response to user gesture
     if (sender.tab?.id) {
       chrome.sidePanel.open({ tabId: sender.tab.id })
-        .then(() => console.log('[HubSpot Helper] Side panel opened successfully'))
-        .catch(err => console.error('[HubSpot Helper] Error opening side panel:', err));
+        .then(() => console.log('[RevGuide] Side panel opened successfully'))
+        .catch(err => console.error('[RevGuide] Error opening side panel:', err));
+    }
+    return false;
+  }
+
+  // Open the side panel to a specific play (from banner's "Open Play" button)
+  if (request.action === 'openSidePanelToPlay') {
+    console.log('[RevGuide] Received openSidePanelToPlay request, playId:', request.playId);
+    // Set flags to open plays tab and scroll to specific play
+    // Also store the play data in case it's not in the current matching cards
+    const storageData = {
+      sidepanelOpenTab: 'plays',
+      sidepanelFocusPlayId: request.playId
+    };
+    if (request.playData) {
+      storageData.sidepanelFocusPlayData = request.playData;
+    }
+    chrome.storage.local.set(storageData);
+    // Open side panel
+    if (sender.tab?.id) {
+      chrome.sidePanel.open({ tabId: sender.tab.id })
+        .then(() => console.log('[RevGuide] Side panel opened to play successfully'))
+        .catch(err => console.error('[RevGuide] Error opening side panel:', err));
     }
     return false;
   }
@@ -400,17 +394,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
+
+  // Send invitation email via API
+  if (request.action === 'sendInviteEmail') {
+    sendInviteEmail(request.email, request.role)
+      .then(data => sendResponse({ success: true, data }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
 });
 
 // Fetch any HubSpot record from API (contacts, companies, deals, tickets)
 async function fetchHubSpotRecord(objectType, recordId) {
-  console.log('[HubSpot Helper BG] Fetching record:', objectType, recordId);
+  console.log('[RevGuide BG] Fetching record:', objectType, recordId);
 
   const { settings } = await chrome.storage.local.get({ settings: {} });
   const apiToken = settings.hubspotApiToken;
 
   if (!apiToken) {
-    console.log('[HubSpot Helper BG] No API token configured');
+    console.log('[RevGuide BG] No API token configured');
     throw new Error('HubSpot API token not configured. Add it in extension settings.');
   }
 
@@ -423,7 +425,7 @@ async function fetchHubSpotRecord(objectType, recordId) {
   };
   const apiObjectType = objectTypeMap[objectType] || objectType;
 
-  console.log('[HubSpot Helper BG] Token found, fetching properties list...');
+  console.log('[RevGuide BG] Token found, fetching properties list...');
 
   // First, get all available properties for this object type
   let propertyNames = [];
@@ -438,10 +440,10 @@ async function fetchHubSpotRecord(objectType, recordId) {
     if (propsResponse.ok) {
       const propsData = await propsResponse.json();
       propertyNames = propsData.results.map(p => p.name);
-      console.log('[HubSpot Helper BG] Found', propertyNames.length, apiObjectType, 'properties');
+      console.log('[RevGuide BG] Found', propertyNames.length, apiObjectType, 'properties');
     }
   } catch (e) {
-    console.log('[HubSpot Helper BG] Could not fetch property list, using defaults');
+    console.log('[RevGuide BG] Could not fetch property list, using defaults');
     // Default properties by object type
     const defaults = {
       contacts: ['firstname', 'lastname', 'email', 'phone', 'lifecyclestage', 'hubspot_owner_id'],
@@ -454,7 +456,7 @@ async function fetchHubSpotRecord(objectType, recordId) {
 
   // Fetch the record with all properties
   const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/${recordId}?properties=${propertyNames.join(',')}`;
-  console.log('[HubSpot Helper BG] Fetching', apiObjectType, 'record with', propertyNames.length, 'properties');
+  console.log('[RevGuide BG] Fetching', apiObjectType, 'record with', propertyNames.length, 'properties');
 
   const response = await fetch(url, {
     headers: {
@@ -463,22 +465,22 @@ async function fetchHubSpotRecord(objectType, recordId) {
     }
   });
 
-  console.log('[HubSpot Helper BG] Response status:', response.status);
+  console.log('[RevGuide BG] Response status:', response.status);
 
   if (!response.ok) {
     const errText = await response.text();
-    console.log('[HubSpot Helper BG] Error response:', errText);
+    console.log('[RevGuide BG] Error response:', errText);
     throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
   }
 
   const data = await response.json();
-  console.log('[HubSpot Helper BG] Success, got', Object.keys(data.properties || {}).length, 'properties');
+  console.log('[RevGuide BG] Success, got', Object.keys(data.properties || {}).length, 'properties');
   return data;
 }
 
 // Fetch properties for a HubSpot object type
 async function fetchHubSpotProperties(objectType) {
-  console.log('[HubSpot Helper BG] Fetching properties for:', objectType);
+  console.log('[RevGuide BG] Fetching properties for:', objectType);
 
   const { settings } = await chrome.storage.local.get({ settings: {} });
   const apiToken = settings.hubspotApiToken;
@@ -516,7 +518,7 @@ async function fetchHubSpotProperties(objectType) {
 
 // Update a HubSpot record's properties
 async function updateHubSpotRecord(objectType, recordId, properties) {
-  console.log('[HubSpot Helper BG] Updating record:', objectType, recordId, properties);
+  console.log('[RevGuide BG] Updating record:', objectType, recordId, properties);
 
   const { settings } = await chrome.storage.local.get({ settings: {} });
   const apiToken = settings.hubspotApiToken;
@@ -540,7 +542,7 @@ async function updateHubSpotRecord(objectType, recordId, properties) {
   const apiObjectType = objectTypeMap[objectType] || objectType;
 
   const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/${recordId}`;
-  console.log('[HubSpot Helper BG] PATCH request to:', url);
+  console.log('[RevGuide BG] PATCH request to:', url);
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -551,16 +553,16 @@ async function updateHubSpotRecord(objectType, recordId, properties) {
     body: JSON.stringify({ properties })
   });
 
-  console.log('[HubSpot Helper BG] Response status:', response.status);
+  console.log('[RevGuide BG] Response status:', response.status);
 
   if (!response.ok) {
     const errText = await response.text();
-    console.log('[HubSpot Helper BG] Error response:', errText);
+    console.log('[RevGuide BG] Error response:', errText);
     throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
   }
 
   const data = await response.json();
-  console.log('[HubSpot Helper BG] Success, updated properties');
+  console.log('[RevGuide BG] Success, updated properties');
   return data;
 }
 
@@ -570,3 +572,32 @@ chrome.storage.onChanged.addListener((changes, area) => {
     // Could update badge count here
   }
 });
+
+// API endpoint for invite emails
+const INVITE_API_URL = 'https://revguide-api.revguide.workers.dev/api/invite';
+// TODO: Update this URL after deploying your Cloudflare Worker
+
+// Send invitation email via API
+async function sendInviteEmail(email, role) {
+  console.log('[RevGuide BG] Sending invite via API to:', email);
+
+  const response = await fetch(INVITE_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, role })
+  });
+
+  console.log('[RevGuide BG] API response status:', response.status);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.log('[RevGuide BG] API error:', errorData);
+    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log('[RevGuide BG] Invite sent successfully, id:', data.id);
+  return data;
+}

@@ -330,7 +330,7 @@
 
       <!-- Footer -->
       <div class="signup-footer">
-        <p>Already have an account? <a href="login.html">Sign in</a></p>
+        <p>Already have an account? <a href="/login">Sign in</a></p>
       </div>
 
       <!-- Terms -->
@@ -352,7 +352,7 @@
       // Check if already logged in
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
-        window.location.href = 'home.html';
+        window.location.href = '/home';
         return;
       }
 

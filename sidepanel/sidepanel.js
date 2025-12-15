@@ -1,5 +1,5 @@
 /**
- * HubSpot Helper - Side Panel
+ * RevGuide - Side Panel
  * Displays plays and settings in Chrome's native side panel
  */
 
@@ -29,7 +29,7 @@ class SidePanel {
     // Listen for messages from content script or background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === 'updateSidePanel' || message.action === 'updateSidePanelCards') {
-        console.log('[HubSpot Helper] Received card update:', message.cards?.length, 'cards');
+        console.log('[RevGuide] Received card update:', message.cards?.length, 'cards');
         // Store properties and context for field editing
         if (message.properties) this.properties = message.properties;
         if (message.context) this.context = message.context;
@@ -44,7 +44,7 @@ class SidePanel {
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       // Only refresh if URL changed and it's a HubSpot page
       if (changeInfo.url && tab.url?.includes('hubspot.com')) {
-        console.log('[HubSpot Helper] Tab URL changed, refreshing cards');
+        console.log('[RevGuide] Tab URL changed, refreshing cards');
         // Small delay to let content script re-initialize
         setTimeout(() => this.requestCardsFromContentScript(), 1000);
       }
@@ -52,7 +52,7 @@ class SidePanel {
 
     // Listen for tab activation (switching tabs)
     chrome.tabs.onActivated.addListener((activeInfo) => {
-      console.log('[HubSpot Helper] Tab activated, refreshing cards');
+      console.log('[RevGuide] Tab activated, refreshing cards');
       setTimeout(() => this.requestCardsFromContentScript(), 500);
     });
 
@@ -86,11 +86,18 @@ class SidePanel {
 
   async checkOpenTab() {
     // Check if we should open to a specific tab
-    const { sidepanelOpenTab } = await chrome.storage.local.get('sidepanelOpenTab');
+    const { sidepanelOpenTab, sidepanelFocusPlayId, sidepanelFocusPlayData } = await chrome.storage.local.get(['sidepanelOpenTab', 'sidepanelFocusPlayId', 'sidepanelFocusPlayData']);
     if (sidepanelOpenTab) {
       this.switchTab(sidepanelOpenTab);
       // Clear the flag
       await chrome.storage.local.remove('sidepanelOpenTab');
+    }
+
+    // If we should focus on a specific play, store it for when cards load
+    if (sidepanelFocusPlayId) {
+      this.pendingFocusPlayId = sidepanelFocusPlayId;
+      this.pendingFocusPlayData = sidepanelFocusPlayData || null;
+      await chrome.storage.local.remove(['sidepanelFocusPlayId', 'sidepanelFocusPlayData']);
     }
   }
 
@@ -168,6 +175,15 @@ class SidePanel {
       this.importData(e.target.files[0]);
       e.target.value = '';
     });
+
+    // "Not a HubSpot Page" state buttons
+    document.getElementById('notHubspotAdminBtn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('admin/pages/home.html') });
+    });
+
+    document.getElementById('notHubspotSettingsBtn')?.addEventListener('click', () => {
+      this.switchTab('settings');
+    });
   }
 
   async updateSetting(key, value) {
@@ -184,7 +200,7 @@ class SidePanel {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hubspot-helper-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `revguide-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -315,6 +331,94 @@ class SidePanel {
 
     // Initialize editable field section events
     this.initFieldSectionEvents();
+
+    // Check if we need to focus on a specific play
+    if (this.pendingFocusPlayId) {
+      this.focusOnPlay(this.pendingFocusPlayId, this.pendingFocusPlayData);
+      this.pendingFocusPlayId = null;
+      this.pendingFocusPlayData = null;
+    }
+  }
+
+  /**
+   * Scroll to and expand a specific play card
+   * If the play is not in the current list, add it temporarily
+   * @param {string} playId - The ID of the play to focus on
+   * @param {Object} playData - Optional play data if not in current cards
+   */
+  focusOnPlay(playId, playData = null) {
+    let cardElement = document.querySelector(`.battle-card[data-card-id="${playId}"]`);
+
+    // If the play isn't in the current list, we need to add it
+    if (!cardElement && playData) {
+      console.log('[RevGuide] Play not in current list, adding it:', playId);
+
+      const container = document.getElementById('cardsContainer');
+      const emptyState = document.getElementById('emptyState');
+
+      // Hide empty state if showing
+      if (emptyState) {
+        emptyState.style.display = 'none';
+      }
+      if (container) {
+        container.style.display = 'block';
+      }
+
+      // Add a "Related Play" header if this is the first/only card
+      const isOnlyCard = container && container.querySelectorAll('.battle-card').length === 0;
+
+      // Create the card HTML and add it
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = this.renderCard(playData, true); // true = fromBanner flag
+      const newCard = tempDiv.firstElementChild;
+
+      if (container) {
+        if (isOnlyCard) {
+          // Add a section header for related plays
+          const header = document.createElement('div');
+          header.className = 'related-play-header';
+          header.innerHTML = '<span class="related-play-label">Related Play from Banner</span>';
+          container.appendChild(header);
+        }
+        container.appendChild(newCard);
+
+        // Add click handler for expand/collapse
+        const cardHeader = newCard.querySelector('.card-header');
+        if (cardHeader) {
+          cardHeader.addEventListener('click', () => {
+            newCard.classList.toggle('expanded');
+          });
+        }
+
+        // Add click handler for admin edit link
+        const editLink = newCard.querySelector('.admin-edit-link');
+        if (editLink) {
+          editLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cardId = editLink.dataset.cardId;
+            const adminUrl = chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
+            chrome.tabs.create({ url: adminUrl });
+          });
+        }
+
+        cardElement = newCard;
+      }
+    }
+
+    if (cardElement) {
+      // Expand the card
+      cardElement.classList.add('expanded');
+
+      // Scroll it into view with some offset
+      setTimeout(() => {
+        cardElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Add a highlight animation
+        cardElement.classList.add('highlight');
+        setTimeout(() => cardElement.classList.remove('highlight'), 2000);
+      }, 100);
+    }
   }
 
   showEmptyState() {
