@@ -252,6 +252,8 @@ async function handleCallback(req: Request): Promise<Response> {
     }
 
     // Link user to organization if we have a user
+    let connectedByUserId: string | null = null
+
     if (oauthState.user_id) {
       // Check if user already has a profile
       const { data: existingUser } = await supabase
@@ -265,14 +267,18 @@ async function handleCallback(req: Request): Promise<Response> {
         const { data: authUser } = await supabase.auth.admin.getUserById(oauthState.user_id)
 
         if (authUser?.user) {
-          await supabase
+          const { data: newUser } = await supabase
             .from('users')
             .insert({
               auth_user_id: oauthState.user_id,
               email: authUser.user.email,
               organization_id: organizationId,
-              role: 'owner'
+              role: 'admin'
             })
+            .select('id')
+            .single()
+
+          connectedByUserId = newUser?.id || null
         }
       } else {
         // Update user's organization
@@ -280,6 +286,8 @@ async function handleCallback(req: Request): Promise<Response> {
           .from('users')
           .update({ organization_id: organizationId })
           .eq('auth_user_id', oauthState.user_id)
+
+        connectedByUserId = existingUser.id
       }
     }
 
@@ -295,7 +303,7 @@ async function handleCallback(req: Request): Promise<Response> {
         p_refresh_token: tokens.refresh_token,
         p_expires_in: tokens.expires_in,
         p_scopes: HUBSPOT_SCOPES,
-        p_connected_by: oauthState.user_id,
+        p_connected_by: connectedByUserId,
         p_encryption_key: TOKEN_ENCRYPTION_KEY
       }
     )
