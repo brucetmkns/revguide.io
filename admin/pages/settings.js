@@ -10,6 +10,9 @@ class SettingsPage {
   }
 
   async init() {
+    // Show appropriate HubSpot card based on context FIRST to prevent flashing
+    this.setupHubSpotCards();
+
     // Check authentication (redirects to login if not authenticated)
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
@@ -26,9 +29,6 @@ class SettingsPage {
     const data = await AdminShared.loadStorageData();
     this.settings = data.settings;
     this.invitedUsers = data.invitedUsers || [];
-
-    // Show appropriate HubSpot card based on context
-    this.setupHubSpotCards();
 
     // Populate UI
     this.updateSettingsUI();
@@ -114,28 +114,14 @@ class SettingsPage {
     const disconnectedState = document.getElementById('hubspotDisconnectedState');
 
     try {
-      // First check database for connection record
+      // Only check database for connection record (not Nango directly)
+      // This prevents showing "connected" for old test connections
       let connection = null;
       try {
         const { data } = await RevGuideDB.getPrimaryHubSpotConnection();
         connection = data;
       } catch (e) {
-        console.log('No database connection found, checking Nango...');
-      }
-
-      // If no database connection, check Nango directly
-      if (!connection || !connection.is_active) {
-        const nangoConnection = await RevGuideNango.checkConnection();
-        if (nangoConnection) {
-          // Use Nango connection info
-          connection = {
-            is_active: true,
-            portal_name: nangoConnection.portalName || 'HubSpot Portal',
-            portal_domain: nangoConnection.portalDomain,
-            portal_id: nangoConnection.portalId,
-            nango_connection_id: nangoConnection.nangoConnectionId || nangoConnection.connectionId
-          };
-        }
+        console.log('No database connection found');
       }
 
       if (connection && connection.is_active) {
@@ -160,6 +146,7 @@ class SettingsPage {
       // Show disconnected state on error
       connectedState.style.display = 'none';
       disconnectedState.style.display = 'block';
+      this.currentConnection = null;
     }
   }
 
@@ -609,7 +596,10 @@ class SettingsPage {
   }
 
   async disconnectHubSpot() {
-    if (!this.currentConnection) return;
+    if (!this.currentConnection) {
+      AdminShared.showToast('No connection to disconnect', 'error');
+      return;
+    }
 
     const confirmed = await AdminShared.showConfirmDialog({
       title: 'Disconnect HubSpot',
@@ -622,6 +612,7 @@ class SettingsPage {
     if (confirmed !== 'primary') return;
 
     const disconnectBtn = document.getElementById('disconnectHubSpotBtn');
+    const originalBtnContent = disconnectBtn ? disconnectBtn.innerHTML : '';
 
     try {
       if (disconnectBtn) {
@@ -629,20 +620,34 @@ class SettingsPage {
         disconnectBtn.textContent = 'Disconnecting...';
       }
 
-      // Disconnect via Nango
+      // Try to disconnect via Nango (ignore errors - connection might not exist)
       if (this.currentConnection.nango_connection_id) {
-        await RevGuideNango.disconnect(this.currentConnection.nango_connection_id);
+        try {
+          await RevGuideNango.disconnect(this.currentConnection.nango_connection_id);
+        } catch (e) {
+          console.log('Nango disconnect failed (may not exist):', e);
+        }
       }
 
       // Mark connection as inactive in database
-      await RevGuideDB.disconnectHubSpot(this.currentConnection.id);
+      if (this.currentConnection.id) {
+        try {
+          await RevGuideDB.disconnectHubSpot(this.currentConnection.id);
+        } catch (e) {
+          console.log('Database disconnect failed:', e);
+        }
+      }
 
       // Clear organization portal info
-      await RevGuideDB.updateOrganization({
-        hubspot_portal_id: null,
-        hubspot_portal_domain: null,
-        nango_connection_id: null
-      });
+      try {
+        await RevGuideDB.updateOrganization({
+          hubspot_portal_id: null,
+          hubspot_portal_domain: null,
+          nango_connection_id: null
+        });
+      } catch (e) {
+        console.log('Update organization failed:', e);
+      }
 
       AdminShared.showToast('HubSpot disconnected', 'success');
 
@@ -651,10 +656,11 @@ class SettingsPage {
     } catch (error) {
       console.error('Disconnect error:', error);
       AdminShared.showToast('Failed to disconnect. Please try again.', 'error');
-
+    } finally {
+      // Always reset button state
       if (disconnectBtn) {
         disconnectBtn.disabled = false;
-        disconnectBtn.innerHTML = '<span class="icon icon-x icon--sm"></span> Disconnect';
+        disconnectBtn.innerHTML = originalBtnContent || '<span class="icon icon-x icon--sm"></span> Disconnect';
       }
     }
   }
