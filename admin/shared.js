@@ -87,10 +87,20 @@ function renderSidebar(activePage) {
   if (!sidebar) return;
 
   // Sidebar navigation is now inlined in HTML for instant rendering
-  // This function only updates the footer with user info
+  // This function only updates the footer with user info and beta feedback
   const footer = sidebar.querySelector('.sidebar-footer');
   if (footer) {
+    const feedbackLink = `
+      <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Send Feedback</span>
+      </a>
+    `;
+
     footer.innerHTML = !isExtensionContext && currentUser ? `
+      ${feedbackLink}
       <div class="user-info">
         <div class="user-avatar">${(currentUser.name || currentUser.email || '?')[0].toUpperCase()}</div>
         <div class="user-details">
@@ -106,6 +116,7 @@ function renderSidebar(activePage) {
         </button>
       </div>
     ` : `
+      ${feedbackLink}
       <div class="extension-status">
         <span class="status-dot active"></span>
         <span>Extension Active</span>

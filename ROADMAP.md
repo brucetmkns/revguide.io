@@ -4,11 +4,24 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.1.0 (SaaS Web App + Chrome Extension)
+## Current State: v2.1.2 (SaaS Web App + Chrome Extension)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, user settings management, and proper database security.
 
-### Direct HubSpot OAuth (v2.1.0) - NEW
+### Security Hardening (v2.1.2) - NEW
+- **Fixed Row Level Security (RLS) policies** - Re-enabled RLS with proper SECURITY DEFINER helper function
+- **Proper data isolation** - Users can only access their own organization's data
+- **No circular dependencies** - `get_user_organization_id()` function breaks RLS policy loops
+
+### User Settings (v2.1.1)
+- **Account Settings card** in Settings page with:
+  - Editable user name (stored in `users` table)
+  - Read-only email display (from Supabase auth)
+  - Editable company/organization name (stored in `organizations` table)
+- **HubSpot connection loading state** with spinner animation
+- **Fixed OAuth org naming** to not use portal domains like "app.hubspot.com"
+
+### Direct HubSpot OAuth (v2.1.0)
 - **Replaced Nango** with direct HubSpot OAuth via Supabase edge functions
 - **Secure token storage** with pgcrypto encryption in database
 - **Automatic token refresh** before expiry
@@ -115,9 +128,11 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 
 ---
 
-## MVP Beta Release Checklist
+## Beta Release - Ready for Testers! ✅
 
-Ready for beta testers! The extension is feature-complete for the initial release.
+**Status:** Ready for public beta (December 2024)
+
+The extension is feature-complete and prepared for beta testers with full infrastructure in place.
 
 ### Core Features (Complete)
 - [x] Banners with conditions and rich text
@@ -127,7 +142,19 @@ Ready for beta testers! The extension is feature-complete for the initial releas
 - [x] Multi-page admin panel with onboarding
 - [x] Admin edit links for quick content updates
 - [x] Import/Export for backup and sharing
-- [x] HubSpot API integration
+- [x] Direct HubSpot OAuth integration (no API tokens needed)
+- [x] Team management with database-backed invitations
+- [x] Row Level Security for data isolation
+
+### Infrastructure (Complete)
+- [x] CI/CD pipeline via GitHub Actions
+- [x] Automated testing (23 tests for conditions, storage)
+- [x] Error monitoring documentation (Sentry)
+- [x] Environment variables documented
+- [x] Deployment guide (Supabase, Vercel, Cloudflare)
+- [x] Privacy policy for Chrome Web Store
+- [x] Chrome Web Store submission guide
+- [x] Beta tester documentation
 
 ### Beta Testing Focus Areas
 - [ ] Onboarding flow clarity
@@ -136,17 +163,20 @@ Ready for beta testers! The extension is feature-complete for the initial releas
 - [ ] Editable fields save functionality
 - [ ] Cross-browser compatibility (Chrome/Edge)
 
-### Known Limitations (Document for Beta Users)
-1. **Local storage only** - Data doesn't sync between browsers/devices
-2. **Manual sharing** - Use Export/Import to share configurations
-3. **API token required** - For property dropdowns and field editing
-4. **Chrome/Edge only** - No Firefox support yet
+### Documentation
+| Document | Purpose |
+|----------|---------|
+| `docs/DEPLOYMENT.md` | Production deployment steps |
+| `docs/ERROR_MONITORING.md` | Sentry setup guide |
+| `docs/PRIVACY_POLICY.md` | Chrome Web Store privacy policy |
+| `docs/CHROME_WEB_STORE.md` | Store submission guide |
+| `docs/BETA_PROGRAM.md` | Beta tester onboarding |
+| `docs/ARCHITECTURE.md` | Codebase information architecture |
 
-### Pre-Launch Tasks
-- [ ] Create beta tester installation guide
-- [ ] Set up feedback collection (GitHub Issues or form)
-- [ ] Prepare sample content packs for testing
-- [ ] Document common HubSpot API scope requirements
+### Known Limitations (Documented for Beta Users)
+1. **Chrome/Edge only** - No Firefox support yet
+2. **HubSpot OAuth required** - For property access and field editing
+3. **Desktop only** - Mobile/tablet not optimized
 
 ---
 
@@ -732,7 +762,7 @@ Would you like me to suggest values?"
 - [ ] Skeleton loading states for content
 
 ### Account & Settings
-- [ ] **User Profile section** - View/edit profile info, change password, manage login methods
+- [x] **User Profile section** - View/edit profile info (name, email display, company name)
 - [ ] **Billing management** - View subscription, update payment method, download invoices
 - [ ] Account deletion/data export (GDPR compliance)
 

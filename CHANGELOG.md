@@ -2,6 +2,117 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.2.0] - 2025-12-16 - Beta Release
+
+### Added
+- **CI/CD Pipeline**
+  - GitHub Actions workflow for continuous integration (`.github/workflows/ci.yml`)
+  - Automated validation: manifest.json structure, required files check
+  - ESLint integration for code quality
+  - Extension package build automation
+  - Automatic deployment to Supabase edge functions and Cloudflare Worker on main branch
+
+- **Release Automation**
+  - GitHub Actions workflow for releases (`.github/workflows/release.yml`)
+  - Triggered by version tags (v*)
+  - Automatic GitHub release creation with changelog extraction
+  - Extension ZIP artifact attached to releases
+
+- **Test Suite**
+  - Test framework setup with Chrome API mocks (`tests/setup.js`)
+  - Condition engine tests - 16 tests (`tests/conditions.test.js`)
+  - Storage tests - 7 tests (`tests/storage.test.js`)
+  - Test runner script (`tests/run-tests.js`)
+
+- **Documentation**
+  - `docs/DEPLOYMENT.md` - Comprehensive deployment guide for Supabase, Vercel, Cloudflare
+  - `docs/ERROR_MONITORING.md` - Sentry setup guide for web, extension, edge functions
+  - `docs/PRIVACY_POLICY.md` - Complete privacy policy for Chrome Web Store
+  - `docs/CHROME_WEB_STORE.md` - Store submission guide with listing content
+  - `docs/BETA_PROGRAM.md` - Beta tester onboarding and feedback guide
+  - `docs/ARCHITECTURE.md` - Information architecture explaining codebase structure
+  - `.env.example` - Environment variable template with all required variables
+
+- **Team Management Improvements**
+  - Database-backed invitations (replaces local array)
+  - Pending invitations table in Settings
+  - Resend invitation functionality
+  - Proper invitation expiry tracking
+
+- **User Feedback**
+  - "Send Feedback" link in admin sidebar
+  - Links to GitHub Issues for bug reports and feature requests
+
+### Changed
+- **Team Management** now uses Supabase database for invitations instead of local storage
+- Updated version to 2.2.0 for beta release milestone
+
+### Technical
+- New files: `.github/workflows/ci.yml`, `.github/workflows/release.yml`
+- New files: `tests/setup.js`, `tests/conditions.test.js`, `tests/storage.test.js`, `tests/run-tests.js`
+- New files: `docs/DEPLOYMENT.md`, `docs/ERROR_MONITORING.md`, `docs/PRIVACY_POLICY.md`, `docs/CHROME_WEB_STORE.md`, `docs/BETA_PROGRAM.md`, `docs/ARCHITECTURE.md`
+- Updated: `admin/pages/settings.js` - Database-backed team management
+- Updated: `admin/shared.js` - Added feedback link to sidebar
+- Updated: `admin/shared.css` - Feedback link styling
+
+---
+
+## [2.1.2] - 2025-12-16
+
+### Security
+- **Fixed Row Level Security (RLS) Policies**
+  - Re-enabled RLS on `users` and `organizations` tables (was temporarily disabled for debugging)
+  - Created `get_user_organization_id()` SECURITY DEFINER function to break circular dependencies
+  - All RLS policies now use the helper function instead of subqueries
+  - Proper security isolation restored - users can only access their own organization's data
+
+### Technical
+- New migration: `supabase/migrations/003_fix_rls_policies.sql`
+- Fixed policies for: users, organizations, hubspot_connections, invitations tables
+- Service role retains full access for edge functions
+
+---
+
+## [2.1.1] - 2025-12-16
+
+### Added
+- **User Settings Section**
+  - New "Account Settings" card in Settings page
+  - Editable "Your Name" field - updates user profile in database
+  - Email address display (read-only, from Supabase auth)
+  - Editable "Company Name" field - updates organization name
+  - Save button updates both user and organization in one action
+  - Sidebar footer updates immediately to reflect name changes
+
+- **HubSpot Connection Loading Spinner**
+  - Loading state with spinner while checking HubSpot connection status
+  - Shows "Checking connection status..." message during API call
+  - Smoother UX instead of showing disconnected state briefly
+
+### Changed
+- **HubSpot OAuth Organization Naming**
+  - Fixed OAuth flow to not use "app.hubspot.com" as organization name
+  - Now defaults to "My Organization" when HubSpot company name is unavailable
+  - Only uses HubSpot's company name if it's a real company name (not portal domain)
+
+### Fixed
+- **Database Query Optimization**
+  - Changed `getUserProfile()` from joined query to separate queries
+  - Avoids 500 errors caused by Supabase PostgREST join issues with RLS
+  - More resilient to database/RLS configuration issues
+
+- **Auth Fallback for Email**
+  - `checkAuth()` now falls back to Supabase auth user if profile query fails
+  - Ensures email displays even when users table has issues
+
+### Technical
+- New `updateUserProfile()` function in `supabase.js` for updating user name
+- Updated `loadAccountSettings()` to populate name field from profile
+- Updated `saveAccountSettings()` to handle both user and org updates
+- HubSpot OAuth edge function checks for portal domains before using as org name
+
+---
+
 ## [2.1.0] - 2025-12-16
 
 ### Added

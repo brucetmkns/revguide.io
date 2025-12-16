@@ -5,7 +5,8 @@
 class SettingsPage {
   constructor() {
     this.settings = {};
-    this.invitedUsers = [];
+    this.teamMembers = [];
+    this.pendingInvitations = [];
     this.init();
   }
 
@@ -32,10 +33,12 @@ class SettingsPage {
     console.log('[Settings] Loading storage data...');
     const data = await AdminShared.loadStorageData();
     this.settings = data.settings;
-    this.invitedUsers = data.invitedUsers || [];
 
     // Populate UI
     this.updateSettingsUI();
+
+    // Load team members from database (web context) or local storage (extension)
+    await this.loadTeamData();
     this.renderUsersTable();
 
     // Load account settings (user email, company name)
@@ -48,6 +51,46 @@ class SettingsPage {
     // Bind events
     this.bindEvents();
     console.log('[Settings] init() completed');
+  }
+
+  /**
+   * Load team members and pending invitations from database
+   */
+  async loadTeamData() {
+    // In web context, load from Supabase
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      try {
+        // Load team members
+        const { data: members, error: membersError } = await RevGuideDB.getTeamMembers();
+        if (membersError) {
+          console.error('[Settings] Error loading team members:', membersError);
+        } else {
+          this.teamMembers = members || [];
+        }
+
+        // Load pending invitations
+        const { data: invitations, error: invitesError } = await RevGuideDB.getInvitations();
+        if (invitesError) {
+          console.error('[Settings] Error loading invitations:', invitesError);
+        } else {
+          this.pendingInvitations = invitations || [];
+        }
+
+        console.log('[Settings] Loaded', this.teamMembers.length, 'members and', this.pendingInvitations.length, 'invitations');
+      } catch (error) {
+        console.error('[Settings] Failed to load team data:', error);
+      }
+    } else {
+      // In extension context, use local storage (legacy)
+      const data = await AdminShared.loadStorageData();
+      this.teamMembers = [];
+      this.pendingInvitations = (data.invitedUsers || []).map(u => ({
+        id: u.id,
+        email: u.email,
+        role: u.role,
+        created_at: u.invitedAt ? new Date(u.invitedAt).toISOString() : new Date().toISOString()
+      }));
+    }
   }
 
   /**
@@ -199,12 +242,23 @@ class SettingsPage {
       }
     });
 
-    // Delete user buttons (delegated)
+    // User table action buttons (delegated)
     document.getElementById('usersTableBody').addEventListener('click', (e) => {
       const deleteBtn = e.target.closest('.delete-user-btn');
       if (deleteBtn) {
         const userId = deleteBtn.dataset.id;
-        this.deleteUser(userId);
+        const type = deleteBtn.dataset.type;
+        const email = deleteBtn.dataset.email;
+        this.deleteUser(userId, type, email);
+        return;
+      }
+
+      const resendBtn = e.target.closest('.resend-invite-btn');
+      if (resendBtn) {
+        const inviteId = resendBtn.dataset.id;
+        const email = resendBtn.dataset.email;
+        const role = resendBtn.dataset.role;
+        this.resendInvitation(inviteId, email, role);
       }
     });
   }
@@ -419,7 +473,9 @@ class SettingsPage {
     const tableContainer = document.getElementById('usersTableContainer');
     const emptyState = document.getElementById('usersEmptyState');
 
-    if (this.invitedUsers.length === 0) {
+    const totalCount = this.teamMembers.length + this.pendingInvitations.length;
+
+    if (totalCount === 0) {
       tableContainer.style.display = 'none';
       emptyState.style.display = 'block';
       return;
@@ -428,21 +484,58 @@ class SettingsPage {
     tableContainer.style.display = 'block';
     emptyState.style.display = 'none';
 
-    tbody.innerHTML = this.invitedUsers.map(user => `
-      <tr data-id="${user.id}">
-        <td><strong>${AdminShared.escapeHtml(user.email)}</strong></td>
-        <td><span class="role-badge ${user.role}">${user.role}</span></td>
-        <td><span class="badge badge-${user.status}">${user.status === 'active' ? 'Active' : 'Pending'}</span></td>
-        <td>${this.formatDate(user.invitedAt)}</td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon-sm btn-danger-icon delete-user-btn" data-id="${user.id}" title="Remove user">
-              <span class="icon icon-trash icon--sm"></span>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    // Combine and render both active members and pending invitations
+    let rows = '';
+
+    // Render active team members first
+    for (const member of this.teamMembers) {
+      const isCurrentUser = member.auth_user_id === AdminShared.currentUser?.auth_user_id;
+      rows += `
+        <tr data-id="${member.id}" data-type="member">
+          <td>
+            <strong>${AdminShared.escapeHtml(member.name || member.email)}</strong>
+            ${member.name ? `<br><span class="text-muted">${AdminShared.escapeHtml(member.email)}</span>` : ''}
+            ${isCurrentUser ? '<span class="badge badge-info" style="margin-left: 8px;">You</span>' : ''}
+          </td>
+          <td><span class="role-badge ${member.role}">${member.role}</span></td>
+          <td><span class="badge badge-active">Active</span></td>
+          <td>${this.formatDate(member.created_at)}</td>
+          <td>
+            <div class="action-buttons">
+              ${!isCurrentUser ? `
+                <button class="btn-icon-sm btn-danger-icon delete-user-btn" data-id="${member.id}" data-type="member" data-email="${AdminShared.escapeHtml(member.email)}" title="Remove user">
+                  <span class="icon icon-trash icon--sm"></span>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    // Render pending invitations
+    for (const invite of this.pendingInvitations) {
+      rows += `
+        <tr data-id="${invite.id}" data-type="invitation">
+          <td><strong>${AdminShared.escapeHtml(invite.email)}</strong></td>
+          <td><span class="role-badge ${invite.role}">${invite.role}</span></td>
+          <td><span class="badge badge-pending">Pending</span></td>
+          <td>${this.formatDate(invite.created_at)}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-icon-sm resend-invite-btn" data-id="${invite.id}" data-email="${AdminShared.escapeHtml(invite.email)}" data-role="${invite.role}" title="Resend invitation">
+                <span class="icon icon-send icon--sm"></span>
+              </button>
+              <button class="btn-icon-sm btn-danger-icon delete-user-btn" data-id="${invite.id}" data-type="invitation" data-email="${AdminShared.escapeHtml(invite.email)}" title="Cancel invitation">
+                <span class="icon icon-trash icon--sm"></span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = rows;
   }
 
   formatDate(timestamp) {
@@ -481,9 +574,15 @@ class SettingsPage {
       return;
     }
 
-    // Check for duplicates
-    if (this.invitedUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      AdminShared.showToast('This user has already been invited', 'error');
+    // Check for duplicates in team members
+    if (this.teamMembers.some(m => m.email.toLowerCase() === email.toLowerCase())) {
+      AdminShared.showToast('This user is already a team member', 'error');
+      return;
+    }
+
+    // Check for duplicates in pending invitations
+    if (this.pendingInvitations.some(i => i.email.toLowerCase() === email.toLowerCase())) {
+      AdminShared.showToast('This user already has a pending invitation', 'error');
       return;
     }
 
@@ -494,23 +593,44 @@ class SettingsPage {
     sendBtn.innerHTML = '<span class="icon icon-refresh icon--sm"></span> Sending...';
 
     try {
-      // Send invitation via API
-      await this.sendInviteViaAPI(email, role);
+      // Step 1: Create invitation in database (web context) or local storage (extension)
+      let invitationData;
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        const { data, error } = await RevGuideDB.createInvitation(email, role);
+        if (error) {
+          throw new Error(error.message);
+        }
+        invitationData = data;
+      }
 
-      // Create user object
-      const user = {
-        id: AdminShared.generateId(),
-        email: email,
-        role: role,
-        status: 'pending',
-        invitedAt: Date.now()
-      };
+      // Step 2: Send email via Cloudflare Worker API (Resend)
+      await this.sendInviteEmail(email, role);
 
-      // Add to list
-      this.invitedUsers.push(user);
+      // Update local state
+      if (invitationData) {
+        this.pendingInvitations.push(invitationData);
+      } else {
+        // Extension context - store locally
+        const user = {
+          id: AdminShared.generateId(),
+          email: email,
+          role: role,
+          status: 'pending',
+          invitedAt: Date.now()
+        };
+        this.pendingInvitations.push({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          created_at: new Date(user.invitedAt).toISOString()
+        });
 
-      // Save to storage
-      await AdminShared.saveStorageData({ invitedUsers: this.invitedUsers });
+        // Save to local storage for extension context
+        const data = await AdminShared.loadStorageData();
+        const invitedUsers = data.invitedUsers || [];
+        invitedUsers.push(user);
+        await AdminShared.saveStorageData({ invitedUsers });
+      }
 
       // Close modal and refresh table
       this.closeInviteModal();
@@ -519,7 +639,7 @@ class SettingsPage {
       AdminShared.showToast(`Invitation sent to ${email}`, 'success');
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      AdminShared.showToast(`Failed to send email: ${error.message}`, 'error');
+      AdminShared.showToast(`Failed to send invitation: ${error.message}`, 'error');
     } finally {
       // Restore button state
       sendBtn.disabled = false;
@@ -527,32 +647,58 @@ class SettingsPage {
     }
   }
 
-  async sendInviteViaAPI(email, role) {
-    // In web context, use Supabase to create invitation
-    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-      const { data, error } = await RevGuideDB.createInvitation(email, role);
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
+  /**
+   * Send invitation email via Cloudflare Worker (Resend SMTP)
+   */
+  async sendInviteEmail(email, role) {
+    const INVITE_API_URL = 'https://revguide-api.revguide.workers.dev/api/invite';
+
+    // In extension context, use background script
+    if (AdminShared.isExtensionContext) {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'sendInviteEmail',
+          email: email,
+          role: role
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response?.success) {
+            resolve(response.data);
+          } else {
+            reject(new Error(response?.error || 'Failed to send email'));
+          }
+        });
+      });
     }
 
-    // In extension context, send via background script
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({
-        action: 'sendInviteEmail',
-        email: email,
-        role: role
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (response?.success) {
-          resolve(response.data);
-        } else {
-          reject(new Error(response?.error || 'Failed to send email'));
-        }
-      });
+    // In web context, call API directly
+    const response = await fetch(INVITE_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, role })
     });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to send email');
+    }
+
+    return result;
+  }
+
+  /**
+   * Resend invitation email
+   */
+  async resendInvitation(inviteId, email, role) {
+    try {
+      await this.sendInviteEmail(email, role);
+      AdminShared.showToast(`Invitation resent to ${email}`, 'success');
+    } catch (error) {
+      console.error('Failed to resend invitation:', error);
+      AdminShared.showToast(`Failed to resend: ${error.message}`, 'error');
+    }
   }
 
   isValidEmail(email) {
@@ -560,30 +706,66 @@ class SettingsPage {
     return emailRegex.test(email);
   }
 
-  async deleteUser(userId) {
-    const user = this.invitedUsers.find(u => u.id === userId);
-    if (!user) return;
+  async deleteUser(userId, type, email) {
+    const isMember = type === 'member';
+    const title = isMember ? 'Remove Team Member' : 'Cancel Invitation';
+    const message = isMember
+      ? `Are you sure you want to remove ${email} from your team? They will lose access to shared content.`
+      : `Are you sure you want to cancel the invitation to ${email}?`;
 
     const confirmed = await AdminShared.showConfirmDialog({
-      title: 'Remove User',
-      message: `Are you sure you want to remove ${user.email} from your team?`,
-      primaryLabel: 'Remove',
-      secondaryLabel: 'Cancel',
+      title,
+      message,
+      primaryLabel: isMember ? 'Remove' : 'Cancel Invitation',
+      secondaryLabel: 'Keep',
       showCancel: false
     });
 
     if (confirmed !== 'primary') return;
 
-    // Remove from list
-    this.invitedUsers = this.invitedUsers.filter(u => u.id !== userId);
+    try {
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        // Web context - delete from database
+        const client = await RevGuideAuth.waitForClient();
 
-    // Save to storage
-    await AdminShared.saveStorageData({ invitedUsers: this.invitedUsers });
+        if (isMember) {
+          // Remove user from organization (set organization_id to null)
+          const { error } = await client
+            .from('users')
+            .update({ organization_id: null })
+            .eq('id', userId);
 
-    // Refresh table
-    this.renderUsersTable();
+          if (error) throw new Error(error.message);
 
-    AdminShared.showToast('User removed', 'success');
+          this.teamMembers = this.teamMembers.filter(m => m.id !== userId);
+        } else {
+          // Delete invitation
+          const { error } = await client
+            .from('invitations')
+            .delete()
+            .eq('id', userId);
+
+          if (error) throw new Error(error.message);
+
+          this.pendingInvitations = this.pendingInvitations.filter(i => i.id !== userId);
+        }
+      } else {
+        // Extension context - update local storage
+        const data = await AdminShared.loadStorageData();
+        const invitedUsers = (data.invitedUsers || []).filter(u => u.id !== userId);
+        await AdminShared.saveStorageData({ invitedUsers });
+
+        this.pendingInvitations = this.pendingInvitations.filter(i => i.id !== userId);
+      }
+
+      // Refresh table
+      this.renderUsersTable();
+
+      AdminShared.showToast(isMember ? 'Team member removed' : 'Invitation cancelled', 'success');
+    } catch (error) {
+      console.error('Failed to remove user:', error);
+      AdminShared.showToast(`Failed to remove: ${error.message}`, 'error');
+    }
   }
 
   // ================================

@@ -747,4 +747,120 @@ async function getValidAccessToken(connectionId) {
 
 ---
 
+## Supabase Row Level Security (RLS) with PostgREST (v2.1.1)
+
+### RLS + Joins = 500 Errors
+**Lesson**: PostgREST queries with joins can fail with 500 errors when RLS policies create circular dependencies or permission conflicts.
+
+**Problem**: A query like `users?select=*,organizations(*)` failed with a 500 Internal Server Error even though:
+- User was authenticated
+- Foreign key relationship was valid
+- Both tables had data
+
+**Root cause**: RLS policies on `users` and `organizations` tables created a circular dependency:
+- Users policy: "Can only see users in my organization"
+- Organizations policy: "Can only see my organization"
+- To see users → need organization_id → need to query organizations → need to check if user belongs to org → need to query users
+
+**Solution options**:
+1. **Disable RLS** (NOT recommended - reduces security):
+```sql
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE organizations DISABLE ROW LEVEL SECURITY;
+```
+
+2. **Use separate queries** instead of joins (workaround):
+```javascript
+// WRONG - join query fails with RLS
+const { data } = await client
+  .from('users')
+  .select('*, organizations(*)')
+  .eq('auth_user_id', user.id)
+  .single();
+
+// WORKAROUND - separate queries work
+const { data: userProfile } = await client
+  .from('users')
+  .select('*')
+  .eq('auth_user_id', user.id)
+  .single();
+
+if (userProfile.organization_id) {
+  const { data: org } = await client
+    .from('organizations')
+    .select('*')
+    .eq('id', userProfile.organization_id)
+    .single();
+  userProfile.organizations = org;
+}
+```
+
+3. **Fix RLS policies with SECURITY DEFINER function** (RECOMMENDED):
+```sql
+-- Create a helper function that bypasses RLS to get user's org
+CREATE OR REPLACE FUNCTION get_user_organization_id(p_auth_uid UUID)
+RETURNS UUID AS $$
+  SELECT organization_id FROM users WHERE auth_user_id = p_auth_uid LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+GRANT EXECUTE ON FUNCTION get_user_organization_id TO authenticated;
+
+-- Now policies can use this function instead of subqueries
+CREATE POLICY "Users can view own organization" ON organizations
+  FOR SELECT USING (
+    id = get_user_organization_id(auth.uid())
+  );
+
+CREATE POLICY "Users can view org members" ON users
+  FOR SELECT USING (
+    organization_id = get_user_organization_id(auth.uid())
+  );
+```
+
+The key insight: `SECURITY DEFINER` functions run with the privileges of the function owner (typically the DB owner), bypassing RLS. This breaks the circular dependency while still enforcing proper access control.
+
+### Debugging RLS Issues
+**Lesson**: When PostgREST returns 500, RLS is often the culprit.
+
+**Debugging steps**:
+1. Check if query works with RLS disabled
+2. Check policy definitions: `SELECT * FROM pg_policies WHERE tablename = 'users';`
+3. Test individual table access before testing joins
+4. Look for circular policy references
+
+### HubSpot OAuth - Organization Naming
+**Lesson**: Don't use technical identifiers as organization names.
+
+**Problem**: HubSpot OAuth was creating organizations with names like "app.hubspot.com" because it used the portal domain when the portal name was unavailable.
+
+**Solution**: Validate organization names before using them:
+```typescript
+let orgName = 'My Organization'
+if (portalInfo.portalName &&
+    portalInfo.portalName !== portalInfo.portalDomain &&
+    !portalInfo.portalName.includes('hubspot.com')) {
+  orgName = portalInfo.portalName
+}
+```
+
+### Foreign Key References Across Tables
+**Lesson**: Carefully check which table a FK references - `auth.users.id` vs `public.users.id` are different.
+
+**Problem**: `hubspot_connections.connected_by` was a FK to `users.id` (our custom users table), but code was passing `auth.users.id` (Supabase auth user ID).
+
+**Pattern**: When storing user references:
+```javascript
+// Need users.id, not auth_user_id
+const { data: userRecord } = await client
+  .from('users')
+  .select('id')  // This is users.id
+  .eq('auth_user_id', authUserId)  // Match by auth ID
+  .single();
+
+// Use userRecord.id for FK references
+connection.connected_by = userRecord.id;
+```
+
+---
+
 *Last updated: December 2024*

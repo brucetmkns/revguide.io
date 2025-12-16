@@ -69,6 +69,28 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.sidebar-feedback-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.sidebar-feedback-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary);
+}
+
+.sidebar-feedback-link svg {
+  flex-shrink: 0;
+}
+
 .extension-status {
   display: flex;
   align-items: center;

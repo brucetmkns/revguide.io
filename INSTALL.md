@@ -2,9 +2,13 @@
 
 This guide covers how to install RevGuide as a Chrome extension.
 
-## Method 1: Developer Mode (Current)
+**Current Version:** v2.2.0 (Beta Release)
 
-For local development and testing:
+For beta tester documentation, see [docs/BETA_PROGRAM.md](docs/BETA_PROGRAM.md).
+
+## Method 1: Developer Mode (Beta Testing)
+
+For beta testers and local development:
 
 ### Step 1: Download the Extension
 
@@ -45,11 +49,20 @@ After installation, complete these steps to get the most out of RevGuide:
 - Click the RevGuide icon in Chrome toolbar
 - Click **Open Admin Panel** (gear icon)
 
-### 2. Connect HubSpot API (Optional but Recommended)
+### 2. Connect HubSpot (Recommended)
 
-To enable property dropdowns and enhanced features:
+RevGuide uses HubSpot OAuth for secure authentication - no API tokens needed!
 
+**For Web App (app.revguide.io):**
 1. Go to **Settings** in the Admin Panel
+2. Click **Connect HubSpot**
+3. Authorize RevGuide in the HubSpot OAuth popup
+4. You're connected!
+
+**For Extension-Only Mode:**
+If you prefer using the extension without the web app, you can configure a HubSpot Private App token:
+
+1. Go to **Settings** in the Admin Panel (extension)
 2. In HubSpot, navigate to: **Settings > Integrations > Private Apps**
 3. Create a new private app with these scopes:
    - `crm.objects.contacts.read`
@@ -244,3 +257,24 @@ curl -X POST https://revguide-api.revguide.workers.dev/api/invite \
 ```
 
 See [api/README.md](api/README.md) for more details.
+
+## Running Tests
+
+RevGuide includes a test suite for the condition engine and storage operations:
+
+```bash
+# Run all tests
+node tests/run-tests.js
+```
+
+Tests include:
+- Condition evaluation (equals, contains, greater_than, etc.)
+- AND/OR logic combinations
+- Storage operations and data structure validation
+
+## Additional Resources
+
+- **Beta Program:** [docs/BETA_PROGRAM.md](docs/BETA_PROGRAM.md)
+- **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Deployment:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **Privacy Policy:** [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md)

@@ -4,6 +4,16 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
+**Current Version:** v2.2.0 (Beta Release)
+
+## Beta Program
+
+RevGuide is currently in public beta! We're looking for feedback from sales teams and HubSpot users.
+
+- **Beta Documentation:** See [docs/BETA_PROGRAM.md](docs/BETA_PROGRAM.md)
+- **Report Issues:** [GitHub Issues](https://github.com/revguide/revguide/issues)
+- **Privacy Policy:** [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md)
+
 ## Features
 
 ### Banners
@@ -459,10 +469,17 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [ROADMAP.md](ROADMAP.md) 
 
 ### Additional Documentation
 - [INSTALL.md](INSTALL.md) - Detailed installation and setup guide
-- [PRIVACY.md](PRIVACY.md) - Privacy policy
-- [HUBSPOT_DOM_STRUCTURE.md](HUBSPOT_DOM_STRUCTURE.md) - HubSpot DOM reference for developers
 - [LEARNINGS.md](LEARNINGS.md) - Development lessons learned, code patterns, and debugging tips
+- [HUBSPOT_DOM_STRUCTURE.md](HUBSPOT_DOM_STRUCTURE.md) - HubSpot DOM reference for developers
 - [api/README.md](api/README.md) - API setup and deployment guide
+
+### Beta & Deployment Documentation
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Information architecture and codebase overview
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment guide
+- [docs/BETA_PROGRAM.md](docs/BETA_PROGRAM.md) - Beta tester onboarding
+- [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) - Privacy policy for Chrome Web Store
+- [docs/CHROME_WEB_STORE.md](docs/CHROME_WEB_STORE.md) - Store submission guide
+- [docs/ERROR_MONITORING.md](docs/ERROR_MONITORING.md) - Sentry error monitoring setup
 
 ## Team Invitations API
 
