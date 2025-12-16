@@ -2,6 +2,55 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.1.0] - 2025-12-16
+
+### Added
+- **Direct HubSpot OAuth Integration**
+  - Replaced Nango OAuth middleware with direct HubSpot OAuth via Supabase edge functions
+  - New `/hubspot-oauth` edge function with endpoints: `/authorize`, `/callback`, `/connection`, `/disconnect`, `/proxy`
+  - Secure token storage with pgcrypto encryption in database
+  - Automatic token refresh before expiry (tokens valid for 30 minutes)
+  - CSRF protection via state parameter stored in `oauth_states` table
+
+- **HubSpot Field Import in Web App**
+  - Field import now works in web context (previously extension-only)
+  - Fetches properties via OAuth proxy endpoint
+  - Loading spinner animation while fetching fields from HubSpot
+
+- **Account Settings Card**
+  - New card in Settings page for managing account details
+  - Email display (read-only) and company name field
+
+### Changed
+- **Settings Page**
+  - Updated to use `RevGuideHubSpot` client instead of `RevGuideNango`
+  - Simplified OAuth callback handling (checks URL params instead of polling)
+  - HubSpot connection status fetched via new `/connection` endpoint
+
+- **Shared Utilities**
+  - `fetchProperties()` now uses HubSpot OAuth proxy in web context
+  - Falls back to chrome.runtime messaging in extension context
+
+### Technical
+- New files:
+  - `supabase/functions/hubspot-oauth/index.ts` - Edge function for OAuth
+  - `supabase/functions/hubspot-oauth/config.toml` - Disables JWT verification
+  - `supabase/migrations/002_direct_hubspot_oauth.sql` - Token columns and oauth_states table
+  - `admin/hubspot.js` - Frontend HubSpot client (replaces nango.js)
+- Updated files:
+  - `admin/shared.js` - fetchProperties uses OAuth proxy
+  - `admin/pages/settings.js` - Uses RevGuideHubSpot
+  - `admin/pages/settings.html` - Loads hubspot.js, account settings card
+  - `admin/pages/wiki.html` - Loads hubspot.js for field import
+  - `admin/pages/wiki.js` - Loading spinner for field import
+  - `admin/pages/wiki.css` - Loading indicator styles
+
+### Removed
+- Nango dependency (NANGO_SECRET_KEY no longer required)
+- Complex webhook-based OAuth completion flow
+
+---
+
 ## [2.0.0] - 2025-12-15
 
 ### Added

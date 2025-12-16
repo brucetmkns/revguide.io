@@ -4,11 +4,17 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v1.9.7 (Chrome Extension) - MVP BETA READY
+## Current State: v2.1.0 (SaaS Web App + Chrome Extension)
 
-A fully functional Chrome extension with local storage, ready for beta testers.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration.
 
-### Rebrand to RevGuide (v1.9.7) - NEW
+### Direct HubSpot OAuth (v2.1.0) - NEW
+- **Replaced Nango** with direct HubSpot OAuth via Supabase edge functions
+- **Secure token storage** with pgcrypto encryption in database
+- **Automatic token refresh** before expiry
+- **Field import** now works in web app via OAuth proxy
+
+### Rebrand to RevGuide (v1.9.7)
 - **Product renamed** from "HubSpot Helper" to "RevGuide"
 - **New API endpoint**: `https://revguide-api.revguide.workers.dev`
 - **Updated branding** across all UI, documentation, and code
@@ -314,11 +320,12 @@ content-library/
 
 | Component | Technology | Status |
 |-----------|------------|--------|
-| Database | Supabase (Postgres) | **In Progress** |
+| Database | Supabase (Postgres) | **Complete** |
 | Authentication | Supabase Auth (Magic Link + Google OAuth) | **Complete** |
 | Email | Resend SMTP with custom domain | **Complete** |
 | Web Dashboard | Static HTML on Vercel | **Complete** |
 | Domain | app.revguide.io | **Complete** |
+| HubSpot OAuth | Supabase Edge Functions | **Complete** |
 | Payments | Stripe | Planned |
 
 ### 2.1.1 Completed: Web App Deployment (December 2025)
