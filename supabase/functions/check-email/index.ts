@@ -39,11 +39,16 @@ serve(async (req) => {
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim()
 
-    // Use service role to check auth.users table
+    // Use service role to check the users table (not auth.users)
+    // We want to check if user has completed onboarding (exists in users table with org)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // Check if user exists in auth.users
-    const { data: users, error } = await supabase.auth.admin.listUsers()
+    // Check if user exists in users table (completed signup)
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, organization_id')
+      .eq('email', normalizedEmail)
+      .maybeSingle()
 
     if (error) {
       console.error('Error checking users:', error)
@@ -53,10 +58,8 @@ serve(async (req) => {
       )
     }
 
-    // Check if email exists in auth users
-    const userExists = users.users.some(
-      (user) => user.email?.toLowerCase() === normalizedEmail
-    )
+    // User exists if they have a record in users table with an organization
+    const userExists = !!(user && user.organization_id)
 
     return new Response(
       JSON.stringify({ exists: userExists }),
