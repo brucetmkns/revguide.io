@@ -622,3 +622,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ----------------------------------------
+   Spinner Animation
+   ---------------------------------------- */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
