@@ -205,6 +205,26 @@
         </div>
 
         <div class="settings-grid">
+          <!-- Account Settings Card -->
+          <div class="settings-card" id="accountSettingsCard">
+            <h3>Account Settings</h3>
+            <p>Manage your account and organization details</p>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="userEmail" disabled placeholder="Loading...">
+              <span class="form-hint">Email cannot be changed. Contact support if you need to update it.</span>
+            </div>
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="companyName" placeholder="Enter your company name">
+              <span class="form-hint">This name will be shown to all team members in your organization</span>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" id="saveAccountBtn">Save Changes</button>
+            </div>
+            <div id="accountStatus" class="status-message"></div>
+          </div>
+
           <!-- HubSpot Connection Card (Web Context - OAuth) -->
           <div class="settings-card" id="hubspotOAuthCard" style="display: none;">
             <h3>HubSpot Connection</h3>
@@ -246,22 +266,6 @@
             </div>
 
             <div id="hubspotOAuthStatus" class="status-message"></div>
-          </div>
-
-          <!-- HubSpot API Card (Extension Context - Private App Token) -->
-          <div class="settings-card" id="hubspotTokenCard">
-            <h3>HubSpot API</h3>
-            <p>Connect to HubSpot to fetch properties for condition building</p>
-            <div class="form-group">
-              <label>Private App Access Token</label>
-              <input type="password" id="apiToken" placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-              <span class="form-hint">Required scopes: crm.objects.*.read, crm.schemas.*.read</span>
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-secondary" id="testApiBtn">Test Connection</button>
-              <button class="btn btn-primary" id="saveApiBtn">Save Token</button>
-            </div>
-            <div id="apiStatus" class="status-message"></div>
           </div>
 
           <div class="settings-card">

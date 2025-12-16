@@ -34,10 +34,11 @@ class SettingsPage {
     this.updateSettingsUI();
     this.renderUsersTable();
 
-    // Load HubSpot connection status (web context only)
-    if (!AdminShared.isExtensionContext) {
-      await this.loadHubSpotConnectionStatus();
-    }
+    // Load account settings (user email, company name)
+    await this.loadAccountSettings();
+
+    // Load HubSpot connection status
+    await this.loadHubSpotConnectionStatus();
 
     // Bind events
     this.bindEvents();
@@ -70,17 +71,8 @@ class SettingsPage {
 
   setupHubSpotCards() {
     const oauthCard = document.getElementById('hubspotOAuthCard');
-    const tokenCard = document.getElementById('hubspotTokenCard');
-
-    if (AdminShared.isExtensionContext) {
-      // Extension: Show token card, hide OAuth card
-      if (oauthCard) oauthCard.style.display = 'none';
-      if (tokenCard) tokenCard.style.display = 'block';
-    } else {
-      // Web: Show OAuth card, hide token card
-      if (oauthCard) oauthCard.style.display = 'block';
-      if (tokenCard) tokenCard.style.display = 'none';
-    }
+    // Always show OAuth card
+    if (oauthCard) oauthCard.style.display = 'block';
   }
 
   async loadHubSpotConnectionStatus() {
@@ -123,15 +115,6 @@ class SettingsPage {
   }
 
   updateSettingsUI() {
-    // Load API token (only in extension context)
-    if (AdminShared.isExtensionContext) {
-      chrome.storage.local.get(['apiToken'], (data) => {
-        if (data.apiToken) {
-          document.getElementById('apiToken').value = data.apiToken;
-        }
-      });
-    }
-
     // Load display options
     document.getElementById('showBanners').checked = this.settings.showBanners !== false;
     document.getElementById('showBattleCards').checked = this.settings.showBattleCards !== false;
@@ -141,6 +124,12 @@ class SettingsPage {
   }
 
   bindEvents() {
+    // Account Settings
+    const saveAccountBtn = document.getElementById('saveAccountBtn');
+    if (saveAccountBtn) {
+      saveAccountBtn.addEventListener('click', () => this.saveAccountSettings());
+    }
+
     // HubSpot OAuth buttons (web context)
     const connectHubSpotBtn = document.getElementById('connectHubSpotSettingsBtn');
     const disconnectHubSpotBtn = document.getElementById('disconnectHubSpotBtn');
@@ -151,10 +140,6 @@ class SettingsPage {
     if (disconnectHubSpotBtn) {
       disconnectHubSpotBtn.addEventListener('click', () => this.disconnectHubSpot());
     }
-
-    // API Token (extension context)
-    document.getElementById('saveApiBtn')?.addEventListener('click', () => this.saveApiToken());
-    document.getElementById('testApiBtn')?.addEventListener('click', () => this.testApiConnection());
 
     // Display options - auto-save on change
     document.getElementById('showBanners').addEventListener('change', (e) => {
@@ -218,64 +203,91 @@ class SettingsPage {
     AdminShared.showToast('Settings saved', 'success');
   }
 
-  async saveApiToken() {
-    const token = document.getElementById('apiToken').value.trim();
-    if (!token) {
-      this.showApiStatus('Please enter an API token', 'error');
-      return;
+  // ================================
+  // Account Settings Methods
+  // ================================
+
+  async loadAccountSettings() {
+    const userEmailInput = document.getElementById('userEmail');
+    const companyNameInput = document.getElementById('companyName');
+
+    // Load from AdminShared's current user/organization (set during checkAuth)
+    if (AdminShared.currentUser) {
+      userEmailInput.value = AdminShared.currentUser.email || '';
     }
 
-    // In web context, API tokens will be handled via Nango OAuth (future)
-    if (!AdminShared.isExtensionContext) {
-      this.showApiStatus('API configuration will use OAuth in the web app (coming soon)', 'info');
-      return;
+    if (AdminShared.currentOrganization) {
+      companyNameInput.value = AdminShared.currentOrganization.name || '';
+      this.originalCompanyName = AdminShared.currentOrganization.name || '';
     }
-
-    // In extension context, save to Chrome storage
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ apiToken: token }, () => {
-        this.showApiStatus('API token saved successfully', 'success');
-        resolve();
-      });
-    });
   }
 
-  async testApiConnection() {
-    const token = document.getElementById('apiToken').value.trim();
-    if (!token) {
-      this.showApiStatus('Please enter an API token first', 'error');
+  async saveAccountSettings() {
+    const companyNameInput = document.getElementById('companyName');
+    const saveBtn = document.getElementById('saveAccountBtn');
+    const statusEl = document.getElementById('accountStatus');
+
+    const companyName = companyNameInput.value.trim();
+
+    // Validate
+    if (!companyName) {
+      this.showAccountStatus('Company name is required', 'error');
       return;
     }
 
-    this.showApiStatus('Testing connection...', '');
+    // Check if changed
+    if (companyName === this.originalCompanyName) {
+      this.showAccountStatus('No changes to save', 'info');
+      return;
+    }
+
+    // Show loading state
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = 'Saving...';
 
     try {
-      const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=1', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Update organization in Supabase
+      const { data, error } = await RevGuideDB.updateOrganization({ name: companyName });
 
-      if (response.ok) {
-        this.showApiStatus('Connection successful! API token is valid.', 'success');
-      } else if (response.status === 401) {
-        this.showApiStatus('Invalid API token. Please check your token.', 'error');
-      } else if (response.status === 403) {
-        this.showApiStatus('Token lacks required permissions. Need crm.objects.*.read scope.', 'error');
-      } else {
-        this.showApiStatus(`Connection failed: ${response.status} ${response.statusText}`, 'error');
+      if (error) {
+        throw new Error(error.message);
       }
+
+      // Update local state
+      this.originalCompanyName = companyName;
+      if (AdminShared.currentOrganization) {
+        AdminShared.currentOrganization.name = companyName;
+      }
+
+      // Update sidebar organization name display
+      AdminShared.renderSidebar('settings');
+
+      this.showAccountStatus('Company name updated successfully', 'success');
+      AdminShared.showToast('Account settings saved', 'success');
     } catch (error) {
-      this.showApiStatus(`Connection error: ${error.message}`, 'error');
+      console.error('Failed to save account settings:', error);
+      this.showAccountStatus(`Failed to save: ${error.message}`, 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalText;
     }
   }
 
-  showApiStatus(message, type) {
-    const statusEl = document.getElementById('apiStatus');
+  showAccountStatus(message, type) {
+    const statusEl = document.getElementById('accountStatus');
+    if (!statusEl) return;
+
     statusEl.textContent = message;
     statusEl.className = 'status-message' + (type ? ` ${type}` : '');
     statusEl.style.display = message ? 'block' : 'none';
+
+    // Auto-hide success/info messages after 3 seconds
+    if (type === 'success' || type === 'info') {
+      setTimeout(() => {
+        statusEl.style.display = 'none';
+      }, 3000);
+    }
   }
 
   async exportData() {
