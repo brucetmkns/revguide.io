@@ -1,9 +1,9 @@
 /**
  * RevGuide - Nango Client
- * Handles HubSpot OAuth via Nango using session tokens
+ * Handles HubSpot OAuth via Nango Connect UI
  *
- * Nango deprecated public keys - now requires session tokens generated server-side.
- * See: https://nango.dev/docs/reference/sdks/frontend
+ * Uses Nango's hosted Connect UI popup for OAuth flow.
+ * See: https://nango.dev/docs/guides/api-authorization/authorize-in-your-app-default-ui
  */
 
 // Integration ID must match what you configured in Nango Dashboard > Integrations
@@ -14,36 +14,13 @@ const NANGO_EDGE_FUNCTION_URL = window.SUPABASE_URL
   ? `${window.SUPABASE_URL}/functions/v1/nango-callback`
   : '/api/nango'; // Fallback for local dev
 
-// Load Nango SDK from CDN
-const nangoScript = document.createElement('script');
-nangoScript.src = 'https://unpkg.com/@nangohq/frontend@latest/dist/index.global.js';
-document.head.appendChild(nangoScript);
-
-// Nango SDK ready flag
-let nangoSDKReady = false;
-
-nangoScript.onload = () => {
-  nangoSDKReady = true;
-  window.dispatchEvent(new CustomEvent('nango-ready'));
-};
+// Nango Connect UI base URL
+const NANGO_CONNECT_URL = 'https://connect.nango.dev';
 
 /**
  * RevGuide Nango API
  */
 const RevGuideNango = {
-  /**
-   * Wait for Nango SDK to be ready
-   */
-  async waitForSDK() {
-    if (nangoSDKReady) return;
-
-    return new Promise((resolve) => {
-      window.addEventListener('nango-ready', () => {
-        resolve();
-      }, { once: true });
-    });
-  },
-
   /**
    * Get a session token from the backend
    * @param {Object} endUser - End user info (id, email, displayName)
@@ -54,8 +31,7 @@ const RevGuideNango = {
       const response = await fetch(`${NANGO_EDGE_FUNCTION_URL}/session`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${window.SUPABASE_ANON_KEY || ''}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           endUser,
@@ -64,7 +40,8 @@ const RevGuideNango = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get session token');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get session token');
       }
 
       const data = await response.json();
@@ -76,14 +53,12 @@ const RevGuideNango = {
   },
 
   /**
-   * Connect HubSpot account via OAuth
+   * Connect HubSpot account via OAuth using Nango Connect UI popup
    * @param {string} connectionId - Unique identifier for this connection (usually org_id or user_id)
    * @param {Object} endUser - End user info for session token
    * @returns {Promise<Object>} Connection result with portal info
    */
   async connectHubSpot(connectionId, endUser = {}) {
-    await this.waitForSDK();
-
     try {
       // Get session token from backend
       const sessionToken = await this.getSessionToken({
@@ -92,13 +67,11 @@ const RevGuideNango = {
         displayName: endUser.displayName || ''
       });
 
-      // Initialize Nango with session token
-      const nango = new Nango({ connectSessionToken: sessionToken });
+      console.log('[RevGuide] Got session token, opening Connect UI...');
 
-      // Trigger OAuth flow
-      const result = await nango.auth(HUBSPOT_INTEGRATION_ID, connectionId);
+      // Open Nango Connect UI popup
+      const result = await this.openConnectUI(sessionToken, connectionId);
 
-      // Result contains: providerConfigKey, connectionId
       console.log('[RevGuide] HubSpot connected:', result);
 
       // Fetch connection details to get portal info
@@ -116,6 +89,69 @@ const RevGuideNango = {
         error: error.message || 'Failed to connect HubSpot'
       };
     }
+  },
+
+  /**
+   * Open Nango Connect UI in a popup window
+   * @param {string} sessionToken - Connect session token
+   * @param {string} connectionId - Connection ID
+   * @returns {Promise<Object>} Connection result
+   */
+  openConnectUI(sessionToken, connectionId) {
+    return new Promise((resolve, reject) => {
+      // Build Connect UI URL
+      const connectUrl = new URL(NANGO_CONNECT_URL);
+      connectUrl.searchParams.set('session_token', sessionToken);
+
+      // Open popup
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      const popup = window.open(
+        connectUrl.toString(),
+        'nango-connect',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+      );
+
+      if (!popup) {
+        reject(new Error('Popup blocked. Please allow popups for this site.'));
+        return;
+      }
+
+      // Listen for messages from popup
+      const messageHandler = (event) => {
+        // Verify origin
+        if (!event.origin.includes('nango.dev')) return;
+
+        const { type, data } = event.data || {};
+
+        if (type === 'authorization_success' || type === 'success') {
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          resolve({
+            connectionId: data?.connectionId || connectionId,
+            providerConfigKey: HUBSPOT_INTEGRATION_ID
+          });
+        } else if (type === 'authorization_error' || type === 'error') {
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          reject(new Error(data?.error || 'Authorization failed'));
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Check if popup was closed manually
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          reject(new Error('Authorization cancelled'));
+        }
+      }, 500);
+    });
   },
 
   /**
