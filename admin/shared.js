@@ -15,8 +15,62 @@ let currentUser = null;
 let currentOrganization = null;
 
 /**
+ * Session cache keys
+ */
+const SESSION_CACHE_KEY = 'revguide_user_cache';
+const SESSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load user data from session cache
+ */
+function loadUserFromCache() {
+  try {
+    const cached = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (cached) {
+      const { user, organization, timestamp } = JSON.parse(cached);
+      // Check if cache is still valid (within TTL)
+      if (Date.now() - timestamp < SESSION_CACHE_TTL) {
+        currentUser = user;
+        currentOrganization = organization;
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load user cache:', e);
+  }
+  return false;
+}
+
+/**
+ * Save user data to session cache
+ */
+function saveUserToCache() {
+  try {
+    sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({
+      user: currentUser,
+      organization: currentOrganization,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.warn('Failed to save user cache:', e);
+  }
+}
+
+/**
+ * Clear user cache (call on logout or when data changes)
+ */
+function clearUserCache() {
+  try {
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
+  } catch (e) {
+    // Ignore
+  }
+}
+
+/**
  * Check if user is authenticated
  * Redirects to login if not authenticated
+ * Uses session cache to avoid repeated database calls
  * @returns {Promise<boolean>}
  */
 async function checkAuth() {
@@ -34,12 +88,20 @@ async function checkAuth() {
         return false;
       }
 
-      // Get user profile - but don't fail if database query fails
+      // Try to load from session cache first (fast path)
+      if (loadUserFromCache()) {
+        console.log('[Auth] Loaded user from cache');
+        return true;
+      }
+
+      // Cache miss - fetch from database
+      console.log('[Auth] Cache miss, fetching from database...');
       try {
         const { data: profile, error } = await RevGuideDB.getUserProfile();
         if (profile) {
           currentUser = profile;
           currentOrganization = profile.organizations;
+          saveUserToCache();
         } else if (error) {
           console.warn('Failed to load user profile from database:', error);
           // Fallback: get email from auth user
@@ -73,9 +135,19 @@ async function checkAuth() {
  */
 async function signOut() {
   if (typeof RevGuideAuth !== 'undefined') {
+    clearUserCache();
+    currentUser = null;
+    currentOrganization = null;
     await RevGuideAuth.signOut();
     window.location.href = '/login';
   }
+}
+
+/**
+ * Refresh the user cache (call after updating user/org data)
+ */
+function refreshUserCache() {
+  saveUserToCache();
 }
 
 /**
@@ -1073,6 +1145,7 @@ window.AdminShared = {
   // Auth
   checkAuth,
   signOut,
+  refreshUserCache,
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
   // UI

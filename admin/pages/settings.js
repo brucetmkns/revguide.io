@@ -408,6 +408,9 @@ class SettingsPage {
         }
       }
 
+      // Update the cache so other pages get the new values instantly
+      AdminShared.refreshUserCache();
+
       // Update sidebar display
       AdminShared.renderSidebar('settings');
 
