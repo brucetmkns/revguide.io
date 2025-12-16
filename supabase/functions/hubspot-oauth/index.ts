@@ -216,6 +216,21 @@ async function handleCallback(req: Request): Promise<Response> {
     let organizationId = oauthState.organization_id
 
     if (!organizationId) {
+      // First check if user already has an organization (from onboarding)
+      if (oauthState.user_id) {
+        const { data: existingUserProfile } = await supabase
+          .from('users')
+          .select('organization_id')
+          .eq('auth_user_id', oauthState.user_id)
+          .single()
+
+        if (existingUserProfile?.organization_id) {
+          organizationId = existingUserProfile.organization_id
+        }
+      }
+    }
+
+    if (!organizationId) {
       // Check if org exists for this portal
       const { data: existingOrg } = await supabase
         .from('organizations')
@@ -321,13 +336,31 @@ async function handleCallback(req: Request): Promise<Response> {
 
     console.log('Connection stored successfully:', connectionResult)
 
-    // Update organization with portal info
+    // Update organization with portal info (but don't overwrite existing name)
+    // First check if org already has a name set by user during onboarding
+    const { data: existingOrg } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', organizationId)
+      .single()
+
+    const updateData: any = {
+      hubspot_portal_id: portalInfo.portalId,
+      hubspot_portal_domain: portalInfo.portalDomain
+    }
+
+    // Only set name if it's currently "My Organization" (default) or empty
+    if (!existingOrg?.name || existingOrg.name === 'My Organization') {
+      if (portalInfo.portalName &&
+          portalInfo.portalName !== portalInfo.portalDomain &&
+          !portalInfo.portalName.includes('hubspot.com')) {
+        updateData.name = portalInfo.portalName
+      }
+    }
+
     await supabase
       .from('organizations')
-      .update({
-        hubspot_portal_id: portalInfo.portalId,
-        hubspot_portal_domain: portalInfo.portalDomain
-      })
+      .update(updateData)
       .eq('id', organizationId)
 
     // Redirect back to frontend with success

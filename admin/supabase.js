@@ -11,9 +11,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
-// Import Supabase client from CDN
+// Import Supabase client from local bundle (required for Chrome extension CSP)
 const supabaseScript = document.createElement('script');
-supabaseScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+supabaseScript.src = chrome.runtime.getURL('admin/lib/supabase.min.js');
 document.head.appendChild(supabaseScript);
 
 // Wait for Supabase to load
@@ -471,6 +471,99 @@ const RevGuideDB = {
       .insert(orgData)
       .select()
       .single();
+  },
+
+  /**
+   * Create a new user with a new organization (for onboarding)
+   * @param {string} name - User's display name
+   * @param {string} companyName - Company/organization name
+   * @returns {Promise<{data: {user, organization}, error}>}
+   */
+  async createUserWithOrganization(name, companyName) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) {
+      return { data: null, error: new Error('Not authenticated') };
+    }
+
+    // Check if user already has a profile
+    const { data: existingUser } = await client
+      .from('users')
+      .select('id, organization_id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (existingUser?.organization_id) {
+      return { data: null, error: new Error('User already has an organization') };
+    }
+
+    // Generate slug from company name
+    const slug = companyName.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || `org-${Date.now()}`;
+
+    // Create organization first
+    const { data: org, error: orgError } = await client
+      .from('organizations')
+      .insert({
+        name: companyName,
+        slug: slug
+      })
+      .select()
+      .single();
+
+    if (orgError) {
+      console.error('Failed to create organization:', orgError);
+      return { data: null, error: orgError };
+    }
+
+    // Create or update user profile linked to organization
+    let userProfile;
+    let userError;
+
+    if (existingUser) {
+      // Update existing user
+      const result = await client
+        .from('users')
+        .update({
+          name: name,
+          organization_id: org.id,
+          role: 'admin'
+        })
+        .eq('auth_user_id', user.id)
+        .select()
+        .single();
+      userProfile = result.data;
+      userError = result.error;
+    } else {
+      // Create new user
+      const result = await client
+        .from('users')
+        .insert({
+          auth_user_id: user.id,
+          email: user.email,
+          name: name,
+          organization_id: org.id,
+          role: 'admin'
+        })
+        .select()
+        .single();
+      userProfile = result.data;
+      userError = result.error;
+    }
+
+    if (userError) {
+      console.error('Failed to create/update user profile:', userError);
+      // Clean up org if user creation failed
+      await client.from('organizations').delete().eq('id', org.id);
+      return { data: null, error: userError };
+    }
+
+    // Cache the org ID for fast access
+    this.setCachedOrgId(org.id);
+
+    return { data: { user: userProfile, organization: org }, error: null };
   },
 
   /**

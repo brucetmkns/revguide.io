@@ -279,6 +279,14 @@
       <!-- Signup Form -->
       <form class="signup-form" id="signupForm">
         <div class="form-group">
+          <label for="fullName">Your name</label>
+          <input type="text" id="fullName" placeholder="Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label for="companyName">Company name</label>
+          <input type="text" id="companyName" placeholder="Acme Inc." required>
+        </div>
+        <div class="form-group">
           <label for="email">Work email</label>
           <input type="email" id="email" placeholder="you@company.com" required>
         </div>
@@ -347,12 +355,43 @@
       const signupBtn = document.getElementById('signupBtn');
       const googleBtn = document.getElementById('googleBtn');
       const signupMessage = document.getElementById('signupMessage');
+      const fullNameInput = document.getElementById('fullName');
+      const companyNameInput = document.getElementById('companyName');
       const emailInput = document.getElementById('email');
+
+      // Check if returning from magic link or OAuth
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const queryParams = new URLSearchParams(window.location.search);
+
+      if (hashParams.get('access_token') || queryParams.get('code')) {
+        showMessage('Setting up your account...', 'success');
+        // Wait for Supabase to process the token
+        setTimeout(async () => {
+          const { data: { session } } = await RevGuideAuth.getSession();
+          if (session) {
+            // Redirect to onboarding for new users
+            window.location.href = '/onboarding';
+          } else {
+            showMessage('Authentication failed. Please try again.', 'error');
+          }
+        }, 1000);
+        return;
+      }
 
       // Check if already logged in
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
-        window.location.href = '/home';
+        // Check if user has completed onboarding (has organization)
+        try {
+          const { data: profile } = await RevGuideDB.getUserProfile();
+          if (profile?.organization_id) {
+            window.location.href = '/home';
+          } else {
+            window.location.href = '/onboarding';
+          }
+        } catch (e) {
+          window.location.href = '/onboarding';
+        }
         return;
       }
 
@@ -360,11 +399,22 @@
       signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const fullName = fullNameInput.value.trim();
+        const companyName = companyNameInput.value.trim();
         const email = emailInput.value.trim();
-        if (!email) return;
+
+        if (!fullName || !companyName || !email) return;
 
         signupBtn.disabled = true;
         signupBtn.textContent = 'Sending...';
+
+        // Store signup data for onboarding page
+        sessionStorage.setItem('revguide_signup_data', JSON.stringify({
+          fullName,
+          companyName,
+          email,
+          timestamp: Date.now()
+        }));
 
         try {
           const { error } = await RevGuideAuth.signInWithMagicLink(email);
@@ -386,6 +436,19 @@
 
       // Google OAuth
       googleBtn.addEventListener('click', async () => {
+        const fullName = fullNameInput.value.trim();
+        const companyName = companyNameInput.value.trim();
+
+        // Store signup data even for Google OAuth
+        if (fullName || companyName) {
+          sessionStorage.setItem('revguide_signup_data', JSON.stringify({
+            fullName,
+            companyName,
+            email: '',
+            timestamp: Date.now()
+          }));
+        }
+
         googleBtn.disabled = true;
 
         try {
