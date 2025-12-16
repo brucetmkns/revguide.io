@@ -485,9 +485,7 @@ class BannersPage {
     const playSelectEl = document.getElementById('ruleRelatedPlay');
     const relatedPlayId = playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : '';
 
-    // Build banner data object for Supabase
-    // NOTE: Column names in Supabase should use snake_case,
-    // but we store as the exact keys our code expects for consistency
+    // Build banner data object (camelCase for local use)
     const bannerData = {
       name,
       title: title || name,
@@ -513,23 +511,48 @@ class BannersPage {
     try {
       // In web context, save directly to Supabase
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        // Supabase uses snake_case column names - map from camelCase
+        const supabaseData = {
+          name,
+          title: title || name,
+          message,
+          type,
+          priority,
+          object_types: objectTypes,
+          object_type: objectTypeValue,
+          conditions,
+          logic,
+          display_on_all: displayOnAll,
+          tab_visibility: tabVisibility,
+          related_play_id: relatedPlayId || null,
+          enabled: true
+        };
+
+        // Add embed URL for embed type
+        if (type === 'embed') {
+          supabaseData.url = embedUrl;
+          supabaseData.embed_url = AdminShared.convertToEmbedUrl(embedUrl);
+        }
+
         if (this.editingRuleId) {
           // Update existing banner
-          const { data, error } = await RevGuideDB.updateBanner(this.editingRuleId, bannerData);
+          const { data, error } = await RevGuideDB.updateBanner(this.editingRuleId, supabaseData);
           if (error) throw error;
 
-          // Update local array
+          // Map response back to camelCase and update local array
+          const mappedData = this.mapBannerFromSupabase(data);
           const index = this.rules.findIndex(r => r.id === this.editingRuleId);
           if (index !== -1) {
-            this.rules[index] = { ...this.rules[index], ...data };
+            this.rules[index] = mappedData;
           }
         } else {
           // Create new banner
-          const { data, error } = await RevGuideDB.createBanner(bannerData);
+          const { data, error } = await RevGuideDB.createBanner(supabaseData);
           if (error) throw error;
 
-          // Add to local array
-          this.rules.push(data);
+          // Map response back to camelCase and add to local array
+          const mappedData = this.mapBannerFromSupabase(data);
+          this.rules.push(mappedData);
         }
 
         // Clear storage cache so next load gets fresh data
@@ -581,6 +604,31 @@ class BannersPage {
       console.error('Failed to save banner:', error);
       AdminShared.showToast(`Failed to save banner: ${error.message}`, 'error');
     }
+  }
+
+  // Map Supabase snake_case response to camelCase for local use
+  mapBannerFromSupabase(data) {
+    if (!data) return null;
+    return {
+      id: data.id,
+      name: data.name,
+      title: data.title,
+      message: data.message,
+      type: data.type,
+      priority: data.priority,
+      objectTypes: data.object_types,
+      objectType: data.object_type,
+      conditions: data.conditions,
+      logic: data.logic,
+      displayOnAll: data.display_on_all,
+      tabVisibility: data.tab_visibility,
+      relatedPlayId: data.related_play_id,
+      enabled: data.enabled,
+      url: data.url,
+      embedUrl: data.embed_url,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   }
 
   editRule(ruleId) {

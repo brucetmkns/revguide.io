@@ -275,6 +275,73 @@ function clearStorageCache() {
   clearStorageDataCache();
 }
 
+// Map Supabase snake_case to camelCase for local use
+function mapBannerFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    title: data.title,
+    message: data.message,
+    type: data.type,
+    priority: data.priority,
+    objectTypes: data.object_types,
+    objectType: data.object_type,
+    conditions: data.conditions,
+    logic: data.logic,
+    displayOnAll: data.display_on_all,
+    tabVisibility: data.tab_visibility,
+    relatedPlayId: data.related_play_id,
+    enabled: data.enabled,
+    url: data.url,
+    embedUrl: data.embed_url,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+function mapPlayFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    cardType: data.card_type,
+    subtitle: data.subtitle,
+    link: data.link,
+    objectType: data.object_type,
+    conditions: data.conditions,
+    logic: data.logic,
+    displayOnAll: data.display_on_all,
+    sections: data.sections,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+function mapWikiFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    title: data.title,
+    trigger: data.trigger,
+    aliases: data.aliases,
+    category: data.category,
+    objectType: data.object_type,
+    propertyGroup: data.property_group,
+    definition: data.definition,
+    link: data.link,
+    matchType: data.match_type,
+    frequency: data.frequency,
+    includeAliases: data.include_aliases,
+    priority: data.priority,
+    pageType: data.page_type,
+    urlPatterns: data.url_patterns,
+    enabled: data.enabled,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
 async function loadStorageData(forceRefresh = false) {
   const defaults = {
     rules: [],
@@ -313,10 +380,15 @@ async function loadStorageData(forceRefresh = false) {
         RevGuideDB.getPlays()
       ]);
 
+      // Map Supabase snake_case to camelCase for local use
+      const mappedBanners = (bannersResult.data || []).map(mapBannerFromSupabase);
+      const mappedPlays = (playsResult.data || []).map(mapPlayFromSupabase);
+      const mappedWiki = (wikiResult.data || []).map(mapWikiFromSupabase);
+
       const data = {
-        wikiEntries: wikiResult.data || [],
-        rules: bannersResult.data || [],
-        battleCards: playsResult.data || [],
+        wikiEntries: mappedWiki,
+        rules: mappedBanners,
+        battleCards: mappedPlays,
         presentations: [],
         invitedUsers: [],
         settings: defaults.settings

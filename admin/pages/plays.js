@@ -870,7 +870,7 @@ class PlaysPage {
     const logic = AdminShared.getLogic('playLogicToggle');
     const displayOnAll = document.getElementById('playDisplayOnAll').checked;
 
-    // Build play data object
+    // Build play data object (camelCase for local use)
     const playData = {
       name,
       cardType,
@@ -886,23 +886,38 @@ class PlaysPage {
     try {
       // In web context, save directly to Supabase
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        // Supabase uses snake_case column names - map from camelCase
+        const supabaseData = {
+          name,
+          card_type: cardType,
+          subtitle,
+          link,
+          object_type: objectType,
+          conditions,
+          logic,
+          display_on_all: displayOnAll,
+          sections
+        };
+
         if (this.editingPlayId) {
           // Update existing play
-          const { data, error } = await RevGuideDB.updatePlay(this.editingPlayId, playData);
+          const { data, error } = await RevGuideDB.updatePlay(this.editingPlayId, supabaseData);
           if (error) throw error;
 
-          // Update local array
+          // Map response back to camelCase and update local array
+          const mappedData = this.mapPlayFromSupabase(data);
           const index = this.battleCards.findIndex(c => c.id === this.editingPlayId);
           if (index !== -1) {
-            this.battleCards[index] = { ...this.battleCards[index], ...data };
+            this.battleCards[index] = mappedData;
           }
         } else {
           // Create new play
-          const { data, error } = await RevGuideDB.createPlay(playData);
+          const { data, error } = await RevGuideDB.createPlay(supabaseData);
           if (error) throw error;
 
-          // Add to local array
-          this.battleCards.push(data);
+          // Map response back to camelCase and add to local array
+          const mappedData = this.mapPlayFromSupabase(data);
+          this.battleCards.push(mappedData);
         }
 
         // Clear storage cache so next load gets fresh data
@@ -936,6 +951,25 @@ class PlaysPage {
       console.error('Failed to save play:', error);
       AdminShared.showToast(`Failed to save play: ${error.message}`, 'error');
     }
+  }
+
+  // Map Supabase snake_case response to camelCase for local use
+  mapPlayFromSupabase(data) {
+    if (!data) return null;
+    return {
+      id: data.id,
+      name: data.name,
+      cardType: data.card_type,
+      subtitle: data.subtitle,
+      link: data.link,
+      objectType: data.object_type,
+      conditions: data.conditions,
+      logic: data.logic,
+      displayOnAll: data.display_on_all,
+      sections: data.sections,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   }
 
   editPlay(playId) {

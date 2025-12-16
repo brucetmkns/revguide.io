@@ -933,26 +933,45 @@ class WikiPage {
     try {
       // In web context, save directly to Supabase
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        // Map to Supabase snake_case column names
+        const supabaseData = {
+          title: entry.title,
+          trigger: entry.trigger,
+          aliases: entry.aliases,
+          category: entry.category,
+          object_type: entry.objectType,
+          property_group: entry.propertyGroup,
+          definition: entry.definition,
+          link: entry.link,
+          match_type: entry.matchType,
+          frequency: entry.frequency,
+          include_aliases: entry.includeAliases,
+          priority: entry.priority,
+          page_type: entry.pageType,
+          url_patterns: entry.urlPatterns,
+          enabled: entry.enabled
+        };
+
         if (isNew) {
-          // Create new entry - don't include the local id
-          const { id, createdAt, ...entryData } = entry;
-          const { data, error } = await RevGuideDB.createWikiEntry(entryData);
+          // Create new entry
+          const { data, error } = await RevGuideDB.createWikiEntry(supabaseData);
           if (error) throw error;
 
-          // Use the server-generated entry
-          this.wikiEntries.push(data);
-          this.selectedEntryId = data.id;
+          // Map response back to camelCase and use the server-generated entry
+          const mappedData = this.mapWikiFromSupabase(data);
+          this.wikiEntries.push(mappedData);
+          this.selectedEntryId = mappedData.id;
           this.isCreatingNew = false;
         } else {
           // Update existing entry
-          const { id, createdAt, ...entryData } = entry;
-          const { data, error } = await RevGuideDB.updateWikiEntry(this.selectedEntryId, entryData);
+          const { data, error } = await RevGuideDB.updateWikiEntry(this.selectedEntryId, supabaseData);
           if (error) throw error;
 
-          // Update local array
+          // Map response back to camelCase and update local array
+          const mappedData = this.mapWikiFromSupabase(data);
           const index = this.wikiEntries.findIndex(e => e.id === this.selectedEntryId);
           if (index !== -1) {
-            this.wikiEntries[index] = { ...this.wikiEntries[index], ...data };
+            this.wikiEntries[index] = mappedData;
           }
         }
 
@@ -1742,6 +1761,31 @@ class WikiPage {
   }
 
   // ============ UTILITIES ============
+
+  // Map Supabase snake_case response to camelCase for local use
+  mapWikiFromSupabase(data) {
+    if (!data) return null;
+    return {
+      id: data.id,
+      title: data.title,
+      trigger: data.trigger,
+      aliases: data.aliases,
+      category: data.category,
+      objectType: data.object_type,
+      propertyGroup: data.property_group,
+      definition: data.definition,
+      link: data.link,
+      matchType: data.match_type,
+      frequency: data.frequency,
+      includeAliases: data.include_aliases,
+      priority: data.priority,
+      pageType: data.page_type,
+      urlPatterns: data.url_patterns,
+      enabled: data.enabled,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
+  }
 
   slugify(text) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
