@@ -17,6 +17,11 @@ class SettingsPage {
     // Render sidebar
     AdminShared.renderSidebar('settings');
 
+    // Check if returning from OAuth flow (web context only)
+    if (!AdminShared.isExtensionContext) {
+      await this.handleOAuthCallback();
+    }
+
     // Load data
     const data = await AdminShared.loadStorageData();
     this.settings = data.settings;
@@ -36,6 +41,57 @@ class SettingsPage {
 
     // Bind events
     this.bindEvents();
+  }
+
+  /**
+   * Handle OAuth callback if returning from Nango
+   */
+  async handleOAuthCallback() {
+    if (!RevGuideNango.isReturningFromOAuth()) {
+      return;
+    }
+
+    console.log('[Settings] Returning from OAuth flow...');
+
+    try {
+      // Complete the OAuth flow
+      const connection = await RevGuideNango.completeOAuthFlow();
+
+      if (connection && connection.isConnected) {
+        console.log('[Settings] OAuth completed successfully:', connection);
+
+        // Get organization ID
+        const orgId = await RevGuideDB.getOrganizationId();
+
+        if (orgId) {
+          // Create HubSpot connection record in database
+          await RevGuideDB.createHubSpotConnection({
+            organization_id: orgId,
+            portal_id: connection.portalId,
+            portal_domain: connection.portalDomain,
+            portal_name: connection.portalName,
+            nango_connection_id: connection.nangoConnectionId || connection.connectionId
+          });
+
+          // Update organization with portal info
+          await RevGuideDB.updateOrganization({
+            hubspot_portal_id: connection.portalId,
+            hubspot_portal_domain: connection.portalDomain,
+            nango_connection_id: connection.nangoConnectionId || connection.connectionId
+          });
+
+          AdminShared.showToast('HubSpot connected successfully!', 'success');
+        } else {
+          AdminShared.showToast('HubSpot connected! Please refresh if status does not update.', 'success');
+        }
+      } else {
+        console.log('[Settings] OAuth was cancelled or failed');
+        AdminShared.showToast('HubSpot connection was cancelled.', 'warning');
+      }
+    } catch (error) {
+      console.error('[Settings] OAuth callback error:', error);
+      AdminShared.showToast('Failed to complete HubSpot connection.', 'error');
+    }
   }
 
   setupHubSpotCards() {
@@ -58,7 +114,29 @@ class SettingsPage {
     const disconnectedState = document.getElementById('hubspotDisconnectedState');
 
     try {
-      const { data: connection } = await RevGuideDB.getPrimaryHubSpotConnection();
+      // First check database for connection record
+      let connection = null;
+      try {
+        const { data } = await RevGuideDB.getPrimaryHubSpotConnection();
+        connection = data;
+      } catch (e) {
+        console.log('No database connection found, checking Nango...');
+      }
+
+      // If no database connection, check Nango directly
+      if (!connection || !connection.is_active) {
+        const nangoConnection = await RevGuideNango.checkConnection();
+        if (nangoConnection) {
+          // Use Nango connection info
+          connection = {
+            is_active: true,
+            portal_name: nangoConnection.portalName || 'HubSpot Portal',
+            portal_domain: nangoConnection.portalDomain,
+            portal_id: nangoConnection.portalId,
+            nango_connection_id: nangoConnection.nangoConnectionId || nangoConnection.connectionId
+          };
+        }
+      }
 
       if (connection && connection.is_active) {
         // Show connected state
@@ -508,48 +586,24 @@ class SettingsPage {
     }
 
     try {
-      // Generate unique connection ID
-      const connectionId = 'conn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      // Get current user info for session token
+      const { data: { user } } = await RevGuideAuth.getSession();
+      const endUser = user ? {
+        id: user.id,
+        email: user.email,
+        displayName: user.email
+      } : {};
 
-      // Get current organization ID
-      const orgId = await RevGuideDB.getOrganizationId();
+      // Start OAuth flow - this will redirect the page
+      await RevGuideNango.startHubSpotOAuth(
+        window.location.href, // Return to settings page after OAuth
+        endUser
+      );
 
-      // Start Nango OAuth flow
-      const result = await RevGuideNango.connectHubSpot(connectionId);
-
-      if (result.success) {
-        // Get portal info
-        const portalInfo = await RevGuideNango.getPortalInfo(connectionId);
-
-        if (portalInfo && orgId) {
-          // Create HubSpot connection record
-          await RevGuideDB.createHubSpotConnection({
-            organization_id: orgId,
-            portal_id: portalInfo.portalId,
-            portal_domain: portalInfo.portalDomain,
-            portal_name: portalInfo.portalName,
-            nango_connection_id: connectionId
-          });
-
-          // Update organization with portal info
-          await RevGuideDB.updateOrganization({
-            hubspot_portal_id: portalInfo.portalId,
-            hubspot_portal_domain: portalInfo.portalDomain,
-            nango_connection_id: connectionId
-          });
-
-          AdminShared.showToast('HubSpot connected successfully!', 'success');
-
-          // Reload connection status
-          await this.loadHubSpotConnectionStatus();
-        }
-      } else {
-        AdminShared.showToast(result.error || 'Failed to connect HubSpot', 'error');
-        this.resetConnectButton();
-      }
+      // Note: Page will redirect, so code below won't execute
     } catch (error) {
       console.error('HubSpot connection error:', error);
-      AdminShared.showToast('Failed to connect HubSpot. Please try again.', 'error');
+      AdminShared.showToast('Failed to start HubSpot connection. Please try again.', 'error');
       this.resetConnectButton();
     }
   }

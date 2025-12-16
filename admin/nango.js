@@ -1,9 +1,6 @@
 /**
  * RevGuide - Nango Client
- * Handles HubSpot OAuth via Nango Connect UI
- *
- * Uses Nango's hosted Connect UI popup for OAuth flow.
- * See: https://nango.dev/docs/guides/api-authorization/authorize-in-your-app-default-ui
+ * Handles HubSpot OAuth via Nango using redirect flow
  */
 
 // Integration ID must match what you configured in Nango Dashboard > Integrations
@@ -53,138 +50,90 @@ const RevGuideNango = {
   },
 
   /**
-   * Connect HubSpot account via OAuth using Nango Connect UI popup
-   * @param {string} connectionId - Unique identifier for this connection (usually org_id or user_id)
+   * Start HubSpot OAuth flow via redirect
+   * Redirects user to Nango Connect UI, which will redirect back after OAuth
+   * @param {string} returnUrl - URL to return to after OAuth completes
    * @param {Object} endUser - End user info for session token
-   * @returns {Promise<Object>} Connection result with portal info
    */
-  async connectHubSpot(connectionId, endUser = {}) {
+  async startHubSpotOAuth(returnUrl, endUser = {}) {
     try {
+      // Generate a unique end user ID
+      const endUserId = endUser.id || 'user_' + Date.now();
+
       // Get session token from backend
       const sessionToken = await this.getSessionToken({
-        id: endUser.id || connectionId,
+        id: endUserId,
         email: endUser.email || '',
         displayName: endUser.displayName || ''
       });
 
-      console.log('[RevGuide] Got session token, opening Connect UI...');
+      // Store return URL and end user ID in session storage
+      sessionStorage.setItem('nango_return_url', returnUrl);
+      sessionStorage.setItem('nango_end_user_id', endUserId);
 
-      // Open Nango Connect UI popup
-      const result = await this.openConnectUI(sessionToken, connectionId);
-
-      console.log('[RevGuide] HubSpot connected:', result);
-
-      // Fetch connection details to get portal info
-      const connectionDetails = await this.getConnectionDetails(connectionId);
-
-      return {
-        success: true,
-        connectionId: result.connectionId,
-        ...connectionDetails
-      };
-    } catch (error) {
-      console.error('[RevGuide] HubSpot connection failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to connect HubSpot'
-      };
-    }
-  },
-
-  /**
-   * Open Nango Connect UI in a popup window
-   * @param {string} sessionToken - Connect session token
-   * @param {string} connectionId - Connection ID
-   * @returns {Promise<Object>} Connection result
-   */
-  openConnectUI(sessionToken, connectionId) {
-    return new Promise((resolve, reject) => {
       // Build Connect UI URL
       const connectUrl = new URL(NANGO_CONNECT_URL);
       connectUrl.searchParams.set('session_token', sessionToken);
 
-      // Open popup
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
+      console.log('[RevGuide] Redirecting to Nango Connect UI...');
 
-      const popup = window.open(
-        connectUrl.toString(),
-        'nango-connect',
-        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
-      );
+      // Redirect to Nango Connect UI (full page redirect, not popup)
+      window.location.href = connectUrl.toString();
+    } catch (error) {
+      console.error('[RevGuide] Failed to start HubSpot OAuth:', error);
+      throw error;
+    }
+  },
 
-      if (!popup) {
-        reject(new Error('Popup blocked. Please allow popups for this site.'));
-        return;
+  /**
+   * Check if returning from OAuth flow
+   * Call this on page load to detect if user just completed OAuth
+   * @returns {boolean} True if returning from OAuth
+   */
+  isReturningFromOAuth() {
+    return sessionStorage.getItem('nango_return_url') !== null;
+  },
+
+  /**
+   * Complete the OAuth flow after returning from Nango
+   * @returns {Promise<Object>} Connection details or null if not returning from OAuth
+   */
+  async completeOAuthFlow() {
+    const returnUrl = sessionStorage.getItem('nango_return_url');
+    const endUserId = sessionStorage.getItem('nango_end_user_id');
+
+    if (!returnUrl) {
+      return null;
+    }
+
+    // Clear session storage
+    sessionStorage.removeItem('nango_return_url');
+    sessionStorage.removeItem('nango_end_user_id');
+
+    try {
+      // Check if connection was established
+      const connection = await this.getConnectionDetails(endUserId || 'any');
+
+      if (connection && connection.isConnected) {
+        console.log('[RevGuide] OAuth completed successfully:', connection);
+        return connection;
+      } else {
+        console.log('[RevGuide] OAuth may have been cancelled');
+        return null;
       }
-
-      let resolved = false;
-
-      // Listen for messages from popup
-      const messageHandler = (event) => {
-        console.log('[RevGuide] Message from popup:', event.origin, event.data);
-
-        // Verify origin
-        if (!event.origin.includes('nango.dev')) return;
-
-        const { type, data, eventType } = event.data || {};
-        const messageType = type || eventType;
-
-        console.log('[RevGuide] Nango message type:', messageType, data);
-
-        if (messageType === 'authorization_success' || messageType === 'success' || messageType === 'connect_complete') {
-          resolved = true;
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageHandler);
-          popup.close();
-          resolve({
-            connectionId: data?.connectionId || connectionId,
-            providerConfigKey: HUBSPOT_INTEGRATION_ID
-          });
-        } else if (messageType === 'authorization_error' || messageType === 'error' || messageType === 'connect_error') {
-          resolved = true;
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageHandler);
-          popup.close();
-          reject(new Error(data?.error || data?.message || 'Authorization failed'));
-        }
-      };
-
-      window.addEventListener('message', messageHandler);
-
-      // Check if popup was closed - when closed, assume success and verify connection
-      const checkClosed = setInterval(() => {
-        if (popup.closed && !resolved) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageHandler);
-
-          // Popup closed - wait a moment then assume user completed flow
-          console.log('[RevGuide] Popup closed, waiting before resolving...');
-          setTimeout(() => {
-            if (!resolved) {
-              resolved = true;
-              console.log('[RevGuide] Resolving with connectionId:', connectionId);
-              resolve({
-                connectionId: connectionId,
-                providerConfigKey: HUBSPOT_INTEGRATION_ID
-              });
-            }
-          }, 500);
-        }
-      }, 300);
-    });
+    } catch (error) {
+      console.error('[RevGuide] Error completing OAuth flow:', error);
+      return null;
+    }
   },
 
   /**
    * Get connection details from backend
-   * @param {string} connectionId - The connection ID
+   * @param {string} connectionId - The connection ID or end_user ID
    * @returns {Promise<Object>} Connection details including portal info
    */
   async getConnectionDetails(connectionId) {
     try {
-      // Call our edge function to get connection details
       const response = await fetch(`${NANGO_EDGE_FUNCTION_URL}/connection?connectionId=${connectionId}`);
 
       if (!response.ok) {
@@ -199,16 +148,19 @@ const RevGuideNango = {
   },
 
   /**
-   * Check if HubSpot is connected for this connection ID
-   * @param {string} connectionId - The connection ID to check
-   * @returns {Promise<boolean>}
+   * Check if HubSpot is connected
+   * @returns {Promise<Object|null>} Connection info if connected, null otherwise
    */
-  async isConnected(connectionId) {
+  async checkConnection() {
     try {
-      const details = await this.getConnectionDetails(connectionId);
-      return details?.isConnected === true;
+      // Use 'any' to get the most recent connection
+      const details = await this.getConnectionDetails('any');
+      if (details?.isConnected) {
+        return details;
+      }
+      return null;
     } catch {
-      return false;
+      return null;
     }
   },
 
@@ -266,79 +218,6 @@ const RevGuideNango = {
       console.error('[RevGuide] Proxy request failed:', error);
       throw error;
     }
-  },
-
-  /**
-   * Get HubSpot portal info from connected account
-   * @param {string} connectionId - The connection ID
-   * @returns {Promise<Object>} Portal info (id, domain, name)
-   */
-  async getPortalInfo(connectionId) {
-    try {
-      // HubSpot account info endpoint
-      const response = await this.proxyRequest(connectionId, '/account-info/v3/details');
-      return {
-        portalId: response.portalId?.toString(),
-        portalDomain: response.uiDomain,
-        portalName: response.companyName || response.uiDomain,
-        timeZone: response.timeZone
-      };
-    } catch (error) {
-      console.error('[RevGuide] Failed to get portal info:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Fetch HubSpot properties for an object type
-   * @param {string} connectionId - The connection ID
-   * @param {string} objectType - Object type (contacts, companies, deals, tickets)
-   * @returns {Promise<Array>}
-   */
-  async getProperties(connectionId, objectType) {
-    const response = await this.proxyRequest(
-      connectionId,
-      `/crm/v3/properties/${objectType}`
-    );
-    return response.results || [];
-  },
-
-  /**
-   * Fetch a HubSpot record
-   * @param {string} connectionId - The connection ID
-   * @param {string} objectType - Object type
-   * @param {string} recordId - Record ID
-   * @param {Array<string>} properties - Properties to fetch
-   * @returns {Promise<Object>}
-   */
-  async getRecord(connectionId, objectType, recordId, properties = []) {
-    const queryParams = properties.length > 0
-      ? `?properties=${properties.join(',')}`
-      : '';
-
-    return this.proxyRequest(
-      connectionId,
-      `/crm/v3/objects/${objectType}/${recordId}${queryParams}`
-    );
-  },
-
-  /**
-   * Update a HubSpot record
-   * @param {string} connectionId - The connection ID
-   * @param {string} objectType - Object type
-   * @param {string} recordId - Record ID
-   * @param {Object} properties - Properties to update
-   * @returns {Promise<Object>}
-   */
-  async updateRecord(connectionId, objectType, recordId, properties) {
-    return this.proxyRequest(
-      connectionId,
-      `/crm/v3/objects/${objectType}/${recordId}`,
-      {
-        method: 'PATCH',
-        body: { properties }
-      }
-    );
   }
 };
 

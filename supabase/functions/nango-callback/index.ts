@@ -80,18 +80,19 @@ async function handleCreateSession(req: Request): Promise<Response> {
       body: JSON.stringify({
         end_user: {
           id: endUser.id,
-          email: endUser.email || '',
-          display_name: endUser.displayName || ''
+          ...(endUser.email && { email: endUser.email }),
+          ...(endUser.displayName && { display_name: endUser.displayName })
         },
         allowed_integrations: allowedIntegrations || ['hubspot']
       })
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Nango session creation failed:', error)
+      const errorText = await response.text()
+      console.error('Nango session creation failed:', response.status, errorText)
+      console.error('NANGO_SECRET_KEY exists:', !!NANGO_SECRET_KEY, 'length:', NANGO_SECRET_KEY?.length)
       return new Response(
-        JSON.stringify({ error: 'Failed to create session' }),
+        JSON.stringify({ error: 'Failed to create session', details: errorText }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -240,7 +241,7 @@ async function handleNangoWebhook(req: Request): Promise<Response> {
 }
 
 /**
- * Get connection details for a connection ID
+ * Get connection details for a connection ID or end_user ID
  */
 async function handleGetConnection(req: Request): Promise<Response> {
   const url = new URL(req.url)
@@ -253,8 +254,19 @@ async function handleGetConnection(req: Request): Promise<Response> {
     )
   }
 
-  // Get connection from Nango
-  const connection = await fetchNangoConnection(connectionId)
+  // First try direct connection lookup
+  let connection = await fetchNangoConnection(connectionId)
+  let actualConnectionId = connectionId
+
+  // If not found, try to find by end_user ID
+  if (!connection) {
+    console.log('Connection not found directly, searching by end_user ID:', connectionId)
+    const foundConnection = await findConnectionByEndUser(connectionId)
+    if (foundConnection) {
+      actualConnectionId = foundConnection.connection_id
+      connection = foundConnection
+    }
+  }
 
   if (!connection) {
     return new Response(
@@ -263,13 +275,14 @@ async function handleGetConnection(req: Request): Promise<Response> {
     )
   }
 
-  // Get portal info
-  const portalInfo = await fetchHubSpotPortalInfo(connectionId)
+  // Get portal info using the actual Nango connection ID
+  const portalInfo = await fetchHubSpotPortalInfo(actualConnectionId)
 
   return new Response(
     JSON.stringify({
       isConnected: true,
-      connectionId,
+      connectionId: actualConnectionId,
+      nangoConnectionId: actualConnectionId,
       ...portalInfo
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -333,6 +346,26 @@ async function handleProxy(req: Request): Promise<Response> {
     )
   }
 
+  // Resolve the actual Nango connection ID
+  let actualConnectionId = connectionId
+
+  // First check if it's a valid Nango connection ID
+  const directConnection = await fetchNangoConnection(connectionId)
+  if (!directConnection) {
+    // Try to find by end_user ID
+    console.log('Proxy: Connection not found directly, searching by end_user ID:', connectionId)
+    const foundConnection = await findConnectionByEndUser(connectionId)
+    if (foundConnection) {
+      actualConnectionId = foundConnection.connection_id
+      console.log('Proxy: Found connection:', actualConnectionId)
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'Connection not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
   // Make request through Nango proxy with HubSpot API versioning
   const nangoResponse = await fetch(
     `https://api.nango.dev/proxy${endpoint}`,
@@ -340,7 +373,7 @@ async function handleProxy(req: Request): Promise<Response> {
       method,
       headers: {
         'Authorization': `Bearer ${NANGO_SECRET_KEY}`,
-        'Connection-Id': connectionId,
+        'Connection-Id': actualConnectionId,
         'Provider-Config-Key': 'hubspot',
         'Content-Type': 'application/json',
         // HubSpot 2025 platform requires date-based API versioning
@@ -382,6 +415,60 @@ async function fetchNangoConnection(connectionId: string): Promise<any> {
     return await response.json()
   } catch (error) {
     console.error('Failed to fetch Nango connection:', error)
+    return null
+  }
+}
+
+/**
+ * List all HubSpot connections and find one by end_user ID
+ */
+async function findConnectionByEndUser(endUserId: string): Promise<any> {
+  try {
+    const response = await fetch(
+      `https://api.nango.dev/connections`,
+      {
+        headers: {
+          'Authorization': `Bearer ${NANGO_SECRET_KEY}`
+        }
+      }
+    )
+
+    if (!response.ok) {
+      console.error('Failed to list connections:', response.status, await response.text())
+      return null
+    }
+
+    const data = await response.json()
+    console.log('Nango connections response:', JSON.stringify(data).substring(0, 500))
+
+    // Handle both array response and object with connections property
+    const allConnections = Array.isArray(data) ? data : (data.connections || [])
+    console.log('Total connections count:', allConnections.length)
+
+    // Filter to HubSpot connections only
+    const connections = allConnections.filter((c: any) =>
+      c.provider_config_key === 'hubspot' || c.provider === 'hubspot'
+    )
+    console.log('HubSpot connections count:', connections.length)
+
+    // Find connection matching the end_user ID
+    const match = connections.find((c: any) => c.end_user?.id === endUserId)
+
+    if (match) {
+      console.log('Found match by end_user ID:', match.connection_id)
+      return match
+    }
+
+    // If no match by end_user, return the most recent connection
+    if (connections.length > 0) {
+      console.log('Returning most recent connection:', connections[0].connection_id)
+      return connections[0]
+    }
+
+    console.log('No connections found')
+    return null
+  } catch (error) {
+    console.error('Failed to find connection by end user:', error)
     return null
   }
 }
