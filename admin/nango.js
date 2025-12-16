@@ -185,7 +185,7 @@ const RevGuideNango = {
   async getConnectionDetails(connectionId) {
     try {
       // Call our edge function to get connection details
-      const response = await fetch(`/api/nango/connection?connectionId=${connectionId}`);
+      const response = await fetch(`${NANGO_EDGE_FUNCTION_URL}/connection?connectionId=${connectionId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch connection details');
@@ -219,7 +219,7 @@ const RevGuideNango = {
    */
   async disconnect(connectionId) {
     try {
-      const response = await fetch('/api/nango/disconnect', {
+      const response = await fetch(`${NANGO_EDGE_FUNCTION_URL}/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionId })
@@ -245,7 +245,7 @@ const RevGuideNango = {
    */
   async proxyRequest(connectionId, endpoint, options = {}) {
     try {
-      const response = await fetch('/api/nango/proxy', {
+      const response = await fetch(`${NANGO_EDGE_FUNCTION_URL}/proxy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
