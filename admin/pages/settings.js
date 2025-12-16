@@ -219,19 +219,18 @@ class SettingsPage {
   // ================================
 
   async loadAccountSettings() {
+    const userNameInput = document.getElementById('userName');
     const userEmailInput = document.getElementById('userEmail');
     const companyNameInput = document.getElementById('companyName');
 
-    // Try to get email - first from profile, then from auth user
+    // Try to get email and name - first from profile, then from auth user
     let email = AdminShared.currentUser?.email;
-    console.log('[Settings] currentUser:', AdminShared.currentUser);
-    console.log('[Settings] email from profile:', email);
+    let name = AdminShared.currentUser?.name;
 
     // If no email from profile, get from Supabase auth directly
     if (!email && typeof RevGuideAuth !== 'undefined') {
       try {
         const result = await RevGuideAuth.getUser();
-        console.log('[Settings] RevGuideAuth.getUser() result:', result);
         const user = result?.data?.user;
         if (user && user.email) {
           email = user.email;
@@ -241,8 +240,13 @@ class SettingsPage {
       }
     }
 
-    console.log('[Settings] Final email:', email);
+    // Set name field
+    if (name) {
+      userNameInput.value = name;
+    }
+    this.originalUserName = name || '';
 
+    // Set email field
     if (email) {
       userEmailInput.value = email;
       userEmailInput.placeholder = '';
@@ -250,6 +254,7 @@ class SettingsPage {
       userEmailInput.placeholder = 'Unable to load email';
     }
 
+    // Set company name field
     if (AdminShared.currentOrganization) {
       companyNameInput.value = AdminShared.currentOrganization.name || '';
       this.originalCompanyName = AdminShared.currentOrganization.name || '';
@@ -257,20 +262,18 @@ class SettingsPage {
   }
 
   async saveAccountSettings() {
+    const userNameInput = document.getElementById('userName');
     const companyNameInput = document.getElementById('companyName');
     const saveBtn = document.getElementById('saveAccountBtn');
-    const statusEl = document.getElementById('accountStatus');
 
+    const userName = userNameInput.value.trim();
     const companyName = companyNameInput.value.trim();
 
-    // Validate
-    if (!companyName) {
-      this.showAccountStatus('Company name is required', 'error');
-      return;
-    }
+    // Check if anything changed
+    const nameChanged = userName !== this.originalUserName;
+    const companyChanged = companyName !== this.originalCompanyName;
 
-    // Check if changed
-    if (companyName === this.originalCompanyName) {
+    if (!nameChanged && !companyChanged) {
       this.showAccountStatus('No changes to save', 'info');
       return;
     }
@@ -281,23 +284,34 @@ class SettingsPage {
     saveBtn.innerHTML = 'Saving...';
 
     try {
-      // Update organization in Supabase
-      const { data, error } = await RevGuideDB.updateOrganization({ name: companyName });
-
-      if (error) {
-        throw new Error(error.message);
+      // Update user name if changed
+      if (nameChanged) {
+        const { error: userError } = await RevGuideDB.updateUserProfile({ name: userName });
+        if (userError) {
+          throw new Error(userError.message);
+        }
+        this.originalUserName = userName;
+        if (AdminShared.currentUser) {
+          AdminShared.currentUser.name = userName;
+        }
       }
 
-      // Update local state
-      this.originalCompanyName = companyName;
-      if (AdminShared.currentOrganization) {
-        AdminShared.currentOrganization.name = companyName;
+      // Update organization name if changed
+      if (companyChanged) {
+        const { error: orgError } = await RevGuideDB.updateOrganization({ name: companyName });
+        if (orgError) {
+          throw new Error(orgError.message);
+        }
+        this.originalCompanyName = companyName;
+        if (AdminShared.currentOrganization) {
+          AdminShared.currentOrganization.name = companyName;
+        }
       }
 
-      // Update sidebar organization name display
+      // Update sidebar display
       AdminShared.renderSidebar('settings');
 
-      this.showAccountStatus('Company name updated successfully', 'success');
+      this.showAccountStatus('Settings saved successfully', 'success');
       AdminShared.showToast('Account settings saved', 'success');
     } catch (error) {
       console.error('Failed to save account settings:', error);

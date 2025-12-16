@@ -165,6 +165,23 @@ const RevGuideDB = {
     return profile?.organization_id;
   },
 
+  /**
+   * Update current user's profile
+   */
+  async updateUserProfile(updates) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { error: new Error('Not authenticated') };
+
+    return client
+      .from('users')
+      .update(updates)
+      .eq('auth_user_id', user.id)
+      .select()
+      .single();
+  },
+
   // ============================================
   // Wiki Entries
   // ============================================

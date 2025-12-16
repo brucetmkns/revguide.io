@@ -227,8 +227,14 @@ async function handleCallback(req: Request): Promise<Response> {
         organizationId = existingOrg.id
       } else {
         // Create new organization
-        // Generate a slug from portal name or use portal ID
-        const orgName = portalInfo.portalName || portalInfo.portalDomain || 'My Organization'
+        // Use HubSpot company name if available, otherwise use a generic name
+        // Avoid using "app.hubspot.com" or similar portal domains as org name
+        let orgName = 'My Organization'
+        if (portalInfo.portalName &&
+            portalInfo.portalName !== portalInfo.portalDomain &&
+            !portalInfo.portalName.includes('hubspot.com')) {
+          orgName = portalInfo.portalName
+        }
         const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `org-${portalInfo.portalId}`
 
         const { data: newOrg, error: orgError } = await supabase
