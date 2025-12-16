@@ -4,7 +4,7 @@
  */
 
 // Configuration
-const LIBRARIES_BASE_URL = 'https://raw.githubusercontent.com/brucetmkns/revguide.io/main/libraries';
+const LIBRARIES_BASE_URL = 'https://raw.githubusercontent.com/brucetmkns/revguide.io/main/library-data';
 const MANIFEST_URL = `${LIBRARIES_BASE_URL}/index.json`;
 
 // State
