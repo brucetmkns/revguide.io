@@ -10,11 +10,14 @@ class SettingsPage {
   }
 
   async init() {
+    console.log('[Settings] init() started');
+
     // Show appropriate HubSpot card based on context FIRST to prevent flashing
     this.setupHubSpotCards();
 
     // Check authentication (redirects to login if not authenticated)
     const isAuthenticated = await AdminShared.checkAuth();
+    console.log('[Settings] isAuthenticated:', isAuthenticated);
     if (!isAuthenticated) return;
 
     // Render sidebar
@@ -26,6 +29,7 @@ class SettingsPage {
     }
 
     // Load data
+    console.log('[Settings] Loading storage data...');
     const data = await AdminShared.loadStorageData();
     this.settings = data.settings;
     this.invitedUsers = data.invitedUsers || [];
@@ -35,6 +39,7 @@ class SettingsPage {
     this.renderUsersTable();
 
     // Load account settings (user email, company name)
+    console.log('[Settings] About to call loadAccountSettings()');
     await this.loadAccountSettings();
 
     // Load HubSpot connection status
@@ -42,6 +47,7 @@ class SettingsPage {
 
     // Bind events
     this.bindEvents();
+    console.log('[Settings] init() completed');
   }
 
   /**
@@ -76,12 +82,16 @@ class SettingsPage {
   }
 
   async loadHubSpotConnectionStatus() {
+    const loadingState = document.getElementById('hubspotLoadingState');
     const connectedState = document.getElementById('hubspotConnectedState');
     const disconnectedState = document.getElementById('hubspotDisconnectedState');
 
     try {
       // Get connection status from HubSpot client
       const connection = await RevGuideHubSpot.getConnection();
+
+      // Hide loading state
+      if (loadingState) loadingState.style.display = 'none';
 
       if (connection && connection.isConnected) {
         // Show connected state
@@ -107,7 +117,8 @@ class SettingsPage {
       }
     } catch (error) {
       console.error('Error loading HubSpot connection:', error);
-      // Show disconnected state on error
+      // Hide loading state and show disconnected state on error
+      if (loadingState) loadingState.style.display = 'none';
       connectedState.style.display = 'none';
       disconnectedState.style.display = 'block';
       this.currentConnection = null;
@@ -211,9 +222,32 @@ class SettingsPage {
     const userEmailInput = document.getElementById('userEmail');
     const companyNameInput = document.getElementById('companyName');
 
-    // Load from AdminShared's current user/organization (set during checkAuth)
-    if (AdminShared.currentUser) {
-      userEmailInput.value = AdminShared.currentUser.email || '';
+    // Try to get email - first from profile, then from auth user
+    let email = AdminShared.currentUser?.email;
+    console.log('[Settings] currentUser:', AdminShared.currentUser);
+    console.log('[Settings] email from profile:', email);
+
+    // If no email from profile, get from Supabase auth directly
+    if (!email && typeof RevGuideAuth !== 'undefined') {
+      try {
+        const result = await RevGuideAuth.getUser();
+        console.log('[Settings] RevGuideAuth.getUser() result:', result);
+        const user = result?.data?.user;
+        if (user && user.email) {
+          email = user.email;
+        }
+      } catch (e) {
+        console.error('[Settings] Failed to load user email:', e);
+      }
+    }
+
+    console.log('[Settings] Final email:', email);
+
+    if (email) {
+      userEmailInput.value = email;
+      userEmailInput.placeholder = '';
+    } else {
+      userEmailInput.placeholder = 'Unable to load email';
     }
 
     if (AdminShared.currentOrganization) {

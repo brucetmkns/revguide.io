@@ -34,11 +34,27 @@ async function checkAuth() {
         return false;
       }
 
-      // Get user profile
-      const { data: profile } = await RevGuideDB.getUserProfile();
-      if (profile) {
-        currentUser = profile;
-        currentOrganization = profile.organizations;
+      // Get user profile - but don't fail if database query fails
+      try {
+        const { data: profile, error } = await RevGuideDB.getUserProfile();
+        if (profile) {
+          currentUser = profile;
+          currentOrganization = profile.organizations;
+        } else if (error) {
+          console.warn('Failed to load user profile from database:', error);
+          // Fallback: get email from auth user
+          const { data: { user } } = await RevGuideAuth.getUser();
+          if (user) {
+            currentUser = { email: user.email, auth_user_id: user.id };
+          }
+        }
+      } catch (profileError) {
+        console.warn('Error loading user profile:', profileError);
+        // Fallback: get email from auth user
+        const { data: { user } } = await RevGuideAuth.getUser();
+        if (user) {
+          currentUser = { email: user.email, auth_user_id: user.id };
+        }
       }
 
       return true;

@@ -127,11 +127,34 @@ const RevGuideDB = {
 
     if (!user) return { data: null, error: new Error('Not authenticated') };
 
-    return client
+    // First get the user record
+    const { data: userProfile, error: userError } = await client
       .from('users')
-      .select('*, organizations(*)')
+      .select('*')
       .eq('auth_user_id', user.id)
       .single();
+
+    if (userError || !userProfile) {
+      console.error('Failed to get user profile:', userError);
+      return { data: null, error: userError };
+    }
+
+    // Then get the organization separately if user has one
+    if (userProfile.organization_id) {
+      const { data: org, error: orgError } = await client
+        .from('organizations')
+        .select('*')
+        .eq('id', userProfile.organization_id)
+        .single();
+
+      if (org) {
+        userProfile.organizations = org;
+      } else if (orgError) {
+        console.warn('Failed to get organization:', orgError);
+      }
+    }
+
+    return { data: userProfile, error: null };
   },
 
   /**
