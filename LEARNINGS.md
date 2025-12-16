@@ -863,4 +863,85 @@ connection.connected_by = userRecord.id;
 
 ---
 
+## Supabase Column Naming Conventions (v2.2.1)
+
+### Snake_Case vs CamelCase Mapping
+**Lesson**: Supabase/PostgreSQL uses snake_case for column names, but JavaScript frontend uses camelCase. You MUST map between them.
+
+**Problem**: Saving data with camelCase keys (e.g., `objectType`, `displayOnAll`) to Supabase fails with "Could not find the 'objectType' column" because the actual column is `object_type`.
+
+**Solution**: Create explicit mapping functions for each entity type:
+
+```javascript
+// When SAVING to Supabase (camelCase → snake_case)
+const supabaseData = {
+  name,
+  card_type: cardType,        // camelCase → snake_case
+  object_type: objectType,
+  display_on_all: displayOnAll,
+  // ... etc
+};
+
+// When LOADING from Supabase (snake_case → camelCase)
+function mapPlayFromSupabase(data) {
+  return {
+    id: data.id,
+    name: data.name,
+    cardType: data.card_type,       // snake_case → camelCase
+    objectType: data.object_type,
+    displayOnAll: data.display_on_all,
+    // ... etc
+  };
+}
+```
+
+**Files affected**:
+- `admin/shared.js` - Global mapping functions for `loadStorageData()`
+- `admin/pages/banners.js` - `mapBannerFromSupabase()` method
+- `admin/pages/plays.js` - `mapPlayFromSupabase()` method
+- `admin/pages/wiki.js` - `mapWikiFromSupabase()` method
+
+### Direct Database Operations vs Cache
+**Lesson**: In web context, save directly to Supabase, not just to local cache.
+
+**Problem**: The original `saveStorageData()` function was only updating sessionStorage cache, not actually persisting to Supabase. Data appeared to save but was lost on page navigation.
+
+**Solution**: Each page's save function should:
+1. Save directly to Supabase via `RevGuideDB.createX()` / `updateX()`
+2. Clear the storage cache so next load fetches fresh data
+3. Update local state with the response from Supabase
+
+```javascript
+// WRONG - only updates cache, doesn't persist
+await AdminShared.saveStorageData({ rules: this.rules });
+
+// CORRECT - saves to database, clears cache
+if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+  const { data, error } = await RevGuideDB.createBanner(supabaseData);
+  if (error) throw error;
+  AdminShared.clearStorageCache(); // Force fresh load next time
+  this.rules.push(this.mapBannerFromSupabase(data));
+}
+```
+
+### Missing Database Columns
+**Lesson**: Supabase tables may not have all columns your frontend expects. Add them via migration.
+
+**Problem**: Saving plays failed with "Could not find the 'object_type' column" because the plays table was created without that column.
+
+**Solution**: Create a migration to add missing columns:
+```sql
+-- Migration 006: Add missing columns
+ALTER TABLE plays ADD COLUMN IF NOT EXISTS object_type TEXT;
+ALTER TABLE plays ADD COLUMN IF NOT EXISTS display_on_all BOOLEAN DEFAULT false;
+
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS object_type TEXT;
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS embed_url TEXT;
+-- ... etc
+```
+
+**Important**: Run migrations via Supabase Dashboard → SQL Editor, not just by creating the file.
+
+---
+
 *Last updated: December 2024*

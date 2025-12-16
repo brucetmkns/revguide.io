@@ -2,6 +2,36 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.2.1] - 2025-12-16 - Data Persistence Fix
+
+### Fixed
+- **Data Persistence - Critical Fix**
+  - Wiki entries, banners, and plays now properly save to Supabase database
+  - Data persists correctly when navigating between pages
+  - Previously, save operations were updating local cache but not persisting to database
+
+- **Supabase Column Name Mapping**
+  - Added snake_case/camelCase mapping between frontend and database
+  - Frontend uses camelCase (e.g., `objectType`, `displayOnAll`)
+  - Supabase uses snake_case (e.g., `object_type`, `display_on_all`)
+  - Mapping functions in `shared.js` and each page class
+
+### Added
+- **Database Migration 006**
+  - Added missing columns to `plays` table: `object_type`, `display_on_all`
+  - Added missing columns to `banners` table: `object_type`, `object_types`, `display_on_all`, `tab_visibility`, `related_play_id`, `embed_url`
+  - Added missing columns to `wiki_entries` table: `object_type`, `property_group`, `match_type`, `frequency`, `include_aliases`, `priority`, `page_type`, `url_patterns`
+
+### Technical
+- `banners.js`: Direct Supabase save via `RevGuideDB.createBanner()`/`updateBanner()`/`deleteBanner()`
+- `plays.js`: Direct Supabase save via `RevGuideDB.createPlay()`/`updatePlay()`/`deletePlay()`
+- `wiki.js`: Direct Supabase save via `RevGuideDB.createWikiEntry()`/`updateWikiEntry()`/`deleteWikiEntry()`
+- `shared.js`: Added `mapBannerFromSupabase()`, `mapPlayFromSupabase()`, `mapWikiFromSupabase()` for loading data
+- `shared.js`: Added `clearStorageCache()` to invalidate cache after saves
+- New migration: `supabase/migrations/006_add_missing_columns.sql`
+
+---
+
 ## [2.2.0] - 2025-12-16 - Beta Release
 
 ### Added

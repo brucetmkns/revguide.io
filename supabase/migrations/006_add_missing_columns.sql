@@ -16,5 +16,6 @@ ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS property_group TEXT;
 ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS match_type TEXT DEFAULT 'exact';
 ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS frequency TEXT DEFAULT 'first';
 ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS include_aliases BOOLEAN DEFAULT true;
+ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 50;
 ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS page_type TEXT DEFAULT 'record';
 ALTER TABLE wiki_entries ADD COLUMN IF NOT EXISTS url_patterns JSONB;

@@ -4,11 +4,17 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.1.2 (SaaS Web App + Chrome Extension)
+## Current State: v2.2.1 (SaaS Web App + Chrome Extension)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, user settings management, and proper database security.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, user settings management, proper database security, and reliable data persistence.
 
-### Security Hardening (v2.1.2) - NEW
+### Data Persistence Fix (v2.2.1) - NEW
+- **Fixed critical data persistence bug** - Wiki, banners, and plays now properly save to Supabase
+- **Snake_case/camelCase mapping** - Proper conversion between frontend (camelCase) and database (snake_case)
+- **Direct database operations** - Save functions now write directly to Supabase instead of just cache
+- **Database schema updates** - Added missing columns to plays, banners, and wiki_entries tables
+
+### Security Hardening (v2.1.2)
 - **Fixed Row Level Security (RLS) policies** - Re-enabled RLS with proper SECURITY DEFINER helper function
 - **Proper data isolation** - Users can only access their own organization's data
 - **No circular dependencies** - `get_user_organization_id()` function breaks RLS policy loops
