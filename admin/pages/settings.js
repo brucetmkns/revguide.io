@@ -178,8 +178,17 @@ class SettingsPage {
   }
 
   bindEvents() {
-    // Account Settings
+    // Account Settings - Edit/Cancel/Save buttons
+    const editAccountBtn = document.getElementById('editAccountBtn');
+    const cancelAccountBtn = document.getElementById('cancelAccountBtn');
     const saveAccountBtn = document.getElementById('saveAccountBtn');
+
+    if (editAccountBtn) {
+      editAccountBtn.addEventListener('click', () => this.enterAccountEditMode());
+    }
+    if (cancelAccountBtn) {
+      cancelAccountBtn.addEventListener('click', () => this.exitAccountEditMode());
+    }
     if (saveAccountBtn) {
       saveAccountBtn.addEventListener('click', () => this.saveAccountSettings());
     }
@@ -273,20 +282,17 @@ class SettingsPage {
   // ================================
 
   async loadAccountSettings() {
-    const userNameInput = document.getElementById('userName');
-    const userEmailInput = document.getElementById('userEmail');
-    const companyNameInput = document.getElementById('companyName');
-
-    // Try to get email and name - first from profile, then from auth user
+    // Get data from already-loaded AdminShared (populated by checkAuth)
     let email = AdminShared.currentUser?.email;
     let name = AdminShared.currentUser?.name;
+    let companyName = AdminShared.currentOrganization?.name;
 
-    // If no email from profile, get from Supabase auth directly
+    // If no email from profile, get from Supabase auth directly (fallback)
     if (!email && typeof RevGuideAuth !== 'undefined') {
       try {
         const result = await RevGuideAuth.getUser();
         const user = result?.data?.user;
-        if (user && user.email) {
+        if (user?.email) {
           email = user.email;
         }
       } catch (e) {
@@ -294,25 +300,65 @@ class SettingsPage {
       }
     }
 
-    // Set name field
-    if (name) {
-      userNameInput.value = name;
-    }
+    // Store original values for change detection
     this.originalUserName = name || '';
+    this.originalCompanyName = companyName || '';
 
-    // Set email field
-    if (email) {
-      userEmailInput.value = email;
-      userEmailInput.placeholder = '';
-    } else {
-      userEmailInput.placeholder = 'Unable to load email';
-    }
+    // Update display mode values (shown by default)
+    this.updateAccountDisplay(name, email, companyName);
 
-    // Set company name field
-    if (AdminShared.currentOrganization) {
-      companyNameInput.value = AdminShared.currentOrganization.name || '';
-      this.originalCompanyName = AdminShared.currentOrganization.name || '';
+    // Also populate edit form inputs for when user clicks Edit
+    const userNameInput = document.getElementById('userName');
+    const userEmailInput = document.getElementById('userEmail');
+    const companyNameInput = document.getElementById('companyName');
+
+    if (userNameInput) userNameInput.value = name || '';
+    if (userEmailInput) {
+      userEmailInput.value = email || '';
+      userEmailInput.placeholder = email ? '' : 'Unable to load email';
     }
+    if (companyNameInput) companyNameInput.value = companyName || '';
+  }
+
+  updateAccountDisplay(name, email, companyName) {
+    const displayName = document.getElementById('displayUserName');
+    const displayEmail = document.getElementById('displayUserEmail');
+    const displayCompany = document.getElementById('displayCompanyName');
+
+    if (displayName) {
+      displayName.textContent = name || 'Not set';
+      displayName.classList.toggle('empty', !name);
+    }
+    if (displayEmail) {
+      displayEmail.textContent = email || 'Not available';
+      displayEmail.classList.toggle('empty', !email);
+    }
+    if (displayCompany) {
+      displayCompany.textContent = companyName || 'Not set';
+      displayCompany.classList.toggle('empty', !companyName);
+    }
+  }
+
+  enterAccountEditMode() {
+    document.getElementById('accountDisplayMode').style.display = 'none';
+    document.getElementById('accountEditMode').style.display = 'block';
+    document.getElementById('editAccountBtn').style.display = 'none';
+
+    // Focus the first input
+    document.getElementById('userName')?.focus();
+  }
+
+  exitAccountEditMode() {
+    document.getElementById('accountDisplayMode').style.display = 'block';
+    document.getElementById('accountEditMode').style.display = 'none';
+    document.getElementById('editAccountBtn').style.display = 'block';
+
+    // Reset inputs to original values
+    document.getElementById('userName').value = this.originalUserName;
+    document.getElementById('companyName').value = this.originalCompanyName;
+
+    // Clear any status message
+    this.showAccountStatus('', '');
   }
 
   async saveAccountSettings() {
@@ -365,7 +411,13 @@ class SettingsPage {
       // Update sidebar display
       AdminShared.renderSidebar('settings');
 
-      this.showAccountStatus('Settings saved successfully', 'success');
+      // Update display mode with new values
+      const email = document.getElementById('userEmail').value;
+      this.updateAccountDisplay(userName, email, companyName);
+
+      // Exit edit mode
+      this.exitAccountEditMode();
+
       AdminShared.showToast('Account settings saved', 'success');
     } catch (error) {
       console.error('Failed to save account settings:', error);

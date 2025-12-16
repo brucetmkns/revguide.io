@@ -168,6 +168,57 @@
     .btn-danger-outline:hover {
       background: var(--color-danger-bg);
     }
+
+    /* Account Settings Display Mode */
+    .card-header-with-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-4);
+    }
+
+    .card-header-with-action h3 {
+      margin-bottom: var(--space-1);
+    }
+
+    .card-header-with-action p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      margin: 0;
+    }
+
+    .btn-sm {
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--font-size-sm);
+    }
+
+    .account-info-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .account-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .account-info-item label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+    }
+
+    .account-value {
+      font-size: var(--font-size-base);
+      color: var(--color-text-primary);
+    }
+
+    .account-value.empty {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -220,25 +271,55 @@
         <div class="settings-grid">
           <!-- Account Settings Card -->
           <div class="settings-card" id="accountSettingsCard">
-            <h3>Account Settings</h3>
-            <p>Manage your account and organization details</p>
-            <div class="form-group">
-              <label>Your Name</label>
-              <input type="text" id="userName" placeholder="Enter your name">
-              <span class="form-hint">Your display name shown to other team members</span>
+            <div class="card-header-with-action">
+              <div>
+                <h3>Account Settings</h3>
+                <p>Manage your account and organization details</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="editAccountBtn">
+                <span class="icon icon-edit icon--sm"></span> Edit
+              </button>
             </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" id="userEmail" disabled placeholder="Loading...">
-              <span class="form-hint">Email cannot be changed. Contact support if you need to update it.</span>
+
+            <!-- Display Mode (default) -->
+            <div id="accountDisplayMode">
+              <div class="account-info-grid">
+                <div class="account-info-item">
+                  <label>Your Name</label>
+                  <span id="displayUserName" class="account-value">Loading...</span>
+                </div>
+                <div class="account-info-item">
+                  <label>Email Address</label>
+                  <span id="displayUserEmail" class="account-value">Loading...</span>
+                </div>
+                <div class="account-info-item">
+                  <label>Company Name</label>
+                  <span id="displayCompanyName" class="account-value">Loading...</span>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Company Name</label>
-              <input type="text" id="companyName" placeholder="Enter your company name">
-              <span class="form-hint">This name will be shown to all team members in your organization</span>
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-primary" id="saveAccountBtn">Save Changes</button>
+
+            <!-- Edit Mode (hidden by default) -->
+            <div id="accountEditMode" style="display: none;">
+              <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="userName" placeholder="Enter your name">
+                <span class="form-hint">Your display name shown to other team members</span>
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="userEmail" disabled placeholder="Loading...">
+                <span class="form-hint">Email cannot be changed. Contact support if you need to update it.</span>
+              </div>
+              <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" id="companyName" placeholder="Enter your company name">
+                <span class="form-hint">This name will be shown to all team members in your organization</span>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelAccountBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveAccountBtn">Save Changes</button>
+              </div>
             </div>
             <div id="accountStatus" class="status-message"></div>
           </div>
