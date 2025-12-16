@@ -120,35 +120,51 @@ const RevGuideNango = {
         return;
       }
 
+      let resolved = false;
+
       // Listen for messages from popup
       const messageHandler = (event) => {
+        console.log('[RevGuide] Message from popup:', event.origin, event.data);
+
         // Verify origin
         if (!event.origin.includes('nango.dev')) return;
 
-        const { type, data } = event.data || {};
+        const { type, data, eventType } = event.data || {};
+        const messageType = type || eventType;
 
-        if (type === 'authorization_success' || type === 'success') {
+        console.log('[RevGuide] Nango message type:', messageType, data);
+
+        if (messageType === 'authorization_success' || messageType === 'success' || messageType === 'connect_complete') {
+          resolved = true;
+          clearInterval(checkClosed);
           window.removeEventListener('message', messageHandler);
           popup.close();
           resolve({
             connectionId: data?.connectionId || connectionId,
             providerConfigKey: HUBSPOT_INTEGRATION_ID
           });
-        } else if (type === 'authorization_error' || type === 'error') {
+        } else if (messageType === 'authorization_error' || messageType === 'error' || messageType === 'connect_error') {
+          resolved = true;
+          clearInterval(checkClosed);
           window.removeEventListener('message', messageHandler);
           popup.close();
-          reject(new Error(data?.error || 'Authorization failed'));
+          reject(new Error(data?.error || data?.message || 'Authorization failed'));
         }
       };
 
       window.addEventListener('message', messageHandler);
 
-      // Check if popup was closed manually
+      // Check if popup was closed manually (with delay to allow message to arrive)
       const checkClosed = setInterval(() => {
-        if (popup.closed) {
+        if (popup.closed && !resolved) {
           clearInterval(checkClosed);
           window.removeEventListener('message', messageHandler);
-          reject(new Error('Authorization cancelled'));
+          // Small delay to check if we got a message right before closing
+          setTimeout(() => {
+            if (!resolved) {
+              reject(new Error('Authorization cancelled'));
+            }
+          }, 200);
         }
       }, 500);
     });
