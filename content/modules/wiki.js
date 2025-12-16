@@ -309,20 +309,27 @@ class WikiModule {
       for (const { term, entry } of sortedTerms) {
         // EXACT MATCH ONLY - the cleaned text must equal the term
         // This prevents "Company" from matching "Company Domain Name"
-        if (textToMatch === term) {
+        // Also handle simple plural forms (company/companies, contact/contacts)
+        const isMatch = textToMatch === term ||
+          textToMatch === term + 's' ||           // company → companies
+          textToMatch === term + 'es' ||          // (for words ending in consonant)
+          (term.endsWith('y') && textToMatch === term.slice(0, -1) + 'ies') || // company → companies
+          (textToMatch.endsWith('s') && textToMatch.slice(0, -1) === term) ||  // companies → company
+          (textToMatch.endsWith('es') && textToMatch.slice(0, -2) === term) || // boxes → box
+          (textToMatch.endsWith('ies') && textToMatch.slice(0, -3) + 'y' === term); // companies → company
+
+        if (isMatch) {
           // Get section for deduplication
           const section = this.getSectionForElement(parent);
           const sectionKey = `${section}:${entry.id}`;
 
           // Skip if we've already shown this term in this section
           if (shownInSection.has(sectionKey)) {
-            this.log(`Skip duplicate: "${term}" already shown in ${section}`);
             continue;
           }
 
           // Verify this is a label-like context
           if (!this.isLikelyLabelContext(parent, textNode.textContent.trim())) {
-            this.log(`Skip context: "${textNode.textContent.trim()}" not label-like (tag: ${parent.tagName}, class: ${parent.className?.substring?.(0, 50) || ''})`);
             continue;
           }
 
@@ -367,10 +374,11 @@ class WikiModule {
       }
     }
 
-    // Accept common label tags
+    // Accept common label tags (including HubSpot custom elements like I18N-STRING)
     const labelTags = new Set([
       'SPAN', 'DIV', 'LABEL', 'TH', 'TD', 'DT', 'DD', 'LI',
-      'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'A', 'P', 'STRONG', 'B'
+      'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'A', 'P', 'STRONG', 'B',
+      'I18N-STRING' // HubSpot's internationalization component for labels
     ]);
     if (!labelTags.has(element.tagName)) return false;
 

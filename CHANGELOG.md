@@ -2,6 +2,49 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.0] - 2025-12-15
+
+### Added
+- **SaaS Web Application**
+  - Admin panel now hosted at [app.revguide.io](https://app.revguide.io)
+  - Works alongside Chrome extension (same codebase)
+  - Context detection: automatically uses Supabase auth in web, chrome.storage in extension
+
+- **Supabase Authentication**
+  - Magic Link (passwordless email sign-in)
+  - Google OAuth sign-in
+  - Session management with automatic refresh
+  - Protected routes redirect to login when unauthenticated
+
+- **Resend Email Integration**
+  - Custom SMTP configured for `@revguide.io` sender domain
+  - Branded email templates matching RevGuide design system
+  - Templates: Magic Link, Confirm Signup, Invite User, Reset Password
+
+- **Vercel Deployment**
+  - GitHub integration for automatic deployments
+  - Custom domain `app.revguide.io`
+  - Clean URL rewrites (`/login`, `/home`, `/wiki`, etc.)
+
+### Changed
+- **Admin Panel URLs**
+  - Web app uses clean URLs: `/login`, `/signup`, `/home`, `/wiki`, `/banners`, `/plays`, `/libraries`, `/settings`
+  - Extension continues to use `.html` file paths
+  - All CSS/JS paths updated to absolute URLs for Vercel compatibility
+
+- **Auth Flow**
+  - Login/signup pages detect web vs extension context
+  - Web: Uses Supabase `signInWithOtp()` for magic links
+  - Extension: Bypasses auth (uses local chrome.storage)
+
+### Technical
+- New files: `/admin/supabase.js`, `/admin/pages/login.html`, `/admin/pages/signup.html`
+- New file: `/vercel.json` for URL rewrites and headers
+- Updated: `/admin/shared.js` with `isExtensionContext` detection and auth redirects
+- Updated: All HTML files with absolute paths for CSS/JS resources
+
+---
+
 ## [1.9.9] - 2025-12-15
 
 ### Changed
@@ -10,6 +53,16 @@ All notable changes to RevGuide will be documented in this file.
   - ~45% less code (~875 lines vs ~1600 lines)
   - Faster and more consistent text matching across all HubSpot pages
   - Fixed false positives: "Company" no longer matches "Company Domain Name"
+
+- **Smart Plural Matching**
+  - Triggers now automatically match singular/plural variants
+  - "Company" trigger matches "Companies (0)" text and vice versa
+  - "Contact" trigger matches "Contacts (3)" text
+  - Handles common English plural rules: -s, -es, -ies
+
+- **HubSpot Custom Element Support**
+  - Added `I18N-STRING` to accepted label tags
+  - Association card titles now properly detected and matched
 
 - **Section-Based Deduplication**
   - Wiki icons now show first instance of each term PER SECTION, not every instance

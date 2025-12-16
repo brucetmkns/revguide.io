@@ -1,6 +1,8 @@
 # RevGuide
 
-A Chrome extension that displays contextual banners, plays, wiki tooltips, and embedded media on HubSpot CRM record pages based on configurable rules.
+A Chrome extension and SaaS platform that displays contextual banners, plays, wiki tooltips, and embedded media on HubSpot CRM record pages based on configurable rules.
+
+**Live App:** [app.revguide.io](https://app.revguide.io)
 
 ## Features
 
@@ -75,11 +77,31 @@ A Chrome extension that displays contextual banners, plays, wiki tooltips, and e
 - "Open Admin Panel" button for full configuration
 
 ### Design
-- Modern UI with **Manrope font** and **#b2ef63 accent color**
+- Modern UI with **Manrope font** and **#b2ef63 accent color** (lime green)
+- Dark sidebar with **#111827** background
 - SVG icons throughout (no emojis)
 - Content script banners styled to match HubSpot's native design system
 
-## Installation
+## Web App (SaaS)
+
+RevGuide is available as a hosted web application at [app.revguide.io](https://app.revguide.io).
+
+### Authentication
+- **Magic Link**: Passwordless sign-in via email
+- **Google OAuth**: Sign in with Google (coming soon)
+- Powered by [Supabase Auth](https://supabase.com/auth)
+
+### Email Notifications
+- Transactional emails sent via [Resend](https://resend.com)
+- Custom SMTP configured for `@revguide.io` sender domain
+- Branded email templates matching RevGuide design system
+
+### Hosting
+- **Frontend**: Deployed on [Vercel](https://vercel.com)
+- **Domain**: `app.revguide.io` (CNAME to Vercel)
+- **Database**: Supabase (Postgres)
+
+## Chrome Extension Installation
 
 1. Clone or download this repository
 2. Open Chrome and navigate to `chrome://extensions/`
@@ -244,9 +266,12 @@ plugin/
 │   ├── styles.css             # Landing page styles
 │   └── script.js              # Landing page scripts
 │
+├── vercel.json                # Vercel deployment config (URL rewrites)
+│
 ├── docs/                      # Development documentation
 │   ├── AI_CHAT_DEV.md         # AI chat feature specification
-│   └── MULTI_PORTAL_DEV.md    # Multi-portal/team feature specification
+│   ├── MULTI_PORTAL_DEV.md    # Multi-portal/team feature specification
+│   └── AUTHENTICATION.md      # Auth strategy and implementation
 │
 ├── backups/                   # Version backups (not in production)
 │

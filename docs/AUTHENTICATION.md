@@ -1,24 +1,96 @@
-# Authentication & User Management Strategy
+# Authentication & User Management
 
-This document outlines the authentication architecture options for RevGuide, comparing the current implementation with recommended approaches for a production SaaS product.
+This document outlines the authentication architecture for RevGuide, covering both user authentication (Supabase) and CRM authentication (HubSpot API).
 
 ## Table of Contents
 
 1. [Current Implementation](#current-implementation)
-2. [Recommended Architecture](#recommended-architecture)
-3. [Unified API Platforms](#unified-api-platforms)
-4. [Implementation Options](#implementation-options)
-5. [Multi-CRM Support](#multi-crm-support)
-6. [Security Comparison](#security-comparison)
-7. [Migration Path](#migration-path)
+2. [User Authentication (Supabase)](#user-authentication-supabase)
+3. [CRM Authentication (HubSpot)](#crm-authentication-hubspot)
+4. [Email Configuration](#email-configuration)
+5. [Recommended Future Architecture](#recommended-future-architecture)
+6. [Multi-CRM Support](#multi-crm-support)
 
 ---
 
 ## Current Implementation
 
-### How It Works Today
+RevGuide uses a **dual authentication** approach:
 
-RevGuide currently uses **HubSpot Private App Tokens** for API authentication:
+1. **User Authentication**: Supabase Auth (Magic Link + Google OAuth) for web app access
+2. **CRM Authentication**: HubSpot Private App Tokens for CRM data access
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│   Web App User   │────▶│   Supabase Auth  │────▶│   app.revguide.io│
+│   (Magic Link)   │     │   (JWT tokens)   │     │   (Dashboard)    │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Chrome Extension│────▶│  HubSpot Token   │────▶│   HubSpot API    │
+│  (User's browser)│     │  (Private App)   │     │   (CRM Data)     │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+---
+
+## User Authentication (Supabase)
+
+### Overview
+
+The web app at [app.revguide.io](https://app.revguide.io) uses **Supabase Auth** for user authentication.
+
+### Supported Methods
+
+| Method | Status | Description |
+|--------|--------|-------------|
+| Magic Link | **Active** | Passwordless email sign-in |
+| Google OAuth | **Active** | Sign in with Google account |
+| Email + Password | Planned | Traditional credentials |
+
+### Implementation
+
+**Files:**
+- `/admin/supabase.js` - Supabase client initialization
+- `/admin/pages/login.html` - Login page UI
+- `/admin/pages/signup.html` - Sign up page UI
+- `/admin/shared.js` - Auth state checking and redirects
+
+**Configuration:**
+```javascript
+// admin/supabase.js
+const SUPABASE_URL = 'https://[project-id].supabase.co';
+const SUPABASE_ANON_KEY = '[anon-key]';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+```
+
+**Auth Flow:**
+1. User visits `/login`
+2. Enters email address
+3. Clicks "Send Magic Link"
+4. Receives branded email from `hello@revguide.io`
+5. Clicks link → Redirected to `/home` with active session
+6. Session stored in browser (localStorage via Supabase)
+
+**Context Detection:**
+```javascript
+// Detect if running as extension or web app
+const isExtensionContext = typeof chrome !== 'undefined' && chrome.storage;
+
+if (isExtensionContext) {
+  // Use chrome.storage for data
+} else {
+  // Use Supabase for auth and data
+}
+```
+
+---
+
+## CRM Authentication (HubSpot)
+
+### How It Works
+
+RevGuide uses **HubSpot Private App Tokens** for CRM API access:
 
 ```
 ┌──────────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -45,7 +117,7 @@ RevGuide currently uses **HubSpot Private App Tokens** for API authentication:
 | `crm.schemas.*.read` | Read property definitions for dropdowns |
 | `crm.objects.*.write` | (Optional) Enable editable fields |
 
-### Limitations of Current Approach
+### Limitations of Current CRM Auth Approach
 
 | Issue | Impact |
 |-------|--------|
@@ -58,7 +130,84 @@ RevGuide currently uses **HubSpot Private App Tokens** for API authentication:
 
 ---
 
-## Recommended Architecture
+## Email Configuration
+
+### Overview
+
+RevGuide uses **Resend** as the SMTP provider for transactional emails, configured through Supabase.
+
+### Setup
+
+1. **Resend Account**: Sign up at [resend.com](https://resend.com)
+2. **Domain Verification**: Verify `revguide.io` domain in Resend dashboard
+3. **API Key**: Create API key in Resend
+4. **Supabase SMTP**: Configure custom SMTP in Supabase → Project Settings → Authentication
+
+### SMTP Configuration
+
+| Setting | Value |
+|---------|-------|
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | Resend API key |
+| Sender Email | `hello@revguide.io` |
+| Sender Name | `RevGuide` |
+
+### Email Templates
+
+All templates are configured in **Supabase → Authentication → Email Templates**.
+
+#### Design System
+
+| Element | Value |
+|---------|-------|
+| Primary Color | `#b2ef63` (lime green) |
+| Background | `#f8fafc` (light gray) |
+| Header Background | `#111827` (dark charcoal) |
+| Text Color | `#1e293b` (dark gray) |
+| Font | `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif` |
+| Border Radius | `12px` |
+
+#### Template Types
+
+1. **Magic Link** - Subject: "Sign in to RevGuide"
+2. **Confirm Signup** - Subject: "Welcome to RevGuide — Confirm your email"
+3. **Invite User** - Subject: "You've been invited to join RevGuide"
+4. **Reset Password** - Subject: "Reset your RevGuide password"
+
+#### Template Structure
+
+```html
+<!-- All templates follow this structure -->
+<body style="background-color: #f8fafc; padding: 40px 20px;">
+  <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px;">
+
+    <!-- Header: Dark background with white text -->
+    <div style="background: #111827; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+      <h1 style="color: #ffffff;">RevGuide</h1>
+    </div>
+
+    <!-- Body: Content area -->
+    <div style="padding: 32px;">
+      <h2>Title</h2>
+      <p>Message content...</p>
+      <a href="{{ .ConfirmationURL }}" style="background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px;">
+        Button Text
+      </a>
+    </div>
+
+    <!-- Footer: Light background -->
+    <div style="background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+      <p>RevGuide — Contextual guidance for your revenue team</p>
+    </div>
+  </div>
+</body>
+```
+
+---
+
+## Recommended Future Architecture
 
 ### OAuth SSO with Hosted Admin Panel
 

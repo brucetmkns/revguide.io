@@ -314,11 +314,43 @@ content-library/
 
 | Component | Technology | Status |
 |-----------|------------|--------|
-| Database | Supabase (Postgres) | Planned |
-| Authentication | Supabase Auth | Planned |
-| API | Supabase Edge Functions | Planned |
-| Web Dashboard | Next.js on Vercel | Planned |
+| Database | Supabase (Postgres) | **In Progress** |
+| Authentication | Supabase Auth (Magic Link + Google OAuth) | **Complete** |
+| Email | Resend SMTP with custom domain | **Complete** |
+| Web Dashboard | Static HTML on Vercel | **Complete** |
+| Domain | app.revguide.io | **Complete** |
 | Payments | Stripe | Planned |
+
+### 2.1.1 Completed: Web App Deployment (December 2025)
+
+**Live at:** [app.revguide.io](https://app.revguide.io)
+
+**Authentication Setup:**
+- Supabase project configured with Magic Link authentication
+- Google OAuth provider enabled
+- Custom SMTP via Resend for branded emails from `@revguide.io`
+- Email templates customized with RevGuide branding (lime green #b2ef63, Manrope font)
+
+**Email Templates Configured:**
+- Magic Link (sign in)
+- Confirm Signup (new users)
+- Invite User (team invites)
+- Reset Password
+
+**Hosting Setup:**
+- Vercel deployment via GitHub integration
+- Custom domain `app.revguide.io` with DNS (CNAME to Vercel)
+- Clean URLs configured via `vercel.json` rewrites:
+  - `/login` → `/admin/pages/login.html`
+  - `/signup` → `/admin/pages/signup.html`
+  - `/home` → `/admin/pages/home.html`
+  - `/wiki`, `/banners`, `/plays`, `/libraries`, `/settings`
+
+**Context Detection:**
+- Admin panel detects web vs extension context
+- Uses Supabase auth in web context
+- Uses chrome.storage in extension context
+- Seamless experience in both environments
 
 ### 2.2 Data Model
 
@@ -370,7 +402,9 @@ presentations
 ### 2.3 Features
 
 #### Authentication & Onboarding
-- [ ] Sign up with email or Google OAuth
+- [x] Sign up with email (Magic Link)
+- [x] Sign in with Google OAuth
+- [x] Custom branded email templates via Resend SMTP
 - [ ] Organization auto-created on first sign-up
 - [ ] Onboarding wizard for HubSpot API token setup
 - [ ] Extension login flow (redirect to web, store token)

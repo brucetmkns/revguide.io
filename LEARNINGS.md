@@ -339,6 +339,46 @@ normalizeText(text) {
 }
 ```
 
+### Smart Plural Matching
+**Lesson**: Users expect "Company" to match "Companies" without adding aliases manually.
+
+**Problem**: Exact matching (`===`) means "company" won't match "companies" - they're different strings.
+
+**Solution**: Check common English plural forms automatically:
+```javascript
+const isMatch = textToMatch === term ||
+  textToMatch === term + 's' ||           // deal → deals
+  textToMatch === term + 'es' ||          // box → boxes
+  (term.endsWith('y') && textToMatch === term.slice(0, -1) + 'ies') || // company → companies
+  (textToMatch.endsWith('s') && textToMatch.slice(0, -1) === term) ||  // deals → deal
+  (textToMatch.endsWith('es') && textToMatch.slice(0, -2) === term) || // boxes → box
+  (textToMatch.endsWith('ies') && textToMatch.slice(0, -3) + 'y' === term); // companies → company
+```
+
+**Handles**:
+- `company` ↔ `companies` (y → ies)
+- `contact` ↔ `contacts` (+ s)
+- `deal` ↔ `deals` (+ s)
+- Works in both directions (singular trigger matches plural text, plural trigger matches singular text)
+
+### HubSpot Custom Elements
+**Lesson**: HubSpot uses custom HTML elements like `<i18n-string>` for internationalized labels.
+
+**Problem**: These aren't standard HTML tags, so `isLikelyLabelContext()` rejected them.
+
+**Solution**: Add HubSpot-specific tags to the accepted list:
+```javascript
+const labelTags = new Set([
+  'SPAN', 'DIV', 'LABEL', /* ... standard tags ... */
+  'I18N-STRING' // HubSpot's internationalization component
+]);
+```
+
+**Where `I18N-STRING` appears**:
+- Association card titles: "Contacts (3)", "Companies (0)"
+- Count labels in sidebars
+- Other internationalized UI text
+
 ### Performance Optimizations
 **Lesson**: With 1000+ wiki terms, efficiency matters.
 
