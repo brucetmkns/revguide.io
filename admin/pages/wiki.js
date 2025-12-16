@@ -1269,8 +1269,17 @@ class WikiPage {
       return;
     }
 
-    statusEl.textContent = 'Loading fields...';
-    statusEl.className = 'status-text';
+    statusEl.innerHTML = `
+      <div class="loading-indicator">
+        <svg class="loading-spinner" viewBox="0 0 24 24" width="20" height="20">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <span>Loading fields from HubSpot...</span>
+      </div>
+    `;
+    statusEl.className = 'status-text loading';
     fieldsList.style.display = 'none';
     importOptions.style.display = 'none';
 

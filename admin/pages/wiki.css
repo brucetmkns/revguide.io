@@ -1288,6 +1288,24 @@
   gap: var(--space-2);
 }
 
+/* Loading indicator for field import */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  padding: var(--space-4) 0;
+}
+
+.loading-indicator .loading-spinner {
+  color: var(--color-primary);
+}
+
+.status-text.loading {
+  display: flex;
+  justify-content: center;
+}
+
 
 /* ----------------------------------------
    Form Utilities
