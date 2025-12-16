@@ -158,42 +158,22 @@ function renderSidebar(activePage) {
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar) return;
 
-  // Sidebar navigation is now inlined in HTML for instant rendering
-  // This function only updates the footer with user info and beta feedback
-  const footer = sidebar.querySelector('.sidebar-footer');
-  if (footer) {
-    const feedbackLink = `
-      <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span>Send Feedback</span>
-      </a>
-    `;
+  // Update only the text content of pre-rendered elements (no innerHTML replacement)
+  // This prevents the distracting flash on page navigation
+  if (!isExtensionContext && currentUser) {
+    const avatarEl = document.getElementById('sidebarUserAvatar');
+    const nameEl = document.getElementById('sidebarUserName');
+    const orgEl = document.getElementById('sidebarUserOrg');
 
-    footer.innerHTML = !isExtensionContext && currentUser ? `
-      ${feedbackLink}
-      <div class="user-info">
-        <div class="user-avatar">${(currentUser.name || currentUser.email || '?')[0].toUpperCase()}</div>
-        <div class="user-details">
-          <span class="user-name">${currentUser.name || currentUser.email?.split('@')[0] || 'User'}</span>
-          <span class="user-org">${currentOrganization?.name || ''}</span>
-        </div>
-        <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      </div>
-    ` : `
-      ${feedbackLink}
-      <div class="extension-status">
-        <span class="status-dot active"></span>
-        <span>Extension Active</span>
-      </div>
-    `;
+    if (avatarEl) {
+      avatarEl.textContent = (currentUser.name || currentUser.email || '?')[0].toUpperCase();
+    }
+    if (nameEl) {
+      nameEl.textContent = currentUser.name || currentUser.email?.split('@')[0] || 'User';
+    }
+    if (orgEl) {
+      orgEl.textContent = currentOrganization?.name || '';
+    }
   }
 
   // For extension context, update URLs to use .html extension
