@@ -88,22 +88,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Google OAuth
-  googleBtn.addEventListener('click', async () => {
-    googleBtn.disabled = true;
+  // Google OAuth (hidden until configured)
+  if (googleBtn) {
+    googleBtn.addEventListener('click', async () => {
+      googleBtn.disabled = true;
 
-    try {
-      const { error } = await RevGuideAuth.signInWithGoogle();
-      if (error) {
-        showMessage(error.message, 'error');
+      try {
+        const { error } = await RevGuideAuth.signInWithGoogle();
+        if (error) {
+          showMessage(error.message, 'error');
+          googleBtn.disabled = false;
+        }
+        // User will be redirected to Google
+      } catch (err) {
+        showMessage('Failed to start Google sign-in.', 'error');
         googleBtn.disabled = false;
       }
-      // User will be redirected to Google
-    } catch (err) {
-      showMessage('Failed to start Google sign-in.', 'error');
-      googleBtn.disabled = false;
-    }
-  });
+    });
+  }
 
   // HubSpot OAuth via Nango
   hubspotBtn.addEventListener('click', async () => {
