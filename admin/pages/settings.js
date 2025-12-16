@@ -2,12 +2,44 @@
  * RevGuide - Settings Page
  */
 
+const HUBSPOT_CONNECTION_CACHE_KEY = 'revguide_hubspot_connection';
+const HUBSPOT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 class SettingsPage {
   constructor() {
     this.settings = {};
     this.teamMembers = [];
     this.pendingInvitations = [];
     this.init();
+  }
+
+  // HubSpot connection cache methods
+  loadHubSpotConnectionFromCache() {
+    try {
+      const cached = sessionStorage.getItem(HUBSPOT_CONNECTION_CACHE_KEY);
+      if (cached) {
+        const { connection, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < HUBSPOT_CACHE_TTL) {
+          return connection;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  saveHubSpotConnectionToCache(connection) {
+    try {
+      sessionStorage.setItem(HUBSPOT_CONNECTION_CACHE_KEY, JSON.stringify({
+        connection,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  clearHubSpotConnectionCache() {
+    try {
+      sessionStorage.removeItem(HUBSPOT_CONNECTION_CACHE_KEY);
+    } catch (e) {}
   }
 
   async init() {
@@ -108,6 +140,9 @@ class SettingsPage {
     // Clear URL parameters
     RevGuideHubSpot.clearOAuthParams();
 
+    // Clear HubSpot cache so we fetch fresh connection status
+    this.clearHubSpotConnectionCache();
+
     if (oauthReturn.success) {
       const portalName = oauthReturn.portal || 'HubSpot';
       AdminShared.showToast(`Connected to ${portalName} successfully!`, 'success');
@@ -129,6 +164,14 @@ class SettingsPage {
     const connectedState = document.getElementById('hubspotConnectedState');
     const disconnectedState = document.getElementById('hubspotDisconnectedState');
 
+    // Try to load from session cache first for instant display
+    const cached = this.loadHubSpotConnectionFromCache();
+    if (cached !== null) {
+      if (loadingState) loadingState.style.display = 'none';
+      this.displayHubSpotConnection(cached);
+      return;
+    }
+
     try {
       // Get connection status from HubSpot client
       const connection = await RevGuideHubSpot.getConnection();
@@ -136,32 +179,41 @@ class SettingsPage {
       // Hide loading state
       if (loadingState) loadingState.style.display = 'none';
 
-      if (connection && connection.isConnected) {
-        // Show connected state
-        connectedState.style.display = 'block';
-        disconnectedState.style.display = 'none';
-
-        // Update portal info
-        document.getElementById('connectedPortalName').textContent = connection.portalName || 'HubSpot Portal';
-        document.getElementById('connectedPortalDomain').textContent = connection.portalDomain || connection.portalId;
-
-        // Store connection for disconnect action
-        this.currentConnection = {
-          id: connection.connectionId,
-          portal_name: connection.portalName,
-          portal_domain: connection.portalDomain,
-          portal_id: connection.portalId
-        };
-      } else {
-        // Show disconnected state
-        connectedState.style.display = 'none';
-        disconnectedState.style.display = 'block';
-        this.currentConnection = null;
-      }
+      // Cache and display the connection
+      this.saveHubSpotConnectionToCache(connection);
+      this.displayHubSpotConnection(connection);
     } catch (error) {
       console.error('Error loading HubSpot connection:', error);
       // Hide loading state and show disconnected state on error
       if (loadingState) loadingState.style.display = 'none';
+      connectedState.style.display = 'none';
+      disconnectedState.style.display = 'block';
+      this.currentConnection = null;
+    }
+  }
+
+  displayHubSpotConnection(connection) {
+    const connectedState = document.getElementById('hubspotConnectedState');
+    const disconnectedState = document.getElementById('hubspotDisconnectedState');
+
+    if (connection && connection.isConnected) {
+      // Show connected state
+      connectedState.style.display = 'block';
+      disconnectedState.style.display = 'none';
+
+      // Update portal info
+      document.getElementById('connectedPortalName').textContent = connection.portalName || 'HubSpot Portal';
+      document.getElementById('connectedPortalDomain').textContent = connection.portalDomain || connection.portalId;
+
+      // Store connection for disconnect action
+      this.currentConnection = {
+        id: connection.connectionId,
+        portal_name: connection.portalName,
+        portal_domain: connection.portalDomain,
+        portal_id: connection.portalId
+      };
+    } else {
+      // Show disconnected state
       connectedState.style.display = 'none';
       disconnectedState.style.display = 'block';
       this.currentConnection = null;
@@ -887,7 +939,8 @@ class SettingsPage {
         throw new Error(result.error || 'Disconnect failed');
       }
 
-      // Reload connection status
+      // Clear cache and reload connection status
+      this.clearHubSpotConnectionCache();
       await this.loadHubSpotConnectionStatus();
     } catch (error) {
       console.error('Disconnect error:', error);

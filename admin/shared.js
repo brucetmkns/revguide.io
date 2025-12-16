@@ -18,17 +18,17 @@ let currentOrganization = null;
  * Session cache keys
  */
 const SESSION_CACHE_KEY = 'revguide_user_cache';
-const SESSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const SESSION_AUTH_KEY = 'revguide_auth_validated';
+const SESSION_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 /**
- * Load user data from session cache
+ * Load user data from session cache (synchronous for immediate use)
  */
 function loadUserFromCache() {
   try {
     const cached = sessionStorage.getItem(SESSION_CACHE_KEY);
     if (cached) {
       const { user, organization, timestamp } = JSON.parse(cached);
-      // Check if cache is still valid (within TTL)
       if (Date.now() - timestamp < SESSION_CACHE_TTL) {
         currentUser = user;
         currentOrganization = organization;
@@ -51,9 +51,26 @@ function saveUserToCache() {
       organization: currentOrganization,
       timestamp: Date.now()
     }));
+    // Mark that auth has been validated this session
+    sessionStorage.setItem(SESSION_AUTH_KEY, Date.now().toString());
   } catch (e) {
     console.warn('Failed to save user cache:', e);
   }
+}
+
+/**
+ * Check if auth was already validated this browser session
+ */
+function isAuthValidatedThisSession() {
+  try {
+    const validated = sessionStorage.getItem(SESSION_AUTH_KEY);
+    if (validated) {
+      const timestamp = parseInt(validated, 10);
+      // Valid for 10 minutes
+      return Date.now() - timestamp < SESSION_CACHE_TTL;
+    }
+  } catch (e) {}
+  return false;
 }
 
 /**
@@ -62,6 +79,7 @@ function saveUserToCache() {
 function clearUserCache() {
   try {
     sessionStorage.removeItem(SESSION_CACHE_KEY);
+    sessionStorage.removeItem(SESSION_AUTH_KEY);
   } catch (e) {
     // Ignore
   }
@@ -69,33 +87,44 @@ function clearUserCache() {
 
 /**
  * Check if user is authenticated
- * Redirects to login if not authenticated
- * Uses session cache to avoid repeated database calls
+ * Uses aggressive caching to avoid repeated API calls within session
  * @returns {Promise<boolean>}
  */
 async function checkAuth() {
-  // In extension context, skip auth for now (will be added later)
+  // In extension context, skip auth for now
   if (isExtensionContext) {
     return true;
   }
 
-  // In web context, check Supabase session
+  // FAST PATH: If we have cached user data and auth was validated this session,
+  // trust it completely without any API calls
+  if (loadUserFromCache() && isAuthValidatedThisSession()) {
+    console.log('[Auth] Using cached auth (no API calls)');
+    // Update sidebar immediately with cached data
+    renderSidebar();
+    return true;
+  }
+
+  // SLOW PATH: Need to validate with Supabase
   if (typeof RevGuideAuth !== 'undefined') {
     try {
+      console.log('[Auth] Validating with Supabase...');
       const { data: { session } } = await RevGuideAuth.getSession();
       if (!session) {
+        clearUserCache();
         window.location.href = '/login';
         return false;
       }
 
-      // Try to load from session cache first (fast path)
-      if (loadUserFromCache()) {
-        console.log('[Auth] Loaded user from cache');
+      // If we have cached user data but session just validated, reuse cache
+      if (currentUser && currentOrganization) {
+        console.log('[Auth] Session valid, using existing user cache');
+        saveUserToCache(); // Update timestamp
         return true;
       }
 
-      // Cache miss - fetch from database
-      console.log('[Auth] Cache miss, fetching from database...');
+      // No cache - fetch from database
+      console.log('[Auth] Fetching user profile from database...');
       try {
         const { data: profile, error } = await RevGuideDB.getUserProfile();
         if (profile) {
@@ -103,25 +132,26 @@ async function checkAuth() {
           currentOrganization = profile.organizations;
           saveUserToCache();
         } else if (error) {
-          console.warn('Failed to load user profile from database:', error);
-          // Fallback: get email from auth user
+          console.warn('Failed to load user profile:', error);
           const { data: { user } } = await RevGuideAuth.getUser();
           if (user) {
             currentUser = { email: user.email, auth_user_id: user.id };
+            saveUserToCache();
           }
         }
       } catch (profileError) {
         console.warn('Error loading user profile:', profileError);
-        // Fallback: get email from auth user
         const { data: { user } } = await RevGuideAuth.getUser();
         if (user) {
           currentUser = { email: user.email, auth_user_id: user.id };
+          saveUserToCache();
         }
       }
 
       return true;
     } catch (e) {
       console.error('Auth check failed:', e);
+      clearUserCache();
       window.location.href = '/login';
       return false;
     }
