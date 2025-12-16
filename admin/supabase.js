@@ -338,6 +338,170 @@ const RevGuideDB = {
       .single();
   },
 
+  /**
+   * Get organization by HubSpot portal ID
+   */
+  async getOrganizationByPortalId(portalId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    const { data, error } = await client
+      .from('organizations')
+      .select('*')
+      .eq('hubspot_portal_id', portalId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error fetching organization by portal ID:', error);
+    }
+
+    return data;
+  },
+
+  /**
+   * Create a new organization
+   */
+  async createOrganization(orgData) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('organizations')
+      .insert(orgData)
+      .select()
+      .single();
+  },
+
+  /**
+   * Link a user to an organization
+   */
+  async linkUserToOrganization(authUserId, organizationId, role = 'member') {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { error: new Error('Not authenticated') };
+
+    // Check if user record exists
+    const { data: existingUser } = await client
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (existingUser) {
+      // Update existing user
+      return client
+        .from('users')
+        .update({ organization_id: organizationId, role })
+        .eq('auth_user_id', user.id)
+        .select()
+        .single();
+    } else {
+      // Create new user record
+      return client
+        .from('users')
+        .insert({
+          auth_user_id: user.id,
+          email: user.email,
+          organization_id: organizationId,
+          role
+        })
+        .select()
+        .single();
+    }
+  },
+
+  /**
+   * Get current organization with HubSpot connection details
+   */
+  async getOrganizationWithConnection() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: null, error: new Error('No organization') };
+
+    return client
+      .from('organizations')
+      .select('*, hubspot_connections(*)')
+      .eq('id', orgId)
+      .single();
+  },
+
+  // ============================================
+  // HubSpot Connections
+  // ============================================
+
+  /**
+   * Create a HubSpot connection record
+   */
+  async createHubSpotConnection(connectionData) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    return client
+      .from('hubspot_connections')
+      .insert({
+        ...connectionData,
+        connected_by: user?.id,
+        is_active: true
+      })
+      .select()
+      .single();
+  },
+
+  /**
+   * Get active HubSpot connections for current organization
+   */
+  async getHubSpotConnections() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('hubspot_connections')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('is_active', true)
+      .order('connected_at', { ascending: false });
+  },
+
+  /**
+   * Get the primary (active) HubSpot connection
+   */
+  async getPrimaryHubSpotConnection() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: null, error: new Error('No organization') };
+
+    return client
+      .from('hubspot_connections')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('is_active', true)
+      .order('connected_at', { ascending: false })
+      .limit(1)
+      .single();
+  },
+
+  /**
+   * Disconnect a HubSpot connection (mark as inactive)
+   */
+  async disconnectHubSpot(connectionId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('hubspot_connections')
+      .update({ is_active: false })
+      .eq('id', connectionId)
+      .select()
+      .single();
+  },
+
+  /**
+   * Check if organization has an active HubSpot connection
+   */
+  async hasHubSpotConnection() {
+    const { data } = await this.getPrimaryHubSpotConnection();
+    return !!data;
+  },
+
   // ============================================
   // Realtime Subscriptions
   // ============================================

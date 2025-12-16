@@ -47,6 +47,27 @@
     <!-- Main Content -->
     <main class="main-content">
       <section class="content-section active" id="homeSection">
+        <!-- Connect HubSpot Banner (shown when not connected) -->
+        <div class="connect-hubspot-banner" id="connectHubSpotBanner" style="display: none;">
+          <div class="connect-banner-content">
+            <div class="connect-banner-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                <path d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.984 2.21 2.21 0 00-2.212-2.212 2.21 2.21 0 00-2.212 2.212c0 .863.502 1.609 1.227 1.968v2.879a5.197 5.197 0 00-2.382 1.193l-6.376-4.96a2.567 2.567 0 00.09-.62 2.453 2.453 0 00-2.455-2.456A2.453 2.453 0 002.656 3.56a2.453 2.453 0 002.455 2.456c.405 0 .784-.103 1.12-.28l6.272 4.879a5.19 5.19 0 00-.701 2.605 5.222 5.222 0 005.222 5.222 5.222 5.222 0 005.222-5.222 5.207 5.207 0 00-4.082-5.089zm-1.14 7.526a2.637 2.637 0 01-2.639-2.639 2.637 2.637 0 012.639-2.639 2.637 2.637 0 012.639 2.639 2.637 2.637 0 01-2.639 2.639z"/>
+              </svg>
+            </div>
+            <div class="connect-banner-text">
+              <h3>Connect your HubSpot portal</h3>
+              <p>Link your HubSpot account to enable property fetching, field import, and advanced features.</p>
+            </div>
+            <button class="btn btn-hubspot" id="connectHubSpotBtn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.984 2.21 2.21 0 00-2.212-2.212 2.21 2.21 0 00-2.212 2.212c0 .863.502 1.609 1.227 1.968v2.879a5.197 5.197 0 00-2.382 1.193l-6.376-4.96a2.567 2.567 0 00.09-.62 2.453 2.453 0 00-2.455-2.456A2.453 2.453 0 002.656 3.56a2.453 2.453 0 002.455 2.456c.405 0 .784-.103 1.12-.28l6.272 4.879a5.19 5.19 0 00-.701 2.605 5.222 5.222 0 005.222 5.222 5.222 5.222 0 005.222-5.222 5.207 5.207 0 00-4.082-5.089zm-1.14 7.526a2.637 2.637 0 01-2.639-2.639 2.637 2.637 0 012.639-2.639 2.637 2.637 0 012.639 2.639 2.637 2.637 0 01-2.639 2.639z"/>
+              </svg>
+              Connect HubSpot
+            </button>
+          </div>
+        </div>
+
         <div class="section-header">
           <div>
             <h2>Welcome to RevGuide</h2>
@@ -224,7 +245,64 @@
   </div>
 
   <script src="/admin/supabase.js"></script>
+  <script src="/admin/nango.js"></script>
   <script src="/admin/shared.js"></script>
   <script src="/admin/pages/home.js"></script>
+
+  <style>
+    .connect-hubspot-banner {
+      background: linear-gradient(135deg, #ff7a59 0%, #ff5c35 100%);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      color: white;
+    }
+    .connect-banner-content {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .connect-banner-icon {
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+    .connect-banner-text {
+      flex: 1;
+    }
+    .connect-banner-text h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+    }
+    .connect-banner-text p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: var(--font-size-sm);
+    }
+    .btn-hubspot {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: white;
+      color: #ff5c35;
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      font-weight: var(--font-weight-semibold);
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-hubspot:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    @media (max-width: 768px) {
+      .connect-banner-content {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
 </body>
 </html>

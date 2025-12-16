@@ -22,12 +22,67 @@ class SettingsPage {
     this.settings = data.settings;
     this.invitedUsers = data.invitedUsers || [];
 
+    // Show appropriate HubSpot card based on context
+    this.setupHubSpotCards();
+
     // Populate UI
     this.updateSettingsUI();
     this.renderUsersTable();
 
+    // Load HubSpot connection status (web context only)
+    if (!AdminShared.isExtensionContext) {
+      await this.loadHubSpotConnectionStatus();
+    }
+
     // Bind events
     this.bindEvents();
+  }
+
+  setupHubSpotCards() {
+    const oauthCard = document.getElementById('hubspotOAuthCard');
+    const tokenCard = document.getElementById('hubspotTokenCard');
+
+    if (AdminShared.isExtensionContext) {
+      // Extension: Show token card, hide OAuth card
+      if (oauthCard) oauthCard.style.display = 'none';
+      if (tokenCard) tokenCard.style.display = 'block';
+    } else {
+      // Web: Show OAuth card, hide token card
+      if (oauthCard) oauthCard.style.display = 'block';
+      if (tokenCard) tokenCard.style.display = 'none';
+    }
+  }
+
+  async loadHubSpotConnectionStatus() {
+    const connectedState = document.getElementById('hubspotConnectedState');
+    const disconnectedState = document.getElementById('hubspotDisconnectedState');
+
+    try {
+      const { data: connection } = await RevGuideDB.getPrimaryHubSpotConnection();
+
+      if (connection && connection.is_active) {
+        // Show connected state
+        connectedState.style.display = 'block';
+        disconnectedState.style.display = 'none';
+
+        // Update portal info
+        document.getElementById('connectedPortalName').textContent = connection.portal_name || 'HubSpot Portal';
+        document.getElementById('connectedPortalDomain').textContent = connection.portal_domain || connection.portal_id;
+
+        // Store connection for disconnect action
+        this.currentConnection = connection;
+      } else {
+        // Show disconnected state
+        connectedState.style.display = 'none';
+        disconnectedState.style.display = 'block';
+        this.currentConnection = null;
+      }
+    } catch (error) {
+      console.error('Error loading HubSpot connection:', error);
+      // Show disconnected state on error
+      connectedState.style.display = 'none';
+      disconnectedState.style.display = 'block';
+    }
   }
 
   updateSettingsUI() {
@@ -49,9 +104,20 @@ class SettingsPage {
   }
 
   bindEvents() {
-    // API Token
-    document.getElementById('saveApiBtn').addEventListener('click', () => this.saveApiToken());
-    document.getElementById('testApiBtn').addEventListener('click', () => this.testApiConnection());
+    // HubSpot OAuth buttons (web context)
+    const connectHubSpotBtn = document.getElementById('connectHubSpotSettingsBtn');
+    const disconnectHubSpotBtn = document.getElementById('disconnectHubSpotBtn');
+
+    if (connectHubSpotBtn) {
+      connectHubSpotBtn.addEventListener('click', () => this.connectHubSpot());
+    }
+    if (disconnectHubSpotBtn) {
+      disconnectHubSpotBtn.addEventListener('click', () => this.disconnectHubSpot());
+    }
+
+    // API Token (extension context)
+    document.getElementById('saveApiBtn')?.addEventListener('click', () => this.saveApiToken());
+    document.getElementById('testApiBtn')?.addEventListener('click', () => this.testApiConnection());
 
     // Display options - auto-save on change
     document.getElementById('showBanners').addEventListener('change', (e) => {
@@ -421,6 +487,135 @@ class SettingsPage {
     this.renderUsersTable();
 
     AdminShared.showToast('User removed', 'success');
+  }
+
+  // ================================
+  // HubSpot OAuth Methods
+  // ================================
+
+  async connectHubSpot() {
+    const connectBtn = document.getElementById('connectHubSpotSettingsBtn');
+
+    // Disable button and show loading
+    if (connectBtn) {
+      connectBtn.disabled = true;
+      connectBtn.innerHTML = `
+        <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        Connecting...
+      `;
+    }
+
+    try {
+      // Generate unique connection ID
+      const connectionId = 'conn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+      // Get current organization ID
+      const orgId = await RevGuideDB.getOrganizationId();
+
+      // Start Nango OAuth flow
+      const result = await RevGuideNango.connectHubSpot(connectionId);
+
+      if (result.success) {
+        // Get portal info
+        const portalInfo = await RevGuideNango.getPortalInfo(connectionId);
+
+        if (portalInfo && orgId) {
+          // Create HubSpot connection record
+          await RevGuideDB.createHubSpotConnection({
+            organization_id: orgId,
+            portal_id: portalInfo.portalId,
+            portal_domain: portalInfo.portalDomain,
+            portal_name: portalInfo.portalName,
+            nango_connection_id: connectionId
+          });
+
+          // Update organization with portal info
+          await RevGuideDB.updateOrganization({
+            hubspot_portal_id: portalInfo.portalId,
+            hubspot_portal_domain: portalInfo.portalDomain,
+            nango_connection_id: connectionId
+          });
+
+          AdminShared.showToast('HubSpot connected successfully!', 'success');
+
+          // Reload connection status
+          await this.loadHubSpotConnectionStatus();
+        }
+      } else {
+        AdminShared.showToast(result.error || 'Failed to connect HubSpot', 'error');
+        this.resetConnectButton();
+      }
+    } catch (error) {
+      console.error('HubSpot connection error:', error);
+      AdminShared.showToast('Failed to connect HubSpot. Please try again.', 'error');
+      this.resetConnectButton();
+    }
+  }
+
+  async disconnectHubSpot() {
+    if (!this.currentConnection) return;
+
+    const confirmed = await AdminShared.showConfirmDialog({
+      title: 'Disconnect HubSpot',
+      message: 'Are you sure you want to disconnect your HubSpot portal? This will disable property fetching and field import.',
+      primaryLabel: 'Disconnect',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (confirmed !== 'primary') return;
+
+    const disconnectBtn = document.getElementById('disconnectHubSpotBtn');
+
+    try {
+      if (disconnectBtn) {
+        disconnectBtn.disabled = true;
+        disconnectBtn.textContent = 'Disconnecting...';
+      }
+
+      // Disconnect via Nango
+      if (this.currentConnection.nango_connection_id) {
+        await RevGuideNango.disconnect(this.currentConnection.nango_connection_id);
+      }
+
+      // Mark connection as inactive in database
+      await RevGuideDB.disconnectHubSpot(this.currentConnection.id);
+
+      // Clear organization portal info
+      await RevGuideDB.updateOrganization({
+        hubspot_portal_id: null,
+        hubspot_portal_domain: null,
+        nango_connection_id: null
+      });
+
+      AdminShared.showToast('HubSpot disconnected', 'success');
+
+      // Reload connection status
+      await this.loadHubSpotConnectionStatus();
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      AdminShared.showToast('Failed to disconnect. Please try again.', 'error');
+
+      if (disconnectBtn) {
+        disconnectBtn.disabled = false;
+        disconnectBtn.innerHTML = '<span class="icon icon-x icon--sm"></span> Disconnect';
+      }
+    }
+  }
+
+  resetConnectButton() {
+    const connectBtn = document.getElementById('connectHubSpotSettingsBtn');
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+          <path d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.984 2.21 2.21 0 00-2.212-2.212 2.21 2.21 0 00-2.212 2.212c0 .863.502 1.609 1.227 1.968v2.879a5.197 5.197 0 00-2.382 1.193l-6.376-4.96a2.567 2.567 0 00.09-.62 2.453 2.453 0 00-2.455-2.456A2.453 2.453 0 002.656 3.56a2.453 2.453 0 002.455 2.456c.405 0 .784-.103 1.12-.28l6.272 4.879a5.19 5.19 0 00-.701 2.605 5.222 5.222 0 005.222 5.222 5.222 5.222 0 005.222-5.222 5.207 5.207 0 00-4.082-5.089zm-1.14 7.526a2.637 2.637 0 01-2.639-2.639 2.637 2.637 0 012.639-2.639 2.637 2.637 0 012.639 2.639 2.637 2.637 0 01-2.639 2.639z"/>
+        </svg>
+        Connect HubSpot
+      `;
+    }
   }
 }
 
