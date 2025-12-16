@@ -89,23 +89,25 @@ class SettingsPage {
    * Load team members and pending invitations from database
    */
   async loadTeamData() {
-    // In web context, load from Supabase
+    // In web context, load from Supabase - parallelize the two queries
     if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
       try {
-        // Load team members
-        const { data: members, error: membersError } = await RevGuideDB.getTeamMembers();
-        if (membersError) {
-          console.error('[Settings] Error loading team members:', membersError);
+        // Load team members and invitations in parallel
+        const [membersResult, invitationsResult] = await Promise.all([
+          RevGuideDB.getTeamMembers(),
+          RevGuideDB.getInvitations()
+        ]);
+
+        if (membersResult.error) {
+          console.error('[Settings] Error loading team members:', membersResult.error);
         } else {
-          this.teamMembers = members || [];
+          this.teamMembers = membersResult.data || [];
         }
 
-        // Load pending invitations
-        const { data: invitations, error: invitesError } = await RevGuideDB.getInvitations();
-        if (invitesError) {
-          console.error('[Settings] Error loading invitations:', invitesError);
+        if (invitationsResult.error) {
+          console.error('[Settings] Error loading invitations:', invitationsResult.error);
         } else {
-          this.pendingInvitations = invitations || [];
+          this.pendingInvitations = invitationsResult.data || [];
         }
 
         console.log('[Settings] Loaded', this.teamMembers.length, 'members and', this.pendingInvitations.length, 'invitations');

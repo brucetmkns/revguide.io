@@ -886,13 +886,13 @@ class PlaysPage {
     try {
       // In web context, save directly to Supabase
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-        // Supabase uses snake_case column names - map from camelCase
+        // Supabase uses snake_case column names
         const supabaseData = {
           name,
           card_type: cardType,
           subtitle,
           link,
-          object_type: objectType,
+          object_type: objectType || null,
           conditions,
           logic,
           display_on_all: displayOnAll,
