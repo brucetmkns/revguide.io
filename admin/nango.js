@@ -157,19 +157,23 @@ const RevGuideNango = {
       // Check if popup was closed - when closed, assume success and verify connection
       const checkClosed = setInterval(() => {
         if (popup.closed && !resolved) {
-          resolved = true;
           clearInterval(checkClosed);
           window.removeEventListener('message', messageHandler);
 
-          // Popup closed - assume user completed flow, resolve with connectionId
-          // The actual connection will be verified by the caller
-          console.log('[RevGuide] Popup closed, assuming connection complete');
-          resolve({
-            connectionId: connectionId,
-            providerConfigKey: HUBSPOT_INTEGRATION_ID
-          });
+          // Popup closed - wait a moment then assume user completed flow
+          console.log('[RevGuide] Popup closed, waiting before resolving...');
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              console.log('[RevGuide] Resolving with connectionId:', connectionId);
+              resolve({
+                connectionId: connectionId,
+                providerConfigKey: HUBSPOT_INTEGRATION_ID
+              });
+            }
+          }, 500);
         }
-      }, 500);
+      }, 300);
     });
   },
 
