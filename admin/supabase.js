@@ -74,17 +74,24 @@ const RevGuideAuth = {
   },
 
   /**
-   * Sign in with magic link
+   * Sign up with email and password
    */
-  async signInWithMagicLink(email) {
+  async signUp(email, password) {
     const client = await this.waitForClient();
-    const redirectUrl = window.location.origin + window.location.pathname;
-
-    return client.auth.signInWithOtp({
+    return client.auth.signUp({
       email,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
+      password
+    });
+  },
+
+  /**
+   * Sign in with email and password
+   */
+  async signIn(email, password) {
+    const client = await this.waitForClient();
+    return client.auth.signInWithPassword({
+      email,
+      password
     });
   },
 

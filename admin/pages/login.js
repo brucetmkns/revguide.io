@@ -1,16 +1,14 @@
 /**
  * RevGuide - Login Page
- * Handles Magic Link authentication for existing users
+ * Handles email/password authentication
  */
-
-// Edge function URL for checking if email exists
-const CHECK_EMAIL_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co/functions/v1/check-email';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('loginBtn');
   const loginMessage = document.getElementById('loginMessage');
   const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
 
   // Check if already logged in
   const { data: { session } } = await RevGuideAuth.getSession();
@@ -19,113 +17,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Check for auth callback (magic link return)
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  // Check for error in URL (e.g., from OAuth)
   const queryParams = new URLSearchParams(window.location.search);
-
-  // Handle Supabase auth callback (magic link)
-  if (hashParams.get('access_token') || queryParams.get('code')) {
-    showMessage('Signing you in...', 'success');
-    // Supabase handles the token exchange automatically
-    setTimeout(async () => {
-      const { data: { session } } = await RevGuideAuth.getSession();
-      if (session) {
-        window.location.href = '/home';
-      } else {
-        showMessage('Authentication failed. Please try again.', 'error');
-      }
-    }, 1000);
-    return;
-  }
-
-  // Check for error in URL (e.g., expired magic link)
-  if (hashParams.get('error') || queryParams.get('error')) {
-    const errorCode = hashParams.get('error_code') || queryParams.get('error_code');
-    const errorDesc = hashParams.get('error_description') || queryParams.get('error_description');
-
-    if (errorCode === 'otp_expired') {
-      showMessage('This magic link has expired. Please request a new one.', 'error');
-    } else {
-      showMessage(errorDesc?.replace(/\+/g, ' ') || 'Authentication failed. Please try again.', 'error');
-    }
-
-    // Clean up URL
+  if (queryParams.get('error')) {
+    showMessage(queryParams.get('error_description') || 'Authentication failed', 'error');
     window.history.replaceState({}, '', window.location.pathname);
   }
 
-  // Magic link form submit
+  // Login form submit
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const email = emailInput.value.trim();
-    if (!email) return;
+    const password = passwordInput.value;
+
+    if (!email || !password) return;
 
     loginBtn.disabled = true;
-    loginBtn.textContent = 'Checking...';
+    loginBtn.textContent = 'Signing in...';
     hideMessage();
 
     try {
-      // First check if the email exists
-      const emailExists = await checkEmailExists(email);
-
-      if (!emailExists) {
-        // User doesn't exist - prompt to sign up
-        showMessage(
-          'No account found with this email. <a href="/signup">Sign up free</a> to get started!',
-          'warning'
-        );
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Send magic link';
-        return;
-      }
-
-      // User exists - send magic link
-      loginBtn.textContent = 'Sending...';
-      const { error } = await RevGuideAuth.signInWithMagicLink(email);
+      const { data, error } = await RevGuideAuth.signIn(email, password);
 
       if (error) {
-        showMessage(error.message, 'error');
+        // Handle specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          showMessage('Invalid email or password. Please try again.', 'error');
+        } else if (error.message.includes('Email not confirmed')) {
+          showMessage('Please check your email to confirm your account.', 'error');
+        } else {
+          showMessage(error.message, 'error');
+        }
         loginBtn.disabled = false;
-        loginBtn.textContent = 'Send magic link';
-      } else {
-        showMessage('Check your email for the magic link!', 'success');
-        loginBtn.textContent = 'Email sent';
+        loginBtn.textContent = 'Sign in';
+      } else if (data.session) {
+        // Login successful
+        showMessage('Welcome back! Redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = '/home';
+        }, 500);
       }
     } catch (err) {
       console.error('Login error:', err);
       showMessage('Something went wrong. Please try again.', 'error');
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Send magic link';
+      loginBtn.textContent = 'Sign in';
     }
   });
-
-  /**
-   * Check if an email exists in the system
-   */
-  async function checkEmailExists(email) {
-    try {
-      const response = await fetch(CHECK_EMAIL_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-
-      if (!response.ok) {
-        console.error('Check email failed:', response.status);
-        // On error, allow the login attempt (fail open)
-        return true;
-      }
-
-      const data = await response.json();
-      return data.exists === true;
-    } catch (err) {
-      console.error('Check email error:', err);
-      // On error, allow the login attempt (fail open)
-      return true;
-    }
-  }
 
   /**
    * Show a message to the user

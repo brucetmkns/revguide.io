@@ -290,6 +290,10 @@
           <label for="email">Work email</label>
           <input type="email" id="email" placeholder="you@company.com" required>
         </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Min 8 characters" minlength="8" required>
+        </div>
         <button type="submit" class="signup-btn" id="signupBtn">
           Get started free
         </button>
@@ -358,18 +362,17 @@
       const fullNameInput = document.getElementById('fullName');
       const companyNameInput = document.getElementById('companyName');
       const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
 
-      // Check if returning from magic link or OAuth
+      // Check if returning from Google OAuth
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const queryParams = new URLSearchParams(window.location.search);
 
       if (hashParams.get('access_token') || queryParams.get('code')) {
         showMessage('Setting up your account...', 'success');
-        // Wait for Supabase to process the token
         setTimeout(async () => {
           const { data: { session } } = await RevGuideAuth.getSession();
           if (session) {
-            // Redirect to onboarding for new users
             window.location.href = '/onboarding';
           } else {
             showMessage('Authentication failed. Please try again.', 'error');
@@ -381,7 +384,6 @@
       // Check if already logged in
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
-        // Check if user has completed onboarding (has organization)
         try {
           const { data: profile } = await RevGuideDB.getUserProfile();
           if (profile?.organization_id) {
@@ -395,18 +397,24 @@
         return;
       }
 
-      // Magic link form submit
+      // Email/Password signup form submit
       signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const fullName = fullNameInput.value.trim();
         const companyName = companyNameInput.value.trim();
         const email = emailInput.value.trim();
+        const password = passwordInput.value;
 
-        if (!fullName || !companyName || !email) return;
+        if (!fullName || !companyName || !email || !password) return;
+
+        if (password.length < 8) {
+          showMessage('Password must be at least 8 characters.', 'error');
+          return;
+        }
 
         signupBtn.disabled = true;
-        signupBtn.textContent = 'Sending...';
+        signupBtn.textContent = 'Creating account...';
 
         // Store signup data for onboarding page
         sessionStorage.setItem('revguide_signup_data', JSON.stringify({
@@ -417,18 +425,21 @@
         }));
 
         try {
-          const { error } = await RevGuideAuth.signInWithMagicLink(email);
+          const { data, error } = await RevGuideAuth.signUp(email, password);
 
           if (error) {
             showMessage(error.message, 'error');
             signupBtn.disabled = false;
             signupBtn.textContent = 'Get started free';
-          } else {
-            showMessage('Check your email for the magic link!', 'success');
-            signupBtn.textContent = 'Email sent';
+          } else if (data.user) {
+            // Signup successful - redirect to onboarding
+            showMessage('Account created! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = '/onboarding';
+            }, 500);
           }
         } catch (err) {
-          showMessage('Failed to send magic link. Please try again.', 'error');
+          showMessage('Failed to create account. Please try again.', 'error');
           signupBtn.disabled = false;
           signupBtn.textContent = 'Get started free';
         }
@@ -439,7 +450,6 @@
         const fullName = fullNameInput.value.trim();
         const companyName = companyNameInput.value.trim();
 
-        // Store signup data even for Google OAuth
         if (fullName || companyName) {
           sessionStorage.setItem('revguide_signup_data', JSON.stringify({
             fullName,
