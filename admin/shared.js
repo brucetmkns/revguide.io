@@ -429,11 +429,30 @@ async function fetchProperties(objectType, propertiesCache = {}) {
     return propertiesCache[objectType];
   }
 
-  // In web context, properties will be fetched via Nango OAuth (future)
+  // In web context, use HubSpot OAuth proxy
   if (!isExtensionContext) {
-    // Return empty array for now - Nango integration will be added
-    console.log('Property fetching not yet available in web context (Nango OAuth required)');
-    return [];
+    // Check if RevGuideHubSpot is available
+    if (typeof RevGuideHubSpot === 'undefined') {
+      console.error('RevGuideHubSpot not loaded');
+      return [];
+    }
+
+    try {
+      // Get connection to get connectionId
+      const connection = await RevGuideHubSpot.getConnection();
+      if (!connection || !connection.isConnected) {
+        console.log('HubSpot not connected - cannot fetch properties');
+        return [];
+      }
+
+      // Fetch properties via proxy
+      const properties = await RevGuideHubSpot.getProperties(connection.connectionId, objectType);
+      propertiesCache[objectType] = properties;
+      return properties;
+    } catch (error) {
+      console.error('Failed to fetch properties via HubSpot OAuth:', error);
+      return [];
+    }
   }
 
   // In extension context, use background script

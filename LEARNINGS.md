@@ -608,4 +608,143 @@ See `docs/HUBSPOT_DOM.md` for detailed DOM structures.
 
 ---
 
+## HubSpot OAuth Implementation (v2.0)
+
+### Direct OAuth vs Nango Middleware
+**Lesson**: Direct OAuth with Supabase edge functions is simpler and more reliable than using a third-party OAuth middleware like Nango.
+
+**Previous architecture (Nango)**:
+- Frontend → Nango Connect UI → HubSpot → Nango → Webhook → Database
+- Tokens stored in Nango's vault
+- Required NANGO_SECRET_KEY environment variable
+- Multiple redirects and session token management
+- Complex webhook handling for OAuth completion
+
+**New architecture (Direct)**:
+- Frontend → Edge Function → HubSpot OAuth → Edge Function callback → Database
+- Tokens encrypted and stored directly in our database
+- Simpler flow with fewer points of failure
+
+### Edge Function JWT Verification
+**Lesson**: OAuth callback endpoints must disable JWT verification since they're called by external redirects (no auth header).
+
+**Problem**: Supabase edge functions require JWT by default. HubSpot redirects users to callback URL without any auth header.
+
+**Solution**: Deploy with `--no-verify-jwt` flag:
+```bash
+supabase functions deploy hubspot-oauth --no-verify-jwt
+```
+
+Or create `config.toml` in function folder:
+```toml
+verify_jwt = false
+```
+
+### Database Schema Constraints
+**Lesson**: When creating records during OAuth flow, ensure all NOT NULL constraints are satisfied.
+
+**Issues encountered**:
+1. `organizations.slug` required - generate from portal name:
+```typescript
+const slug = orgName.toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '') || `org-${portalId}`
+```
+
+2. `hubspot_connections.connected_by` FK references `users.id`, not `auth.users.id`:
+```typescript
+// WRONG - auth_user_id from oauth state
+p_connected_by: oauthState.user_id
+
+// CORRECT - users.id from users table
+const { data: user } = await supabase
+  .from('users')
+  .select('id')
+  .eq('auth_user_id', oauthState.user_id)
+  .single()
+p_connected_by: user?.id
+```
+
+### Token Storage Security
+**Lesson**: Store OAuth tokens encrypted in database using pgcrypto.
+
+**Pattern**:
+```sql
+-- Encrypt on store
+pgp_sym_encrypt(access_token, encryption_key)
+
+-- Decrypt on use
+pgp_sym_decrypt(access_token_encrypted, encryption_key)
+```
+
+**Environment variable**: `TOKEN_ENCRYPTION_KEY` (32-byte random key)
+
+### OAuth State for CSRF Protection
+**Lesson**: Always use state parameter to prevent CSRF attacks.
+
+**Pattern**:
+```typescript
+// Generate state and store in database
+const state = crypto.randomUUID()
+await supabase.from('oauth_states').insert({
+  state,
+  user_id: userId,
+  return_url: returnUrl,
+  expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 min
+})
+
+// In callback, validate state exists and hasn't expired
+const { data: oauthState } = await supabase
+  .from('oauth_states')
+  .select('*')
+  .eq('state', state)
+  .single()
+
+if (!oauthState || new Date(oauthState.expires_at) < new Date()) {
+  return redirectWithError('Invalid or expired session')
+}
+
+// Delete used state
+await supabase.from('oauth_states').delete().eq('state', state)
+```
+
+### Token Refresh
+**Lesson**: HubSpot access tokens expire in 30 minutes. Refresh proactively before expiry.
+
+**Pattern**:
+```typescript
+async function getValidAccessToken(connectionId) {
+  const { access_token, token_expires_at, refresh_token } = await getTokens(connectionId)
+
+  // Refresh if expires within 5 minutes
+  const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000)
+  if (new Date(token_expires_at) > fiveMinutesFromNow) {
+    return access_token // Still valid
+  }
+
+  // Refresh token
+  const response = await fetch('https://api.hubapi.com/oauth/v1/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: HUBSPOT_CLIENT_ID,
+      client_secret: HUBSPOT_CLIENT_SECRET,
+      refresh_token
+    })
+  })
+
+  const newTokens = await response.json()
+  await updateTokens(connectionId, newTokens)
+  return newTokens.access_token
+}
+```
+
+### Files for HubSpot OAuth
+- `supabase/functions/hubspot-oauth/index.ts` - Edge function with all endpoints
+- `admin/hubspot.js` - Frontend client (replaces nango.js)
+- `admin/pages/settings.js` - Uses RevGuideHubSpot client
+- `supabase/migrations/002_direct_hubspot_oauth.sql` - Token columns and oauth_states table
+
+---
+
 *Last updated: December 2024*
