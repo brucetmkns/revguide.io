@@ -930,23 +930,58 @@ class WikiPage {
     entry.pageType = pageType;
     entry.urlPatterns = urlPatterns.length > 0 ? urlPatterns : null;
 
-    if (isNew) {
-      this.wikiEntries.push(entry);
-      this.selectedEntryId = entry.id;
-      this.isCreatingNew = false;
+    try {
+      // In web context, save directly to Supabase
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        if (isNew) {
+          // Create new entry - don't include the local id
+          const { id, createdAt, ...entryData } = entry;
+          const { data, error } = await RevGuideDB.createWikiEntry(entryData);
+          if (error) throw error;
+
+          // Use the server-generated entry
+          this.wikiEntries.push(data);
+          this.selectedEntryId = data.id;
+          this.isCreatingNew = false;
+        } else {
+          // Update existing entry
+          const { id, createdAt, ...entryData } = entry;
+          const { data, error } = await RevGuideDB.updateWikiEntry(this.selectedEntryId, entryData);
+          if (error) throw error;
+
+          // Update local array
+          const index = this.wikiEntries.findIndex(e => e.id === this.selectedEntryId);
+          if (index !== -1) {
+            this.wikiEntries[index] = { ...this.wikiEntries[index], ...data };
+          }
+        }
+
+        // Clear storage cache so next load gets fresh data
+        AdminShared.clearStorageCache();
+      } else {
+        // Extension context - use local storage
+        if (isNew) {
+          this.wikiEntries.push(entry);
+          this.selectedEntryId = entry.id;
+          this.isCreatingNew = false;
+        }
+
+        await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
+      }
+
+      AdminShared.notifyContentScript();
+
+      this.hasUnsavedChanges = false;
+      this.updateSaveButtonIcon();
+
+      // Re-render
+      this.render();
+
+      AdminShared.showToast('Wiki entry saved', 'success');
+    } catch (error) {
+      console.error('Failed to save wiki entry:', error);
+      AdminShared.showToast(`Failed to save: ${error.message}`, 'error');
     }
-
-    // Save
-    await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
-    AdminShared.notifyContentScript();
-
-    this.hasUnsavedChanges = false;
-    this.updateSaveButtonIcon();
-
-    // Re-render
-    this.render();
-
-    AdminShared.showToast('Wiki entry saved', 'success');
 
     // Clear URL params if present
     if (window.location.search) {
@@ -991,26 +1026,40 @@ class WikiPage {
       return;
     }
 
-    // Remove entry
-    this.wikiEntries = this.wikiEntries.filter(e => e.id !== this.selectedEntryId);
+    const entryIdToDelete = this.selectedEntryId;
 
-    // Select first remaining entry or clear selection
-    if (this.wikiEntries.length > 0) {
-      this.selectedEntryId = this.wikiEntries[0].id;
-    } else {
-      this.selectedEntryId = null;
+    try {
+      // In web context, delete from Supabase
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        const { error } = await RevGuideDB.deleteWikiEntry(entryIdToDelete);
+        if (error) throw error;
+        AdminShared.clearStorageCache();
+      } else {
+        await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
+      }
+
+      // Remove entry from local array
+      this.wikiEntries = this.wikiEntries.filter(e => e.id !== entryIdToDelete);
+
+      // Select first remaining entry or clear selection
+      if (this.wikiEntries.length > 0) {
+        this.selectedEntryId = this.wikiEntries[0].id;
+      } else {
+        this.selectedEntryId = null;
+      }
+
+      this.hasUnsavedChanges = false;
+
+      AdminShared.notifyContentScript();
+
+      // Re-render
+      this.render();
+
+      AdminShared.showToast('Wiki entry deleted', 'success');
+    } catch (error) {
+      console.error('Failed to delete wiki entry:', error);
+      AdminShared.showToast(`Failed to delete: ${error.message}`, 'error');
     }
-
-    this.hasUnsavedChanges = false;
-
-    // Save
-    await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
-    AdminShared.notifyContentScript();
-
-    // Re-render
-    this.render();
-
-    AdminShared.showToast('Wiki entry deleted', 'success');
   }
 
   // ============ MULTI-SELECT MODE ============

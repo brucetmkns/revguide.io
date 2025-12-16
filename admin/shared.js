@@ -166,6 +166,10 @@ async function checkAuth() {
 async function signOut() {
   if (typeof RevGuideAuth !== 'undefined') {
     clearUserCache();
+    clearStorageDataCache();
+    if (typeof RevGuideDB !== 'undefined') {
+      RevGuideDB.clearCachedOrgId();
+    }
     currentUser = null;
     currentOrganization = null;
     await RevGuideAuth.signOut();
@@ -221,7 +225,57 @@ function renderSidebar(activePage) {
  * Load data from Chrome storage or Supabase (web context)
  * @returns {Promise<Object>} The stored data
  */
-async function loadStorageData() {
+// Storage data cache
+const STORAGE_CACHE_KEY = 'revguide_storage_cache';
+const STORAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let _storageDataCache = null;
+let _storageDataTimestamp = 0;
+
+function getStorageDataFromCache() {
+  // Check memory cache first
+  if (_storageDataCache && (Date.now() - _storageDataTimestamp < STORAGE_CACHE_TTL)) {
+    return _storageDataCache;
+  }
+  // Check sessionStorage
+  try {
+    const cached = sessionStorage.getItem(STORAGE_CACHE_KEY);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < STORAGE_CACHE_TTL) {
+        _storageDataCache = data;
+        _storageDataTimestamp = timestamp;
+        return data;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function setStorageDataCache(data) {
+  _storageDataCache = data;
+  _storageDataTimestamp = Date.now();
+  try {
+    sessionStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (e) {}
+}
+
+function clearStorageDataCache() {
+  _storageDataCache = null;
+  _storageDataTimestamp = 0;
+  try {
+    sessionStorage.removeItem(STORAGE_CACHE_KEY);
+  } catch (e) {}
+}
+
+// Alias for external use
+function clearStorageCache() {
+  clearStorageDataCache();
+}
+
+async function loadStorageData(forceRefresh = false) {
   const defaults = {
     rules: [],
     battleCards: [],
@@ -239,8 +293,19 @@ async function loadStorageData() {
     }
   };
 
-  // In web context, load from Supabase
+  // In web context, load from Supabase with caching
   if (!isExtensionContext && typeof RevGuideDB !== 'undefined') {
+    // Fast path: return cached data
+    if (!forceRefresh) {
+      const cached = getStorageDataFromCache();
+      if (cached) {
+        console.log('[Storage] Using cached data');
+        return cached;
+      }
+    }
+
+    // Slow path: fetch from Supabase
+    console.log('[Storage] Fetching from Supabase...');
     try {
       const [wikiResult, bannersResult, playsResult] = await Promise.all([
         RevGuideDB.getWikiEntries(),
@@ -248,7 +313,7 @@ async function loadStorageData() {
         RevGuideDB.getPlays()
       ]);
 
-      return {
+      const data = {
         wikiEntries: wikiResult.data || [],
         rules: bannersResult.data || [],
         battleCards: playsResult.data || [],
@@ -256,6 +321,9 @@ async function loadStorageData() {
         invitedUsers: [],
         settings: defaults.settings
       };
+
+      setStorageDataCache(data);
+      return data;
     } catch (e) {
       console.error('Failed to load from Supabase:', e);
       return defaults;
@@ -276,6 +344,9 @@ async function loadStorageData() {
  * @returns {Promise<void>}
  */
 async function saveStorageData(data) {
+  // Invalidate storage cache when saving
+  clearStorageDataCache();
+
   // In web context, save to Supabase
   if (!isExtensionContext && typeof RevGuideDB !== 'undefined') {
     try {
@@ -533,9 +604,45 @@ function notifyContentScript() {
  * @param {Object} propertiesCache - Cache object to store results
  * @returns {Promise<Array>}
  */
+// Global property cache (persists across pages)
+const PROPERTIES_CACHE_KEY = 'revguide_properties_cache';
+const PROPERTIES_CACHE_TTL = 30 * 60 * 1000; // 30 minutes (properties don't change often)
+
+function getGlobalPropertiesCache() {
+  try {
+    const cached = sessionStorage.getItem(PROPERTIES_CACHE_KEY);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < PROPERTIES_CACHE_TTL) {
+        return data;
+      }
+    }
+  } catch (e) {}
+  return {};
+}
+
+function setGlobalPropertiesCache(objectType, properties) {
+  try {
+    const existing = getGlobalPropertiesCache();
+    existing[objectType] = properties;
+    sessionStorage.setItem(PROPERTIES_CACHE_KEY, JSON.stringify({
+      data: existing,
+      timestamp: Date.now()
+    }));
+  } catch (e) {}
+}
+
 async function fetchProperties(objectType, propertiesCache = {}) {
+  // Check page-level cache first
   if (propertiesCache[objectType]) {
     return propertiesCache[objectType];
+  }
+
+  // Check global sessionStorage cache
+  const globalCache = getGlobalPropertiesCache();
+  if (globalCache[objectType]) {
+    propertiesCache[objectType] = globalCache[objectType];
+    return globalCache[objectType];
   }
 
   // In web context, use HubSpot OAuth proxy
@@ -557,6 +664,7 @@ async function fetchProperties(objectType, propertiesCache = {}) {
       // Fetch properties via proxy
       const properties = await RevGuideHubSpot.getProperties(connection.connectionId, objectType);
       propertiesCache[objectType] = properties;
+      setGlobalPropertiesCache(objectType, properties);
       return properties;
     } catch (error) {
       console.error('Failed to fetch properties via HubSpot OAuth:', error);
@@ -571,6 +679,7 @@ async function fetchProperties(objectType, propertiesCache = {}) {
       (response) => {
         if (response?.success) {
           propertiesCache[objectType] = response.data;
+          setGlobalPropertiesCache(objectType, response.data);
           resolve(response.data);
         } else {
           reject(new Error(response?.error || 'Failed to fetch properties'));
@@ -1162,6 +1271,7 @@ window.AdminShared = {
   renderSidebar,
   loadStorageData,
   saveStorageData,
+  clearStorageCache,
   getInstalledLibraries,
   saveInstalledLibraries,
   buildWikiTermMapCache,

@@ -485,8 +485,10 @@ class BannersPage {
     const playSelectEl = document.getElementById('ruleRelatedPlay');
     const relatedPlayId = playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : '';
 
-    const rule = {
-      id: this.editingRuleId || 'rule_' + Date.now(),
+    // Build banner data object for Supabase
+    // NOTE: Column names in Supabase should use snake_case,
+    // but we store as the exact keys our code expects for consistency
+    const bannerData = {
       name,
       title: title || name,
       message,
@@ -498,33 +500,87 @@ class BannersPage {
       logic,
       displayOnAll,
       tabVisibility,
-      relatedPlayId,
-      enabled: true,
-      createdAt: Date.now()
+      relatedPlayId: relatedPlayId || null,
+      enabled: true
     };
 
-    // Add embed URL and converted URL for embed type
+    // Add embed URL for embed type
     if (type === 'embed') {
-      rule.url = embedUrl;
-      rule.embedUrl = AdminShared.convertToEmbedUrl(embedUrl);
+      bannerData.url = embedUrl;
+      bannerData.embedUrl = AdminShared.convertToEmbedUrl(embedUrl);
     }
 
-    if (this.editingRuleId) {
-      const index = this.rules.findIndex(r => r.id === this.editingRuleId);
-      if (index !== -1) {
-        rule.createdAt = this.rules[index].createdAt;
-        rule.enabled = this.rules[index].enabled;
-        rule.updatedAt = Date.now();
-        this.rules[index] = rule;
+    try {
+      // In web context, save directly to Supabase
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        if (this.editingRuleId) {
+          // Update existing banner
+          const { data, error } = await RevGuideDB.updateBanner(this.editingRuleId, bannerData);
+          if (error) throw error;
+
+          // Update local array
+          const index = this.rules.findIndex(r => r.id === this.editingRuleId);
+          if (index !== -1) {
+            this.rules[index] = { ...this.rules[index], ...data };
+          }
+        } else {
+          // Create new banner
+          const { data, error } = await RevGuideDB.createBanner(bannerData);
+          if (error) throw error;
+
+          // Add to local array
+          this.rules.push(data);
+        }
+
+        // Clear storage cache so next load gets fresh data
+        AdminShared.clearStorageCache();
+      } else {
+        // Extension context - use local storage
+        const rule = {
+          id: this.editingRuleId || 'rule_' + Date.now(),
+          name,
+          title: title || name,
+          message,
+          type,
+          priority,
+          objectTypes,
+          objectType: objectTypeValue,
+          conditions,
+          logic,
+          displayOnAll,
+          tabVisibility,
+          relatedPlayId,
+          enabled: true,
+          createdAt: Date.now()
+        };
+
+        if (type === 'embed') {
+          rule.url = embedUrl;
+          rule.embedUrl = AdminShared.convertToEmbedUrl(embedUrl);
+        }
+
+        if (this.editingRuleId) {
+          const index = this.rules.findIndex(r => r.id === this.editingRuleId);
+          if (index !== -1) {
+            rule.createdAt = this.rules[index].createdAt;
+            rule.enabled = this.rules[index].enabled;
+            rule.updatedAt = Date.now();
+            this.rules[index] = rule;
+          }
+        } else {
+          this.rules.push(rule);
+        }
+
+        await AdminShared.saveStorageData({ rules: this.rules });
       }
-    } else {
-      this.rules.push(rule);
-    }
 
-    await AdminShared.saveStorageData({ rules: this.rules });
-    AdminShared.notifyContentScript();
-    AdminShared.showToast('Banner saved successfully', 'success');
-    this.closeRuleEditor();
+      AdminShared.notifyContentScript();
+      AdminShared.showToast('Banner saved successfully', 'success');
+      this.closeRuleEditor();
+    } catch (error) {
+      console.error('Failed to save banner:', error);
+      AdminShared.showToast(`Failed to save banner: ${error.message}`, 'error');
+    }
   }
 
   editRule(ruleId) {
@@ -535,20 +591,47 @@ class BannersPage {
   async toggleRule(ruleId) {
     const rule = this.rules.find(r => r.id === ruleId);
     if (rule) {
-      rule.enabled = rule.enabled === false ? true : false;
-      await AdminShared.saveStorageData({ rules: this.rules });
-      this.renderRules();
-      AdminShared.notifyContentScript();
+      const newEnabled = rule.enabled === false ? true : false;
+
+      try {
+        if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+          const { error } = await RevGuideDB.updateBanner(ruleId, { enabled: newEnabled });
+          if (error) throw error;
+          rule.enabled = newEnabled;
+          AdminShared.clearStorageCache();
+        } else {
+          rule.enabled = newEnabled;
+          await AdminShared.saveStorageData({ rules: this.rules });
+        }
+
+        this.renderRules();
+        AdminShared.notifyContentScript();
+      } catch (error) {
+        console.error('Failed to toggle banner:', error);
+        AdminShared.showToast(`Failed to update banner: ${error.message}`, 'error');
+      }
     }
   }
 
   async deleteRule(ruleId) {
     if (confirm('Are you sure you want to delete this banner?')) {
-      this.rules = this.rules.filter(r => r.id !== ruleId);
-      await AdminShared.saveStorageData({ rules: this.rules });
-      this.renderRules();
-      AdminShared.notifyContentScript();
-      AdminShared.showToast('Banner deleted', 'success');
+      try {
+        if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+          const { error } = await RevGuideDB.deleteBanner(ruleId);
+          if (error) throw error;
+          AdminShared.clearStorageCache();
+        } else {
+          await AdminShared.saveStorageData({ rules: this.rules });
+        }
+
+        this.rules = this.rules.filter(r => r.id !== ruleId);
+        this.renderRules();
+        AdminShared.notifyContentScript();
+        AdminShared.showToast('Banner deleted', 'success');
+      } catch (error) {
+        console.error('Failed to delete banner:', error);
+        AdminShared.showToast(`Failed to delete banner: ${error.message}`, 'error');
+      }
     }
   }
 }

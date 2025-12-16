@@ -118,6 +118,58 @@ const RevGuideAuth = {
  * RevGuide Database API
  */
 const RevGuideDB = {
+  // Cached organization ID to avoid repeated queries
+  _cachedOrgId: null,
+  _cachedOrgIdTimestamp: 0,
+  _ORG_CACHE_TTL: 10 * 60 * 1000, // 10 minutes
+
+  /**
+   * Get cached organization ID (fast path)
+   */
+  getCachedOrgId() {
+    if (this._cachedOrgId && (Date.now() - this._cachedOrgIdTimestamp < this._ORG_CACHE_TTL)) {
+      return this._cachedOrgId;
+    }
+    // Also check sessionStorage for cross-page persistence
+    try {
+      const cached = sessionStorage.getItem('revguide_org_id');
+      if (cached) {
+        const { orgId, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < this._ORG_CACHE_TTL) {
+          this._cachedOrgId = orgId;
+          this._cachedOrgIdTimestamp = timestamp;
+          return orgId;
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  /**
+   * Set cached organization ID
+   */
+  setCachedOrgId(orgId) {
+    this._cachedOrgId = orgId;
+    this._cachedOrgIdTimestamp = Date.now();
+    try {
+      sessionStorage.setItem('revguide_org_id', JSON.stringify({
+        orgId,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  },
+
+  /**
+   * Clear cached organization ID
+   */
+  clearCachedOrgId() {
+    this._cachedOrgId = null;
+    this._cachedOrgIdTimestamp = 0;
+    try {
+      sessionStorage.removeItem('revguide_org_id');
+    } catch (e) {}
+  },
+
   /**
    * Get user profile with organization
    */
@@ -139,8 +191,10 @@ const RevGuideDB = {
       return { data: null, error: userError };
     }
 
-    // Then get the organization separately if user has one
+    // Cache org ID for fast access
     if (userProfile.organization_id) {
+      this.setCachedOrgId(userProfile.organization_id);
+
       const { data: org, error: orgError } = await client
         .from('organizations')
         .select('*')
@@ -158,9 +212,14 @@ const RevGuideDB = {
   },
 
   /**
-   * Get organization ID for current user
+   * Get organization ID for current user (uses cache)
    */
   async getOrganizationId() {
+    // Fast path: return cached org ID
+    const cached = this.getCachedOrgId();
+    if (cached) return cached;
+
+    // Slow path: fetch from profile
     const { data: profile } = await this.getUserProfile();
     return profile?.organization_id;
   },

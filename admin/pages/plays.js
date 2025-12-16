@@ -870,8 +870,8 @@ class PlaysPage {
     const logic = AdminShared.getLogic('playLogicToggle');
     const displayOnAll = document.getElementById('playDisplayOnAll').checked;
 
-    const card = {
-      id: this.editingPlayId || 'card_' + Date.now(),
+    // Build play data object
+    const playData = {
       name,
       cardType,
       subtitle,
@@ -880,25 +880,62 @@ class PlaysPage {
       conditions,
       logic,
       displayOnAll,
-      sections,
-      createdAt: Date.now()
+      sections
     };
 
-    if (this.editingPlayId) {
-      const index = this.battleCards.findIndex(c => c.id === this.editingPlayId);
-      if (index !== -1) {
-        card.createdAt = this.battleCards[index].createdAt;
-        card.updatedAt = Date.now();
-        this.battleCards[index] = card;
-      }
-    } else {
-      this.battleCards.push(card);
-    }
+    try {
+      // In web context, save directly to Supabase
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        if (this.editingPlayId) {
+          // Update existing play
+          const { data, error } = await RevGuideDB.updatePlay(this.editingPlayId, playData);
+          if (error) throw error;
 
-    await AdminShared.saveStorageData({ battleCards: this.battleCards });
-    AdminShared.notifyContentScript();
-    AdminShared.showToast('Play saved successfully', 'success');
-    this.closePlayEditor();
+          // Update local array
+          const index = this.battleCards.findIndex(c => c.id === this.editingPlayId);
+          if (index !== -1) {
+            this.battleCards[index] = { ...this.battleCards[index], ...data };
+          }
+        } else {
+          // Create new play
+          const { data, error } = await RevGuideDB.createPlay(playData);
+          if (error) throw error;
+
+          // Add to local array
+          this.battleCards.push(data);
+        }
+
+        // Clear storage cache so next load gets fresh data
+        AdminShared.clearStorageCache();
+      } else {
+        // Extension context - use local storage
+        const card = {
+          id: this.editingPlayId || 'card_' + Date.now(),
+          ...playData,
+          createdAt: Date.now()
+        };
+
+        if (this.editingPlayId) {
+          const index = this.battleCards.findIndex(c => c.id === this.editingPlayId);
+          if (index !== -1) {
+            card.createdAt = this.battleCards[index].createdAt;
+            card.updatedAt = Date.now();
+            this.battleCards[index] = card;
+          }
+        } else {
+          this.battleCards.push(card);
+        }
+
+        await AdminShared.saveStorageData({ battleCards: this.battleCards });
+      }
+
+      AdminShared.notifyContentScript();
+      AdminShared.showToast('Play saved successfully', 'success');
+      this.closePlayEditor();
+    } catch (error) {
+      console.error('Failed to save play:', error);
+      AdminShared.showToast(`Failed to save play: ${error.message}`, 'error');
+    }
   }
 
   editPlay(playId) {
@@ -908,11 +945,23 @@ class PlaysPage {
 
   async deletePlay(playId) {
     if (confirm('Are you sure you want to delete this play?')) {
-      this.battleCards = this.battleCards.filter(c => c.id !== playId);
-      await AdminShared.saveStorageData({ battleCards: this.battleCards });
-      this.renderPlays();
-      AdminShared.notifyContentScript();
-      AdminShared.showToast('Play deleted', 'success');
+      try {
+        if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+          const { error } = await RevGuideDB.deletePlay(playId);
+          if (error) throw error;
+          AdminShared.clearStorageCache();
+        } else {
+          await AdminShared.saveStorageData({ battleCards: this.battleCards });
+        }
+
+        this.battleCards = this.battleCards.filter(c => c.id !== playId);
+        this.renderPlays();
+        AdminShared.notifyContentScript();
+        AdminShared.showToast('Play deleted', 'success');
+      } catch (error) {
+        console.error('Failed to delete play:', error);
+        AdminShared.showToast(`Failed to delete play: ${error.message}`, 'error');
+      }
     }
   }
 }
