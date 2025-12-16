@@ -7,6 +7,10 @@
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 
+// Expose for nango.js to use
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
 // Import Supabase client from CDN
 const supabaseScript = document.createElement('script');
 supabaseScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
