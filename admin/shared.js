@@ -70,64 +70,42 @@ function renderSidebar(activePage) {
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar) return;
 
-  // Use clean URLs in web context, .html in extension context
-  const getUrl = (page) => isExtensionContext ? `${page}.html` : `/${page}`;
+  // Sidebar navigation is now inlined in HTML for instant rendering
+  // This function only updates the footer with user info
+  const footer = sidebar.querySelector('.sidebar-footer');
+  if (footer) {
+    footer.innerHTML = !isExtensionContext && currentUser ? `
+      <div class="user-info">
+        <div class="user-avatar">${(currentUser.name || currentUser.email || '?')[0].toUpperCase()}</div>
+        <div class="user-details">
+          <span class="user-name">${currentUser.name || currentUser.email?.split('@')[0] || 'User'}</span>
+          <span class="user-org">${currentOrganization?.name || ''}</span>
+        </div>
+        <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    ` : `
+      <div class="extension-status">
+        <span class="status-dot active"></span>
+        <span>Extension Active</span>
+      </div>
+    `;
+  }
 
-  sidebar.innerHTML = `
-    <div class="sidebar-header">
-      <span class="logo-icon"><span class="icon icon-target-white"></span></span>
-      <h1>RevGuide</h1>
-    </div>
-    <nav class="sidebar-nav">
-      <a href="${getUrl('home')}" class="nav-item${activePage === 'home' ? ' active' : ''}" data-section="home">
-        <span class="nav-icon"><span class="icon icon-home-white"></span></span>
-        Home
-      </a>
-      <a href="${getUrl('banners')}" class="nav-item${activePage === 'banners' ? ' active' : ''}" data-section="banners">
-        <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
-        Banners
-      </a>
-      <a href="${getUrl('plays')}" class="nav-item${activePage === 'plays' ? ' active' : ''}" data-section="cards">
-        <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
-        Plays
-      </a>
-      <a href="${getUrl('wiki')}" class="nav-item${activePage === 'wiki' ? ' active' : ''}" data-section="wiki">
-        <span class="nav-icon"><span class="icon icon-book-white"></span></span>
-        Wiki
-      </a>
-      <a href="${getUrl('libraries')}" class="nav-item${activePage === 'libraries' ? ' active' : ''}" data-section="libraries">
-        <span class="nav-icon"><span class="icon icon-download-white"></span></span>
-        Libraries
-      </a>
-      <a href="${getUrl('settings')}" class="nav-item${activePage === 'settings' ? ' active' : ''}" data-section="settings">
-        <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
-        Settings
-      </a>
-    </nav>
-    <div class="sidebar-footer">
-      ${!isExtensionContext && currentUser ? `
-        <div class="user-info">
-          <div class="user-avatar">${(currentUser.name || currentUser.email || '?')[0].toUpperCase()}</div>
-          <div class="user-details">
-            <span class="user-name">${currentUser.name || currentUser.email?.split('@')[0] || 'User'}</span>
-            <span class="user-org">${currentOrganization?.name || ''}</span>
-          </div>
-          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </button>
-        </div>
-      ` : `
-        <div class="extension-status">
-          <span class="status-dot active"></span>
-          <span>Extension Active</span>
-        </div>
-      `}
-    </div>
-  `;
+  // For extension context, update URLs to use .html extension
+  if (isExtensionContext) {
+    sidebar.querySelectorAll('.nav-item').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('/')) {
+        link.setAttribute('href', href.slice(1) + '.html');
+      }
+    });
+  }
 }
 
 /**

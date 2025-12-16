@@ -323,8 +323,12 @@ class WikiModule {
           const section = this.getSectionForElement(parent);
           const sectionKey = `${section}:${entry.id}`;
 
-          // Skip if we've already shown this term in this section
-          if (shownInSection.has(sectionKey)) {
+          // Also deduplicate by trigger term to prevent duplicate entries with same trigger
+          // from each highlighting different instances
+          const termKey = `${section}:term:${term}`;
+
+          // Skip if we've already shown this entry OR this trigger term in this section
+          if (shownInSection.has(sectionKey) || shownInSection.has(termKey)) {
             continue;
           }
 
