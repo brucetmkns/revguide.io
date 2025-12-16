@@ -227,10 +227,15 @@ async function handleCallback(req: Request): Promise<Response> {
         organizationId = existingOrg.id
       } else {
         // Create new organization
+        // Generate a slug from portal name or use portal ID
+        const orgName = portalInfo.portalName || portalInfo.portalDomain || 'My Organization'
+        const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `org-${portalInfo.portalId}`
+
         const { data: newOrg, error: orgError } = await supabase
           .from('organizations')
           .insert({
-            name: portalInfo.portalName || portalInfo.portalDomain || 'My Organization',
+            name: orgName,
+            slug: slug,
             hubspot_portal_id: portalInfo.portalId,
             hubspot_portal_domain: portalInfo.portalDomain
           })
