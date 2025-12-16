@@ -11,9 +11,15 @@ const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
-// Import Supabase client from local bundle (required for Chrome extension CSP)
+// Import Supabase client - use local bundle for extension, CDN for web
 const supabaseScript = document.createElement('script');
-supabaseScript.src = chrome.runtime.getURL('admin/lib/supabase.min.js');
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+  // Chrome extension context - use local bundle (CSP requirement)
+  supabaseScript.src = chrome.runtime.getURL('admin/lib/supabase.min.js');
+} else {
+  // Web context - use CDN
+  supabaseScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+}
 document.head.appendChild(supabaseScript);
 
 // Wait for Supabase to load
