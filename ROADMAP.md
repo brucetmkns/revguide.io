@@ -712,11 +712,22 @@ Would you like me to suggest values?"
 - [ ] File attachments
 - [ ] Version history with rollback
 
+### Admin Panel Improvements
+- [ ] **Duplicate trigger word validation** - Warn when saving a wiki entry with a trigger word that already exists
+- [ ] Bulk entry management (select multiple, delete, enable/disable)
+- [ ] Entry merge tool for consolidating duplicates
+
 ### UI/UX Enhancements
 - [x] Inline sidebar HTML for instant navigation rendering
+- [ ] **Collapsible sidebar navigation** - Toggle sidebar to icon-only mode for more content space
 - [ ] **Single Page App (SPA) conversion** - Client-side routing for seamless page transitions without full reloads
 - [ ] Page transition animations
 - [ ] Skeleton loading states for content
+
+### Account & Settings
+- [ ] **User Profile section** - View/edit profile info, change password, manage login methods
+- [ ] **Billing management** - View subscription, update payment method, download invoices
+- [ ] Account deletion/data export (GDPR compliance)
 
 ### Integrations
 - [ ] Slack notifications on banner display

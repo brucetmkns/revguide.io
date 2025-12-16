@@ -339,6 +339,7 @@ class WikiModule {
 
           // Record that we're showing this term in this section
           shownInSection.set(sectionKey, true);
+          shownInSection.set(termKey, true);  // Also track by trigger term
           this.processedElements.add(parent);
 
           matches.push({
