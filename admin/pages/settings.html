@@ -114,6 +114,19 @@
       background: var(--color-text-muted);
     }
 
+    .connection-status.loading {
+      color: var(--color-text-secondary);
+    }
+
+    .connection-status.loading .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .portal-details {
       display: flex;
       flex-direction: column;
@@ -230,6 +243,17 @@
             <h3>HubSpot Connection</h3>
             <p>Connect your HubSpot portal to enable property fetching and field import</p>
 
+            <!-- Loading State -->
+            <div id="hubspotLoadingState">
+              <div class="connection-status loading">
+                <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                <span>Checking connection status...</span>
+              </div>
+            </div>
+
             <!-- Connected State -->
             <div id="hubspotConnectedState" style="display: none;">
               <div class="connection-info">
@@ -249,8 +273,8 @@
               </div>
             </div>
 
-            <!-- Disconnected State -->
-            <div id="hubspotDisconnectedState" style="display: none;">
+            <!-- Disconnected State (shown by default) -->
+            <div id="hubspotDisconnectedState">
               <div class="connection-status disconnected">
                 <span class="status-dot"></span>
                 <span>Not connected</span>
