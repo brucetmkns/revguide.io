@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v2.3.0 (Extension Auth Bridge)
+**Current Version:** v2.6.2 (Plays HubSpot Properties Fix)
 
 ## Beta Program
 

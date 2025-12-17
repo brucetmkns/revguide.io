@@ -2,6 +2,19 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.2] - 2025-12-17 - Plays HubSpot Properties Fix
+
+### Fixed
+- **Plays Rules Engine**: Fixed HubSpot properties not loading in the property dropdown when creating/editing plays
+  - The `hubspot.js` script was missing from `plays.html`, causing `RevGuideHubSpot` to be undefined
+  - Properties dropdown now correctly populates with HubSpot company/contact/deal properties
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/plays.html` - Added missing `<script src="/admin/hubspot.js"></script>`
+
+---
+
 ## [2.6.1] - 2025-12-17 - Media Embed Banner Fix
 
 ### Fixed
