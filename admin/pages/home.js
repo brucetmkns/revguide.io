@@ -13,21 +13,103 @@ class HomePage {
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
 
-    // Render sidebar
+    // Render sidebar (role-aware)
     AdminShared.renderSidebar('home');
 
     // Load data
     this.data = await AdminShared.loadStorageData();
 
-    // Check HubSpot connection status (web context only)
-    await this.checkHubSpotConnection();
+    // Setup role-based UI
+    this.setupRoleBasedUI();
 
-    // Update UI
+    // Check HubSpot connection status (web context only, admin only)
+    if (AdminShared.isAdmin()) {
+      await this.checkHubSpotConnection();
+    } else {
+      // Hide HubSpot banner for members
+      const connectBanner = document.getElementById('connectHubSpotBanner');
+      if (connectBanner) connectBanner.style.display = 'none';
+    }
+
+    // Update UI based on role
     this.updateHomeStats();
-    this.updateOnboardingProgress();
+    if (AdminShared.isAdmin()) {
+      this.updateOnboardingProgress();
+    } else {
+      this.updateMemberOnboardingProgress();
+    }
 
     // Bind events
     this.bindEvents();
+  }
+
+  setupRoleBasedUI() {
+    const isAdmin = AdminShared.isAdmin();
+
+    // Show/hide appropriate onboarding sections
+    const adminOnboardingProgress = document.getElementById('adminOnboardingProgress');
+    const memberOnboardingProgress = document.getElementById('memberOnboardingProgress');
+    const adminOnboardingSteps = document.getElementById('adminOnboardingSteps');
+    const memberOnboardingSteps = document.getElementById('memberOnboardingSteps');
+
+    if (isAdmin) {
+      // Show admin onboarding
+      if (adminOnboardingProgress) adminOnboardingProgress.style.display = 'block';
+      if (memberOnboardingProgress) memberOnboardingProgress.style.display = 'none';
+      if (adminOnboardingSteps) adminOnboardingSteps.style.display = 'block';
+      if (memberOnboardingSteps) memberOnboardingSteps.style.display = 'none';
+    } else {
+      // Show member onboarding
+      if (adminOnboardingProgress) adminOnboardingProgress.style.display = 'none';
+      if (memberOnboardingProgress) memberOnboardingProgress.style.display = 'block';
+      if (adminOnboardingSteps) adminOnboardingSteps.style.display = 'none';
+      if (memberOnboardingSteps) memberOnboardingSteps.style.display = 'block';
+    }
+
+    // Update welcome message for members
+    if (!isAdmin) {
+      const sectionHeader = document.querySelector('.section-header');
+      if (sectionHeader) {
+        const description = sectionHeader.querySelector('.section-description');
+        if (description) {
+          description.textContent = 'Get started by installing the Chrome extension';
+        }
+      }
+    }
+  }
+
+  updateMemberOnboardingProgress() {
+    // For members, we just show 2 steps: install extension and activate
+    // Since we can't easily detect if extension is installed from web,
+    // we'll mark both as "ready" and show the success message
+
+    const memberReadyMessage = document.getElementById('memberReadyMessage');
+    const memberStepInstall = document.getElementById('memberStepInstall');
+    const memberStepActivate = document.getElementById('memberStepActivate');
+    const memberProgressFill = document.getElementById('memberProgressFill');
+    const memberProgressText = document.getElementById('memberProgressText');
+
+    // For now, show the "all set" message since they're logged in
+    // In future, could check extension auth state
+    if (memberReadyMessage) {
+      memberReadyMessage.style.display = 'block';
+    }
+    if (memberStepInstall) {
+      memberStepInstall.classList.add('completed');
+      document.getElementById('memberStepInstallStatus').textContent = 'Completed';
+      document.getElementById('memberStepInstallStatus').classList.add('completed');
+    }
+    if (memberStepActivate) {
+      memberStepActivate.classList.add('completed');
+      document.getElementById('memberStepActivateStatus').textContent = 'Completed';
+      document.getElementById('memberStepActivateStatus').classList.add('completed');
+    }
+    if (memberProgressFill) {
+      memberProgressFill.style.width = '100%';
+    }
+    if (memberProgressText) {
+      memberProgressText.textContent = '2';
+    }
   }
 
   async checkHubSpotConnection() {

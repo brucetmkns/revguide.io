@@ -11,6 +11,7 @@ class PlaysPage {
     this.activeTab = 'content';
     this.originalData = null; // For tracking unsaved changes
     this.fieldSectionProperties = []; // Properties available for field sections
+    this.isViewOnly = false; // View-only mode for members
     this.init();
   }
 
@@ -19,8 +20,16 @@ class PlaysPage {
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
 
+    // Check if user is a member (view-only mode)
+    this.isViewOnly = AdminShared.isMember();
+
     // Render sidebar
     AdminShared.renderSidebar('plays');
+
+    // Setup view-only UI if member
+    if (this.isViewOnly) {
+      this.setupViewOnlyMode();
+    }
 
     // Load data
     const data = await AdminShared.loadStorageData();
@@ -28,9 +37,9 @@ class PlaysPage {
 
     // Check for action param
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('action') === 'add') {
+    if (urlParams.get('action') === 'add' && !this.isViewOnly) {
       this.openPlayEditor();
-    } else if (urlParams.get('edit')) {
+    } else if (urlParams.get('edit') && !this.isViewOnly) {
       // Open editor for specific play by ID
       const playId = urlParams.get('edit');
       const play = this.battleCards.find(p => p.id === playId);
@@ -44,8 +53,35 @@ class PlaysPage {
       this.renderPlays();
     }
 
-    // Bind events
-    this.bindEvents();
+    // Bind events (only for admins)
+    if (!this.isViewOnly) {
+      this.bindEvents();
+    }
+  }
+
+  setupViewOnlyMode() {
+    // Hide add buttons
+    const addPlayBtn = document.getElementById('addPlayBtn');
+    const createPlayEmptyBtn = document.getElementById('createPlayEmptyBtn');
+    if (addPlayBtn) addPlayBtn.style.display = 'none';
+    if (createPlayEmptyBtn) createPlayEmptyBtn.style.display = 'none';
+
+    // Update page title/description for viewers
+    const sectionDesc = document.querySelector('.section-description');
+    if (sectionDesc) {
+      sectionDesc.textContent = 'View plays and battle cards configured by your team admins.';
+    }
+
+    // Add view-only badge
+    const headerDiv = document.querySelector('.section-header > div');
+    if (headerDiv) {
+      const badge = document.createElement('span');
+      badge.className = 'view-only-badge';
+      badge.textContent = 'View Only';
+      badge.style.cssText = 'display: inline-block; padding: 4px 12px; background: #f3e8ff; color: #7c3aed; border-radius: 9999px; font-size: 12px; font-weight: 500; margin-left: 12px;';
+      const h2 = headerDiv.querySelector('h2');
+      if (h2) h2.appendChild(badge);
+    }
   }
 
   bindEvents() {
@@ -140,6 +176,14 @@ class PlaysPage {
       const sectionCount = card.sections?.length || 0;
       const conditionCount = card.conditions?.length || 0;
 
+      // Build action buttons based on view-only mode
+      const actionButtons = this.isViewOnly ? `
+        <button class="btn btn-secondary btn-sm view-play-btn" data-id="${card.id}">View</button>
+      ` : `
+        <button class="btn btn-secondary btn-sm edit-play-btn" data-id="${card.id}">Edit</button>
+        <button class="btn btn-danger btn-sm delete-play-btn" data-id="${card.id}">Delete</button>
+      `;
+
       return `
         <div class="card-item" data-id="${card.id}">
           <div class="card-header">
@@ -153,8 +197,7 @@ class PlaysPage {
             <span>${conditionCount} condition${conditionCount !== 1 ? 's' : ''}</span>
           </div>
           <div class="card-actions">
-            <button class="btn btn-secondary btn-sm edit-play-btn" data-id="${card.id}">Edit</button>
-            <button class="btn btn-danger btn-sm delete-play-btn" data-id="${card.id}">Delete</button>
+            ${actionButtons}
           </div>
         </div>
       `;
@@ -167,6 +210,111 @@ class PlaysPage {
 
     grid.querySelectorAll('.delete-play-btn').forEach(btn => {
       btn.addEventListener('click', () => this.deletePlay(btn.dataset.id));
+    });
+
+    // View button for view-only mode
+    grid.querySelectorAll('.view-play-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.viewPlayDetails(btn.dataset.id));
+    });
+  }
+
+  viewPlayDetails(playId) {
+    const play = this.battleCards.find(c => c.id === playId);
+    if (!play) return;
+
+    const icon = AdminShared.CARD_TYPE_ICONS[play.cardType] || '';
+    const typeLabel = AdminShared.CARD_TYPE_LABELS[play.cardType] || play.cardType;
+
+    // Build sections HTML
+    const sectionsHtml = (play.sections || []).map(section => {
+      if (section.type === 'media') {
+        return `
+          <div class="detail-section">
+            <strong>${AdminShared.escapeHtml(section.title || 'Media')}</strong>
+            <p class="detail-message">${AdminShared.escapeHtml(section.mediaUrl || '-')}</p>
+          </div>
+        `;
+      } else if (section.type === 'fields') {
+        const fieldsList = (section.fields || []).map(f => f.label || f.property).join(', ');
+        return `
+          <div class="detail-section">
+            <strong>${AdminShared.escapeHtml(section.title || 'Fields')}</strong>
+            <p>${fieldsList || 'No fields'}</p>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="detail-section">
+            <strong>${AdminShared.escapeHtml(section.title || 'Section')}</strong>
+            <div class="detail-message">${AdminShared.escapeHtml(section.content || '-')}</div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'view-details-modal';
+    modal.innerHTML = `
+      <div class="view-details-overlay"></div>
+      <div class="view-details-content">
+        <div class="view-details-header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="card-icon ${play.cardType}" style="width: 32px; height: 32px;">${icon}</span>
+            <div>
+              <h3 style="margin: 0;">${AdminShared.escapeHtml(play.name)}</h3>
+              <span style="font-size: 12px; color: var(--color-text-tertiary);">${typeLabel}</span>
+            </div>
+          </div>
+          <button class="btn-icon close-details-btn" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="view-details-body">
+          ${play.subtitle ? `
+            <div class="detail-row">
+              <label>Subtitle:</label>
+              <span>${AdminShared.escapeHtml(play.subtitle)}</span>
+            </div>
+          ` : ''}
+          ${play.link ? `
+            <div class="detail-row">
+              <label>Link:</label>
+              <a href="${AdminShared.escapeHtml(play.link)}" target="_blank" style="color: var(--color-primary);">${AdminShared.escapeHtml(play.link)}</a>
+            </div>
+          ` : ''}
+          <div class="detail-row">
+            <label>Object Type:</label>
+            <span>${play.objectType || 'Any'}</span>
+          </div>
+          <div class="detail-row">
+            <label>Conditions:</label>
+            <span>${play.conditions?.length || 0} condition${(play.conditions?.length || 0) !== 1 ? 's' : ''}</span>
+          </div>
+          ${sectionsHtml ? `
+            <div class="detail-row" style="border-bottom: none;">
+              <label>Sections:</label>
+            </div>
+            ${sectionsHtml}
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    const closeModal = () => modal.remove();
+    modal.querySelector('.close-details-btn').addEventListener('click', closeModal);
+    modal.querySelector('.view-details-overlay').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
     });
   }
 

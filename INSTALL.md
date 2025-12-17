@@ -4,6 +4,16 @@ This guide covers how to install RevGuide as a Chrome extension.
 
 **Current Version:** v2.2.0 (Beta Release)
 
+## Browser Compatibility
+
+| Browser | Support | Notes |
+|---------|---------|-------|
+| **Google Chrome** | Full support | Primary platform, all features available |
+| **Microsoft Edge** | Full support | Uses same extension format as Chrome |
+| **Brave** | Full support | Chromium-based, works with Chrome extensions |
+| **Safari** | Not supported | Safari requires a native Safari App Extension built with Xcode/Swift. The Chrome extension uses Chrome-specific APIs (`chrome.sidePanel`, Manifest V3 service workers) that are not compatible with Safari. |
+| **Firefox** | Not supported | Would require a separate extension using Firefox's WebExtensions API |
+
 For beta tester documentation, see [docs/BETA_PROGRAM.md](docs/BETA_PROGRAM.md).
 
 ## Method 1: Developer Mode (Beta Testing)

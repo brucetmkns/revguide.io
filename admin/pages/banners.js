@@ -11,6 +11,7 @@ class BannersPage {
     this.editingRuleId = null;
     this.originalData = null; // For tracking unsaved changes
     this.activeTab = 'content';
+    this.isViewOnly = false; // View-only mode for members
     this.init();
   }
 
@@ -19,25 +20,35 @@ class BannersPage {
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
 
+    // Check if user is a member (view-only mode)
+    this.isViewOnly = AdminShared.isMember();
+
     // Render sidebar
     AdminShared.renderSidebar('banners');
+
+    // Setup view-only UI if member
+    if (this.isViewOnly) {
+      this.setupViewOnlyMode();
+    }
 
     // Load data
     const data = await AdminShared.loadStorageData();
     this.rules = data.rules || [];
     this.plays = data.battleCards || [];
 
-    // Initialize play select dropdown
-    const playSelectEl = document.getElementById('ruleRelatedPlay');
-    if (playSelectEl) {
-      AdminShared.initPlaySelect(playSelectEl, this.plays);
+    // Initialize play select dropdown (only for admins)
+    if (!this.isViewOnly) {
+      const playSelectEl = document.getElementById('ruleRelatedPlay');
+      if (playSelectEl) {
+        AdminShared.initPlaySelect(playSelectEl, this.plays);
+      }
     }
 
     // Check for action param (e.g., from home page)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('action') === 'add') {
+    if (urlParams.get('action') === 'add' && !this.isViewOnly) {
       this.openRuleEditor();
-    } else if (urlParams.get('edit')) {
+    } else if (urlParams.get('edit') && !this.isViewOnly) {
       // Open editor for specific rule by ID
       const ruleId = urlParams.get('edit');
       const rule = this.rules.find(r => r.id === ruleId);
@@ -51,8 +62,39 @@ class BannersPage {
       this.renderRules();
     }
 
-    // Bind events
-    this.bindEvents();
+    // Bind events (only for admins)
+    if (!this.isViewOnly) {
+      this.bindEvents();
+    }
+  }
+
+  setupViewOnlyMode() {
+    // Hide add buttons
+    const addRuleBtn = document.getElementById('addRuleBtn');
+    const createRuleEmptyBtn = document.getElementById('createRuleEmptyBtn');
+    if (addRuleBtn) addRuleBtn.style.display = 'none';
+    if (createRuleEmptyBtn) createRuleEmptyBtn.style.display = 'none';
+
+    // Update page title/description for viewers
+    const sectionHeader = document.querySelector('.section-header h2');
+    if (sectionHeader) {
+      sectionHeader.textContent = 'Banners';
+    }
+    const sectionDesc = document.querySelector('.section-description');
+    if (sectionDesc) {
+      sectionDesc.textContent = 'View banner rules configured by your team admins.';
+    }
+
+    // Add view-only badge
+    const headerDiv = document.querySelector('.section-header > div');
+    if (headerDiv) {
+      const badge = document.createElement('span');
+      badge.className = 'view-only-badge';
+      badge.textContent = 'View Only';
+      badge.style.cssText = 'display: inline-block; padding: 4px 12px; background: #f3e8ff; color: #7c3aed; border-radius: 9999px; font-size: 12px; font-weight: 500; margin-left: 12px;';
+      const h2 = headerDiv.querySelector('h2');
+      if (h2) h2.appendChild(badge);
+    }
   }
 
   bindEvents() {
@@ -169,6 +211,39 @@ class BannersPage {
       const objectType = rule.objectTypes?.[0] || 'All';
       const conditionCount = rule.conditions?.length || 0;
 
+      // Build action buttons based on view-only mode
+      const actionButtons = this.isViewOnly ? `
+        <button class="btn-icon view-rule-btn" data-id="${rule.id}" title="View Details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      ` : `
+        <button class="btn-icon edit-rule-btn" data-id="${rule.id}" title="Edit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button class="btn-icon btn-icon-danger delete-rule-btn" data-id="${rule.id}" title="Delete">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
+      `;
+
+      // Toggle is disabled for view-only users
+      const toggleHtml = this.isViewOnly ? `
+        <span class="status-badge ${rule.enabled !== false ? 'active' : 'inactive'}">${rule.enabled !== false ? 'Active' : 'Inactive'}</span>
+      ` : `
+        <label class="toggle-small">
+          <input type="checkbox" class="toggle-rule" data-id="${rule.id}" ${rule.enabled !== false ? 'checked' : ''}>
+          <span class="toggle-slider-small"></span>
+        </label>
+      `;
+
       return `
         <tr data-id="${rule.id}">
           <td>
@@ -180,27 +255,9 @@ class BannersPage {
           <td><span class="object-badge">${objectType}</span></td>
           <td>${conditionCount} condition${conditionCount !== 1 ? 's' : ''}</td>
           <td>${rule.priority || 10}</td>
+          <td>${toggleHtml}</td>
           <td>
-            <label class="toggle-small">
-              <input type="checkbox" class="toggle-rule" data-id="${rule.id}" ${rule.enabled !== false ? 'checked' : ''}>
-              <span class="toggle-slider-small"></span>
-            </label>
-          </td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn-icon edit-rule-btn" data-id="${rule.id}" title="Edit">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-              <button class="btn-icon btn-icon-danger delete-rule-btn" data-id="${rule.id}" title="Delete">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </button>
-            </div>
+            <div class="action-buttons">${actionButtons}</div>
           </td>
         </tr>
       `;
@@ -217,6 +274,73 @@ class BannersPage {
 
     tbody.querySelectorAll('.toggle-rule').forEach(checkbox => {
       checkbox.addEventListener('change', () => this.toggleRule(checkbox.dataset.id));
+    });
+
+    // View button for view-only mode
+    tbody.querySelectorAll('.view-rule-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.viewRuleDetails(btn.dataset.id));
+    });
+  }
+
+  viewRuleDetails(ruleId) {
+    const rule = this.rules.find(r => r.id === ruleId);
+    if (!rule) return;
+
+    // Create a simple modal to show rule details
+    const modal = document.createElement('div');
+    modal.className = 'view-details-modal';
+    modal.innerHTML = `
+      <div class="view-details-overlay"></div>
+      <div class="view-details-content">
+        <div class="view-details-header">
+          <h3>${AdminShared.escapeHtml(rule.name)}</h3>
+          <button class="btn-icon close-details-btn" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="view-details-body">
+          <div class="detail-row">
+            <label>Title:</label>
+            <span>${AdminShared.escapeHtml(rule.title || '-')}</span>
+          </div>
+          <div class="detail-row">
+            <label>Type:</label>
+            <span class="type-badge-inline" style="background: ${AdminShared.TYPE_COLORS[rule.type] || AdminShared.TYPE_COLORS.info}">${AdminShared.TYPE_LABELS[rule.type] || rule.type}</span>
+          </div>
+          <div class="detail-row">
+            <label>Message:</label>
+            <div class="detail-message">${rule.message || '-'}</div>
+          </div>
+          <div class="detail-row">
+            <label>Object Type:</label>
+            <span>${rule.objectTypes?.[0] || 'All'}</span>
+          </div>
+          <div class="detail-row">
+            <label>Conditions:</label>
+            <span>${rule.conditions?.length || 0} condition${(rule.conditions?.length || 0) !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="detail-row">
+            <label>Status:</label>
+            <span class="status-badge ${rule.enabled !== false ? 'active' : 'inactive'}">${rule.enabled !== false ? 'Active' : 'Inactive'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    const closeModal = () => modal.remove();
+    modal.querySelector('.close-details-btn').addEventListener('click', closeModal);
+    modal.querySelector('.view-details-overlay').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
     });
   }
 

@@ -10,6 +10,7 @@ class SettingsPage {
     this.settings = {};
     this.teamMembers = [];
     this.pendingInvitations = [];
+    this.isViewOnly = false; // View-only mode for members
     this.init();
   }
 
@@ -53,11 +54,19 @@ class SettingsPage {
     console.log('[Settings] isAuthenticated:', isAuthenticated);
     if (!isAuthenticated) return;
 
+    // Check if user is a member (view-only mode)
+    this.isViewOnly = AdminShared.isMember();
+
     // Render sidebar
     AdminShared.renderSidebar('settings');
 
-    // Check if returning from OAuth flow (web context only)
-    if (!AdminShared.isExtensionContext) {
+    // Setup view-only UI if member
+    if (this.isViewOnly) {
+      this.setupViewOnlyMode();
+    }
+
+    // Check if returning from OAuth flow (web context only, admin only)
+    if (!AdminShared.isExtensionContext && !this.isViewOnly) {
       await this.handleOAuthCallback();
     }
 
@@ -70,19 +79,52 @@ class SettingsPage {
     this.updateSettingsUI();
 
     // Load team members from database (web context) or local storage (extension)
-    await this.loadTeamData();
-    this.renderUsersTable();
+    // Only load if admin - members don't need to see the team list
+    if (!this.isViewOnly) {
+      await this.loadTeamData();
+      this.renderUsersTable();
+    }
 
     // Load account settings (user email, company name)
     console.log('[Settings] About to call loadAccountSettings()');
     await this.loadAccountSettings();
 
-    // Load HubSpot connection status
-    await this.loadHubSpotConnectionStatus();
+    // Load HubSpot connection status (admin only)
+    if (!this.isViewOnly) {
+      await this.loadHubSpotConnectionStatus();
+    }
 
     // Bind events
     this.bindEvents();
     console.log('[Settings] init() completed');
+  }
+
+  setupViewOnlyMode() {
+    // Hide HubSpot connection section
+    const hubspotCard = document.getElementById('hubspotSettingsCard');
+    const hubspotExtCard = document.getElementById('hubspotExtensionCard');
+    if (hubspotCard) hubspotCard.style.display = 'none';
+    if (hubspotExtCard) hubspotExtCard.style.display = 'none';
+
+    // Hide team management section
+    const teamCard = document.getElementById('teamSettingsCard');
+    if (teamCard) teamCard.style.display = 'none';
+
+    // Update page title/description
+    const sectionDesc = document.querySelector('.section-description');
+    if (sectionDesc) {
+      sectionDesc.textContent = 'Manage your account preferences.';
+    }
+
+    // Add view-only note to account section
+    const accountCard = document.getElementById('accountSettingsCard');
+    if (accountCard) {
+      const note = document.createElement('p');
+      note.className = 'settings-note';
+      note.textContent = 'Contact your admin to change HubSpot connection or invite team members.';
+      note.style.cssText = 'color: var(--color-text-tertiary); font-size: 14px; margin-top: 16px; padding: 12px; background: #f3e8ff; border-radius: 8px;';
+      accountCard.appendChild(note);
+    }
   }
 
   /**
@@ -708,7 +750,7 @@ class SettingsPage {
 
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
         // Get organization name for the email
-        const { data: org } = await RevGuideDB.getOrganization();
+        const { data: org } = await RevGuideDB.getOrganizationWithConnection();
         orgName = org?.name;
 
         const { data, error } = await RevGuideDB.createInvitation(email, role);
@@ -819,7 +861,7 @@ class SettingsPage {
       // Get org name
       let orgName = null;
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-        const { data: org } = await RevGuideDB.getOrganization();
+        const { data: org } = await RevGuideDB.getOrganizationWithConnection();
         orgName = org?.name;
       }
 

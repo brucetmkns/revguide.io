@@ -231,6 +231,21 @@ function renderSidebar(activePage) {
     if (orgEl) {
       orgEl.textContent = currentOrganization?.name || '';
     }
+
+    // Add role indicator badge next to user name
+    let roleIndicator = document.getElementById('sidebarRoleIndicator');
+    if (!roleIndicator && nameEl) {
+      roleIndicator = document.createElement('span');
+      roleIndicator.id = 'sidebarRoleIndicator';
+      roleIndicator.className = `role-indicator ${currentUser.role || 'member'}`;
+      nameEl.parentNode.insertBefore(roleIndicator, nameEl.nextSibling);
+    }
+    if (roleIndicator) {
+      const roleLabel = currentUser.role === 'owner' ? 'Owner' :
+                        currentUser.role === 'admin' ? 'Admin' : 'Viewer';
+      roleIndicator.textContent = roleLabel;
+      roleIndicator.className = `role-indicator ${currentUser.role || 'member'}`;
+    }
   }
 
   // For extension context, update URLs to use .html extension
@@ -241,6 +256,15 @@ function renderSidebar(activePage) {
         link.setAttribute('href', href.slice(1) + '.html');
       }
     });
+  }
+
+  // Hide admin-only navigation items for members
+  if (!isExtensionContext && isMember()) {
+    // Hide Libraries link for members (admin feature)
+    const librariesLink = sidebar.querySelector('[data-section="libraries"]');
+    if (librariesLink) {
+      librariesLink.style.display = 'none';
+    }
   }
 }
 
@@ -1352,6 +1376,34 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
   });
 }
 
+/**
+ * Check if current user has admin privileges (owner or admin role)
+ * @returns {boolean}
+ */
+function isAdmin() {
+  if (isExtensionContext) return true; // Extension context has full access
+  const role = currentUser?.role;
+  return role === 'owner' || role === 'admin';
+}
+
+/**
+ * Check if current user is a member (view-only access)
+ * @returns {boolean}
+ */
+function isMember() {
+  if (isExtensionContext) return false;
+  return currentUser?.role === 'member';
+}
+
+/**
+ * Get current user's role
+ * @returns {string} 'owner' | 'admin' | 'member' | null
+ */
+function getUserRole() {
+  if (isExtensionContext) return 'owner'; // Extension context treated as owner
+  return currentUser?.role || null;
+}
+
 // Export for use in page scripts
 window.AdminShared = {
   // Context detection
@@ -1362,6 +1414,10 @@ window.AdminShared = {
   refreshUserCache,
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
+  // Role helpers
+  isAdmin,
+  isMember,
+  getUserRole,
   // UI
   renderSidebar,
   loadStorageData,

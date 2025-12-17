@@ -17,6 +17,7 @@ class WikiPage {
     this.hasUnsavedChanges = false;
     this.isSelectMode = false;
     this.selectedEntryIds = new Set();
+    this.isViewOnly = false; // View-only mode for members
     this.init();
   }
 
@@ -25,8 +26,16 @@ class WikiPage {
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
 
+    // Check if user is a member (view-only mode)
+    this.isViewOnly = AdminShared.isMember();
+
     // Render sidebar
     AdminShared.renderSidebar('wiki');
+
+    // Setup view-only UI if member
+    if (this.isViewOnly) {
+      this.setupViewOnlyMode();
+    }
 
     // Load data
     const data = await AdminShared.loadStorageData();
@@ -40,17 +49,17 @@ class WikiPage {
       this.selectedEntryId = this.wikiEntries[0].id;
     }
 
-    // Bind events
+    // Bind events (skip editing events for view-only)
     this.bindEvents();
 
-    // Check for action param
+    // Check for action param (only if not view-only)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('action') === 'add') {
+    if (urlParams.get('action') === 'add' && !this.isViewOnly) {
       this.createNewEntry();
-    } else if (urlParams.get('action') === 'import') {
+    } else if (urlParams.get('action') === 'import' && !this.isViewOnly) {
       this.openImportFieldsModal();
     } else if (urlParams.get('edit')) {
-      // Select and edit specific entry by ID
+      // Select and view specific entry by ID (view-only will just view)
       const entryId = urlParams.get('edit');
       const entry = this.wikiEntries.find(e => e.id === entryId);
       if (entry) {
@@ -62,6 +71,84 @@ class WikiPage {
 
     // Initial render
     this.render();
+  }
+
+  setupViewOnlyMode() {
+    // Hide add/import buttons
+    const addWikiBtn = document.getElementById('addWikiBtn');
+    const importFieldsBtn = document.getElementById('importFieldsBtn');
+    if (addWikiBtn) addWikiBtn.style.display = 'none';
+    if (importFieldsBtn) importFieldsBtn.style.display = 'none';
+
+    // Hide select mode button
+    const selectModeBtn = document.getElementById('wikiSelectModeBtn');
+    if (selectModeBtn) selectModeBtn.style.display = 'none';
+
+    // Update page description for viewers
+    const sectionDesc = document.querySelector('.section-description');
+    if (sectionDesc) {
+      sectionDesc.textContent = 'View wiki entries and field definitions configured by your team admins.';
+    }
+
+    // Add view-only badge
+    const headerDiv = document.querySelector('.section-header > div');
+    if (headerDiv) {
+      const badge = document.createElement('span');
+      badge.className = 'view-only-badge';
+      badge.textContent = 'View Only';
+      badge.style.cssText = 'display: inline-block; padding: 4px 12px; background: #f3e8ff; color: #7c3aed; border-radius: 9999px; font-size: 12px; font-weight: 500; margin-left: 12px;';
+      const h2 = headerDiv.querySelector('h2');
+      if (h2) h2.appendChild(badge);
+    }
+
+    // Hide card action buttons (duplicate, delete)
+    const cardActions = document.querySelector('.wiki-card-actions');
+    if (cardActions) {
+      cardActions.style.display = 'none';
+    }
+
+    // Hide save/cancel buttons
+    const saveWikiBtn = document.getElementById('saveWikiBtn');
+    const cancelWikiBtn = document.getElementById('cancelWikiBtn');
+    const saveEntryBtnTop = document.getElementById('saveEntryBtnTop');
+    if (saveWikiBtn) saveWikiBtn.style.display = 'none';
+    if (cancelWikiBtn) cancelWikiBtn.style.display = 'none';
+    if (saveEntryBtnTop) saveEntryBtnTop.style.display = 'none';
+
+    // Hide status toggle
+    const statusToggle = document.getElementById('wikiStatusToggle');
+    if (statusToggle) statusToggle.style.display = 'none';
+
+    // Make form inputs read-only
+    this.makeFormReadOnly();
+  }
+
+  makeFormReadOnly() {
+    // This will be called after form is rendered to make inputs read-only
+    const formInputs = ['wikiTitle', 'wikiTrigger', 'wikiAliases', 'wikiCategory',
+      'wikiObjectType', 'wikiPropertyGroup', 'wikiDefinition', 'wikiLink',
+      'wikiMatchType', 'wikiFrequency', 'wikiIncludeAliases', 'wikiPriority',
+      'wikiPageType', 'wikiUrlPatterns'];
+
+    formInputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.readOnly = true;
+          el.style.backgroundColor = 'var(--color-bg-subtle)';
+        } else if (el.tagName === 'SELECT') {
+          el.disabled = true;
+          el.style.backgroundColor = 'var(--color-bg-subtle)';
+        } else if (el.contentEditable === 'true') {
+          el.contentEditable = 'false';
+          el.style.backgroundColor = 'var(--color-bg-subtle)';
+        }
+      }
+    });
+
+    // Hide toolbar buttons for rich text
+    const toolbar = document.getElementById('wikiDefinitionToolbar');
+    if (toolbar) toolbar.style.display = 'none';
   }
 
   bindEvents() {
@@ -551,6 +638,11 @@ class WikiPage {
     }
 
     this.hasUnsavedChanges = false;
+
+    // Apply view-only mode if member
+    if (this.isViewOnly) {
+      this.makeFormReadOnly();
+    }
   }
 
   populateFormFields(entry) {
