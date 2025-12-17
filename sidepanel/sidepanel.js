@@ -151,18 +151,19 @@ class SidePanel {
       existingStatus.remove();
     }
 
-    // Show/hide API token section based on auth state
-    const apiTokenSection = document.getElementById('apiTokenSection');
-    if (apiTokenSection) {
-      apiTokenSection.style.display = this.authState.isAuthenticated ? 'none' : 'block';
-    }
-
     // Update admin hint text
     const adminHint = document.getElementById('adminHint');
     if (adminHint) {
       adminHint.textContent = this.authState.isAuthenticated
         ? 'Opens app.revguide.io to manage your content'
         : 'Manage rules, plays, wiki entries, and media';
+    }
+
+    // Hide Export/Import for viewer role
+    const isViewer = this.authState.profile?.role === 'viewer';
+    const dataSection = document.querySelector('.settings-section:has(#exportBtn)');
+    if (dataSection && isViewer) {
+      dataSection.style.display = 'none';
     }
 
     if (this.authState.isAuthenticated) {
@@ -240,8 +241,7 @@ class SidePanel {
         showBattleCards: true,
         showPresentations: true,
         showWiki: true,
-        showAdminLinks: true,
-        hubspotApiToken: ''
+        showAdminLinks: true
       }
     });
     this.settings = data.settings;
@@ -252,7 +252,6 @@ class SidePanel {
     document.getElementById('showBattleCards').checked = this.settings.showBattleCards !== false;
     document.getElementById('showPresentations').checked = this.settings.showPresentations !== false;
     document.getElementById('showWiki').checked = this.settings.showWiki !== false;
-    document.getElementById('hubspotApiToken').value = this.settings.hubspotApiToken || '';
   }
 
   setupSettingsHandlers() {
@@ -275,16 +274,6 @@ class SidePanel {
 
     document.getElementById('showWiki').addEventListener('change', (e) => {
       this.updateSetting('showWiki', e.target.checked);
-    });
-
-    // API Token
-    document.getElementById('saveApiToken').addEventListener('click', () => {
-      const token = document.getElementById('hubspotApiToken').value.trim();
-      this.updateSetting('hubspotApiToken', token);
-      const status = document.getElementById('apiTokenStatus');
-      status.textContent = 'Saved!';
-      status.className = 'status-text success';
-      setTimeout(() => { status.textContent = ''; }, 2000);
     });
 
     // Admin Panel button - open web app if authenticated, local if not

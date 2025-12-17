@@ -93,6 +93,9 @@ class PlaysPage {
     document.getElementById('playsSearch').addEventListener('input', () => this.renderPlays());
     document.getElementById('playsFilter').addEventListener('change', () => this.renderPlays());
 
+    // Refresh button
+    document.getElementById('refreshPlaysBtn').addEventListener('click', () => this.refreshData());
+
     // Editor navigation
     document.getElementById('backToPlays').addEventListener('click', (e) => {
       e.preventDefault();
@@ -143,6 +146,30 @@ class PlaysPage {
     document.querySelectorAll('.play-tab-panel').forEach(panel => {
       panel.hidden = panel.id !== `play-tab-${tabName}`;
     });
+  }
+
+  async refreshData() {
+    const btn = document.getElementById('refreshPlaysBtn');
+    const icon = btn.querySelector('.icon');
+
+    // Add spinning animation
+    icon.style.animation = 'spin 1s linear infinite';
+    btn.disabled = true;
+
+    try {
+      // Clear cache and reload
+      AdminShared.clearStorageCache();
+      const data = await AdminShared.loadStorageData(true);
+      this.battleCards = data.battleCards || [];
+      this.renderPlays();
+      AdminShared.showToast('Plays refreshed', 'success');
+    } catch (e) {
+      console.error('Failed to refresh:', e);
+      AdminShared.showToast('Failed to refresh', 'error');
+    } finally {
+      icon.style.animation = '';
+      btn.disabled = false;
+    }
   }
 
   renderPlays() {

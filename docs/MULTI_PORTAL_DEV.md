@@ -106,14 +106,14 @@ This document outlines the implementation plan for multi-portal support and user
   portals: {
     "12345678": {
       name: "Client A - Acme Corp",
-      apiToken: "pat-na1-...",
+      nangoConnectionId: "conn_abc123",  // OAuth connection via Nango
       color: "#ff7a59",  // Visual identifier
       addedAt: 1702500000000,
       userRoleInPortal: "admin" | "user" | "consultant"  // Role within this specific portal
     },
     "87654321": {
       name: "Client B - Widget Inc",
-      apiToken: "pat-eu1-...",
+      nangoConnectionId: "conn_def456",  // OAuth connection via Nango
       color: "#00bda5",
       addedAt: 1702600000000,
       userRoleInPortal: "consultant"
@@ -144,7 +144,7 @@ This document outlines the implementation plan for multi-portal support and user
       battleCards: [...],
       rules: [...],
       settings: {
-        // Portal-specific settings (API token is in portals registry)
+        // Portal-specific settings
         showBanners: true,
         showBattleCards: true,
         // ... etc

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plays - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/rules.css">
+  <link rel="stylesheet" href="/admin/pages/plays.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item active" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Plays List Section -->
+      <section class="content-section active" id="playsSection">
+        <div class="section-header">
+          <div>
+            <h2>Plays</h2>
+            <p class="section-description">Create plays for competitors, objections, processes, and best practices</p>
+          </div>
+          <button class="btn btn-primary" id="addPlayBtn">
+            <span class="icon icon-plus"></span> Add Play
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="playsSearch" placeholder="Search plays...">
+          <select class="filter-select" id="playsFilter">
+            <option value="all">All Types</option>
+            <option value="competitor">Competitor</option>
+            <option value="objection">Objection</option>
+            <option value="tip">Tip</option>
+            <option value="process">Process</option>
+          </select>
+        </div>
+
+        <div class="cards-grid" id="playsGrid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="playsEmptyState" style="display: none;">
+          <div class="empty-icon"><span class="icon icon-layers icon--3xl"></span></div>
+          <h3>No plays yet</h3>
+          <p>Create your first play to help your team</p>
+          <button class="btn btn-primary" id="createPlayEmptyBtn">Create Play</button>
+        </div>
+      </section>
+
+      <!-- Play Editor Section -->
+      <section class="content-section" id="playEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToPlays" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Plays
+            </a>
+            <h2 id="playEditorTitle">Add Play</h2>
+          </div>
+        </div>
+
+        <div class="play-editor-layout">
+          <div class="play-editor-card">
+            <!-- Tabs -->
+            <nav class="play-card-tabs" role="tablist" id="playCardTabs">
+              <button role="tab" aria-selected="true" data-tab="content" class="play-tab active">Content</button>
+              <button role="tab" aria-selected="false" data-tab="rules" class="play-tab">Rules</button>
+              <button role="tab" aria-selected="false" data-tab="usage" class="play-tab">Usage</button>
+            </nav>
+
+            <!-- Tab Panels -->
+            <div class="play-card-body">
+              <!-- Content Tab -->
+              <section id="play-tab-content" role="tabpanel" class="play-tab-panel">
+                <div class="play-content-form">
+                  <!-- Basic Information -->
+                  <div class="form-group">
+                    <label>Card Name <span class="required">*</span></label>
+                    <input type="text" id="playName" placeholder="e.g., vs. Competitor A">
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group flex-1">
+                      <label>Card Type</label>
+                      <select id="playType">
+                        <option value="competitor">Competitor</option>
+                        <option value="objection">Objection Handler</option>
+                        <option value="tip">Tip / Best Practice</option>
+                        <option value="process">Process Guide</option>
+                      </select>
+                    </div>
+                    <div class="form-group flex-2">
+                      <label>Subtitle</label>
+                      <input type="text" id="playSubtitle" placeholder="e.g., Enterprise CRM competitor">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Link to Full Version</label>
+                    <input type="url" id="playLink" placeholder="https://docs.google.com/document/d/...">
+                    <span class="form-hint">Optional URL to full document (Google Doc, Notion, etc.)</span>
+                  </div>
+
+                  <!-- Sections -->
+                  <div class="form-group">
+                    <div class="label-row">
+                      <label>Sections</label>
+                      <button class="btn btn-secondary btn-sm" id="addSectionBtn">
+                        <span class="icon icon-plus icon--sm"></span> Add Section
+                      </button>
+                    </div>
+                    <span class="form-hint">Add content sections to your play</span>
+                    <div class="sections-builder" id="playSections">
+                      <!-- Sections added by JS -->
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Rules Tab -->
+              <section id="play-tab-rules" role="tabpanel" class="play-tab-panel" hidden>
+                <div class="play-rules-form">
+                  <div class="form-group">
+                    <label>Object Type</label>
+                    <select id="playObjectType">
+                      <option value="">Select object type (optional)...</option>
+                      <option value="contacts">Contacts</option>
+                      <option value="companies">Companies</option>
+                      <option value="deals">Deals</option>
+                      <option value="tickets">Tickets</option>
+                    </select>
+                    <span class="form-hint">Choose which HubSpot object type this play applies to</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="playDisplayOnAll">
+                      <span>Display on all records</span>
+                    </label>
+                    <span class="form-hint">When enabled, this card will show on all records of this object type</span>
+                  </div>
+
+                  <div id="playConditionsWrapper">
+                    <div class="form-group">
+                      <div class="label-row">
+                        <label>Conditions</label>
+                        <span id="playConditionStatus" class="status-text"></span>
+                      </div>
+                      <span class="form-hint">Define when this card should appear based on record properties</span>
+                      <div class="logic-toggle" id="playLogicToggle">
+                        <span class="logic-label">Match:</span>
+                        <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                        <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                      </div>
+                      <div class="conditions-builder" id="playConditions">
+                        <!-- Conditions added by JS -->
+                      </div>
+                      <button class="btn btn-secondary btn-sm" id="addPlayConditionBtn" disabled>
+                        <span class="icon icon-plus icon--sm"></span> Add Condition
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Usage Tab (Coming Soon) -->
+              <section id="play-tab-usage" role="tabpanel" class="play-tab-panel" hidden>
+                <div class="play-usage-coming-soon">
+                  <span class="icon icon-chart icon--2xl"></span>
+                  <h3>Usage Analytics Coming Soon</h3>
+                  <p>Track how often this play is viewed and used by your team</p>
+                </div>
+              </section>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="play-card-footer">
+              <button class="btn btn-secondary" id="cancelPlayBtn">Cancel</button>
+              <button class="btn btn-primary" id="savePlayBtn">Save Play</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/supabase.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/plays.js"></script>
+</body>
+</html>

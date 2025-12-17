@@ -1,0 +1,1532 @@
+/* ============================================
+   Wiki Page Styles - Two-Pane Layout
+   ============================================ */
+
+/* ----------------------------------------
+   Two-Pane Layout
+   ---------------------------------------- */
+.wiki-layout {
+  display: flex;
+  gap: var(--space-5);
+  height: calc(100vh - 120px);
+  min-height: 600px;
+}
+
+.wiki-nav-pane {
+  width: 360px;
+  min-width: 320px;
+  max-width: 450px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wiki-detail-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Toolbar
+   ---------------------------------------- */
+.wiki-nav-toolbar {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.wiki-nav-search {
+  width: 100%;
+}
+
+.wiki-nav-filters {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.wiki-nav-filters .filter-select {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  padding: var(--space-1) var(--space-2);
+}
+
+.wiki-nav-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wiki-nav-actions-right {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.wiki-nav-actions .btn-icon {
+  width: 28px;
+  height: 28px;
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Tree Container
+   ---------------------------------------- */
+.wiki-nav-tree-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.wiki-nav-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.wiki-nav-empty .icon {
+  margin-bottom: var(--space-3);
+  opacity: 0.5;
+}
+
+.wiki-nav-empty p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Tree
+   ---------------------------------------- */
+.wiki-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wiki-tree ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wiki-node {
+  position: relative;
+}
+
+.wiki-node-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  user-select: none;
+}
+
+.wiki-node-header:hover {
+  background: var(--color-bg-muted);
+}
+
+.wiki-node-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.wiki-node-toggle[aria-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.wiki-node-toggle .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.wiki-node-label {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiki-node-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+.wiki-node-children {
+  display: block;
+}
+
+.wiki-node.is-collapsed > .wiki-node-children {
+  display: none;
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Object Type Nodes (Level 1)
+   ---------------------------------------- */
+.wiki-node-object {
+  margin-bottom: var(--space-3);
+}
+
+.wiki-node-object > .wiki-node-header {
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+.wiki-node-object > .wiki-node-header:hover {
+  background: var(--color-bg-subtle);
+}
+
+.wiki-node-object > .wiki-node-header .wiki-node-label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.wiki-node-object > .wiki-node-children {
+  margin-top: var(--space-2);
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border);
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Group Nodes (Level 2)
+   ---------------------------------------- */
+.wiki-node-group {
+  margin-bottom: var(--space-2);
+}
+
+.wiki-node-group > .wiki-node-header {
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.wiki-node-group > .wiki-node-header .wiki-node-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--font-weight-semibold);
+}
+
+.wiki-node-group > .wiki-node-children {
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border);
+  margin-top: var(--space-1);
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Term Nodes (Level 3)
+   ---------------------------------------- */
+.wiki-node-term {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.wiki-node-term:hover {
+  background: var(--color-bg-muted);
+}
+
+.wiki-node-term.is-selected {
+  background: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+  padding-left: calc(var(--space-2) - 3px);
+  border-radius: var(--radius-sm);
+}
+
+.wiki-node-term.is-selected .wiki-term-text {
+  color: white;
+  font-weight: var(--font-weight-medium);
+}
+
+.wiki-node-term.is-selected .status-dot {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.wiki-node-term.is-selected .wiki-term-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wiki-term-text {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiki-term-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.wiki-node-term.no-trigger .wiki-term-text {
+  color: var(--color-text-secondary);
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Entry Nodes with Children (Level 3+)
+   ---------------------------------------- */
+.wiki-node-entry {
+  position: relative;
+}
+
+.wiki-node-entry > .wiki-node-header {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.wiki-node-entry > .wiki-node-header:hover {
+  background: var(--color-bg-muted);
+}
+
+.wiki-node-entry > .wiki-node-header.is-selected {
+  background: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+  padding-left: calc(var(--space-2) - 3px);
+  border-radius: var(--radius-sm);
+}
+
+.wiki-node-entry > .wiki-node-header.is-selected .wiki-term-text {
+  color: white;
+  font-weight: var(--font-weight-medium);
+}
+
+.wiki-node-entry > .wiki-node-header.is-selected .status-dot {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.wiki-node-entry > .wiki-node-header.is-selected .wiki-node-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wiki-node-entry > .wiki-node-header.is-selected .wiki-node-toggle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.wiki-node-entry > .wiki-node-header .wiki-node-toggle {
+  margin-right: 0;
+}
+
+.wiki-node-entry > .wiki-node-children {
+  margin-left: var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border);
+  margin-top: var(--space-1);
+}
+
+.wiki-node-entry.is-collapsed > .wiki-node-children {
+  display: none;
+}
+
+.wiki-node-child {
+  padding-left: var(--space-2);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.status-dot.status-dot--enabled {
+  background: var(--color-success);
+}
+
+.status-dot.status-dot--disabled {
+  background: var(--color-text-muted);
+}
+
+
+/* ----------------------------------------
+   Navigation Pane - Stats
+   ---------------------------------------- */
+.wiki-nav-stats {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.wiki-nav-stats .wiki-stat {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.wiki-nav-stats .wiki-stat strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+
+/* ----------------------------------------
+   Detail Pane - Card
+   ---------------------------------------- */
+.wiki-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.wiki-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  gap: var(--space-4);
+}
+
+.wiki-card-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wiki-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.wiki-card-title-row h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiki-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.wiki-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+
+/* ----------------------------------------
+   Status Toggle Button
+   ---------------------------------------- */
+.status-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.status-toggle:hover {
+  background: var(--color-bg-muted);
+}
+
+.status-toggle.is-enabled {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+}
+
+.status-toggle.is-enabled .status-toggle-dot {
+  background: var(--color-success);
+}
+
+.status-toggle.is-enabled .status-toggle-label {
+  color: var(--color-success);
+}
+
+.status-toggle.is-disabled {
+  background: var(--color-bg-muted);
+  border-color: var(--color-border);
+}
+
+.status-toggle.is-disabled .status-toggle-dot {
+  background: var(--color-text-muted);
+}
+
+.status-toggle.is-disabled .status-toggle-label {
+  color: var(--color-text-muted);
+}
+
+.status-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.status-toggle-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+
+/* ----------------------------------------
+   Card Tabs
+   ---------------------------------------- */
+.wiki-card-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.wiki-tab {
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.wiki-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.wiki-tab.active {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.wiki-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-primary);
+}
+
+
+/* ----------------------------------------
+   Card Body & Tab Panels
+   ---------------------------------------- */
+.wiki-card-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wiki-tab-panel {
+  flex: 1;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.wiki-tab-panel[hidden] {
+  display: none;
+}
+
+
+/* ----------------------------------------
+   Card Empty State
+   ---------------------------------------- */
+.wiki-card-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.wiki-card-empty-state .icon {
+  margin-bottom: var(--space-4);
+  opacity: 0.4;
+}
+
+.wiki-card-empty-state h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-2);
+}
+
+.wiki-card-empty-state p {
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+
+/* ----------------------------------------
+   Card Content - Form Layout
+   ---------------------------------------- */
+.wiki-card-content {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--space-6);
+  flex: 1;
+}
+
+.wiki-content-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.wiki-content-preview {
+  position: sticky;
+  top: 0;
+}
+
+.wiki-content-preview h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-3);
+}
+
+
+/* ----------------------------------------
+   Card Footer
+   ---------------------------------------- */
+.wiki-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+
+/* ----------------------------------------
+   Rules Tab Content
+   ---------------------------------------- */
+.wiki-rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.wiki-rules-section {
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wiki-rules-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.wiki-rules-section h4 {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+
+/* ----------------------------------------
+   Usage Tab Content
+   ---------------------------------------- */
+.wiki-usage-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.wiki-usage-section h4 {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.wiki-usage-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.wiki-usage-stat {
+  background: var(--color-bg-subtle);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.wiki-usage-stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-1);
+}
+
+.wiki-usage-stat-value {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.wiki-usage-placeholder {
+  text-align: center;
+  padding: var(--space-8);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+}
+
+.wiki-usage-placeholder .icon {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  margin-bottom: var(--space-3);
+}
+
+.wiki-usage-placeholder h4 {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.wiki-usage-placeholder p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+
+/* ----------------------------------------
+   Badges
+   ---------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+.badge-category {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.badge-object {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.badge-group {
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+
+/* ----------------------------------------
+   Wiki Object Badges
+   ---------------------------------------- */
+.wiki-object-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+.wiki-object-badge.contacts {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.wiki-object-badge.companies {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.wiki-object-badge.deals {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.wiki-object-badge.tickets {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+
+/* ----------------------------------------
+   Wiki Category Badges
+   ---------------------------------------- */
+.wiki-category-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.wiki-category-badge.wiki-category-general { background: var(--color-info-bg); color: var(--color-info); }
+.wiki-category-badge.wiki-category-sales { background: var(--color-success-bg); color: var(--color-success); }
+.wiki-category-badge.wiki-category-marketing { background: #fef3e5; color: #f59e0b; }
+.wiki-category-badge.wiki-category-product { background: #f3e8ff; color: #9333ea; }
+.wiki-category-badge.wiki-category-process { background: var(--color-danger-bg); color: var(--color-danger); }
+.wiki-category-badge.wiki-category-field { background: #e0f2fe; color: #0284c7; }
+
+
+/* ----------------------------------------
+   Wiki Preview
+   ---------------------------------------- */
+.wiki-preview {
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.wiki-preview-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.wiki-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.wiki-preview-term {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.wiki-preview-category {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+}
+
+.wiki-preview-content {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.wiki-preview-content p {
+  margin: 0;
+}
+
+.wiki-preview-trigger {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wiki-preview-trigger code {
+  background: var(--color-bg-muted);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.wiki-preview-no-trigger {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+
+/* ----------------------------------------
+   Property Values
+   ---------------------------------------- */
+.property-values-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.property-value-item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.property-value-item .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.property-value-item .form-group label {
+  font-size: var(--font-size-xs);
+  margin-bottom: var(--space-1);
+}
+
+.property-value-item .form-group input {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.btn-remove-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  margin-top: 20px;
+}
+
+.btn-remove-value:hover {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+
+/* ----------------------------------------
+   Modal
+   ---------------------------------------- */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+}
+
+.modal-content.modal-lg {
+  max-width: 700px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
+}
+
+.modal-body {
+  padding: var(--space-5);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+
+/* ----------------------------------------
+   Fields List
+   ---------------------------------------- */
+.fields-list {
+  margin-top: var(--space-4);
+}
+
+.fields-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+}
+
+.fields-search {
+  width: 200px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.fields-list-items {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.field-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.field-item:hover {
+  background: var(--color-bg-muted);
+}
+
+.field-item.already-imported {
+  opacity: 0.5;
+}
+
+.field-item.needs-update {
+  background: var(--color-warning-bg);
+}
+
+.field-checkbox {
+  flex-shrink: 0;
+}
+
+.field-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.field-name {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.field-badge {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+}
+
+.field-badge-update {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.field-badge-dropdown {
+  background: var(--color-info-bg, #e0f2fe);
+  color: var(--color-info, #0369a1);
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* ----------------------------------------
+   Fields Tree (Import Modal)
+   ---------------------------------------- */
+.fields-tree {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.fields-tree-node {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fields-tree-node:last-child {
+  border-bottom: none;
+}
+
+.fields-tree-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.fields-tree-header:hover {
+  background: var(--color-bg-subtle);
+}
+
+.fields-tree-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.fields-tree-toggle[aria-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.fields-tree-toggle .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.fields-tree-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.fields-tree-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fields-tree-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg-page);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+.fields-tree-children {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--color-border);
+  margin-left: var(--space-5);
+}
+
+.fields-tree-children .field-item {
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
+}
+
+.fields-tree-children .field-item:last-child {
+  border-bottom: none;
+}
+
+/* Import modal footer with checkbox option */
+.modal-footer-import {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.modal-footer-import .fields-import-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.modal-footer-import .fields-import-option:hover {
+  color: var(--color-text-primary);
+}
+
+.modal-footer-import .help-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  cursor: help;
+}
+
+.modal-footer-import .help-icon:hover {
+  color: var(--color-text-secondary);
+}
+
+.modal-footer-import .modal-footer-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Loading indicator for field import */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  padding: var(--space-4) 0;
+}
+
+.loading-indicator .loading-spinner {
+  color: var(--color-primary);
+}
+
+.status-text.loading {
+  display: flex;
+  justify-content: center;
+}
+
+
+/* ----------------------------------------
+   Form Utilities
+   ---------------------------------------- */
+.form-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.form-row .flex-1 {
+  flex: 1;
+}
+
+.form-row .flex-2 {
+  flex: 2;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+
+/* ----------------------------------------
+   Responsive
+   ---------------------------------------- */
+@media (max-width: 1200px) {
+  .wiki-card-content {
+    grid-template-columns: 1fr;
+  }
+
+  .wiki-content-preview {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .wiki-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .wiki-nav-pane {
+    width: 100%;
+    max-width: none;
+    max-height: 400px;
+  }
+
+  .wiki-detail-pane {
+    min-height: 500px;
+  }
+}
+
+
+/* ----------------------------------------
+   Multi-Select Mode
+   ---------------------------------------- */
+
+/* Select Mode Button - active state */
+#wikiSelectModeBtn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+#wikiSelectModeBtn.active .icon {
+  filter: brightness(0) invert(1);
+}
+
+.wiki-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-info-bg);
+  border-bottom: 1px solid var(--color-info);
+}
+
+.wiki-bulk-actions-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.wiki-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.wiki-select-all-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.wiki-selected-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.wiki-bulk-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-1);
+}
+
+.wiki-bulk-buttons .btn {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+/* Tooltips for buttons */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-text-primary);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  z-index: 100;
+  pointer-events: none;
+}
+
+[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--color-text-primary);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  z-index: 100;
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip position variants - align right for buttons near right edge */
+[data-tooltip-position="right"]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+[data-tooltip-position="right"]::before {
+  left: auto;
+  right: 8px;
+  transform: none;
+}
+
+/* Tooltip position variants - align left for buttons near left edge */
+[data-tooltip-position="left"]::after {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
+[data-tooltip-position="left"]::before {
+  left: 8px;
+  right: auto;
+  transform: none;
+}
+
+.wiki-entry-checkbox,
+.wiki-group-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+
+.wiki-node-term:has(.wiki-entry-checkbox) {
+  padding-left: var(--space-2);
+}
+
+.wiki-node-term:has(.wiki-entry-checkbox):hover {
+  background: var(--color-bg-muted);
+}
+
+.wiki-node-term:has(.wiki-entry-checkbox.checked),
+.wiki-node-term:has(.wiki-entry-checkbox:checked) {
+  background: var(--color-primary-bg);
+}

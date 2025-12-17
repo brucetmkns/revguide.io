@@ -16,6 +16,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[RevGuide Callback] Extension ID from URL:', extensionId);
   console.log('[RevGuide Callback] Chrome available:', typeof chrome !== 'undefined');
   console.log('[RevGuide Callback] Chrome runtime available:', typeof chrome !== 'undefined' && !!chrome.runtime);
+  console.log('[RevGuide Callback] User agent:', navigator.userAgent);
+  console.log('[RevGuide Callback] Is Chrome:', navigator.userAgent.includes('Chrome'));
+
+  // Debug: Check if we're in extension context or web page
+  const isExtensionContext = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
+  console.log('[RevGuide Callback] Is extension context:', isExtensionContext);
+
+  // In web page context, chrome.runtime might still be available for externally_connectable
+  if (typeof chrome !== 'undefined') {
+    console.log('[RevGuide Callback] Chrome object keys:', Object.keys(chrome));
+  }
 
   // Check if user is logged in
   const { data: { session } } = await RevGuideAuth.getSession();
@@ -105,8 +116,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     // No extension ID or Chrome APIs not available
     console.log('[RevGuide Callback] Cannot send message - extensionId:', extensionId, 'chrome:', typeof chrome);
+    console.log('[RevGuide Callback] chrome.runtime:', typeof chrome !== 'undefined' ? chrome.runtime : 'N/A');
+
     if (!extensionId) {
       showError('No extension ID provided. Please try signing in from the extension again.');
+    } else if (typeof chrome === 'undefined') {
+      showError('Chrome browser APIs not detected. Make sure you are using Google Chrome or a Chromium-based browser.');
+    } else if (!chrome.runtime) {
+      // This typically means the extension isn't installed or the extension ID doesn't match
+      showError('Cannot connect to RevGuide extension. Please ensure the extension is installed and enabled, then try again.');
     } else {
       showError('Chrome messaging API not available. Make sure you are using Chrome browser.');
     }

@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-12-12",
+  "libraries": [
+    {
+      "id": "hubspot-basics",
+      "name": "HubSpot Basics",
+      "description": "Core HubSpot terminology and concepts every user should know",
+      "version": "1.0.0",
+      "entryCount": 15,
+      "category": "hubspot",
+      "icon": "hub",
+      "file": "hubspot-basics.json"
+    },
+    {
+      "id": "sales-pipeline",
+      "name": "Sales Pipeline",
+      "description": "Standard sales stages, deal properties, and pipeline terminology",
+      "version": "1.0.0",
+      "entryCount": 12,
+      "category": "sales",
+      "icon": "dollar-sign",
+      "file": "sales-pipeline.json"
+    },
+    {
+      "id": "contact-lifecycle",
+      "name": "Contact Lifecycle",
+      "description": "Contact lifecycle stages, lead status, and qualification terms",
+      "version": "1.0.0",
+      "entryCount": 10,
+      "category": "contacts",
+      "icon": "users",
+      "file": "contact-lifecycle.json"
+    },
+    {
+      "id": "marketing-terms",
+      "name": "Marketing Terms",
+      "description": "Marketing terminology, campaign types, and metrics",
+      "version": "1.0.0",
+      "entryCount": 10,
+      "category": "marketing",
+      "icon": "megaphone",
+      "file": "marketing-terms.json"
+    },
+    {
+      "id": "service-tickets",
+      "name": "Service & Tickets",
+      "description": "Support terminology, ticket statuses, and service terms",
+      "version": "1.0.0",
+      "entryCount": 8,
+      "category": "service",
+      "icon": "headphones",
+      "file": "service-tickets.json"
+    }
+  ]
+}

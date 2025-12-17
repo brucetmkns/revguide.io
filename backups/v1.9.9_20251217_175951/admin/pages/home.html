@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/home.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item active" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="homeSection">
+        <!-- Connect HubSpot Banner (shown when not connected) -->
+        <div class="connect-hubspot-banner" id="connectHubSpotBanner" style="display: none;">
+          <div class="connect-banner-content">
+            <div class="connect-banner-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                <path d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.984 2.21 2.21 0 00-2.212-2.212 2.21 2.21 0 00-2.212 2.212c0 .863.502 1.609 1.227 1.968v2.879a5.197 5.197 0 00-2.382 1.193l-6.376-4.96a2.567 2.567 0 00.09-.62 2.453 2.453 0 00-2.455-2.456A2.453 2.453 0 002.656 3.56a2.453 2.453 0 002.455 2.456c.405 0 .784-.103 1.12-.28l6.272 4.879a5.19 5.19 0 00-.701 2.605 5.222 5.222 0 005.222 5.222 5.222 5.222 0 005.222-5.222 5.207 5.207 0 00-4.082-5.089zm-1.14 7.526a2.637 2.637 0 01-2.639-2.639 2.637 2.637 0 012.639-2.639 2.637 2.637 0 012.639 2.639 2.637 2.637 0 01-2.639 2.639z"/>
+              </svg>
+            </div>
+            <div class="connect-banner-text">
+              <h3>Connect your HubSpot portal</h3>
+              <p>Link your HubSpot account to enable property fetching, field import, and advanced features.</p>
+            </div>
+            <button class="btn btn-hubspot" id="connectHubSpotBtn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.984 2.21 2.21 0 00-2.212-2.212 2.21 2.21 0 00-2.212 2.212c0 .863.502 1.609 1.227 1.968v2.879a5.197 5.197 0 00-2.382 1.193l-6.376-4.96a2.567 2.567 0 00.09-.62 2.453 2.453 0 00-2.455-2.456A2.453 2.453 0 002.656 3.56a2.453 2.453 0 002.455 2.456c.405 0 .784-.103 1.12-.28l6.272 4.879a5.19 5.19 0 00-.701 2.605 5.222 5.222 0 005.222 5.222 5.222 5.222 0 005.222-5.222 5.207 5.207 0 00-4.082-5.089zm-1.14 7.526a2.637 2.637 0 01-2.639-2.639 2.637 2.637 0 012.639-2.639 2.637 2.637 0 012.639 2.639 2.637 2.637 0 01-2.639 2.639z"/>
+              </svg>
+              Connect HubSpot
+            </button>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div>
+            <h2>Welcome to RevGuide</h2>
+            <p class="section-description">Get started by completing these setup steps</p>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="home-stats">
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-field">
+              <span class="icon icon-book"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeWikiCount">0</span>
+              <span class="stat-label">Wiki Entries</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-general">
+              <span class="icon icon-clipboard-list"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeRulesCount">0</span>
+              <span class="stat-label">Banner Rules</span>
+            </div>
+          </div>
+          <div class="home-stat-card">
+            <div class="stat-icon wiki-icon-sales">
+              <span class="icon icon-layers"></span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="homeCardsCount">0</span>
+              <span class="stat-label">Plays</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overview (Admin) -->
+        <div class="onboarding-progress" id="adminOnboardingProgress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="onboardingProgressFill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text"><span id="onboardingProgressText">0</span> of 6 steps completed</span>
+        </div>
+
+        <!-- Progress Overview (Member) -->
+        <div class="onboarding-progress" id="memberOnboardingProgress" style="display: none;">
+          <div class="progress-bar">
+            <div class="progress-fill" id="memberProgressFill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text"><span id="memberProgressText">0</span> of 2 steps completed</span>
+        </div>
+
+        <!-- Member Onboarding Steps (simplified) -->
+        <div class="onboarding-steps" id="memberOnboardingSteps" style="display: none;">
+          <!-- Step 1: Install Extension -->
+          <div class="onboarding-step" data-step="install" id="memberStepInstall">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Install Chrome Extension</h3>
+                <span class="step-status" id="memberStepInstallStatus">Not started</span>
+              </div>
+              <p>Install the RevGuide Chrome extension to see contextual guidance directly in HubSpot.</p>
+              <div class="step-actions">
+                <a href="https://chrome.google.com/webstore" target="_blank" class="btn btn-primary btn-sm">Get Extension</a>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-puzzle icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 2: Activate Extension -->
+          <div class="onboarding-step" data-step="activate" id="memberStepActivate">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Activate Extension</h3>
+                <span class="step-status" id="memberStepActivateStatus">Not started</span>
+              </div>
+              <p>Sign in to the extension to sync your team's wiki entries, banners, and plays.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" disabled>Opens in Extension</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-check-circle icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- All Set Message -->
+          <div class="member-ready-message" id="memberReadyMessage" style="display: none;">
+            <div class="ready-icon">
+              <span class="icon icon-check-circle icon--2xl"></span>
+            </div>
+            <h3>You're all set!</h3>
+            <p>Open HubSpot to see contextual guidance from your team. Browse the wiki, banners, and plays your admins have created.</p>
+          </div>
+        </div>
+
+        <!-- Admin Onboarding Steps -->
+        <div class="onboarding-steps" id="adminOnboardingSteps">
+          <!-- Step 1: Install Plugin -->
+          <div class="onboarding-step completed" data-step="install" id="stepInstall">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Install Plugin</h3>
+                <span class="step-status completed" id="stepInstallStatus">Completed</span>
+              </div>
+              <p>Install the RevGuide Chrome extension to enable contextual guidance on HubSpot pages.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepInstallBtn">Invite Team Members</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-puzzle icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 2: Connect HubSpot -->
+          <div class="onboarding-step" data-step="api" id="stepApi">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Connect HubSpot API</h3>
+                <span class="step-status" id="stepApiStatus">Not started</span>
+              </div>
+              <p>Connect your HubSpot private app to enable property fetching and field import.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepApiBtn">Configure API</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-link icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 3: Build Your Wiki -->
+          <div class="onboarding-step" data-step="wiki" id="stepWiki">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Build Your Wiki</h3>
+                <span class="step-status" id="stepWikiStatus">Not started</span>
+              </div>
+              <p>Import HubSpot fields or add custom terms to create contextual tooltips for your team.</p>
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-sm" id="stepWikiImportBtn">Import Fields</button>
+                <button class="btn btn-primary btn-sm" id="stepWikiAddBtn">Add Entry</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-book icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 4: Create Banner Rules -->
+          <div class="onboarding-step" data-step="rules" id="stepRules">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Create Banner Rules</h3>
+                <span class="step-status" id="stepRulesStatus">Not started</span>
+              </div>
+              <p>Display contextual banners on HubSpot records based on property conditions.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepRulesBtn">Create Rule</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-clipboard-list icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 5: Add Plays -->
+          <div class="onboarding-step" data-step="cards" id="stepCards">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Add Plays</h3>
+                <span class="step-status" id="stepCardsStatus">Not started</span>
+              </div>
+              <p>Create plays for competitors, objections, processes, and best practices.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepCardsBtn">Create Play</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-layers icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 6: Invite Team -->
+          <div class="onboarding-step" data-step="team" id="stepTeam">
+            <div class="step-number">6</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Invite Your Team</h3>
+                <span class="step-status" id="stepTeamStatus">Not started</span>
+              </div>
+              <p>Share your configuration with team members so everyone has the same context.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepTeamBtn">Invite Team</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-users icon--lg"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Library Promo -->
+        <div class="content-library-promo">
+          <div class="promo-content">
+            <span class="promo-badge">New</span>
+            <h3>Content Libraries</h3>
+            <p>Download starter packs to quickly populate your wiki with pre-built HubSpot terminology, sales pipeline stages, and more.</p>
+            <a href="libraries.html" class="btn btn-primary btn-sm" style="margin-top: var(--space-3);">
+              <span class="icon icon-download icon--sm"></span> Browse Libraries
+            </a>
+          </div>
+          <div class="promo-icon">
+            <span class="icon icon-download icon--2xl"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/supabase.js"></script>
+  <script src="/admin/nango.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/home.js"></script>
+
+  <style>
+    .connect-hubspot-banner {
+      background: linear-gradient(135deg, #ff7a59 0%, #ff5c35 100%);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      color: white;
+    }
+    .connect-banner-content {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .connect-banner-icon {
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+    .connect-banner-text {
+      flex: 1;
+    }
+    .connect-banner-text h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+    }
+    .connect-banner-text p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: var(--font-size-sm);
+    }
+    .btn-hubspot {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: white;
+      color: #ff5c35;
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      font-weight: var(--font-weight-semibold);
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-hubspot:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    @media (max-width: 768px) {
+      .connect-banner-content {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    /* Member ready message */
+    .member-ready-message {
+      text-align: center;
+      padding: var(--space-8) var(--space-6);
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid #bbf7d0;
+    }
+    .member-ready-message .ready-icon {
+      color: #22c55e;
+      margin-bottom: var(--space-4);
+    }
+    .member-ready-message h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--font-size-xl);
+      color: #166534;
+    }
+    .member-ready-message p {
+      margin: 0;
+      color: #15803d;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* Member role badge in header */
+    .role-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-gray-100);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      color: var(--color-gray-600);
+      margin-left: var(--space-3);
+    }
+    .role-indicator.admin {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .role-indicator.member {
+      background: #f3e8ff;
+      color: #7c3aed;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,126 @@
+{
+  "id": "hubspot-basics",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "title": "Marketing Qualified Lead",
+      "trigger": "MQL",
+      "aliases": ["M.Q.L.", "Marketing-Qualified Lead"],
+      "definition": "<p>A lead that has been deemed more likely to become a customer based on marketing engagement metrics and lead intelligence.</p><p>MQLs have typically:</p><ul><li>Engaged with marketing content</li><li>Met lead scoring thresholds</li><li>Shown buying intent signals</li></ul>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Sales Qualified Lead",
+      "trigger": "SQL",
+      "aliases": ["S.Q.L.", "Sales-Qualified Lead"],
+      "definition": "<p>A prospective customer that has been researched and vetted by both marketing and sales teams and is deemed ready for the next stage in the sales process.</p><p>SQLs are characterized by:</p><ul><li>Clear budget and authority</li><li>Defined need and timeline</li><li>Active engagement with sales</li></ul>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Customer Relationship Management",
+      "trigger": "CRM",
+      "aliases": ["C.R.M."],
+      "definition": "<p>A technology for managing all your company's relationships and interactions with customers and potential customers. HubSpot CRM is the central database where all contact, company, deal, and ticket information is stored.</p>",
+      "category": "general",
+      "objectType": null
+    },
+    {
+      "title": "Lifecycle Stage",
+      "trigger": "Lifecycle Stage",
+      "aliases": ["Lifecycle", "Life Cycle Stage"],
+      "definition": "<p>A property that indicates where a contact or company is in your marketing and sales funnel. Default stages include:</p><ul><li><strong>Subscriber</strong> - Opted in to hear from you</li><li><strong>Lead</strong> - Converted on your site</li><li><strong>MQL</strong> - Marketing qualified</li><li><strong>SQL</strong> - Sales qualified</li><li><strong>Opportunity</strong> - Associated with a deal</li><li><strong>Customer</strong> - Closed won deal</li><li><strong>Evangelist</strong> - Promoter of your brand</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Deal Pipeline",
+      "trigger": "Pipeline",
+      "aliases": ["Sales Pipeline", "Deal Pipeline"],
+      "definition": "<p>A visual representation of where deals are in your sales process. Pipelines contain stages that represent milestones in your sales cycle.</p><p>Each pipeline stage typically has:</p><ul><li>A name describing the milestone</li><li>A probability percentage</li><li>Required properties to advance</li></ul>",
+      "category": "sales",
+      "objectType": "deals"
+    },
+    {
+      "title": "HubSpot Owner",
+      "trigger": "Owner",
+      "aliases": ["Record Owner", "HubSpot Owner"],
+      "definition": "<p>The user in HubSpot assigned responsibility for a specific contact, company, deal, or ticket. Owners can be assigned manually or automatically through workflows and lead routing rules.</p>",
+      "category": "field",
+      "objectType": null
+    },
+    {
+      "title": "Associated Records",
+      "trigger": "Associations",
+      "aliases": ["Associated", "Associated Records"],
+      "definition": "<p>The connections between different objects in HubSpot CRM. For example, a contact can be associated with a company, deals, and tickets. Associations help maintain a complete picture of customer relationships.</p>",
+      "category": "general",
+      "objectType": null
+    },
+    {
+      "title": "Property",
+      "trigger": "Property",
+      "aliases": ["Properties", "Custom Property"],
+      "definition": "<p>A field that stores information about a record in HubSpot. Properties can be default (created by HubSpot) or custom (created by your team). Types include single-line text, dropdown, date, number, and more.</p>",
+      "category": "general",
+      "objectType": null
+    },
+    {
+      "title": "Workflow",
+      "trigger": "Workflow",
+      "aliases": ["Workflows", "Automation Workflow"],
+      "definition": "<p>An automated series of actions that execute when specific criteria are met. Workflows can:</p><ul><li>Send emails automatically</li><li>Update record properties</li><li>Create tasks and notifications</li><li>Rotate leads to owners</li><li>Trigger webhooks and integrations</li></ul>",
+      "category": "process",
+      "objectType": null
+    },
+    {
+      "title": "List",
+      "trigger": "List",
+      "aliases": ["Lists", "Contact List", "Active List", "Static List"],
+      "definition": "<p>A segmented group of records based on property values or behaviors. HubSpot has two types:</p><ul><li><strong>Active Lists</strong> - Automatically update as records meet or no longer meet criteria</li><li><strong>Static Lists</strong> - Fixed membership, records must be manually added/removed</li></ul>",
+      "category": "general",
+      "objectType": null
+    },
+    {
+      "title": "Form",
+      "trigger": "Form",
+      "aliases": ["Forms", "HubSpot Form", "Lead Form"],
+      "definition": "<p>A data collection tool that captures visitor information and creates or updates records in HubSpot. Forms can be embedded on websites, landing pages, or shared via direct links.</p>",
+      "category": "marketing",
+      "objectType": null
+    },
+    {
+      "title": "Landing Page",
+      "trigger": "Landing Page",
+      "aliases": ["LP", "Landing Pages"],
+      "definition": "<p>A standalone web page created specifically for marketing or advertising campaigns. Landing pages are designed with a single focused objective, typically to capture leads through a form submission.</p>",
+      "category": "marketing",
+      "objectType": null
+    },
+    {
+      "title": "Call-to-Action",
+      "trigger": "CTA",
+      "aliases": ["C.T.A.", "Call to Action"],
+      "definition": "<p>A button or link that prompts visitors to take a specific action, such as downloading content, signing up for a demo, or making a purchase. CTAs are tracked in HubSpot for conversion analytics.</p>",
+      "category": "marketing",
+      "objectType": null
+    },
+    {
+      "title": "Lead Scoring",
+      "trigger": "Lead Score",
+      "aliases": ["Lead Scoring", "HubSpot Score"],
+      "definition": "<p>A methodology for ranking leads based on their perceived value to the organization. HubSpot Score is calculated using positive and negative attributes including demographic fit and engagement behaviors.</p>",
+      "category": "sales",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Activity Timeline",
+      "trigger": "Timeline",
+      "aliases": ["Activity Timeline", "Record Timeline"],
+      "definition": "<p>The chronological history of all interactions and changes on a record. The timeline shows emails, calls, meetings, notes, tasks, form submissions, page views, and property changes.</p>",
+      "category": "general",
+      "objectType": null
+    }
+  ]
+}

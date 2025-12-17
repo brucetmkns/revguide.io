@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Libraries - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <link rel="stylesheet" href="/admin/pages/libraries.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item active" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="librariesSection">
+        <!-- Page Header -->
+        <div class="section-header">
+          <div>
+            <h2>Content Libraries</h2>
+            <p class="section-description">Download pre-built wiki entry packs to get started quickly</p>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="libraries-loading" id="librariesLoading">
+          <div class="loading-spinner"></div>
+          <p>Loading available libraries...</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="libraries-error" id="librariesError" style="display: none;">
+          <span class="icon icon-alert-circle icon--2xl"></span>
+          <h3>Unable to load libraries</h3>
+          <p id="librariesErrorMessage">Please check your internet connection and try again.</p>
+          <button class="btn btn-primary" id="retryLoadBtn">Try Again</button>
+        </div>
+
+        <!-- Libraries Content -->
+        <div class="libraries-content" id="librariesContent" style="display: none;">
+          <!-- Installed Section -->
+          <div class="libraries-section" id="installedSection" style="display: none;">
+            <h3 class="libraries-section-title">
+              <span class="icon icon-check-circle"></span>
+              Installed Libraries
+            </h3>
+            <div class="libraries-grid" id="installedGrid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Available Section -->
+          <div class="libraries-section">
+            <h3 class="libraries-section-title">
+              <span class="icon icon-download"></span>
+              Available Libraries
+            </h3>
+            <div class="libraries-grid" id="availableGrid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="modal" id="previewModal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2 id="previewModalTitle">Library Preview</h2>
+        <button class="modal-close" id="closePreviewModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="preview-header">
+          <p class="preview-description" id="previewDescription"></p>
+          <div class="preview-meta">
+            <span class="preview-meta-item">
+              <span class="icon icon-book icon--sm"></span>
+              <span id="previewEntryCount">0</span> entries
+            </span>
+            <span class="preview-meta-item">
+              <span class="icon icon-tag icon--sm"></span>
+              Version <span id="previewVersion">1.0.0</span>
+            </span>
+          </div>
+        </div>
+        <div class="preview-entries-header">
+          <h4>Entries included:</h4>
+          <input type="text" class="search-input" id="previewSearch" placeholder="Search entries...">
+        </div>
+        <div class="preview-entries-list" id="previewEntriesList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelPreviewBtn">Cancel</button>
+        <button class="btn btn-primary" id="installFromPreviewBtn">
+          <span class="icon icon-download icon--sm"></span> Install Library
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install Modal (Smart Merge) -->
+  <div class="modal" id="installModal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2 id="installModalTitle">Install Library</h2>
+        <button class="modal-close" id="closeInstallModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="install-summary" id="installSummary">
+          <!-- Populated by JS -->
+        </div>
+        <div class="install-entries-header">
+          <div class="install-select-all">
+            <label class="checkbox-label">
+              <input type="checkbox" id="selectAllEntries" checked>
+              <span>Select All</span>
+            </label>
+          </div>
+          <input type="text" class="search-input" id="installSearch" placeholder="Search entries...">
+        </div>
+        <div class="install-entries-list" id="installEntriesList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelInstallBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmInstallBtn">
+          <span class="icon icon-download icon--sm"></span> Install <span id="installCount">0</span> Entries
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Uninstall Confirmation Modal -->
+  <div class="modal" id="uninstallModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Uninstall Library</h2>
+        <button class="modal-close" id="closeUninstallModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="uninstallMessage">Are you sure you want to uninstall this library? This will remove all entries that were added from this library.</p>
+        <div class="uninstall-warning" id="uninstallWarning" style="display: none;">
+          <span class="icon icon-alert-triangle icon--sm"></span>
+          <span>Some entries from this library have been modified. They will still be removed.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelUninstallBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmUninstallBtn">
+          <span class="icon icon-trash icon--sm"></span> Uninstall
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin/supabase.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/libraries.js"></script>
+</body>
+</html>

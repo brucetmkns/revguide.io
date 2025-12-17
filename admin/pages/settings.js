@@ -110,6 +110,11 @@ class SettingsPage {
     const teamCard = document.getElementById('teamSettingsCard');
     if (teamCard) teamCard.style.display = 'none';
 
+    // Hide Import/Export section for viewers
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    if (exportBtn) exportBtn.closest('.settings-card')?.remove();
+
     // Update page title/description
     const sectionDesc = document.querySelector('.section-description');
     if (sectionDesc) {
@@ -378,10 +383,27 @@ class SettingsPage {
   // ================================
 
   async loadAccountSettings() {
-    // Get data from already-loaded AdminShared (populated by checkAuth)
+    // Get user data from already-loaded AdminShared (populated by checkAuth)
     let email = AdminShared.currentUser?.email;
     let name = AdminShared.currentUser?.name;
     let companyName = AdminShared.currentOrganization?.name;
+
+    // Always fetch fresh organization data from database to ensure we have the latest name
+    // (organization name can be updated by admins and other users need to see it)
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      try {
+        const { data: org } = await RevGuideDB.getOrganizationWithConnection();
+        if (org?.name) {
+          companyName = org.name;
+          // Update the cached organization so sidebar also shows correct name
+          if (AdminShared.currentOrganization) {
+            AdminShared.currentOrganization.name = companyName;
+          }
+        }
+      } catch (e) {
+        console.error('[Settings] Failed to fetch fresh organization data:', e);
+      }
+    }
 
     // If no email from profile, get from Supabase auth directly (fallback)
     if (!email && typeof RevGuideAuth !== 'undefined') {

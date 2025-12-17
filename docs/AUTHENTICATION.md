@@ -209,7 +209,7 @@ The background script exposes these message actions:
 
 | State | Sidepanel Plays Tab | Settings Tab | Admin Panel Button |
 |-------|---------------------|--------------|-------------------|
-| **Logged Out** | "Sign In Required" | HubSpot API token field visible | Opens local admin |
+| **Logged Out** | "Sign In Required" | Display options only | Opens local admin |
 | **Logged In** | Organization content | Email + Sign Out button | Opens app.revguide.io |
 
 ### Security Considerations
@@ -241,21 +241,20 @@ The background script exposes these message actions:
 
 ### How It Works
 
-RevGuide uses **HubSpot Private App Tokens** for CRM API access:
+RevGuide uses **HubSpot OAuth** via Nango for secure CRM API access:
 
 ```
 ┌──────────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Chrome Extension│────▶│  Browser     │────▶│  HubSpot     │
-│  (Admin Panel)   │     │  Storage     │     │    API       │
+│  Chrome Extension│────▶│    Nango     │────▶│  HubSpot     │
+│  (Web App)       │     │   (OAuth)    │     │    API       │
 └──────────────────┘     └──────────────┘     └──────────────┘
 ```
 
 **Setup Flow:**
-1. User creates a Private App in HubSpot Settings → Integrations → Private Apps
-2. User configures required scopes (see below)
-3. User copies the access token
-4. User pastes token into RevGuide Settings tab
-5. Token stored in `chrome.storage.local`
+1. User clicks "Connect HubSpot" in Settings
+2. OAuth popup opens for HubSpot authorization
+3. Nango handles token exchange and storage
+4. Connection is established and stored server-side
 
 **Required Scopes:**
 
@@ -266,18 +265,6 @@ RevGuide uses **HubSpot Private App Tokens** for CRM API access:
 | `crm.objects.deals.read` | Read deal data for rule evaluation |
 | `crm.objects.tickets.read` | Read ticket data for rule evaluation |
 | `crm.schemas.*.read` | Read property definitions for dropdowns |
-| `crm.objects.*.write` | (Optional) Enable editable fields |
-
-### Limitations of Current CRM Auth Approach
-
-| Issue | Impact |
-|-------|--------|
-| **High setup friction** | Users must manually create app, configure scopes, copy token |
-| **Token in browser** | If browser compromised, token exposed |
-| **Not user-scoped** | Token has portal-wide access, not tied to user permissions |
-| **Manual rotation** | Tokens expire; users must manually replace |
-| **No audit trail** | Cannot track which user performed actions |
-| **Single CRM** | Only supports HubSpot |
 
 ---
 

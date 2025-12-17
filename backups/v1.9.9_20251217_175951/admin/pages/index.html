@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RevGuide</title>
+  <script src="../supabase.js"></script>
+  <script>
+    // Check auth and redirect appropriately
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Wait a bit for Supabase to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        const { data: { session } } = await RevGuideAuth.getSession();
+        if (session) {
+          window.location.href = '/home';
+        } else {
+          window.location.href = '/login';
+        }
+      } catch (e) {
+        // If Supabase fails, go to login
+        window.location.href = '/login';
+      }
+    });
+  </script>
+</head>
+<body>
+  <p>Loading...</p>
+</body>
+</html>

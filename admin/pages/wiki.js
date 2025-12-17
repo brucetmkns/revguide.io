@@ -163,6 +163,9 @@ class WikiPage {
     document.getElementById('wikiExpandAllBtn').addEventListener('click', () => this.expandAllNodes());
     document.getElementById('wikiCollapseAllBtn').addEventListener('click', () => this.collapseAllNodes());
 
+    // Refresh button
+    document.getElementById('refreshWikiBtn').addEventListener('click', () => this.refreshData());
+
     // Tab clicks
     document.getElementById('wikiCardTabs').addEventListener('click', (e) => {
       const tab = e.target.closest('.wiki-tab');
@@ -239,6 +242,30 @@ class WikiPage {
   }
 
   // ============ RENDERING ============
+
+  async refreshData() {
+    const btn = document.getElementById('refreshWikiBtn');
+    const icon = btn.querySelector('.icon');
+
+    // Add spinning animation
+    icon.style.animation = 'spin 1s linear infinite';
+    btn.disabled = true;
+
+    try {
+      // Clear cache and reload
+      AdminShared.clearStorageCache();
+      const data = await AdminShared.loadStorageData(true);
+      this.wikiEntries = data.wikiEntries || [];
+      this.render();
+      AdminShared.showToast('Wiki refreshed', 'success');
+    } catch (e) {
+      console.error('Failed to refresh:', e);
+      AdminShared.showToast('Failed to refresh', 'error');
+    } finally {
+      icon.style.animation = '';
+      btn.disabled = false;
+    }
+  }
 
   render() {
     this.renderNavTree();

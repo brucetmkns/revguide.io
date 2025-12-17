@@ -299,7 +299,7 @@ Extension fetches content from Supabase using stored token
 
 | Auth State | Sidepanel Plays Tab | Settings Tab | Admin Panel Button |
 |------------|---------------------|--------------|-------------------|
-| Logged Out | "Sign In Required" | Shows API token field | Opens local admin |
+| Logged Out | "Sign In Required" | Shows display options | Opens local admin |
 | Logged In | Organization content | Shows email + Sign Out | Opens app.revguide.io |
 
 ## Key Files Reference

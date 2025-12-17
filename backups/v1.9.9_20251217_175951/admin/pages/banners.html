@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banners - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/banners.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/banners" class="nav-item active" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Banners List Section -->
+      <section class="content-section active" id="rulesSection">
+        <div class="section-header">
+          <div>
+            <h2>Banners</h2>
+            <p class="section-description">Create banners to display contextual messages on HubSpot records</p>
+          </div>
+          <button class="btn btn-primary" id="addRuleBtn">
+            <span class="icon icon-plus"></span> Add Banner
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="rulesSearch" placeholder="Search banners...">
+          <select class="filter-select" id="rulesFilter">
+            <option value="all">All Types</option>
+            <option value="info">Info</option>
+            <option value="success">Success</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+            <option value="embed">Embed</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="rulesTable">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Object</th>
+                <th>Conditions</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th width="100">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rulesTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <div class="empty-state" id="rulesEmptyState" style="display: none;">
+            <div class="empty-icon"><span class="icon icon-clipboard-list icon--3xl"></span></div>
+            <h3>No banners yet</h3>
+            <p>Create your first banner to get started</p>
+            <button class="btn btn-primary" id="createRuleEmptyBtn">Create Banner</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner Editor Section -->
+      <section class="content-section" id="ruleEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToRules" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Banners
+            </a>
+            <h2 id="ruleEditorTitle">Add Banner</h2>
+          </div>
+        </div>
+
+        <div class="banner-editor-layout">
+          <div class="banner-editor-card">
+            <!-- Tabs -->
+            <nav class="banner-card-tabs" role="tablist" id="bannerCardTabs">
+              <button role="tab" aria-selected="true" data-tab="content" class="banner-tab active">Content</button>
+              <button role="tab" aria-selected="false" data-tab="rules" class="banner-tab">Rules</button>
+              <button role="tab" aria-selected="false" data-tab="usage" class="banner-tab">Usage</button>
+            </nav>
+
+            <!-- Tab Panels -->
+            <div class="banner-card-body">
+              <!-- Content Tab -->
+              <section id="banner-tab-content" role="tabpanel" class="banner-tab-panel">
+                <div class="banner-content-form">
+                  <!-- Basic Information -->
+                  <div class="form-row">
+                    <div class="form-group flex-2">
+                      <label>Banner Name <span class="required">*</span></label>
+                      <input type="text" id="ruleName" placeholder="e.g., High Value Deal Alert">
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>Priority</label>
+                      <input type="number" id="rulePriority" value="10" min="0" max="100">
+                      <span class="form-hint">Higher priority shows first</span>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group flex-1">
+                      <label>Banner Title</label>
+                      <input type="text" id="ruleTitle" placeholder="e.g., High Value Opportunity">
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>Banner Type</label>
+                      <select id="ruleType">
+                        <option value="info">Info (Blue)</option>
+                        <option value="success">Success (Green)</option>
+                        <option value="warning">Warning (Orange)</option>
+                        <option value="error">Error (Red)</option>
+                        <option value="embed">Embed (Media)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group" id="embedUrlGroup" style="display: none;">
+                    <label>Embed URL <span class="required">*</span></label>
+                    <input type="url" id="ruleEmbedUrl" placeholder="https://docs.google.com/presentation/d/... or video/embed URL">
+                    <span class="form-hint">Supports Google Slides, YouTube, Loom, Vimeo, and SharePoint/OneDrive. URLs are converted to embed format automatically.</span>
+                    <div class="form-note">
+                      <strong>Note:</strong> Content must allow embedding to work:
+                      <ul>
+                        <li><strong>Google Slides:</strong> Share > "Anyone with the link"</li>
+                        <li><strong>YouTube:</strong> Video must not have embedding disabled</li>
+                        <li><strong>Loom:</strong> Share settings must allow embedding</li>
+                        <li><strong>Other sites:</strong> Must allow iframe embedding (many sites block this for security)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Related Play</label>
+                    <div class="play-select" id="ruleRelatedPlay">
+                      <button type="button" class="play-select-trigger" data-value="">
+                        <span class="select-label">None</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      <div class="play-select-dropdown">
+                        <div class="play-select-search">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                          </svg>
+                          <input type="text" placeholder="Search plays..." class="play-select-input">
+                        </div>
+                        <div class="play-select-options">
+                          <!-- Populated by JS -->
+                        </div>
+                      </div>
+                    </div>
+                    <span class="form-hint">Link a play to this banner. When triggered by rules, viewers can open the play in the sidepanel.</span>
+                  </div>
+
+                  <div class="form-group" id="messageGroup">
+                    <label>Message</label>
+                    <div class="rich-text-editor">
+                      <div class="rich-text-toolbar" id="ruleMessageToolbar">
+                        <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+                          <span class="icon icon-bold"></span>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+                          <span class="icon icon-italic"></span>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+                          <span class="icon icon-underline"></span>
+                        </button>
+                        <span class="toolbar-divider"></span>
+                        <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+                          <span class="icon icon-list"></span>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+                          <span class="icon icon-list-ordered"></span>
+                        </button>
+                        <span class="toolbar-divider"></span>
+                        <button type="button" class="toolbar-btn" data-command="createLink" title="Insert Link">
+                          <span class="icon icon-link"></span>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-command="unlink" title="Remove Link">
+                          <span class="icon icon-unlink"></span>
+                        </button>
+                      </div>
+                      <div id="ruleMessage" class="rich-text-content" contenteditable="true" data-placeholder="Message to display in the banner"></div>
+                    </div>
+                  </div>
+
+                  <!-- Preview -->
+                  <div class="banner-content-preview">
+                    <h4>Preview</h4>
+                    <div class="banner-preview" id="rulePreview">
+                      <div class="preview-banner info">
+                        <strong>Banner Title</strong>
+                        <p>Your message will appear here</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Rules Tab -->
+              <section id="banner-tab-rules" role="tabpanel" class="banner-tab-panel" hidden>
+                <div class="banner-rules-form">
+                  <div class="form-group">
+                    <label>Object Type <span class="required">*</span></label>
+                    <select id="ruleObjectType">
+                      <option value="">Select object type...</option>
+                      <option value="contacts">Contacts</option>
+                      <option value="companies">Companies</option>
+                      <option value="deals">Deals</option>
+                      <option value="tickets">Tickets</option>
+                    </select>
+                    <span class="form-hint">Select an object type to load available properties</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="ruleDisplayOnAll">
+                      <span>Display on all records</span>
+                    </label>
+                    <span class="form-hint">When enabled, this banner will show on all records of this object type</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Show on Tab Position</label>
+                    <input type="number" id="ruleTabVisibility" min="1" max="10" placeholder="Leave empty for all tabs">
+                    <span class="form-hint">Enter the tab number (1, 2, 3, etc.) or leave empty to show on all tabs</span>
+                  </div>
+
+                  <div id="ruleConditionsWrapper">
+                    <div class="form-group">
+                      <div class="label-row">
+                        <label>Conditions</label>
+                        <span id="ruleConditionStatus" class="status-text"></span>
+                      </div>
+                      <span class="form-hint">Define when this banner should appear based on record properties</span>
+                      <div class="logic-toggle" id="ruleLogicToggle">
+                        <span class="logic-label">Match:</span>
+                        <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                        <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                      </div>
+                      <div class="conditions-builder" id="ruleConditions">
+                        <!-- Conditions added by JS -->
+                      </div>
+                      <button class="btn btn-secondary btn-sm" id="addRuleConditionBtn" disabled>
+                        <span class="icon icon-plus icon--sm"></span> Add Condition
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Usage Tab -->
+              <section id="banner-tab-usage" role="tabpanel" class="banner-tab-panel" hidden>
+                <div class="banner-usage-coming-soon">
+                  <span class="icon icon-chart icon--2xl"></span>
+                  <h3>Usage Analytics Coming Soon</h3>
+                  <p>Track how often this banner is displayed to your team</p>
+                </div>
+              </section>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="banner-card-footer">
+              <button class="btn btn-secondary" id="cancelRuleBtn">Cancel</button>
+              <button class="btn btn-primary" id="saveRuleBtn">Save Banner</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/supabase.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/banners.js"></script>
+</body>
+</html>

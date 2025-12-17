@@ -106,6 +106,9 @@ class BannersPage {
     document.getElementById('rulesSearch').addEventListener('input', () => this.renderRules());
     document.getElementById('rulesFilter').addEventListener('change', () => this.renderRules());
 
+    // Refresh button
+    document.getElementById('refreshBannersBtn').addEventListener('click', () => this.refreshData());
+
     // Editor navigation
     document.getElementById('backToRules').addEventListener('click', (e) => {
       e.preventDefault();
@@ -179,6 +182,30 @@ class BannersPage {
     document.querySelectorAll('.banner-tab-panel').forEach(panel => {
       panel.hidden = panel.id !== `banner-tab-${tabName}`;
     });
+  }
+
+  async refreshData() {
+    const btn = document.getElementById('refreshBannersBtn');
+    const icon = btn.querySelector('.icon');
+
+    // Add spinning animation
+    icon.style.animation = 'spin 1s linear infinite';
+    btn.disabled = true;
+
+    try {
+      // Clear cache and reload
+      AdminShared.clearStorageCache();
+      const data = await AdminShared.loadStorageData(true);
+      this.rules = data.rules || [];
+      this.renderRules();
+      AdminShared.showToast('Banners refreshed', 'success');
+    } catch (e) {
+      console.error('Failed to refresh:', e);
+      AdminShared.showToast('Failed to refresh', 'error');
+    } finally {
+      icon.style.animation = '';
+      btn.disabled = false;
+    }
   }
 
   renderRules() {

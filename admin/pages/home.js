@@ -204,14 +204,7 @@ class HomePage {
     }
 
     // In extension context, check Chrome storage
-    chrome.storage.local.get(['apiToken', 'invitedUsers'], (storageData) => {
-      if (storageData.apiToken) {
-        completed++;
-        document.getElementById('stepApi').classList.add('completed');
-        document.getElementById('stepApiStatus').textContent = 'Completed';
-        document.getElementById('stepApiStatus').classList.add('completed');
-      }
-
+    chrome.storage.local.get(['invitedUsers'], (storageData) => {
       // Check wiki entries
       if (this.data.wikiEntries?.length > 0) {
         completed++;
@@ -261,7 +254,7 @@ class HomePage {
 
     // Navigate to Settings > Team Members to invite users
     document.getElementById('stepInstallBtn').addEventListener('click', () => {
-      window.location.href = 'settings.html#team-members';
+      window.location.href = '/settings#team-members';
     });
 
     // Navigate to settings (or trigger HubSpot connect in web context)
@@ -269,33 +262,33 @@ class HomePage {
       if (!AdminShared.isExtensionContext) {
         this.connectHubSpot();
       } else {
-        window.location.href = 'settings.html';
+        window.location.href = '/settings';
       }
     });
 
     // Navigate to wiki with import
     document.getElementById('stepWikiImportBtn').addEventListener('click', () => {
-      window.location.href = 'wiki.html?action=import';
+      window.location.href = '/wiki?action=import';
     });
 
     // Navigate to wiki with add
     document.getElementById('stepWikiAddBtn').addEventListener('click', () => {
-      window.location.href = 'wiki.html?action=add';
+      window.location.href = '/wiki?action=add';
     });
 
     // Navigate to banners
     document.getElementById('stepRulesBtn').addEventListener('click', () => {
-      window.location.href = 'banners.html?action=add';
+      window.location.href = '/banners?action=add';
     });
 
     // Navigate to plays
     document.getElementById('stepCardsBtn').addEventListener('click', () => {
-      window.location.href = 'plays.html?action=add';
+      window.location.href = '/plays?action=add';
     });
 
     // Navigate to team members
     document.getElementById('stepTeamBtn').addEventListener('click', () => {
-      window.location.href = 'settings.html#team-members';
+      window.location.href = '/settings#team-members';
     });
   }
 

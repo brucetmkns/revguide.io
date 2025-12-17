@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tooltip Design Variations - RevGuide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Lexend Deca", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f0f4f7;
+      min-height: 100vh;
+      padding: 40px;
+    }
+
+    .page-header {
+      max-width: 1400px;
+      margin: 0 auto 40px;
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .page-header p {
+      font-size: 15px;
+      color: #64748b;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .variation-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .variation-card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #33475b;
+      margin-bottom: 4px;
+    }
+
+    .variation-card .subtitle {
+      font-size: 12px;
+      color: #7c98b6;
+      margin-bottom: 20px;
+    }
+
+    .tooltip-container {
+      position: relative;
+      min-height: 320px;
+      background: #f8fafc;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Dark container for dark theme variation */
+    .tooltip-container.dark-bg {
+      background: #374151;
+    }
+
+    /* Category colors */
+    .cat-general { --category-color: #00a4bd; --category-bg: rgba(0, 164, 189, 0.1); }
+    .cat-sales { --category-color: #00bda5; --category-bg: rgba(0, 189, 165, 0.1); }
+    .cat-marketing { --category-color: #ff7a59; --category-bg: rgba(255, 122, 89, 0.1); }
+    .cat-product { --category-color: #945dd6; --category-bg: rgba(148, 93, 214, 0.1); }
+    .cat-process { --category-color: #f37272; --category-bg: rgba(243, 114, 114, 0.1); }
+    .cat-field { --category-color: #0091ae; --category-bg: rgba(0, 145, 174, 0.1); }
+
+    /* ============================================
+       CURRENT DESIGN
+       ============================================ */
+    .tooltip-current {
+      position: relative;
+      width: 320px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(45, 62, 80, 0.18), 0 0 0 1px rgba(45, 62, 80, 0.08);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-current .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(45, 62, 80, 0.08);
+      background: linear-gradient(135deg, rgba(0, 145, 174, 0.06) 0%, transparent 100%);
+    }
+
+    .tooltip-current .term {
+      flex: 1;
+      font-weight: 500;
+      font-size: 15px;
+      color: #33475b;
+    }
+
+    .tooltip-current .category {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--category-bg);
+      color: var(--category-color);
+    }
+
+    .tooltip-current .close {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      color: #7c98b6;
+    }
+
+    .tooltip-current .content {
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #33475b;
+    }
+
+    .tooltip-current .footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 16px;
+      background: rgba(45, 62, 80, 0.03);
+      border-top: 1px solid rgba(45, 62, 80, 0.08);
+      color: #0091ae;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ============================================
+       VARIATION A: Minimal Card
+       ============================================ */
+    .tooltip-a {
+      position: relative;
+      width: 300px;
+      background: #ffffff;
+      border-radius: 6px;
+      border-left: 3px solid var(--category-color, #0091ae);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-a .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid #eaf0f6;
+    }
+
+    .tooltip-a .term {
+      font-weight: 600;
+      font-size: 14px;
+      color: #33475b;
+    }
+
+    .tooltip-a .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--category-color, #0091ae);
+    }
+
+    .tooltip-a .content {
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #516f90;
+    }
+
+    /* ============================================
+       VARIATION B: Floating Bubble
+       ============================================ */
+    .tooltip-b {
+      position: relative;
+      width: 280px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 24px rgba(0, 0, 0, 0.1);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-b .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    }
+
+    .tooltip-b .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--category-color, #0091ae);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+    }
+
+    .tooltip-b .term {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+      color: #1a1a2e;
+    }
+
+    .tooltip-b .close {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+
+    .tooltip-b .content {
+      padding: 0 16px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #64748b;
+    }
+
+    .tooltip-b .footer {
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-top: 1px solid #eef2f6;
+      display: flex;
+      gap: 8px;
+    }
+
+    .tooltip-b .footer-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .tooltip-b .footer-btn.secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .tooltip-b .footer-btn.primary {
+      background: var(--category-color, #0091ae);
+      color: white;
+    }
+
+    /* ============================================
+       VARIATION C: Dark Mode / Pro
+       ============================================ */
+    .tooltip-c {
+      position: relative;
+      width: 320px;
+      background: #1e2530;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-c .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tooltip-c .term {
+      font-weight: 500;
+      font-size: 15px;
+      color: #ffffff;
+    }
+
+    .tooltip-c .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--category-color, #0091ae);
+      color: white;
+    }
+
+    .tooltip-c .close {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #64748b;
+    }
+
+    .tooltip-c .content {
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #a1adc0;
+    }
+
+    .tooltip-c .footer {
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tooltip-c .footer a {
+      font-size: 12px;
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .tooltip-c .footer .edit {
+      color: #64748b;
+    }
+
+    /* ============================================
+       VARIATION D: Compact Inline
+       ============================================ */
+    .tooltip-d {
+      position: relative;
+      width: 260px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-d .inner {
+      padding: 12px 14px;
+    }
+
+    .tooltip-d .top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tooltip-d .term {
+      font-weight: 600;
+      font-size: 13px;
+      color: #111827;
+    }
+
+    .tooltip-d .category {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--category-bg, rgba(0, 145, 174, 0.1));
+      color: var(--category-color, #0091ae);
+    }
+
+    .tooltip-d .content {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #6b7280;
+    }
+
+    .tooltip-d .link {
+      display: block;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f3f4f6;
+      font-size: 11px;
+      font-weight: 500;
+      color: #0091ae;
+      text-decoration: none;
+    }
+
+    /* ============================================
+       VARIATION E: HubSpot Native
+       ============================================ */
+    .tooltip-e {
+      position: relative;
+      width: 320px;
+      background: #ffffff;
+      border-radius: 3px;
+      border: 1px solid #cbd6e2;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-e .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: #f5f8fa;
+      border-bottom: 1px solid #cbd6e2;
+    }
+
+    .tooltip-e .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tooltip-e .term {
+      font-weight: 600;
+      font-size: 14px;
+      color: #33475b;
+    }
+
+    .tooltip-e .category {
+      font-size: 11px;
+      font-weight: 500;
+      color: #7c98b6;
+    }
+
+    .tooltip-e .close {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #7c98b6;
+    }
+
+    .tooltip-e .content {
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #33475b;
+    }
+
+    .tooltip-e .footer {
+      padding: 12px 16px;
+      background: #f5f8fa;
+      border-top: 1px solid #cbd6e2;
+    }
+
+    .tooltip-e .footer a {
+      color: #0091ae;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    /* ============================================
+       VARIATION F: Modern Elevated
+       ============================================ */
+    .tooltip-f {
+      position: relative;
+      width: 340px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 2px 4px rgba(0, 0, 0, 0.03),
+        0 12px 24px rgba(0, 0, 0, 0.08),
+        0 24px 48px rgba(0, 0, 0, 0.06);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-f .accent-bar {
+      height: 3px;
+      background: var(--category-color, #0091ae);
+    }
+
+    .tooltip-f .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 16px 18px 12px;
+    }
+
+    .tooltip-f .header-left {
+      flex: 1;
+    }
+
+    .tooltip-f .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--category-color, #0091ae);
+      margin-bottom: 4px;
+    }
+
+    .tooltip-f .term {
+      font-weight: 600;
+      font-size: 16px;
+      color: #111827;
+      line-height: 1.3;
+    }
+
+    .tooltip-f .close {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      color: #9ca3af;
+      margin: -4px -6px 0 0;
+    }
+
+    .tooltip-f .content {
+      padding: 0 18px 18px;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #4b5563;
+    }
+
+    .tooltip-f .footer {
+      padding: 14px 18px;
+      background: #f9fafb;
+      border-top: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tooltip-f .edit-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tooltip-f .learn-more {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Category selector */
+    .category-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+      flex-wrap: wrap;
+    }
+
+    .category-selector button {
+      padding: 8px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .category-selector button:hover {
+      border-color: #cbd5e1;
+    }
+
+    .category-selector button.active {
+      background: #0091ae;
+      border-color: #0091ae;
+      color: white;
+    }
+
+    .category-selector button[data-cat="general"] { color: #00a4bd; }
+    .category-selector button[data-cat="sales"] { color: #00bda5; }
+    .category-selector button[data-cat="marketing"] { color: #ff7a59; }
+    .category-selector button[data-cat="product"] { color: #945dd6; }
+    .category-selector button[data-cat="process"] { color: #f37272; }
+    .category-selector button[data-cat="field"] { color: #0091ae; }
+    .category-selector button.active { color: white; }
+
+    /* SVG icons */
+    .icon-x {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ============================================
+       VARIATION G: Friendly + Smart Footer
+       B's bubble + F's split footer
+       ============================================ */
+    .tooltip-g {
+      position: relative;
+      width: 300px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 24px rgba(0, 0, 0, 0.1);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-g .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .tooltip-g .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--category-color, #0091ae);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .tooltip-g .term {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+      color: #1a1a2e;
+    }
+
+    .tooltip-g .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--category-bg);
+      color: var(--category-color);
+    }
+
+    .tooltip-g .content {
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #64748b;
+    }
+
+    .tooltip-g .footer {
+      padding: 12px 16px;
+      background: #f9fafb;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tooltip-g .edit-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tooltip-g .edit-link:hover { color: #374151; }
+
+    .tooltip-g .learn-more {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ============================================
+       VARIATION H: Compact Bubble
+       D's compact + B's rounded
+       ============================================ */
+    .tooltip-h {
+      position: relative;
+      width: 270px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-h .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #fafbfc;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .tooltip-h .icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: var(--category-color, #0091ae);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .tooltip-h .term {
+      flex: 1;
+      font-weight: 600;
+      font-size: 13px;
+      color: #1a1a2e;
+    }
+
+    .tooltip-h .category {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: var(--category-bg);
+      color: var(--category-color);
+    }
+
+    .tooltip-h .content {
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #64748b;
+    }
+
+    .tooltip-h .footer {
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tooltip-h .edit-link {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9ca3af;
+      text-decoration: none;
+    }
+
+    .tooltip-h .edit-link:hover { color: #6b7280; }
+
+    .tooltip-h .learn-more {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+    }
+
+    /* ============================================
+       VARIATION I: Icon Tag
+       D's inline + B's icon
+       ============================================ */
+    .tooltip-i {
+      position: relative;
+      width: 260px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-i .inner {
+      padding: 14px;
+    }
+
+    .tooltip-i .top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tooltip-i .icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--category-color, #0091ae);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .tooltip-i .term {
+      flex: 1;
+      font-weight: 600;
+      font-size: 13px;
+      color: #111827;
+    }
+
+    .tooltip-i .category {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--category-bg);
+      color: var(--category-color);
+    }
+
+    .tooltip-i .content {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .tooltip-i .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .tooltip-i .edit-link {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9ca3af;
+      text-decoration: none;
+    }
+
+    .tooltip-i .learn-more {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+    }
+
+    /* ============================================
+       VARIATION J: Pill Header
+       ============================================ */
+    .tooltip-j {
+      position: relative;
+      width: 300px;
+      font-family: "Lexend Deca", sans-serif;
+    }
+
+    .tooltip-j .pill-header {
+      display: inline-flex;
+      padding: 6px 12px;
+      background: var(--category-color, #0091ae);
+      border-radius: 20px 20px 0 0;
+      margin-left: 16px;
+    }
+
+    .tooltip-j .pill-header .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: white;
+    }
+
+    .tooltip-j .body {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 24px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      margin-top: -1px;
+    }
+
+    .tooltip-j .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 10px;
+    }
+
+    .tooltip-j .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--category-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--category-color);
+    }
+
+    .tooltip-j .term {
+      font-weight: 600;
+      font-size: 15px;
+      color: #1a1a2e;
+    }
+
+    .tooltip-j .content {
+      padding: 0 16px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #64748b;
+    }
+
+    .tooltip-j .footer {
+      padding: 12px 16px;
+      background: #f9fafb;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tooltip-j .edit-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tooltip-j .learn-more {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ============================================
+       VARIATION K: Sleek Minimal
+       D compact + F shadow + B rounded
+       ============================================ */
+    .tooltip-k {
+      position: relative;
+      width: 280px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 2px 4px rgba(0, 0, 0, 0.03),
+        0 12px 24px rgba(0, 0, 0, 0.08);
+      font-family: "Lexend Deca", sans-serif;
+      overflow: hidden;
+    }
+
+    .tooltip-k .accent-bar {
+      height: 3px;
+      background: var(--category-color, #0091ae);
+    }
+
+    .tooltip-k .inner {
+      padding: 14px;
+    }
+
+    .tooltip-k .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .tooltip-k .term {
+      font-weight: 600;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    .tooltip-k .category {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--category-bg);
+      color: var(--category-color);
+    }
+
+    .tooltip-k .content {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    .tooltip-k .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .tooltip-k .edit-link {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9ca3af;
+      text-decoration: none;
+    }
+
+    .tooltip-k .edit-link:hover { color: #6b7280; }
+
+    .tooltip-k .learn-more {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+    }
+
+    /* ============================================
+       VARIATION L: Card Stack
+       Layered effect with icon
+       ============================================ */
+    .tooltip-l {
+      position: relative;
+      width: 320px;
+      font-family: "Lexend Deca", sans-serif;
+    }
+
+    .tooltip-l .card-bg {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      right: -6px;
+      bottom: -6px;
+      background: var(--category-color, #0091ae);
+      border-radius: 14px;
+      opacity: 0.15;
+    }
+
+    .tooltip-l .card-main {
+      position: relative;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .tooltip-l .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .tooltip-l .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--category-color, #0091ae);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .tooltip-l .header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tooltip-l .category {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--category-color, #0091ae);
+    }
+
+    .tooltip-l .term {
+      font-weight: 600;
+      font-size: 15px;
+      color: #111827;
+    }
+
+    .tooltip-l .content {
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #64748b;
+    }
+
+    .tooltip-l .footer {
+      padding: 12px 16px;
+      background: #f9fafb;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tooltip-l .edit-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tooltip-l .edit-link:hover { color: #374151; }
+
+    .tooltip-l .learn-more {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--category-color, #0091ae);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>Wiki Tooltip Design Variations</h1>
+    <p>Compare different tooltip styles. Click a category below to preview with that color scheme.</p>
+  </div>
+
+  <div class="category-selector">
+    <button data-cat="field" class="active">Field (Default)</button>
+    <button data-cat="general">General</button>
+    <button data-cat="sales">Sales</button>
+    <button data-cat="marketing">Marketing</button>
+    <button data-cat="product">Product</button>
+    <button data-cat="process">Process</button>
+  </div>
+
+  <div class="grid">
+    <!-- Current Design -->
+    <div class="variation-card">
+      <h2>Current Design</h2>
+      <p class="subtitle">Glassmorphism + category gradient header</p>
+      <div class="tooltip-container">
+        <div class="tooltip-current cat-field">
+          <div class="header">
+            <span class="term">Deal Stage</span>
+            <span class="category">Field</span>
+            <button class="close">
+              <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            Learn more
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation A -->
+    <div class="variation-card">
+      <h2>Variation A: Minimal Card</h2>
+      <p class="subtitle">Clean, flat design with left border accent</p>
+      <div class="tooltip-container">
+        <div class="tooltip-a cat-field">
+          <div class="header">
+            <span class="term">Deal Stage</span>
+            <span class="category">Field</span>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation B -->
+    <div class="variation-card">
+      <h2>Variation B: Floating Bubble</h2>
+      <p class="subtitle">Friendly, rounded with icon and action buttons</p>
+      <div class="tooltip-container">
+        <div class="tooltip-b cat-field">
+          <div class="header">
+            <div class="icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <span class="term">Deal Stage</span>
+            <button class="close">
+              <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <button class="footer-btn secondary">Edit</button>
+            <button class="footer-btn primary">Learn More</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation C -->
+    <div class="variation-card">
+      <h2>Variation C: Dark Mode / Pro</h2>
+      <p class="subtitle">Dark theme with high contrast</p>
+      <div class="tooltip-container dark-bg">
+        <div class="tooltip-c cat-field">
+          <div class="header">
+            <span class="term">Deal Stage</span>
+            <span class="category">Field</span>
+            <button class="close">
+              <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <a href="#" class="edit">Edit</a>
+            <a href="#">Learn more &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation D -->
+    <div class="variation-card">
+      <h2>Variation D: Compact Inline</h2>
+      <p class="subtitle">Smaller footprint, tag-style category</p>
+      <div class="tooltip-container">
+        <div class="tooltip-d cat-field">
+          <div class="inner">
+            <div class="top-row">
+              <span class="term">Deal Stage</span>
+              <span class="category">Field</span>
+            </div>
+            <div class="content">
+              <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+            </div>
+            <a href="#" class="link">Learn more &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation E -->
+    <div class="variation-card">
+      <h2>Variation E: HubSpot Native</h2>
+      <p class="subtitle">Matches HubSpot's popover style exactly</p>
+      <div class="tooltip-container">
+        <div class="tooltip-e cat-field">
+          <div class="header">
+            <div class="header-left">
+              <span class="term">Deal Stage</span>
+              <span class="category">Field</span>
+            </div>
+            <button class="close">
+              <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <a href="#">Learn more</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation F -->
+    <div class="variation-card">
+      <h2>Variation F: Modern Elevated</h2>
+      <p class="subtitle">Premium feel with accent bar and large shadow</p>
+      <div class="tooltip-container">
+        <div class="tooltip-f cat-field">
+          <div class="accent-bar"></div>
+          <div class="header">
+            <div class="header-left">
+              <div class="category">Field</div>
+              <div class="term">Deal Stage</div>
+            </div>
+            <button class="close">
+              <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <a href="#" class="edit-link">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </a>
+            <a href="#" class="learn-more">
+              Learn more
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW VARIATIONS: Blending B, D, F -->
+
+    <!-- Variation G: Bubble + F Footer -->
+    <div class="variation-card">
+      <h2>Variation G: Friendly + Smart Footer</h2>
+      <p class="subtitle">B's rounded bubble with F's split footer links</p>
+      <div class="tooltip-container">
+        <div class="tooltip-g cat-field">
+          <div class="header">
+            <div class="icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <span class="term">Deal Stage</span>
+            <span class="category">Field</span>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <a href="#" class="edit-link">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </a>
+            <a href="#" class="learn-more">
+              Learn more
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation H: Compact Bubble -->
+    <div class="variation-card">
+      <h2>Variation H: Compact Bubble</h2>
+      <p class="subtitle">D's compact size + B's friendly rounded style</p>
+      <div class="tooltip-container">
+        <div class="tooltip-h cat-field">
+          <div class="header">
+            <div class="icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <span class="term">Deal Stage</span>
+            <span class="category">Field</span>
+          </div>
+          <div class="content">
+            <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+          </div>
+          <div class="footer">
+            <a href="#" class="edit-link">Edit</a>
+            <a href="#" class="learn-more">Learn more &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation I: Icon Tag -->
+    <div class="variation-card">
+      <h2>Variation I: Icon Tag</h2>
+      <p class="subtitle">D's inline tag + B's icon, minimal chrome</p>
+      <div class="tooltip-container">
+        <div class="tooltip-i cat-field">
+          <div class="inner">
+            <div class="top-row">
+              <div class="icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <span class="term">Deal Stage</span>
+              <span class="category">Field</span>
+            </div>
+            <div class="content">
+              <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+            </div>
+            <div class="footer">
+              <a href="#" class="edit-link">Edit</a>
+              <a href="#" class="learn-more">Learn more &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation J: Pill Header -->
+    <div class="variation-card">
+      <h2>Variation J: Pill Header</h2>
+      <p class="subtitle">B's bubble style + accent pill header bar</p>
+      <div class="tooltip-container">
+        <div class="tooltip-j cat-field">
+          <div class="pill-header">
+            <span class="category">Field</span>
+          </div>
+          <div class="body">
+            <div class="header">
+              <div class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <span class="term">Deal Stage</span>
+            </div>
+            <div class="content">
+              <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+            </div>
+            <div class="footer">
+              <a href="#" class="edit-link">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <a href="#" class="learn-more">
+                Learn more
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation K: Sleek Minimal -->
+    <div class="variation-card">
+      <h2>Variation K: Sleek Minimal</h2>
+      <p class="subtitle">D's compactness + F's elevated shadow + B's rounded</p>
+      <div class="tooltip-container">
+        <div class="tooltip-k cat-field">
+          <div class="accent-bar"></div>
+          <div class="inner">
+            <div class="header">
+              <span class="term">Deal Stage</span>
+              <span class="category">Field</span>
+            </div>
+            <div class="content">
+              <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+            </div>
+            <div class="footer">
+              <a href="#" class="edit-link">Edit</a>
+              <a href="#" class="learn-more">Learn more &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variation L: Card Stack -->
+    <div class="variation-card">
+      <h2>Variation L: Card Stack</h2>
+      <p class="subtitle">B's icon + layered card effect + F's footer</p>
+      <div class="tooltip-container">
+        <div class="tooltip-l cat-field">
+          <div class="card-bg"></div>
+          <div class="card-main">
+            <div class="header">
+              <div class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div class="header-text">
+                <span class="category">Field</span>
+                <span class="term">Deal Stage</span>
+              </div>
+            </div>
+            <div class="content">
+              <p>The current stage of a deal in your sales pipeline. Used to track progress from initial contact to closed won or lost.</p>
+            </div>
+            <div class="footer">
+              <a href="#" class="edit-link">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <a href="#" class="learn-more">
+                Learn more
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Category color switcher
+    const categories = {
+      general: { color: '#00a4bd', bg: 'rgba(0, 164, 189, 0.1)' },
+      sales: { color: '#00bda5', bg: 'rgba(0, 189, 165, 0.1)' },
+      marketing: { color: '#ff7a59', bg: 'rgba(255, 122, 89, 0.1)' },
+      product: { color: '#945dd6', bg: 'rgba(148, 93, 214, 0.1)' },
+      process: { color: '#f37272', bg: 'rgba(243, 114, 114, 0.1)' },
+      field: { color: '#0091ae', bg: 'rgba(0, 145, 174, 0.1)' }
+    };
+
+    const categoryLabels = {
+      general: 'General',
+      sales: 'Sales',
+      marketing: 'Marketing',
+      product: 'Product',
+      process: 'Process',
+      field: 'Field'
+    };
+
+    document.querySelectorAll('.category-selector button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        document.querySelectorAll('.category-selector button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const cat = btn.dataset.cat;
+        const { color, bg } = categories[cat];
+        const label = categoryLabels[cat];
+
+        // Update all tooltips
+        document.querySelectorAll('[class*="tooltip-"]').forEach(tooltip => {
+          tooltip.style.setProperty('--category-color', color);
+          tooltip.style.setProperty('--category-bg', bg);
+
+          // Update category labels
+          tooltip.querySelectorAll('.category').forEach(el => {
+            el.textContent = label;
+          });
+
+          // Update gradient backgrounds for current design
+          const header = tooltip.querySelector('.header');
+          if (header && tooltip.classList.contains('tooltip-current')) {
+            header.style.background = `linear-gradient(135deg, ${bg} 0%, transparent 100%)`;
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

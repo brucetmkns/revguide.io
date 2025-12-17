@@ -1,0 +1,43 @@
+{
+  "uid": "RevGuide_app",
+  "type": "app",
+  "config": {
+    "description": "An example to demonstrate how to build a marketplace app with developer projects.",
+    "name": "RevGuide-Application",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://qbdhvhrowmfnacyikkbf.supabase.co/functions/v1/hubspot-oauth/callback"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.companies.read",
+        "crm.objects.deals.read",
+        "crm.schemas.contacts.read",
+        "crm.schemas.companies.read",
+        "crm.schemas.deals.read"
+      ],
+      "optionalScopes": [
+        "crm.objects.contacts.write",
+        "crm.objects.companies.write",
+        "crm.objects.deals.write"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://example.com/docs",
+      "supportUrl": "https://example.com/support",
+      "supportPhone": "+18005555555"
+    }
+  }
+}

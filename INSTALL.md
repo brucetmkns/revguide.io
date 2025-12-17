@@ -61,31 +61,12 @@ After installation, complete these steps to get the most out of RevGuide:
 
 ### 2. Connect HubSpot (Recommended)
 
-RevGuide uses HubSpot OAuth for secure authentication - no API tokens needed!
+RevGuide uses HubSpot OAuth for secure authentication.
 
-**For Web App (app.revguide.io):**
 1. Go to **Settings** in the Admin Panel
 2. Click **Connect HubSpot**
 3. Authorize RevGuide in the HubSpot OAuth popup
 4. You're connected!
-
-**For Extension-Only Mode:**
-If you prefer using the extension without the web app, you can configure a HubSpot Private App token:
-
-1. Go to **Settings** in the Admin Panel (extension)
-2. In HubSpot, navigate to: **Settings > Integrations > Private Apps**
-3. Create a new private app with these scopes:
-   - `crm.objects.contacts.read`
-   - `crm.objects.companies.read`
-   - `crm.objects.deals.read`
-   - `crm.objects.tickets.read`
-   - `crm.schemas.contacts.read`
-   - `crm.schemas.companies.read`
-   - `crm.schemas.deals.read`
-   - `crm.schemas.tickets.read`
-4. Copy the access token
-5. Paste into the **HubSpot API Token** field
-6. Click **Save Settings**
 
 ### 3. Build Your Wiki
 
@@ -148,12 +129,6 @@ To verify the extension is working:
 - Ensure wiki entries exist and are enabled
 - Wait a few seconds for HubSpot cards to load
 - Check that the property label matches your wiki term
-
-### API Token Not Working
-
-- Verify the token has the required scopes
-- Check that the private app is active in HubSpot
-- Try regenerating the token
 
 ## Updating the Extension
 
