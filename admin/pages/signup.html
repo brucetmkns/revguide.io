@@ -191,6 +191,11 @@
       border: 1px solid var(--color-danger-border);
     }
 
+    .signup-message a {
+      color: inherit;
+      font-weight: var(--font-weight-semibold);
+    }
+
     .features-list {
       background: var(--color-bg-subtle);
       border-radius: var(--radius-md);
@@ -347,6 +352,24 @@
       const emailInput = document.getElementById('email');
       const passwordInput = document.getElementById('password');
 
+      // Check if returning from email confirmation
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const queryParams = new URLSearchParams(window.location.search);
+
+      if (hashParams.get('access_token') || hashParams.get('type') === 'signup') {
+        showMessage('Email confirmed! Redirecting...', 'success');
+        // Wait for Supabase to process the token
+        setTimeout(async () => {
+          const { data: { session } } = await RevGuideAuth.getSession();
+          if (session) {
+            window.location.href = '/onboarding';
+          } else {
+            showMessage('Confirmation failed. Please try signing in.', 'error');
+          }
+        }, 1000);
+        return;
+      }
+
       // Check if already logged in
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
@@ -398,11 +421,25 @@
             signupBtn.disabled = false;
             signupBtn.textContent = 'Get started free';
           } else if (data.user) {
-            // Signup successful - redirect to onboarding
-            showMessage('Account created! Redirecting...', 'success');
-            setTimeout(() => {
-              window.location.href = '/onboarding';
-            }, 500);
+            // Check if email confirmation is required
+            if (data.user.identities && data.user.identities.length === 0) {
+              // User already exists
+              showMessage('An account with this email already exists. <a href="/login">Sign in instead</a>', 'error');
+              signupBtn.disabled = false;
+              signupBtn.textContent = 'Get started free';
+            } else if (data.session) {
+              // No email confirmation required - redirect to onboarding
+              showMessage('Account created! Redirecting...', 'success');
+              setTimeout(() => {
+                window.location.href = '/onboarding';
+              }, 500);
+            } else {
+              // Email confirmation required
+              showMessage('Check your email to confirm your account! Click the link in the email, then return here to sign in.', 'success');
+              signupBtn.textContent = 'Email sent';
+              // Show a link to login
+              document.querySelector('.signup-footer').innerHTML = '<p>Already confirmed? <a href="/login">Sign in</a></p>';
+            }
           }
         } catch (err) {
           showMessage('Failed to create account. Please try again.', 'error');
@@ -412,7 +449,7 @@
       });
 
       function showMessage(text, type) {
-        signupMessage.textContent = text;
+        signupMessage.innerHTML = text;
         signupMessage.className = `signup-message ${type}`;
         signupMessage.style.display = 'block';
       }
