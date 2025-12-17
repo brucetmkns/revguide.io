@@ -88,11 +88,13 @@ Edit `invite-worker.js` to customize:
 
 ```javascript
 const CONFIG = {
-  fromEmail: 'RevGuide <team@yourdomain.com>',  // Your verified Resend domain
+  fromEmail: 'RevGuide <notifications@email.revguide.io>',  // Your verified Resend domain
+  appUrl: 'https://app.revguide.io',
   chromeStoreUrl: 'https://chrome.google.com/webstore/detail/revguide/...',  // Update when published
   allowedOrigins: [
     'chrome-extension://*',
-    'https://yourdomain.com',
+    'https://app.revguide.io',
+    'https://supered.io',
   ]
 };
 ```
@@ -115,14 +117,18 @@ Send an invitation email to a team member.
 ```json
 {
   "email": "user@example.com",
-  "role": "user"
+  "role": "viewer",
+  "token": "abc123-invitation-token",
+  "orgName": "Acme Corp"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `email` | string | Yes | Recipient email address |
-| `role` | string | Yes | Either `"user"` or `"admin"` |
+| `role` | string | Yes | One of: `"viewer"`, `"editor"`, `"admin"` |
+| `token` | string | Yes | Invitation token from database |
+| `orgName` | string | No | Organization name for email personalization |
 
 **Response (Success):**
 ```json
@@ -170,8 +176,9 @@ Email templates are defined in `invite-worker.js`:
 ### Template Variables
 
 Templates use role-based messaging:
-- **Admin**: "You'll be able to create and edit banners, plays, and wiki entries"
-- **User**: "You'll be able to view all the contextual guidance your team has set up"
+- **Admin**: "As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members."
+- **Editor**: "As an Editor, you can create and edit banners, plays, and wiki entries."
+- **Viewer**: "As a Viewer, you can view all contextual guidance features within HubSpot."
 
 ### Redeploying After Changes
 
@@ -192,7 +199,8 @@ curl https://revguide-api.revguide.workers.dev/health
 ```bash
 curl -X POST https://revguide-api.revguide.workers.dev/api/invite \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "role": "user"}'
+  -H "Origin: https://app.revguide.io" \
+  -d '{"email": "test@example.com", "role": "viewer", "token": "test-token-123", "orgName": "Test Org"}'
 ```
 
 ### Local Development

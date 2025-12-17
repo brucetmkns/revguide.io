@@ -1172,4 +1172,147 @@ async function checkAuth() {
 
 ---
 
+## Team Invitation System (v2.5.1)
+
+### Database Role Constraints vs UI Values
+**Lesson**: Database CHECK constraints must match the values used in the UI dropdown.
+
+**Problem**: UI dropdown had `value="user"` but database constraint only allowed `('admin', 'editor', 'viewer')`. Insert failed with "violates check constraint".
+
+**Solution**: Always verify database constraints match frontend values:
+```sql
+-- Check what values are allowed
+SELECT conname, pg_get_constraintdef(oid)
+FROM pg_constraint
+WHERE conname = 'invitations_role_check';
+```
+
+**Pattern**: UI select options must use exact values from database constraint:
+```html
+<select id="inviteRole">
+  <option value="viewer">Viewer - Can view content</option>
+  <option value="editor">Editor - Can edit content</option>
+  <option value="admin">Admin - Can manage content and users</option>
+</select>
+```
+
+### Cloudflare Worker CORS Configuration
+**Lesson**: When calling a Cloudflare Worker from a web app, the worker must explicitly allow the origin.
+
+**Problem**: Worker had `allowedOrigins: ['chrome-extension://*', 'https://app.revguide.io']` but CORS check logic was broken.
+
+**Wrong approach**:
+```javascript
+// WRONG - includes() with wildcard replacement doesn't work correctly
+const isAllowed = CONFIG.allowedOrigins.some(allowed =>
+  origin.includes(allowed.replace('*', ''))
+);
+```
+
+**Correct approach**:
+```javascript
+// CORRECT - check chrome extensions separately, then exact match for domains
+const isAllowed = origin.startsWith('chrome-extension://') ||
+                  CONFIG.allowedOrigins.includes(origin);
+```
+
+### Cloudflare Worker Secrets
+**Lesson**: Worker environment variables (secrets) are not automatically available after deploy. They must be explicitly set.
+
+**Pattern**: After deploying a worker that uses secrets:
+```bash
+cd api
+npx wrangler secret put RESEND_API_KEY
+# Paste key when prompted
+```
+
+**Debugging**: If API returns "Email service not configured", the secret is missing:
+```javascript
+const apiKey = env.RESEND_API_KEY;
+if (!apiKey) {
+  return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+    status: 500
+  });
+}
+```
+
+### Resend Email Domain Verification
+**Lesson**: Resend requires domain verification before sending emails. The `from` address must use a verified domain.
+
+**Problem**: `from: 'team@revguide.io'` failed because only `email.revguide.io` subdomain was verified.
+
+**Solution**: Use the verified subdomain:
+```javascript
+const CONFIG = {
+  fromEmail: 'RevGuide <notifications@email.revguide.io>',  // Verified subdomain
+  // NOT: 'team@revguide.io'  // Root domain not verified
+};
+```
+
+### Variable Renaming in Refactors
+**Lesson**: When renaming variables during refactoring, search for ALL usages across the file.
+
+**Problem**: Renamed `normalizedRole` to just `role` in the validation section but forgot to update the email template function calls:
+```javascript
+// Validation used new name
+if (!role || !validRoles.includes(role)) { ... }
+
+// But template calls still used old name
+html: buildInvitationEmailHtml(normalizedRole, ...)  // ReferenceError!
+```
+
+**Pattern**: Use IDE "Rename Symbol" feature or search for all occurrences before renaming.
+
+### RLS Policies for Multi-Table Operations
+**Lesson**: When RLS policies on table A need to check data in table B, use SECURITY DEFINER functions to avoid permission errors.
+
+**Problem**: Invitation INSERT policy needed to verify user is an admin:
+```sql
+-- This policy fails with "permission denied for table users"
+CREATE POLICY "Admins can manage invitations" ON invitations
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM users
+      WHERE auth_user_id = auth.uid()
+      AND role IN ('owner', 'admin')
+    )
+  );
+```
+
+**Solution**: Create SECURITY DEFINER helper functions:
+```sql
+-- Function bypasses RLS and runs as owner
+CREATE OR REPLACE FUNCTION check_user_is_admin(p_auth_uid UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users
+    WHERE auth_user_id = p_auth_uid
+    AND role IN ('owner', 'admin')
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Policy uses function instead of direct query
+CREATE POLICY "invitations_admin_insert" ON invitations
+  FOR INSERT WITH CHECK (
+    organization_id = get_user_organization_id(auth.uid())
+    AND check_user_is_admin(auth.uid())
+  );
+```
+
+### Cache Busting for JavaScript Files
+**Lesson**: Browser caching can serve stale JavaScript even after deployment. Use version query parameters.
+
+**Problem**: Fixed code deployed to production but browser served cached v=4 file instead of new v=5.
+
+**Pattern**: Increment version parameter on script tags after changes:
+```html
+<script src="/admin/pages/settings.js?v=5"></script>
+<!-- After next change: -->
+<script src="/admin/pages/settings.js?v=6"></script>
+```
+
+**Alternative**: Use content hash in filename (requires build step).
+
+---
+
 *Last updated: December 2024*
