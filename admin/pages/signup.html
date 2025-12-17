@@ -357,12 +357,27 @@
       const queryParams = new URLSearchParams(window.location.search);
 
       if (hashParams.get('access_token') || hashParams.get('type') === 'signup') {
-        showMessage('Email confirmed! Redirecting...', 'success');
-        // Wait for Supabase to process the token
+        showMessage('Email confirmed! Setting up your account...', 'success');
+        // Wait for Supabase to process the token, then create user/org
         setTimeout(async () => {
           const { data: { session } } = await RevGuideAuth.getSession();
           if (session) {
-            window.location.href = '/onboarding';
+            try {
+              // Get user metadata (stored during signup)
+              const { data: { user } } = await RevGuideAuth.getUser();
+              const fullName = user?.user_metadata?.full_name || '';
+              const companyName = user?.user_metadata?.company_name || '';
+
+              // Create user profile and organization
+              if (fullName && companyName) {
+                await RevGuideDB.createUserWithOrganization(fullName, companyName);
+              }
+
+              window.location.href = '/home';
+            } catch (err) {
+              console.error('Setup error:', err);
+              window.location.href = '/home';
+            }
           } else {
             showMessage('Confirmation failed. Please try signing in.', 'error');
           }
@@ -373,16 +388,7 @@
       // Check if already logged in
       const { data: { session } } = await RevGuideAuth.getSession();
       if (session) {
-        try {
-          const { data: profile } = await RevGuideDB.getUserProfile();
-          if (profile?.organization_id) {
-            window.location.href = '/home';
-          } else {
-            window.location.href = '/onboarding';
-          }
-        } catch (e) {
-          window.location.href = '/onboarding';
-        }
+        window.location.href = '/home';
         return;
       }
 
@@ -405,14 +411,6 @@
         signupBtn.disabled = true;
         signupBtn.textContent = 'Creating account...';
 
-        // Store signup data for onboarding page
-        sessionStorage.setItem('revguide_signup_data', JSON.stringify({
-          fullName,
-          companyName,
-          email,
-          timestamp: Date.now()
-        }));
-
         try {
           const { data, error } = await RevGuideAuth.signUp(email, password, {
             fullName,
@@ -431,10 +429,15 @@
               signupBtn.disabled = false;
               signupBtn.textContent = 'Get started free';
             } else if (data.session) {
-              // No email confirmation required - redirect to onboarding
-              showMessage('Account created! Redirecting...', 'success');
+              // No email confirmation required - create user/org and go to home
+              showMessage('Account created! Setting up...', 'success');
+              try {
+                await RevGuideDB.createUserWithOrganization(fullName, companyName);
+              } catch (err) {
+                console.error('Setup error:', err);
+              }
               setTimeout(() => {
-                window.location.href = '/onboarding';
+                window.location.href = '/home';
               }, 500);
             } else {
               // Email confirmation required

@@ -81,7 +81,7 @@ const RevGuideAuth = {
    */
   async signUp(email, password, metadata = {}) {
     const client = await this.waitForClient();
-    const redirectUrl = window.location.origin + '/onboarding';
+    const redirectUrl = window.location.origin + '/signup';
 
     return client.auth.signUp({
       email,
