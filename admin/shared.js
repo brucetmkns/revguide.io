@@ -126,13 +126,36 @@ async function checkAuth() {
       // No cache - fetch from database
       console.log('[Auth] Fetching user profile from database...');
       try {
-        const { data: profile, error } = await RevGuideDB.getUserProfile();
+        let { data: profile, error } = await RevGuideDB.getUserProfile();
+
+        // If no profile exists, create one from auth metadata
+        if (!profile) {
+          console.log('[Auth] No profile found, checking auth metadata...');
+          const { data: { user } } = await RevGuideAuth.getUser();
+          if (user) {
+            const fullName = user.user_metadata?.full_name || '';
+            const companyName = user.user_metadata?.company_name || '';
+
+            if (fullName && companyName) {
+              console.log('[Auth] Creating user profile from auth metadata...');
+              try {
+                await RevGuideDB.createUserWithOrganization(fullName, companyName);
+                // Fetch the newly created profile
+                const result = await RevGuideDB.getUserProfile();
+                profile = result.data;
+              } catch (createError) {
+                console.warn('Failed to create user profile:', createError);
+              }
+            }
+          }
+        }
+
         if (profile) {
           currentUser = profile;
           currentOrganization = profile.organizations;
           saveUserToCache();
-        } else if (error) {
-          console.warn('Failed to load user profile:', error);
+        } else {
+          // Fallback to basic auth user info
           const { data: { user } } = await RevGuideAuth.getUser();
           if (user) {
             currentUser = { email: user.email, auth_user_id: user.id };
