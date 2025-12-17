@@ -299,24 +299,31 @@ class WikiModule {
       const normalizedText = this.normalizeText(textNode.textContent);
       if (!normalizedText) continue;
 
-      // Pre-process the text once (strip trailing colons and counts)
+      // Pre-process the text once (strip trailing punctuation and counts)
       // This handles cases like "Contacts (2)" → "contacts" or "Deal Stage:" → "deal stage"
       const textToMatch = normalizedText
-        .replace(/\s*:\s*$/, '')           // Remove trailing colon
+        .replace(/\s*[:\?]\s*$/, '')       // Remove trailing colon or question mark
         .replace(/\s*\(\d+\)\s*$/, '');    // Remove trailing count like "(3)"
 
       // Check against all terms (sorted by length, longest first)
       for (const { term, entry } of sortedTerms) {
-        // EXACT MATCH ONLY - the cleaned text must equal the term
-        // This prevents "Company" from matching "Company Domain Name"
-        // Also handle simple plural forms (company/companies, contact/contacts)
-        const isMatch = textToMatch === term ||
-          textToMatch === term + 's' ||           // company → companies
-          textToMatch === term + 'es' ||          // (for words ending in consonant)
-          (term.endsWith('y') && textToMatch === term.slice(0, -1) + 'ies') || // company → companies
-          (textToMatch.endsWith('s') && textToMatch.slice(0, -1) === term) ||  // companies → company
-          (textToMatch.endsWith('es') && textToMatch.slice(0, -2) === term) || // boxes → box
-          (textToMatch.endsWith('ies') && textToMatch.slice(0, -3) + 'y' === term); // companies → company
+        const matchType = entry.matchType || 'exact';
+        let isMatch = false;
+
+        if (matchType === 'starts_with') {
+          // Starts with matching - text must start with the term
+          isMatch = textToMatch.startsWith(term);
+        } else {
+          // Exact matching (default) - handles plurals too
+          // This prevents "Company" from matching "Company Domain Name"
+          isMatch = textToMatch === term ||
+            textToMatch === term + 's' ||           // company → companies
+            textToMatch === term + 'es' ||          // (for words ending in consonant)
+            (term.endsWith('y') && textToMatch === term.slice(0, -1) + 'ies') || // company → companies
+            (textToMatch.endsWith('s') && textToMatch.slice(0, -1) === term) ||  // companies → company
+            (textToMatch.endsWith('es') && textToMatch.slice(0, -2) === term) || // boxes → box
+            (textToMatch.endsWith('ies') && textToMatch.slice(0, -3) + 'y' === term); // companies → company
+        }
 
         if (isMatch) {
           // Get section for deduplication

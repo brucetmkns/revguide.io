@@ -100,6 +100,9 @@
       // Load data from storage for ALL HubSpot pages
       await this.loadData();
       log('Loaded rules:', this.rules.length, 'cards:', this.battleCards.length, 'wiki:', this.wikiEntries.length);
+      if (this.wikiEntries.length > 0) {
+        log('First wiki entry:', JSON.stringify(this.wikiEntries[0]).substring(0, 300));
+      }
 
       // Initialize feature modules
       this.initModules();

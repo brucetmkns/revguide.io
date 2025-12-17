@@ -1631,4 +1631,152 @@ if (deleteBtn) deleteBtn.style.display = 'none';
 
 ---
 
+## Service Worker importScripts Path Resolution (v2.6.0)
+
+### Relative Paths in importScripts
+**Lesson**: `importScripts()` in Chrome Extension service workers resolves paths relative to the service worker file's location, NOT relative to the extension root.
+
+**Problem**: Service worker registration failed with "Status code: 15" error:
+```
+Uncaught NetworkError: Failed to execute 'importScripts' on 'WorkerGlobalScope':
+The script at 'chrome-extension://xxx/background/lib/wiki-cache.js' failed to load.
+```
+
+**Root cause**: The service worker at `background/background.js` used:
+```javascript
+// WRONG - resolves to background/lib/wiki-cache.js
+importScripts('lib/wiki-cache.js');
+```
+
+This resolved to `background/lib/wiki-cache.js` because `background/` is the script's directory. The actual file was at `lib/wiki-cache.js` (extension root).
+
+**Solution**: Use `../` to navigate up to extension root:
+```javascript
+// CORRECT - resolves to lib/wiki-cache.js
+importScripts('../lib/wiki-cache.js');
+```
+
+**Key insight**: Unlike HTML script tags which resolve from the document root, `importScripts()` uses the calling script's directory as the base path.
+
+---
+
+## Supabase Field Mapping for Cloud Content (v2.6.0)
+
+### Complete Field Mapping is Critical
+**Lesson**: When mapping Supabase data to JavaScript objects, include ALL fields the consuming code expects, not just the obvious ones.
+
+**Problem**: Wiki tooltips showed "Built sorted term list: 0 terms" despite 7 wiki entries loading successfully.
+
+**Root cause**: The `mapWikiFromSupabase()` function only mapped basic fields:
+```javascript
+// WRONG - incomplete mapping
+function mapWikiFromSupabase(data) {
+  return {
+    id: data.id,
+    term: data.term,
+    definition: data.definition,
+    objectTypes: data.object_types,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+```
+
+The wiki module's `buildTermMap()` requires `trigger` and `aliases` fields to build the searchable term list. Without these, the term list was empty.
+
+**Solution**: Map ALL fields the module needs:
+```javascript
+function mapWikiFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    term: data.term,
+    trigger: data.trigger || data.term,  // Critical for term matching!
+    definition: data.definition,
+    aliases: data.aliases || [],          // Critical for aliases!
+    category: data.category || 'general',
+    link: data.link || '',
+    enabled: data.enabled !== false,      // Default to enabled
+    objectTypes: data.object_types,
+    objectType: data.object_type,
+    propertyGroup: data.property_group,
+    matchType: data.match_type || 'exact',
+    frequency: data.frequency || 'first',
+    includeAliases: data.include_aliases !== false,
+    priority: data.priority || 50,
+    pageType: data.page_type || 'record',
+    urlPatterns: data.url_patterns,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+```
+
+**Pattern**: When writing mapping functions:
+1. Check ALL consumers of the mapped object
+2. Identify which fields each consumer accesses
+3. Provide sensible defaults for optional fields
+4. Use `|| fallback` for string/array fields, `!== false` for booleans that default true
+
+---
+
+## Cloud Content Cache Invalidation (v2.6.0)
+
+### Clearing Cache After Code Fixes
+**Lesson**: After fixing data transformation bugs, cached data still uses the old (broken) transformation. You must clear the cache for fixes to take effect.
+
+**Problem**: After fixing `mapWikiFromSupabase()`, wiki still showed 0 terms because content was loading from `cloud-cached` (cached in `chrome.storage.local`).
+
+**Solution**: Clear the cloud content cache:
+```javascript
+// Run in service worker console
+chrome.storage.local.remove(['cloudContent', 'cloudContentLastFetch']);
+```
+
+**When to clear cache**:
+- After changing field mapping functions
+- After changing data transformation logic
+- After fixing bugs in data processing
+- After schema changes in database
+
+**Alternative**: Add a cache version that invalidates on code changes:
+```javascript
+const CACHE_VERSION = 2;  // Increment when mapping logic changes
+
+const cached = await chrome.storage.local.get(['cloudContent', 'cloudCacheVersion']);
+if (cached.cloudCacheVersion !== CACHE_VERSION) {
+  // Cache is stale, fetch fresh
+  await chrome.storage.local.remove(['cloudContent', 'cloudContentLastFetch']);
+}
+```
+
+---
+
+## Debugging Data Flow Issues
+
+### Tracing Data Through Extension Components
+**Lesson**: When content isn't displaying, add logging at each transformation point to identify where data gets lost.
+
+**Debug logging pattern**:
+```javascript
+// 1. Log raw data from source
+console.log('[RevGuide] Raw wiki data from Supabase:', wikiResponse.data);
+
+// 2. Log after mapping
+const mapped = wikiEntries.map(mapWikiFromSupabase);
+console.log('[RevGuide] Mapped wiki entries:', mapped);
+console.log('[RevGuide] First entry fields:', Object.keys(mapped[0] || {}));
+
+// 3. Log in consuming module
+console.log('[RevGuide Wiki] Building term map from', entries.length, 'entries');
+console.log('[RevGuide Wiki] First entry trigger:', entries[0]?.trigger);
+
+// 4. Log result
+console.log('[RevGuide Wiki] Built sorted term list:', sortedTerms.length, 'terms');
+```
+
+**Key insight**: The issue is usually at a transformation boundary - where data passes from one component to another with different expectations.
+
+---
+
 *Last updated: December 2024*

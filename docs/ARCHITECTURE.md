@@ -458,6 +458,6 @@ git push origin main
 
 ## Version History
 
-Current: **v2.4.0** (December 2024) - Team Invitation System
+Current: **v2.6.0** (December 2024) - Cloud Content Display Fixes
 
 See `CHANGELOG.md` for full history.

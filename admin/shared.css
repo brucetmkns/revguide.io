@@ -678,6 +678,10 @@
   to { transform: rotate(360deg); }
 }
 
+/* Spinning icon utility class */
+.icon.spinning {
+  animation: spin 1s linear infinite;
+}
 
 /* ----------------------------------------
    View Details Modal (for view-only users)

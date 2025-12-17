@@ -248,7 +248,7 @@ class WikiPage {
     const icon = btn.querySelector('.icon');
 
     // Add spinning animation
-    icon.style.animation = 'spin 1s linear infinite';
+    icon.classList.add('spinning');
     btn.disabled = true;
 
     try {
@@ -262,7 +262,7 @@ class WikiPage {
       console.error('Failed to refresh:', e);
       AdminShared.showToast('Failed to refresh', 'error');
     } finally {
-      icon.style.animation = '';
+      icon.classList.remove('spinning');
       btn.disabled = false;
     }
   }

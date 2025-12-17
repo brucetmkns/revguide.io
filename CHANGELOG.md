@@ -2,6 +2,54 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.1] - 2025-12-17 - Media Embed Banner Fix
+
+### Fixed
+- **Media Embed Banners**: Fixed "Could not find the 'url' column" error when saving embed-type banners
+  - Added missing `url` column to `banners` table in Supabase
+  - New migration: `012_add_banner_url_column.sql`
+
+---
+
+## [2.6.0] - 2025-12-17 - Cloud Content & Service Worker Fixes
+
+### Fixed
+- **Service Worker Loading**: Fixed service worker failing to start with "Failed to execute 'importScripts'" error
+  - `importScripts('lib/wiki-cache.js')` was resolving to non-existent `background/lib/wiki-cache.js`
+  - Changed to `importScripts('../lib/wiki-cache.js')` to correctly resolve to `lib/wiki-cache.js`
+  - This was preventing banners, tooltips, and all cloud functionality from working
+
+- **Wiki Tooltips Not Displaying**: Fixed wiki entries loaded from cloud having 0 terms to match
+  - `mapWikiFromSupabase()` was missing critical fields: `trigger`, `aliases`, `category`, `enabled`, `link`
+  - Wiki module requires `trigger` (or `term`) and `aliases` to build searchable term list
+  - Added comprehensive field mapping with sensible defaults
+
+- **Cloud Content Caching**: Cloud content cache was serving stale data without new field mappings
+  - Added debug logging to show raw and transformed data from Supabase
+  - Users may need to clear cache after upgrade: `chrome.storage.local.remove(['cloudContent', 'cloudContentLastFetch'])`
+
+### Technical
+- **Files Modified**:
+  - `background/background.js` - Fixed importScripts path, expanded `mapWikiFromSupabase()` with all required fields, added debug logging for cloud content
+  - `lib/rules-engine.js` - Added debug logging for rule evaluation
+  - `content/modules/banners.js` - Added debug logging for banner rendering
+  - `content/content.js` - Added debug logging for wiki entry data
+
+- **mapWikiFromSupabase() Now Maps**:
+  - `trigger` (falls back to `term`)
+  - `aliases` (defaults to `[]`)
+  - `category` (defaults to `'general'`)
+  - `enabled` (defaults to `true`)
+  - `link`, `objectType`, `propertyGroup`, `matchType`, `frequency`, `includeAliases`, `priority`, `pageType`, `urlPatterns`
+
+### Debugging
+Added comprehensive logging to diagnose content loading issues:
+- `[RevGuide RulesEngine]` - Rule evaluation with match/skip reasons
+- `[RevGuide Banners]` - Banner render calls and inject targets
+- `[RevGuide]` - First wiki entry data structure after transformation
+
+---
+
 ## [2.5.3] - 2025-12-17 - Role-Based Access Control Fix
 
 ### Fixed

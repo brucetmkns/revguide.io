@@ -3,7 +3,7 @@
  * Handles messaging between sidepanel and content scripts
  */
 
-importScripts('lib/wiki-cache.js');
+importScripts('../lib/wiki-cache.js');
 
 console.log('[RevGuide] Service worker starting...');
 
@@ -310,8 +310,21 @@ function mapWikiFromSupabase(data) {
   return {
     id: data.id,
     term: data.term,
+    trigger: data.trigger || data.term, // Use trigger if available, fallback to term
     definition: data.definition,
+    aliases: data.aliases || [],
+    category: data.category || 'general',
+    link: data.link || '',
+    enabled: data.enabled !== false, // Default to enabled if not specified
     objectTypes: data.object_types,
+    objectType: data.object_type,
+    propertyGroup: data.property_group,
+    matchType: data.match_type || 'exact',
+    frequency: data.frequency || 'first',
+    includeAliases: data.include_aliases !== false,
+    priority: data.priority || 50,
+    pageType: data.page_type || 'record',
+    urlPatterns: data.url_patterns,
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
@@ -322,6 +335,7 @@ function mapWikiFromSupabase(data) {
  */
 async function fetchCloudContent() {
   const authState = await getAuthState();
+  console.log('[RevGuide] fetchCloudContent called - isAuthenticated:', authState.isAuthenticated, 'orgId:', authState.profile?.organizationId);
   if (!authState.isAuthenticated || !authState.profile?.organizationId) {
     console.log('[RevGuide] Cannot fetch cloud content: not authenticated or no org');
     return null;
@@ -351,12 +365,32 @@ async function fetchCloudContent() {
       wikiEntries: wikiEntries?.length || 0
     });
 
+    // Log raw banner data for debugging
+    if (banners?.length > 0) {
+      console.log('[RevGuide] First raw banner from Supabase:', JSON.stringify(banners[0]).substring(0, 500));
+    }
+
+    // Log raw wiki data for debugging
+    if (wikiEntries?.length > 0) {
+      console.log('[RevGuide] First raw wiki entry from Supabase:', JSON.stringify(wikiEntries[0]).substring(0, 500));
+    }
+
     // Transform to match local storage format (snake_case to camelCase)
     const content = {
       rules: (banners || []).map(mapBannerFromSupabase),
       battleCards: (plays || []).map(mapPlayFromSupabase),
       wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase)
     };
+
+    // Log transformed banner for debugging
+    if (content.rules?.length > 0) {
+      console.log('[RevGuide] First transformed banner:', JSON.stringify(content.rules[0]).substring(0, 500));
+    }
+
+    // Log transformed wiki entry for debugging
+    if (content.wikiEntries?.length > 0) {
+      console.log('[RevGuide] First transformed wiki entry:', JSON.stringify(content.wikiEntries[0]).substring(0, 500));
+    }
 
     // Cache in local storage for offline access
     await chrome.storage.local.set({
