@@ -4,11 +4,25 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.2.1 (SaaS Web App + Chrome Extension)
+## Current State: v2.5.3 (SaaS Web App + Chrome Extension)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, user settings management, proper database security, and reliable data persistence.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, and reliable data persistence.
 
-### Data Persistence Fix (v2.2.1) - NEW
+### Role-Based Access Control (v2.5.3) - NEW
+- **Complete role hierarchy**: Owner > Admin > Editor > Viewer
+- **Viewer role**: Can view all content, cannot edit/create/delete
+- **Editor role**: Can create/edit/delete content, cannot manage team
+- **Admin/Owner roles**: Full access including team management
+- **RLS policies**: Database-level enforcement of role permissions
+- **View-only UI**: Viewers see read-only interface with edit controls hidden
+
+### Team Invitation System (v2.5.2)
+- **Email invitations**: Invite team members with role selection (viewer/editor/admin)
+- **Streamlined signup**: Invited users skip email confirmation, pre-filled forms
+- **Invitation acceptance**: Token-based secure invitation flow
+- **Worker API**: Cloudflare Worker handles invite emails and signup
+
+### Data Persistence Fix (v2.2.1)
 - **Fixed critical data persistence bug** - Wiki, banners, and plays now properly save to Supabase
 - **Snake_case/camelCase mapping** - Proper conversion between frontend (camelCase) and database (snake_case)
 - **Direct database operations** - Save functions now write directly to Supabase instead of just cache
@@ -453,8 +467,9 @@ presentations
 - [ ] Extension login flow (redirect to web, store token)
 
 #### Team Management
-- [ ] Invite team members by email
-- [ ] Role-based permissions:
+- [x] Invite team members by email
+- [x] Role-based permissions:
+  - **Owner**: Full access, manage team, billing, transfer ownership
   - **Admin**: Full access, manage team, billing
   - **Editor**: Create/edit/delete content
   - **Viewer**: Use extension, cannot edit
@@ -802,6 +817,50 @@ Would you like me to suggest values?"
 - [ ] Zapier/Make integration
 - [ ] HubSpot custom cards (CRM card API)
 - [ ] Salesforce support (Phase 4?)
+
+### Custom Scripts (Extensibility)
+
+**Goal:** Allow power users to extend RevGuide with custom JavaScript for organization-specific integrations.
+
+**Use Case Example:** Alpha wants to overlay a Q360 link next to deal/company/contact names, linking to the corresponding record in their Q360 system.
+
+#### Features
+- [ ] "Custom Scripts" section in Settings page
+- [ ] Code editor textarea for custom JavaScript
+- [ ] Script execution in content script context with access to:
+  - `ctx.hubspot` - Current record info (recordType, recordId, recordName, properties)
+  - `ctx.overlay()` - Add UI elements near HubSpot elements
+  - `ctx.badge()` - Add badges/indicators
+- [ ] Enable/disable toggle per script
+- [ ] Multiple scripts support (optional)
+- [ ] Script validation before save
+
+#### Example Script
+```javascript
+(function(ctx) {
+  const { recordType, recordId, recordName } = ctx.hubspot;
+
+  if (['deal', 'company', 'contact'].includes(recordType)) {
+    const q360Url = `https://q360.example.com/${recordType}/${recordId}`;
+
+    ctx.overlay({
+      position: 'next-to-title',
+      html: `<a href="${q360Url}" target="_blank">View in Q360</a>`
+    });
+  }
+})(RevGuide);
+```
+
+#### Implementation Complexity
+| Component | Effort | Notes |
+|-----------|--------|-------|
+| Settings UI (textarea) | Low | Standard settings card pattern |
+| Script storage | Low | Add to settings object |
+| Context API design | Medium | Define `ctx.hubspot`, `ctx.overlay()`, etc. |
+| Safe script execution | Medium | Sandbox considerations |
+| Documentation | Low | API reference for script authors |
+
+**Total Estimate:** ~1-2 days of development
 
 ### Enterprise Features
 - [ ] SSO (SAML, OKTA)

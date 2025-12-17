@@ -2,6 +2,95 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.5.3] - 2025-12-17 - Role-Based Access Control Fix
+
+### Fixed
+- **Viewer/Editor Role Support**: Fixed content visibility for invited users with `viewer` or `editor` roles
+  - `isMember()` now correctly identifies both `viewer` and legacy `member` roles
+  - Added `canEditContent()` function for checking edit permissions (owner/admin/editor)
+  - Added `isEditor()` function to identify editor role specifically
+
+- **View-Only Mode for Viewers**: Viewers now see proper read-only UI
+  - Wiki, Banners, and Plays pages use `canEditContent()` instead of `isMember()`
+  - Duplicate and Delete buttons hidden for viewers on Wiki entries
+  - "View Only" badge displays correctly for viewer users
+
+- **Editor Role Permissions**: Editors can now create/edit/delete content
+  - New RLS migration (011) adds `check_user_can_edit_content()` function
+  - Content table policies updated to include `editor` role for INSERT/UPDATE/DELETE
+
+- **Sidebar Role Label**: Now correctly shows "Editor" for editor role users
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.js` - Added `canEditContent()`, `isEditor()`, fixed `isMember()`, updated role labels
+  - `admin/pages/wiki.js` - Use `canEditContent()` for view-only check, hide duplicate/delete buttons
+  - `admin/pages/banners.js` - Use `canEditContent()` for view-only check
+  - `admin/pages/plays.js` - Use `canEditContent()` for view-only check
+
+- **Database Migrations**:
+  - `011_add_editor_content_permissions.sql` - RLS policies for editor role content access
+
+### Role Hierarchy
+| Role | View Content | Edit Content | Manage Team |
+|------|-------------|--------------|-------------|
+| Owner | ✓ | ✓ | ✓ |
+| Admin | ✓ | ✓ | ✓ |
+| Editor | ✓ | ✓ | ✗ |
+| Viewer | ✓ | ✗ | ✗ |
+
+---
+
+## [2.5.2] - 2025-12-17 - Improved Invitation Flow
+
+### Added
+- **Streamlined Invite Signup**: New users invited to join a team now have a seamless signup experience
+  - Signup page pre-fills email (read-only) and shows organization name (read-only)
+  - User only needs to enter name and password
+  - Skips email confirmation step (user already verified email by clicking invite link)
+  - Auto-signs in and redirects to home after account creation
+
+- **New API Endpoint**: `POST /api/signup-invited` on Cloudflare Worker
+  - Creates auth user with `email_confirm: true` (skips verification)
+  - Creates user profile in `users` table with name, org, and role
+  - Marks invitation as accepted
+  - All in one atomic operation
+
+- **RLS Policies for Anonymous Invitation Lookup**
+  - Anonymous users can read invitation details by token (for signup page pre-fill)
+  - Anonymous users can read organization name via invitation join
+  - Secure: tokens are unguessable UUIDs, only returns data user already knows from email
+
+### Fixed
+- **Navigation URLs**: Fixed onboarding panel links using `.html` extensions instead of clean URLs
+  - `settings.html#team-members` → `/settings#team-members`
+  - Now works correctly with Vercel's clean URL routing
+
+- **Role Constraint Mismatch**: Users table now accepts `viewer` and `editor` roles
+  - Database constraint updated: `CHECK (role IN ('owner', 'admin', 'editor', 'viewer', 'member'))`
+  - Matches the roles used in invitations dropdown
+
+- **Already-Accepted Invitations**: Invite page now handles gracefully
+  - If user already belongs to an org, shows success message
+  - If invitation was already accepted (during signup), shows success instead of error
+
+### Technical
+- **Files Modified**:
+  - `api/invite-worker.js` - New `/api/signup-invited` endpoint
+  - `admin/pages/signup.html` - Invite flow detection, pre-fill fields, call worker API
+  - `admin/pages/invite.js` - Handle already-accepted invitations
+  - `admin/pages/home.js` - Fixed navigation URLs
+  - `admin/supabase.js` - `getInvitationByToken()` now accepts `includingAccepted` parameter
+
+- **Database Migrations**:
+  - `009_public_invitation_lookup.sql` - RLS policies for anon access to invitations/orgs
+  - SQL to update `users_role_check` constraint
+
+- **Worker Secrets Required**:
+  - `SUPABASE_SERVICE_ROLE_KEY` - For creating users and profiles via Admin API
+
+---
+
 ## [2.5.1] - 2025-12-17 - Banner Tab Visibility & Token Refresh
 
 ### Fixed

@@ -1406,4 +1406,229 @@ detectCurrentTab() {
 
 ---
 
+## Invitation Signup Flow (v2.5.2)
+
+### Skip Email Confirmation for Invited Users
+**Lesson**: Users who click an invitation link have already verified their email. Don't make them confirm again.
+
+**Problem**: Normal Supabase `signUp()` sends a confirmation email. For invited users, this creates friction - they already proved email ownership by clicking the invite link.
+
+**Solution**: Use Supabase Admin API with `email_confirm: true`:
+```javascript
+// Cloudflare Worker using service role key
+const createUserResponse = await fetch(
+  `${SUPABASE_URL}/auth/v1/admin/users`,
+  {
+    method: 'POST',
+    headers: {
+      'apikey': serviceRoleKey,
+      'Authorization': `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: email,
+      password: password,
+      email_confirm: true,  // Skip email verification!
+      user_metadata: { full_name: fullName }
+    })
+  }
+);
+```
+
+**Key insight**: The Admin API (`/auth/v1/admin/users`) allows setting `email_confirm: true`, which the client-side `signUp()` method doesn't support.
+
+### Database Role Constraint Mismatches
+**Lesson**: When roles are used across multiple tables, ensure CHECK constraints are consistent.
+
+**Problem**:
+- Invitations table used roles: `viewer`, `editor`, `admin`
+- Users table CHECK constraint only allowed: `owner`, `admin`, `member`
+- Worker tried to insert `role: 'viewer'` into users table → constraint violation
+
+**Solution**: Either:
+1. **Update constraint** to allow all role values:
+```sql
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('owner', 'admin', 'editor', 'viewer', 'member'));
+```
+
+2. **Or map roles** in code when transferring between tables:
+```javascript
+const userRole = invitation.role === 'admin' ? 'admin' : 'member';
+```
+
+**Pattern**: Document which roles each table accepts and keep them synchronized.
+
+### RLS Policies for Anonymous Pre-fill
+**Lesson**: Signup pages need to fetch data before user is authenticated. Create limited RLS policies for anonymous access.
+
+**Problem**: Signup page needed to fetch invitation details (email, org name) to pre-fill fields, but user isn't authenticated yet.
+
+**Solution**: Create RLS policies for `anon` role with limited scope:
+```sql
+-- Allow anon to read invitations by token (tokens are unguessable UUIDs)
+CREATE POLICY "invitations_public_by_token" ON invitations
+  FOR SELECT TO anon
+  USING (expires_at > now());
+
+-- Allow anon to read org name via invitation join
+CREATE POLICY "organizations_public_name_only" ON organizations
+  FOR SELECT TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM invitations
+      WHERE invitations.organization_id = organizations.id
+      AND invitations.expires_at > now()
+    )
+  );
+
+GRANT SELECT ON invitations TO anon;
+GRANT SELECT ON organizations TO anon;
+```
+
+**Security**: This is safe because:
+- Tokens are random UUIDs (unguessable)
+- Only returns data user already knows from invitation email
+- Limits organization access to those with valid invitations
+
+### Server-Side vs Client-Side Signup
+**Lesson**: Complex signup flows (invite acceptance, profile creation, invitation marking) should be done server-side.
+
+**Problem**: Client-side signup can't:
+- Skip email confirmation (no access to Admin API)
+- Atomically create user + profile + mark invitation
+- Handle race conditions between steps
+
+**Solution**: Create a dedicated server endpoint that handles everything:
+```javascript
+// POST /api/signup-invited
+async function handleSignupInvited(request, env) {
+  // 1. Validate invitation token
+  // 2. Create auth user (Admin API, email pre-confirmed)
+  // 3. Create user profile in users table
+  // 4. Mark invitation as accepted
+  // 5. Return success (client then signs in)
+}
+```
+
+**Benefits**:
+- Atomic operation (all succeed or all fail)
+- Access to service role key for Admin API
+- Cleaner error handling
+- Single network round-trip from client
+
+### Vercel Clean URLs
+**Lesson**: Vercel automatically serves `page.html` at `/page`. Don't use `.html` in internal links.
+
+**Problem**: Link `href="settings.html#team-members"` resulted in 404 because Vercel routes `/settings.html` differently than `/settings`.
+
+**Solution**: Use clean URLs without extension:
+```javascript
+// WRONG
+window.location.href = 'settings.html#team-members';
+
+// CORRECT
+window.location.href = '/settings#team-members';
+```
+
+**Pattern**: Always use absolute paths with leading `/` and no file extensions for internal navigation.
+
+---
+
+## Role-Based Access Control (v2.5.3)
+
+### Multiple Role Values Across System
+**Lesson**: When roles are used across multiple tables and UI components, ensure all code paths handle all possible role values.
+
+**Problem**: The invitation system used roles `viewer`, `editor`, `admin`, but:
+- `isMember()` only checked for `role === 'member'`
+- Content pages used `isMember()` which returned `false` for `viewer` role
+- Viewers saw edit controls because they weren't recognized as view-only users
+
+**Solution**: Create comprehensive role-checking functions:
+```javascript
+// Check if user can edit content (owner, admin, or editor)
+function canEditContent() {
+  if (isExtensionContext) return true;
+  const role = currentUser?.role;
+  return role === 'owner' || role === 'admin' || role === 'editor';
+}
+
+// Check if user is view-only (viewer or legacy member)
+function isMember() {
+  if (isExtensionContext) return false;
+  const role = currentUser?.role;
+  return role === 'viewer' || role === 'member';
+}
+
+// In page scripts, use canEditContent() for view-only check
+this.isViewOnly = !AdminShared.canEditContent();
+```
+
+**Key insight**: Always use positive capability checks (`canEditContent()`) rather than negative role checks (`!isAdmin()`). This makes it easier to add new roles later.
+
+### RLS Policies Must Match Role Values
+**Lesson**: Database RLS policies must include all role values that should have access.
+
+**Problem**: Content table policies only allowed `owner` and `admin` to INSERT/UPDATE/DELETE:
+```sql
+-- Old policy - editors couldn't create content
+AND role IN ('owner', 'admin')
+```
+
+**Solution**: Create a SECURITY DEFINER function that checks for all editing roles:
+```sql
+CREATE OR REPLACE FUNCTION check_user_can_edit_content(p_auth_uid UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users
+    WHERE auth_user_id = p_auth_uid
+    AND role IN ('owner', 'admin', 'editor')  -- Include editor!
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Use in policies
+CREATE POLICY "Editors can create banners" ON banners
+  FOR INSERT WITH CHECK (
+    organization_id = get_user_organization_id(auth.uid())
+    AND check_user_can_edit_content(auth.uid())
+  );
+```
+
+### UI Element Hiding by ID vs Class
+**Lesson**: When hiding UI elements for view-only mode, use specific element IDs rather than class selectors that may not exist.
+
+**Problem**: Wiki page tried to hide `.wiki-card-actions` class which didn't exist in the DOM:
+```javascript
+// WRONG - class doesn't exist
+const cardActions = document.querySelector('.wiki-card-actions');
+if (cardActions) cardActions.style.display = 'none';  // Never executes
+```
+
+**Solution**: Hide elements by their specific IDs:
+```javascript
+// CORRECT - target specific elements
+const duplicateBtn = document.getElementById('duplicateEntryBtn');
+const deleteBtn = document.getElementById('deleteEntryBtn');
+if (duplicateBtn) duplicateBtn.style.display = 'none';
+if (deleteBtn) deleteBtn.style.display = 'none';
+```
+
+### Organization ID Mismatch Debugging
+**Lesson**: When users can't see content, first check if they're in the correct organization.
+
+**Debugging steps**:
+1. Check user's organization_id: `SELECT organization_id FROM users WHERE email = '...'`
+2. Check content's organization_id: `SELECT organization_id FROM banners/plays/wiki_entries`
+3. Compare - they must match for RLS to allow access
+4. If mismatched, check invitation flow to see where user got wrong org_id
+
+**Common causes**:
+- User signed up directly instead of through invite link (creates new org)
+- Invitation acceptance failed but auth user was created
+- Manual data fix put user in wrong organization
+
+---
+
 *Last updated: December 2024*
