@@ -701,7 +701,7 @@ class SettingsPage {
 
   openInviteModal() {
     document.getElementById('inviteEmail').value = '';
-    document.getElementById('inviteRole').value = 'user';
+    document.getElementById('inviteRole').value = 'member';
     document.getElementById('inviteModal').classList.add('open');
     document.getElementById('inviteEmail').focus();
   }
