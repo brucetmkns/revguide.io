@@ -2409,27 +2409,11 @@ class AdminPanel {
    * Build wiki term map cache for faster tooltip loading
    */
   buildWikiTermMapCache(wikiEntries) {
-    const termMap = {};
-    const entriesById = {};
-
-    const enabledEntries = (wikiEntries || []).filter(e => e.enabled !== false);
-
-    for (const entry of enabledEntries) {
-      entriesById[entry.id] = entry;
-
-      const primaryTrigger = entry.trigger || entry.term;
-      if (!primaryTrigger) continue;
-
-      const triggers = [primaryTrigger, ...(entry.aliases || [])];
-
-      for (const trigger of triggers) {
-        if (trigger && trigger.trim()) {
-          termMap[trigger.toLowerCase().trim()] = entry.id;
-        }
-      }
+    if (!globalThis.RevGuideWikiCache?.buildWikiTermMapCache) {
+      console.warn('[RevGuide] Wiki cache builder not available');
+      return { termMap: {}, entriesById: {} };
     }
-
-    return { termMap, entriesById };
+    return globalThis.RevGuideWikiCache.buildWikiTermMapCache(wikiEntries);
   }
 
   initWikiRichTextEditor() {

@@ -43,98 +43,9 @@
   const log = (...args) => DEBUG && console.log('[RevGuide]', ...args);
 
   // ============ RULES ENGINE ============
-  /**
-   * Evaluates conditions and rules to determine which banners/cards to display.
-   * Supports various operators for property comparison.
-   */
-  class RulesEngine {
-    constructor() {
-      // Helper to parse numbers with currency symbols, commas, etc.
-      const parseNumber = (val) => {
-        if (val === null || val === undefined) return NaN;
-        const cleaned = String(val).replace(/[^0-9.\-]/g, '');
-        return parseFloat(cleaned);
-      };
-
-      // Available comparison operators
-      this.operators = {
-        equals: (a, b) => String(a).toLowerCase() === String(b).toLowerCase(),
-        not_equals: (a, b) => String(a).toLowerCase() !== String(b).toLowerCase(),
-        contains: (a, b) => String(a).toLowerCase().includes(String(b).toLowerCase()),
-        not_contains: (a, b) => !String(a).toLowerCase().includes(String(b).toLowerCase()),
-        starts_with: (a, b) => String(a).toLowerCase().startsWith(String(b).toLowerCase()),
-        ends_with: (a, b) => String(a).toLowerCase().endsWith(String(b).toLowerCase()),
-        greater_than: (a, b) => parseNumber(a) > parseNumber(b),
-        less_than: (a, b) => parseNumber(a) < parseNumber(b),
-        greater_equal: (a, b) => parseNumber(a) >= parseNumber(b),
-        less_equal: (a, b) => parseNumber(a) <= parseNumber(b),
-        is_empty: (a) => !a || String(a).trim() === '',
-        is_not_empty: (a) => a && String(a).trim() !== '',
-        in_list: (a, b) => {
-          const list = String(b).split(',').map(s => s.trim().toLowerCase());
-          return list.includes(String(a).toLowerCase());
-        },
-        not_in_list: (a, b) => {
-          const list = String(b).split(',').map(s => s.trim().toLowerCase());
-          return !list.includes(String(a).toLowerCase());
-        }
-      };
-    }
-
-    /**
-     * Evaluate a single condition against properties
-     * @param {Object} condition - Condition with property, operator, value
-     * @param {Object} properties - Current page properties
-     * @returns {boolean} Whether condition is met
-     */
-    evaluateCondition(condition, properties) {
-      const { property, operator, value } = condition;
-      const propertyValue = properties[property];
-      const operatorFn = this.operators[operator];
-      if (!operatorFn) {
-        log('Unknown operator:', operator);
-        return false;
-      }
-      const result = operatorFn(propertyValue, value);
-      log(`Condition: ${property} ${operator} "${value}" | Actual: "${propertyValue}" | Result: ${result}`);
-      return result;
-    }
-
-    /**
-     * Evaluate all conditions in a rule
-     * @param {Object} rule - Rule with conditions array and logic (AND/OR)
-     * @param {Object} properties - Current page properties
-     * @returns {boolean} Whether rule matches
-     */
-    evaluateRule(rule, properties) {
-      if (!rule.conditions || rule.conditions.length === 0) return true;
-      const logic = rule.logic || 'AND';
-      if (logic === 'AND') {
-        return rule.conditions.every(c => this.evaluateCondition(c, properties));
-      }
-      return rule.conditions.some(c => this.evaluateCondition(c, properties));
-    }
-
-    /**
-     * Evaluate all rules and return matching ones
-     * @param {Array} rules - Array of rules to evaluate
-     * @param {Object} properties - Current page properties
-     * @param {Object} context - Page context (objectType, pipeline, stage)
-     * @returns {Array} Matching rules sorted by priority
-     */
-    evaluateRules(rules, properties, context = {}) {
-      const matching = [];
-      for (const rule of rules) {
-        if (rule.enabled === false) continue;
-        if (rule.objectTypes?.length && !rule.objectTypes.includes(context.objectType)) continue;
-        if (rule.pipelines?.length && !rule.pipelines.includes(context.pipeline)) continue;
-        if (rule.stages?.length && !rule.stages.includes(context.stage)) continue;
-        if (rule.displayOnAll || this.evaluateRule(rule, properties)) {
-          matching.push(rule);
-        }
-      }
-      return matching.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-    }
+  const RulesEngine = globalThis.RevGuideRulesEngine;
+  if (!RulesEngine) {
+    console.error('[RevGuide] RulesEngine not loaded. Ensure lib/rules-engine.js is included.');
   }
 
   // ============ MAIN ORCHESTRATOR CLASS ============
@@ -1236,9 +1147,11 @@
   }
 
   // ============ INITIALIZATION ============
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => new HubSpotHelper());
-  } else {
-    new HubSpotHelper();
+  if (RulesEngine) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => new HubSpotHelper());
+    } else {
+      new HubSpotHelper();
+    }
   }
 })();

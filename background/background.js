@@ -3,6 +3,8 @@
  * Handles messaging between sidepanel and content scripts
  */
 
+importScripts('lib/wiki-cache.js');
+
 console.log('[RevGuide] Service worker starting...');
 
 // ============ AUTH STATE MANAGEMENT ============
@@ -193,6 +195,19 @@ async function ensureValidToken() {
 
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
+const CLOUD_CONTENT_TTL_MS = 5 * 60 * 1000;
+const HUBSPOT_PROPERTIES_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const HUBSPOT_PROPERTIES_CACHE_KEY = 'hubspotPropertiesCache';
+const HUBSPOT_OBJECT_TYPE_MAP = {
+  contact: 'contacts',
+  company: 'companies',
+  deal: 'deals',
+  ticket: 'tickets'
+};
+
+function getHubSpotApiObjectType(objectType) {
+  return HUBSPOT_OBJECT_TYPE_MAP[objectType] || objectType;
+}
 
 /**
  * Make authenticated request to Supabase REST API
@@ -359,20 +374,28 @@ async function fetchCloudContent() {
 /**
  * Get content - from cloud if authenticated, otherwise local
  */
-async function getContent() {
+async function getContent(options = {}) {
   const authState = await getAuthState();
+  const { forceRefresh = false } = options;
 
   if (authState.isAuthenticated && authState.profile?.organizationId) {
-    // Try to fetch from cloud
+    const cachedResult = await chrome.storage.local.get({
+      cloudContent: null,
+      cloudContentLastFetch: 0
+    });
+    const cacheAge = Date.now() - (cachedResult.cloudContentLastFetch || 0);
+
+    if (!forceRefresh && cachedResult.cloudContent && cacheAge < CLOUD_CONTENT_TTL_MS) {
+      return { source: 'cloud-cached', content: cachedResult.cloudContent };
+    }
+
     const cloudContent = await fetchCloudContent();
     if (cloudContent) {
       return { source: 'cloud', content: cloudContent };
     }
 
-    // Fall back to cached cloud content
-    const { cloudContent: cached } = await chrome.storage.local.get('cloudContent');
-    if (cached) {
-      return { source: 'cloud-cached', content: cached };
+    if (cachedResult.cloudContent) {
+      return { source: 'cloud-cached', content: cachedResult.cloudContent };
     }
   }
 
@@ -619,7 +642,7 @@ async function initializeSampleData() {
   ];
 
   // Build pre-computed wiki term map cache for faster tooltip loading
-  const wikiCacheData = buildWikiTermMapCacheForBackground(sampleWikiEntries);
+  const wikiCacheData = RevGuideWikiCache.buildWikiTermMapCache(sampleWikiEntries);
 
   await chrome.storage.local.set({
     rules: sampleRules,
@@ -633,43 +656,11 @@ async function initializeSampleData() {
       showBanners: true,
       showBattleCards: true,
       showWiki: true,
-      bannerPosition: 'top',
-      theme: 'light'
+      bannerPosition: 'top'
     }
   });
 
   console.log('[RevGuide] Sample data initialized with wiki cache');
-}
-
-/**
- * Build wiki term map cache (background script version)
- * Mirrors the logic in admin/shared.js buildWikiTermMapCache
- * @param {Array} wikiEntries
- * @returns {Object} { termMap, entriesById }
- */
-function buildWikiTermMapCacheForBackground(wikiEntries) {
-  const termMap = {};
-  const entriesById = {};
-
-  const enabledEntries = (wikiEntries || []).filter(e => e.enabled !== false);
-
-  for (const entry of enabledEntries) {
-    entriesById[entry.id] = entry;
-
-    // Support both old (term) and new (trigger) field names
-    const primaryTrigger = entry.trigger || entry.term;
-    if (!primaryTrigger) continue;
-
-    const triggers = [primaryTrigger, ...(entry.aliases || [])];
-
-    for (const trigger of triggers) {
-      if (trigger && trigger.trim()) {
-        termMap[trigger.toLowerCase().trim()] = entry.id;
-      }
-    }
-  }
-
-  return { termMap, entriesById };
 }
 
 // Message handling
@@ -691,7 +682,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'getContent') {
-    getContent().then(sendResponse);
+    getContent({ forceRefresh: !!request.forceRefresh }).then(sendResponse);
     return true;
   }
 
@@ -810,7 +801,81 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+async function getCachedHubSpotProperties(apiObjectType) {
+  const { [HUBSPOT_PROPERTIES_CACHE_KEY]: cache } = await chrome.storage.local.get({
+    [HUBSPOT_PROPERTIES_CACHE_KEY]: {}
+  });
+
+  const entry = cache[apiObjectType];
+  if (!entry || !Array.isArray(entry.properties) || !entry.timestamp) {
+    return null;
+  }
+
+  if (Date.now() - entry.timestamp > HUBSPOT_PROPERTIES_CACHE_TTL_MS) {
+    return null;
+  }
+
+  return entry.properties;
+}
+
+async function setCachedHubSpotProperties(apiObjectType, properties) {
+  const { [HUBSPOT_PROPERTIES_CACHE_KEY]: cache } = await chrome.storage.local.get({
+    [HUBSPOT_PROPERTIES_CACHE_KEY]: {}
+  });
+
+  const updated = {
+    ...cache,
+    [apiObjectType]: {
+      properties,
+      timestamp: Date.now()
+    }
+  };
+
+  await chrome.storage.local.set({ [HUBSPOT_PROPERTIES_CACHE_KEY]: updated });
+}
+
+async function fetchHubSpotPropertiesPaged(apiObjectType, apiToken) {
+  const properties = [];
+  let after = null;
+  let pageCount = 0;
+
+  while (true) {
+    const url = new URL(`https://api.hubapi.com/crm/v3/properties/${apiObjectType}`);
+    url.searchParams.set('limit', '100');
+    if (after) {
+      url.searchParams.set('after', after);
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data.results)) {
+      properties.push(...data.results);
+    }
+
+    after = data.paging?.next?.after || null;
+    pageCount += 1;
+
+    if (!after || pageCount > 50) {
+      break;
+    }
+  }
+
+  return properties;
+}
+
 // Fetch any HubSpot record from API (contacts, companies, deals, tickets)
+// Requires HubSpot API token configured in extension settings
 async function fetchHubSpotRecord(objectType, recordId) {
   console.log('[RevGuide BG] Fetching record:', objectType, recordId);
 
@@ -818,46 +883,31 @@ async function fetchHubSpotRecord(objectType, recordId) {
   const apiToken = settings.hubspotApiToken;
 
   if (!apiToken) {
-    console.log('[RevGuide BG] No API token configured');
     throw new Error('HubSpot API token not configured. Add it in extension settings.');
   }
 
-  // Map singular to plural for API endpoints
-  const objectTypeMap = {
-    'contact': 'contacts',
-    'company': 'companies',
-    'deal': 'deals',
-    'ticket': 'tickets'
-  };
-  const apiObjectType = objectTypeMap[objectType] || objectType;
+  const apiObjectType = getHubSpotApiObjectType(objectType);
 
   console.log('[RevGuide BG] Token found, fetching properties list...');
 
-  // First, get all available properties for this object type
-  let propertyNames = [];
-  try {
-    const propsUrl = `https://api.hubapi.com/crm/v3/properties/${apiObjectType}`;
-    const propsResponse = await fetch(propsUrl, {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    if (propsResponse.ok) {
-      const propsData = await propsResponse.json();
-      propertyNames = propsData.results.map(p => p.name);
+  let cachedProperties = await getCachedHubSpotProperties(apiObjectType);
+  let propertyNames = cachedProperties ? cachedProperties.map(p => p.name) : [];
+
+  if (propertyNames.length === 0) {
+    try {
+      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { apiToken, forceRefresh: true });
+      propertyNames = fetchedProperties.map(p => p.name);
       console.log('[RevGuide BG] Found', propertyNames.length, apiObjectType, 'properties');
+    } catch (e) {
+      console.log('[RevGuide BG] Could not fetch property list, using defaults');
+      const defaults = {
+        contacts: ['firstname', 'lastname', 'email', 'phone', 'lifecyclestage', 'hubspot_owner_id'],
+        companies: ['name', 'domain', 'industry', 'annualrevenue', 'numberofemployees', 'hubspot_owner_id'],
+        deals: ['dealname', 'amount', 'dealstage', 'hubspot_owner_id', 'pipeline', 'closedate'],
+        tickets: ['subject', 'content', 'hs_ticket_priority', 'hs_pipeline_stage', 'hubspot_owner_id']
+      };
+      propertyNames = defaults[apiObjectType] || [];
     }
-  } catch (e) {
-    console.log('[RevGuide BG] Could not fetch property list, using defaults');
-    // Default properties by object type
-    const defaults = {
-      contacts: ['firstname', 'lastname', 'email', 'phone', 'lifecyclestage', 'hubspot_owner_id'],
-      companies: ['name', 'domain', 'industry', 'annualrevenue', 'numberofemployees', 'hubspot_owner_id'],
-      deals: ['dealname', 'amount', 'dealstage', 'hubspot_owner_id', 'pipeline', 'closedate'],
-      tickets: ['subject', 'content', 'hs_ticket_priority', 'hs_pipeline_stage', 'hubspot_owner_id']
-    };
-    propertyNames = defaults[apiObjectType] || [];
   }
 
   // Fetch the record with all properties
@@ -885,34 +935,29 @@ async function fetchHubSpotRecord(objectType, recordId) {
 }
 
 // Fetch properties for a HubSpot object type
-async function fetchHubSpotProperties(objectType) {
+// Requires HubSpot API token configured in extension settings
+async function fetchHubSpotProperties(objectType, options = {}) {
   console.log('[RevGuide BG] Fetching properties for:', objectType);
 
+  const { apiToken: providedToken, forceRefresh = false } = options;
   const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = settings.hubspotApiToken;
+  const apiToken = providedToken || settings.hubspotApiToken;
 
   if (!apiToken) {
     throw new Error('HubSpot API token not configured. Add it in extension settings.');
   }
 
-  const url = `https://api.hubapi.com/crm/v3/properties/${objectType}`;
+  const apiObjectType = getHubSpotApiObjectType(objectType);
 
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/json'
+  if (!forceRefresh) {
+    const cached = await getCachedHubSpotProperties(apiObjectType);
+    if (cached) {
+      return cached;
     }
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
   }
 
-  const data = await response.json();
-
-  // Return simplified property list: name, label, type, options
-  return data.results.map(prop => ({
+  const rawProperties = await fetchHubSpotPropertiesPaged(apiObjectType, apiToken);
+  const simplified = rawProperties.map(prop => ({
     name: prop.name,
     label: prop.label,
     type: prop.type,
@@ -920,9 +965,16 @@ async function fetchHubSpotProperties(objectType) {
     options: prop.options || [],
     groupName: prop.groupName
   })).sort((a, b) => a.label.localeCompare(b.label));
+
+  if (simplified.length > 0) {
+    await setCachedHubSpotProperties(apiObjectType, simplified);
+  }
+
+  return simplified;
 }
 
 // Update a HubSpot record's properties
+// Requires HubSpot API token configured in extension settings
 async function updateHubSpotRecord(objectType, recordId, properties) {
   console.log('[RevGuide BG] Updating record:', objectType, recordId, properties);
 
@@ -937,15 +989,7 @@ async function updateHubSpotRecord(objectType, recordId, properties) {
     throw new Error('Missing object type or record ID');
   }
 
-  // Map singular object type to API endpoint
-  const objectTypeMap = {
-    'contact': 'contacts',
-    'company': 'companies',
-    'deal': 'deals',
-    'ticket': 'tickets'
-  };
-
-  const apiObjectType = objectTypeMap[objectType] || objectType;
+  const apiObjectType = getHubSpotApiObjectType(objectType);
 
   const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/${recordId}`;
   console.log('[RevGuide BG] PATCH request to:', url);

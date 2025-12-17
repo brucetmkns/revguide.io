@@ -5,57 +5,17 @@
  */
 
 const { TestRunner, assert, assertEqual } = require('./setup');
+const RulesEngine = require('../lib/rules-engine');
 
-// Import condition evaluation logic (simplified version for testing)
+const engine = new RulesEngine();
+
 function evaluateCondition(condition, recordData) {
-  const { property, operator, value } = condition;
-  const recordValue = recordData[property];
-
-  // Handle null/undefined
-  if (recordValue === undefined || recordValue === null) {
-    if (operator === 'is_empty') return true;
-    if (operator === 'is_not_empty') return false;
-    return false;
-  }
-
-  // Normalize values for comparison
-  const normalizedRecordValue = String(recordValue).toLowerCase().trim();
-  const normalizedValue = String(value).toLowerCase().trim();
-
-  switch (operator) {
-    case 'equals':
-      return normalizedRecordValue === normalizedValue;
-    case 'not_equals':
-      return normalizedRecordValue !== normalizedValue;
-    case 'contains':
-      return normalizedRecordValue.includes(normalizedValue);
-    case 'not_contains':
-      return !normalizedRecordValue.includes(normalizedValue);
-    case 'starts_with':
-      return normalizedRecordValue.startsWith(normalizedValue);
-    case 'ends_with':
-      return normalizedRecordValue.endsWith(normalizedValue);
-    case 'greater_than':
-      return parseFloat(recordValue) > parseFloat(value);
-    case 'less_than':
-      return parseFloat(recordValue) < parseFloat(value);
-    case 'is_empty':
-      return recordValue === '' || recordValue === null || recordValue === undefined;
-    case 'is_not_empty':
-      return recordValue !== '' && recordValue !== null && recordValue !== undefined;
-    default:
-      return false;
-  }
+  return engine.evaluateCondition(condition, recordData);
 }
 
 function evaluateConditions(conditions, recordData, logic = 'AND') {
-  if (!conditions || conditions.length === 0) return true;
-
-  if (logic === 'AND') {
-    return conditions.every(c => evaluateCondition(c, recordData));
-  } else {
-    return conditions.some(c => evaluateCondition(c, recordData));
-  }
+  const rule = { conditions, logic };
+  return engine.evaluateRule(rule, recordData);
 }
 
 // Run tests

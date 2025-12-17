@@ -555,32 +555,11 @@ async function saveInstalledLibraries(libraries) {
  * @returns {Object} - { termMap: Object, entriesById: Object }
  */
 function buildWikiTermMapCache(wikiEntries) {
-  const termMap = {};  // lowercase trigger -> entry ID
-  const entriesById = {};  // entry ID -> entry object (for enabled entries only)
-
-  const enabledEntries = (wikiEntries || []).filter(e => e.enabled !== false);
-
-  for (const entry of enabledEntries) {
-    // Store entry by ID for quick lookup
-    entriesById[entry.id] = entry;
-
-    // Skip entries without a trigger (glossary-only entries)
-    const primaryTrigger = entry.trigger || entry.term;
-    if (!primaryTrigger) continue;
-
-    // Build trigger list: primary trigger + aliases
-    const triggers = [primaryTrigger, ...(entry.aliases || [])];
-
-    for (const trigger of triggers) {
-      if (trigger && trigger.trim()) {
-        const key = trigger.toLowerCase().trim();
-        // Store entry ID (not full entry) to keep cache lightweight
-        termMap[key] = entry.id;
-      }
-    }
+  if (!globalThis.RevGuideWikiCache?.buildWikiTermMapCache) {
+    console.warn('[RevGuide] Wiki cache builder not available');
+    return { termMap: {}, entriesById: {} };
   }
-
-  return { termMap, entriesById };
+  return globalThis.RevGuideWikiCache.buildWikiTermMapCache(wikiEntries);
 }
 
 /**
