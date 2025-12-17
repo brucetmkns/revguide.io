@@ -957,6 +957,29 @@ ul, ol {
   width: 100%;
 }
 
+.btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.btn-icon-sm {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.nav-link-login {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-3);
+  transition: color var(--transition-fast);
+}
+
+.nav-link-login:hover {
+  color: var(--color-text-primary);
+}
+
 
 /* ----------------------------------------
    Privacy Section
