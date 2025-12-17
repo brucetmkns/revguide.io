@@ -18,7 +18,7 @@
 // ===========================================
 
 const CONFIG = {
-  fromEmail: 'RevGuide <team@revguide.io>', // Update with your verified domain
+  fromEmail: 'RevGuide <notifications@email.revguide.io>',
   appUrl: 'https://app.revguide.io',
   chromeStoreUrl: 'https://chrome.google.com/webstore', // Update when published
   allowedOrigins: [
@@ -33,10 +33,18 @@ const CONFIG = {
 // ===========================================
 
 function buildInvitationEmailHtml(role, token, orgName) {
-  const roleText = role === 'admin' ? 'an Admin' : 'a Member';
-  const roleDescription = role === 'admin'
-    ? 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.'
-    : 'As a Member, you can use all the contextual guidance features within HubSpot.';
+  const roleLabels = {
+    admin: 'an Admin',
+    editor: 'an Editor',
+    viewer: 'a Viewer'
+  };
+  const roleDescriptions = {
+    admin: 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.',
+    editor: 'As an Editor, you can create and edit banners, plays, and wiki entries.',
+    viewer: 'As a Viewer, you can view all contextual guidance features within HubSpot.'
+  };
+  const roleText = roleLabels[role] || 'a team member';
+  const roleDescription = roleDescriptions[role] || '';
 
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
   const orgDisplay = orgName ? ` at <strong>${orgName}</strong>` : '';
@@ -105,10 +113,18 @@ function buildInvitationEmailHtml(role, token, orgName) {
 }
 
 function buildInvitationEmailText(role, token, orgName) {
-  const roleText = role === 'admin' ? 'an Admin' : 'a Member';
-  const roleDescription = role === 'admin'
-    ? 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.'
-    : 'As a Member, you can use all the contextual guidance features within HubSpot.';
+  const roleLabels = {
+    admin: 'an Admin',
+    editor: 'an Editor',
+    viewer: 'a Viewer'
+  };
+  const roleDescriptions = {
+    admin: 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.',
+    editor: 'As an Editor, you can create and edit banners, plays, and wiki entries.',
+    viewer: 'As a Viewer, you can view all contextual guidance features within HubSpot.'
+  };
+  const roleText = roleLabels[role] || 'a team member';
+  const roleDescription = roleDescriptions[role] || '';
 
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
   const orgDisplay = orgName ? ` at ${orgName}` : '';
@@ -151,10 +167,10 @@ function getCorsHeaders(request) {
 
   // Allow Chrome extensions and specified domains
   const isAllowed = origin.startsWith('chrome-extension://') ||
-                    CONFIG.allowedOrigins.some(allowed => origin.includes(allowed.replace('*', '')));
+                    CONFIG.allowedOrigins.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : CONFIG.allowedOrigins[0],
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'null',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
@@ -217,10 +233,10 @@ async function handleInvite(request, env, corsHeaders) {
       });
     }
 
-    // Accept both 'user' and 'member' roles (map user -> member)
-    const normalizedRole = role === 'user' ? 'member' : role;
-    if (!normalizedRole || !['member', 'admin'].includes(normalizedRole)) {
-      return new Response(JSON.stringify({ error: 'Role must be "member" or "admin"' }), {
+    // Accept valid roles
+    const validRoles = ['viewer', 'editor', 'admin'];
+    if (!role || !validRoles.includes(role)) {
+      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", or "admin"' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -254,8 +270,8 @@ async function handleInvite(request, env, corsHeaders) {
         from: CONFIG.fromEmail,
         to: [email],
         subject: orgName ? `You're invited to join ${orgName} on RevGuide` : "You're invited to RevGuide",
-        html: buildInvitationEmailHtml(normalizedRole, token, orgName),
-        text: buildInvitationEmailText(normalizedRole, token, orgName)
+        html: buildInvitationEmailHtml(role, token, orgName),
+        text: buildInvitationEmailText(role, token, orgName)
       })
     });
 
