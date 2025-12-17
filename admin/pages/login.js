@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loginMessage = document.getElementById('loginMessage');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
+  const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
   // Check if already logged in
   const { data: { session } } = await RevGuideAuth.getSession();
@@ -64,6 +65,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Sign in';
     }
+  });
+
+  // Forgot password
+  forgotPasswordLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim();
+    if (!email) {
+      showMessage('Please enter your email address first.', 'error');
+      emailInput.focus();
+      return;
+    }
+
+    forgotPasswordLink.style.pointerEvents = 'none';
+    forgotPasswordLink.textContent = 'Sending...';
+
+    try {
+      const { error } = await RevGuideAuth.resetPassword(email);
+
+      if (error) {
+        showMessage(error.message, 'error');
+      } else {
+        showMessage('Check your email for a password reset link!', 'success');
+      }
+    } catch (err) {
+      console.error('Reset password error:', err);
+      showMessage('Failed to send reset email. Please try again.', 'error');
+    }
+
+    forgotPasswordLink.style.pointerEvents = 'auto';
+    forgotPasswordLink.textContent = 'Forgot password?';
   });
 
   /**

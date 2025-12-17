@@ -149,6 +149,22 @@
       font-weight: var(--font-weight-semibold);
     }
 
+    .forgot-password {
+      text-align: center;
+      margin-top: var(--space-3);
+    }
+
+    .forgot-password a {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      text-decoration: none;
+    }
+
+    .forgot-password a:hover {
+      color: var(--color-text-primary);
+      text-decoration: underline;
+    }
+
     .login-footer {
       text-align: center;
       margin-top: var(--space-6);
@@ -209,6 +225,9 @@
         <button type="submit" class="login-btn" id="loginBtn">
           Sign in
         </button>
+        <div class="forgot-password">
+          <a href="#" id="forgotPasswordLink">Forgot password?</a>
+        </div>
       </form>
 
       <!-- Footer -->

@@ -111,6 +111,26 @@ const RevGuideAuth = {
   },
 
   /**
+   * Send password reset email
+   */
+  async resetPassword(email) {
+    const client = await this.waitForClient();
+    const redirectUrl = window.location.origin + '/reset-password';
+
+    return client.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl
+    });
+  },
+
+  /**
+   * Update user password (after reset)
+   */
+  async updatePassword(newPassword) {
+    const client = await this.waitForClient();
+    return client.auth.updateUser({ password: newPassword });
+  },
+
+  /**
    * Sign out
    */
   async signOut() {
