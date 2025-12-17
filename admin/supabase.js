@@ -689,89 +689,29 @@ const RevGuideDB = {
    */
   async createUserWithOrganization(name, companyName) {
     const client = await RevGuideAuth.waitForClient();
-    const { data: { user } } = await client.auth.getUser();
 
-    if (!user) {
-      return { data: null, error: new Error('Not authenticated') };
+    // Call the PostgreSQL function that handles everything atomically
+    const { data, error } = await client.rpc('create_user_with_organization', {
+      p_name: name,
+      p_company_name: companyName
+    });
+
+    if (error) {
+      console.error('Failed to create user with organization:', error);
+      return { data: null, error };
     }
 
-    // Check if user already has a profile
-    const { data: existingUser } = await client
-      .from('users')
-      .select('id, organization_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (existingUser?.organization_id) {
-      return { data: null, error: new Error('User already has an organization') };
-    }
-
-    // Generate slug from company name
-    const slug = companyName.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || `org-${Date.now()}`;
-
-    // Create organization first
-    const { data: org, error: orgError } = await client
-      .from('organizations')
-      .insert({
-        name: companyName,
-        slug: slug
-      })
-      .select()
-      .single();
-
-    if (orgError) {
-      console.error('Failed to create organization:', orgError);
-      return { data: null, error: orgError };
-    }
-
-    // Create or update user profile linked to organization
-    let userProfile;
-    let userError;
-
-    if (existingUser) {
-      // Update existing user
-      const result = await client
-        .from('users')
-        .update({
-          name: name,
-          organization_id: org.id,
-          role: 'admin'
-        })
-        .eq('auth_user_id', user.id)
-        .select()
-        .single();
-      userProfile = result.data;
-      userError = result.error;
-    } else {
-      // Create new user
-      const result = await client
-        .from('users')
-        .insert({
-          auth_user_id: user.id,
-          email: user.email,
-          name: name,
-          organization_id: org.id,
-          role: 'admin'
-        })
-        .select()
-        .single();
-      userProfile = result.data;
-      userError = result.error;
-    }
-
-    if (userError) {
-      console.error('Failed to create/update user profile:', userError);
-      // Clean up org if user creation failed
-      await client.from('organizations').delete().eq('id', org.id);
-      return { data: null, error: userError };
+    // Check for application-level errors from the function
+    if (data?.error) {
+      return { data: null, error: new Error(data.error) };
     }
 
     // Cache the org ID for fast access
-    this.setCachedOrgId(org.id);
+    if (data?.organization_id) {
+      this.setCachedOrgId(data.organization_id);
+    }
 
-    return { data: { user: userProfile, organization: org }, error: null };
+    return { data, error: null };
   },
 
   /**
