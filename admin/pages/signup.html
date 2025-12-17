@@ -356,6 +356,20 @@
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const queryParams = new URLSearchParams(window.location.search);
 
+      // Check for error in URL (e.g., expired link)
+      if (hashParams.get('error')) {
+        const errorCode = hashParams.get('error_code');
+        const errorDesc = hashParams.get('error_description') || 'Something went wrong';
+
+        if (errorCode === 'otp_expired') {
+          showMessage('Your confirmation link has expired. Please sign in with your email and password below, or <a href="#" id="resendLink">request a new confirmation email</a>.', 'error');
+        } else {
+          showMessage(decodeURIComponent(errorDesc.replace(/\+/g, ' ')), 'error');
+        }
+        // Clear the hash
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
       if (hashParams.get('access_token') || hashParams.get('type') === 'signup') {
         showMessage('Email confirmed! Setting up your account...', 'success');
         // Wait for Supabase to process the token, then create user/org
@@ -458,6 +472,34 @@
         signupMessage.innerHTML = text;
         signupMessage.className = `signup-message ${type}`;
         signupMessage.style.display = 'block';
+
+        // Handle resend link click (for expired confirmation)
+        const resendLink = document.getElementById('resendLink');
+        if (resendLink) {
+          resendLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            if (!email) {
+              showMessage('Please enter your email address first.', 'error');
+              emailInput.focus();
+              return;
+            }
+
+            resendLink.textContent = 'Sending...';
+            resendLink.style.pointerEvents = 'none';
+
+            try {
+              const { error } = await RevGuideAuth.resendConfirmation(email);
+              if (error) {
+                showMessage(error.message, 'error');
+              } else {
+                showMessage('Confirmation email sent! Check your inbox.', 'success');
+              }
+            } catch (err) {
+              showMessage('Failed to resend email. Please try again.', 'error');
+            }
+          });
+        }
       }
     });
   </script>

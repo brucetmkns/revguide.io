@@ -123,6 +123,22 @@ const RevGuideAuth = {
   },
 
   /**
+   * Resend confirmation email
+   */
+  async resendConfirmation(email) {
+    const client = await this.waitForClient();
+    const redirectUrl = window.location.origin + '/signup';
+
+    return client.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+  },
+
+  /**
    * Send password reset email
    */
   async resetPassword(email) {
