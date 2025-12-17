@@ -3,6 +3,7 @@
     { "source": "/", "destination": "/admin/pages/index.html" },
     { "source": "/login", "destination": "/admin/pages/login.html" },
     { "source": "/signup", "destination": "/admin/pages/signup.html" },
+    { "source": "/onboarding", "destination": "/admin/pages/onboarding.html" },
     { "source": "/home", "destination": "/admin/pages/home.html" },
     { "source": "/wiki", "destination": "/admin/pages/wiki.html" },
     { "source": "/banners", "destination": "/admin/pages/banners.html" },
