@@ -1,4 +1,0 @@
-# Disable JWT verification for this function
-# The callback endpoint is called by HubSpot redirect (no auth header)
-# We handle our own authentication via the state parameter
-verify_jwt = false
