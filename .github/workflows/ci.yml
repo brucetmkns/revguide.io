@@ -1,0 +1,192 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Validate extension manifest and structure
+  validate:
+    name: Validate Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate manifest.json
+        run: |
+          echo "Validating manifest.json..."
+          node -e "
+            const manifest = require('./manifest.json');
+            const required = ['manifest_version', 'name', 'version', 'permissions'];
+            for (const field of required) {
+              if (!manifest[field]) {
+                console.error('Missing required field:', field);
+                process.exit(1);
+              }
+            }
+            console.log('Manifest valid:', manifest.name, 'v' + manifest.version);
+          "
+
+      - name: Check required files exist
+        run: |
+          echo "Checking required files..."
+          files=(
+            "manifest.json"
+            "background/background.js"
+            "content/content.js"
+            "sidepanel/sidepanel.html"
+            "admin/pages/home.html"
+            "admin/shared.js"
+            "admin/supabase.js"
+          )
+          for file in "${files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "All required files present"
+
+  # Lint JavaScript files
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ESLint
+        run: npm install eslint@8 --save-dev
+
+      - name: Create ESLint config
+        run: |
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": {
+              "browser": true,
+              "es2021": true,
+              "webextensions": true
+            },
+            "extends": "eslint:recommended",
+            "parserOptions": {
+              "ecmaVersion": "latest",
+              "sourceType": "module"
+            },
+            "globals": {
+              "chrome": "readonly",
+              "AdminShared": "readonly",
+              "RevGuideAuth": "readonly",
+              "RevGuideDB": "readonly",
+              "RevGuideHubSpot": "readonly"
+            },
+            "rules": {
+              "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+              "no-console": "off"
+            }
+          }
+          EOF
+
+      - name: Run ESLint
+        run: npx eslint admin/**/*.js content/**/*.js background/**/*.js --max-warnings 50
+        continue-on-error: true  # Don't fail build on lint warnings initially
+
+  # Build extension package
+  build:
+    name: Build Extension Package
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create extension package
+        run: |
+          mkdir -p dist
+
+          # Create zip excluding development files
+          zip -r dist/revguide-extension.zip . \
+            -x "*.git*" \
+            -x "node_modules/*" \
+            -x "dist/*" \
+            -x "docs/*" \
+            -x "supabase/*" \
+            -x "api/*" \
+            -x "backups/*" \
+            -x "*.md" \
+            -x ".env*" \
+            -x ".github/*" \
+            -x "RevGuide/*" \
+            -x "*.log"
+
+          echo "Extension package created: dist/revguide-extension.zip"
+          ls -lh dist/
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: revguide-extension
+          path: dist/revguide-extension.zip
+          retention-days: 30
+
+  # Deploy Edge Functions (only on main branch)
+  deploy-edge-functions:
+    name: Deploy Supabase Edge Functions
+    runs-on: ubuntu-latest
+    needs: [validate, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_REF
+          supabase functions deploy hubspot-oauth --no-verify-jwt
+
+  # Deploy Cloudflare Worker (only on main branch)
+  deploy-worker:
+    name: Deploy Cloudflare Worker
+    runs-on: ubuntu-latest
+    needs: [validate, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cd api
+          wrangler deploy
+
+  # Notify on failure
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [validate, lint, build]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "CI failed - would send notification here"
+          # Add Slack/Discord webhook notification here if needed
