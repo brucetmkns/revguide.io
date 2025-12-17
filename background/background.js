@@ -5,6 +5,249 @@
 
 console.log('[RevGuide] Service worker starting...');
 
+// ============ AUTH STATE MANAGEMENT ============
+
+/**
+ * Listen for external messages from the web app (app.revguide.io)
+ * This handles the auth bridge between web app and extension
+ */
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  console.log('[RevGuide BG] External message received:', message.type, 'from:', sender.origin);
+  console.log('[RevGuide BG] Full message:', JSON.stringify(message).substring(0, 200));
+
+  // Validate sender origin
+  const allowedOrigins = ['https://app.revguide.io', 'http://localhost:5173', 'http://localhost:3000'];
+  if (!allowedOrigins.some(origin => sender.origin?.startsWith(origin.replace('*', '')))) {
+    console.warn('[RevGuide BG] Message from unauthorized origin:', sender.origin);
+    sendResponse({ success: false, error: 'Unauthorized origin' });
+    return true;
+  }
+
+  if (message.type === 'AUTH_STATE_CHANGED') {
+    console.log('[RevGuide BG] Processing AUTH_STATE_CHANGED');
+    handleAuthStateChange(message.payload).then(() => {
+      console.log('[RevGuide BG] Auth state saved, sending response');
+      sendResponse({ success: true });
+    });
+    return true; // Keep channel open for async response
+  }
+
+  if (message.type === 'AUTH_LOGOUT') {
+    handleLogout().then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.type === 'PING') {
+    // Health check from web app
+    console.log('[RevGuide BG] PING received, responding with extension ID');
+    sendResponse({ success: true, extensionId: chrome.runtime.id });
+    return true;
+  }
+
+  sendResponse({ success: false, error: 'Unknown message type' });
+  return true;
+});
+
+/**
+ * Handle auth state change from web app
+ */
+async function handleAuthStateChange(payload) {
+  console.log('[RevGuide] Auth state changed, user:', payload.user?.email);
+
+  // Store auth data
+  await chrome.storage.local.set({
+    authState: {
+      isAuthenticated: true,
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken,
+      expiresAt: payload.expiresAt,
+      user: payload.user,
+      profile: payload.profile,
+      lastUpdated: Date.now()
+    }
+  });
+
+  // Notify all extension contexts (sidepanel, content scripts)
+  chrome.runtime.sendMessage({ action: 'authStateChanged', isAuthenticated: true });
+
+  // Trigger content refresh to load cloud content
+  notifyContentScriptsAuthChanged(true);
+}
+
+/**
+ * Handle logout from web app
+ */
+async function handleLogout() {
+  console.log('[RevGuide] User logged out');
+
+  await chrome.storage.local.remove('authState');
+
+  // Notify all extension contexts
+  chrome.runtime.sendMessage({ action: 'authStateChanged', isAuthenticated: false });
+  notifyContentScriptsAuthChanged(false);
+}
+
+/**
+ * Notify content scripts that auth state changed
+ */
+function notifyContentScriptsAuthChanged(isAuthenticated) {
+  chrome.tabs.query({ url: '*://*.hubspot.com/*' }, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'authStateChanged',
+        isAuthenticated
+      }).catch(() => {});
+    });
+  });
+}
+
+/**
+ * Get current auth state
+ */
+async function getAuthState() {
+  const { authState } = await chrome.storage.local.get('authState');
+  return authState || { isAuthenticated: false };
+}
+
+/**
+ * Check if auth token is still valid (not expired)
+ */
+async function isAuthValid() {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.expiresAt) {
+    return false;
+  }
+  // Add 5 minute buffer before expiry
+  return (authState.expiresAt * 1000) > (Date.now() + 5 * 60 * 1000);
+}
+
+// ============ SUPABASE API ============
+
+const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
+
+/**
+ * Make authenticated request to Supabase REST API
+ */
+async function supabaseFetch(table, options = {}) {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    throw new Error('Not authenticated');
+  }
+
+  const { select = '*', filter = {}, order } = options;
+
+  let url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;
+
+  // Add filters
+  for (const [key, value] of Object.entries(filter)) {
+    url += `&${key}=${encodeURIComponent(value)}`;
+  }
+
+  // Add ordering
+  if (order) {
+    url += `&order=${encodeURIComponent(order)}`;
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${authState.accessToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Supabase error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch all content (banners, plays, wiki) for the user's organization
+ */
+async function fetchCloudContent() {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.profile?.organizationId) {
+    console.log('[RevGuide] Cannot fetch cloud content: not authenticated or no org');
+    return null;
+  }
+
+  const orgId = authState.profile.organizationId;
+  console.log('[RevGuide] Fetching cloud content for org:', orgId);
+
+  try {
+    // Fetch all content types in parallel
+    const [banners, plays, wikiEntries] = await Promise.all([
+      supabaseFetch('banners', {
+        filter: { 'organization_id': `eq.${orgId}` },
+        order: 'priority.desc'
+      }),
+      supabaseFetch('plays', {
+        filter: { 'organization_id': `eq.${orgId}` }
+      }),
+      supabaseFetch('wiki_entries', {
+        filter: { 'organization_id': `eq.${orgId}` }
+      })
+    ]);
+
+    console.log('[RevGuide] Cloud content fetched:', {
+      banners: banners?.length || 0,
+      plays: plays?.length || 0,
+      wikiEntries: wikiEntries?.length || 0
+    });
+
+    // Transform to match local storage format
+    const content = {
+      rules: banners || [],
+      battleCards: plays || [],
+      wikiEntries: wikiEntries || []
+    };
+
+    // Cache in local storage for offline access
+    await chrome.storage.local.set({
+      cloudContent: content,
+      cloudContentLastFetch: Date.now()
+    });
+
+    return content;
+  } catch (error) {
+    console.error('[RevGuide] Error fetching cloud content:', error);
+    return null;
+  }
+}
+
+/**
+ * Get content - from cloud if authenticated, otherwise local
+ */
+async function getContent() {
+  const authState = await getAuthState();
+
+  if (authState.isAuthenticated && authState.profile?.organizationId) {
+    // Try to fetch from cloud
+    const cloudContent = await fetchCloudContent();
+    if (cloudContent) {
+      return { source: 'cloud', content: cloudContent };
+    }
+
+    // Fall back to cached cloud content
+    const { cloudContent: cached } = await chrome.storage.local.get('cloudContent');
+    if (cached) {
+      return { source: 'cloud-cached', content: cached };
+    }
+  }
+
+  // Fall back to local content
+  const local = await chrome.storage.local.get(['rules', 'battleCards', 'wikiEntries']);
+  return { source: 'local', content: local };
+}
+
+// ============ ORIGINAL CODE ============
+
 // Check if URL is a HubSpot page
 function isHubSpotUrl(url) {
   return url && url.includes('hubspot.com');
@@ -296,6 +539,34 @@ function buildWikiTermMapCacheForBackground(wikiEntries) {
 
 // Message handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Auth state queries
+  if (request.action === 'getAuthState') {
+    getAuthState().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'isAuthValid') {
+    isAuthValid().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'logout') {
+    handleLogout().then(() => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (request.action === 'getContent') {
+    getContent().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'refreshCloudContent') {
+    fetchCloudContent().then(content => {
+      sendResponse({ success: !!content, content });
+    });
+    return true;
+  }
+
   if (request.action === 'getProperties') {
     // Forward to content script
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

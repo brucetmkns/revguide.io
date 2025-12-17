@@ -11,18 +11,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const passwordInput = document.getElementById('password');
   const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
+  // Get query params
+  const queryParams = new URLSearchParams(window.location.search);
+  const requestPath = queryParams.get('request_path');
+
+  // Determine redirect URL after login
+  function getRedirectUrl() {
+    if (requestPath) {
+      // If request_path is provided, redirect there after login
+      return requestPath;
+    }
+    return '/home';
+  }
+
   // Check if already logged in
   const { data: { session } } = await RevGuideAuth.getSession();
   if (session) {
-    window.location.href = '/home';
+    window.location.href = getRedirectUrl();
     return;
   }
 
   // Check for error in URL (e.g., from OAuth)
-  const queryParams = new URLSearchParams(window.location.search);
   if (queryParams.get('error')) {
     showMessage(queryParams.get('error_description') || 'Authentication failed', 'error');
-    window.history.replaceState({}, '', window.location.pathname);
+    // Keep request_path in URL if present
+    if (requestPath) {
+      window.history.replaceState({}, '', `${window.location.pathname}?request_path=${encodeURIComponent(requestPath)}`);
+    } else {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }
 
   // Login form submit
@@ -56,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Login successful
         showMessage('Welcome back! Redirecting...', 'success');
         setTimeout(() => {
-          window.location.href = '/home';
+          window.location.href = getRedirectUrl();
         }, 500);
       }
     } catch (err) {

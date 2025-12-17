@@ -308,10 +308,15 @@ class BannersModule {
   openPlayInSidepanel(playId) {
     console.log('[RevGuide] Opening play in sidepanel:', playId);
 
-    // Fetch the play data directly from storage to ensure it's available
-    // even if it doesn't match the current record's rules
-    chrome.storage.local.get(['battleCards'], (data) => {
-      const play = (data.battleCards || []).find(p => p.id === playId);
+    // Fetch the play data via background script (handles cloud vs local)
+    chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.log('[RevGuide] Error getting content:', chrome.runtime.lastError.message);
+        return;
+      }
+
+      const battleCards = response?.content?.battleCards || [];
+      const play = battleCards.find(p => p.id === playId);
 
       if (!play) {
         console.log('[RevGuide] Play not found:', playId);
@@ -323,7 +328,7 @@ class BannersModule {
         action: 'openSidePanelToPlay',
         playId: playId,
         playData: play
-      }, (response) => {
+      }, (resp) => {
         if (chrome.runtime.lastError) {
           console.log('[RevGuide] Error opening sidepanel to play:', chrome.runtime.lastError.message);
         }

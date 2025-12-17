@@ -2,6 +2,109 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.4.0] - 2025-12-16 - Team Invitation System
+
+### Added
+- **Invitation Acceptance Page** (`/invite`)
+  - Token-based invitation links sent via email
+  - Email verification ensures invites can only be accepted by the intended recipient
+  - Clean UI showing organization name, role, and accept/decline options
+  - Handles email mismatch with option to sign in with correct account
+  - Success state redirects to dashboard
+
+- **Auto-Join Flow During Onboarding**
+  - New users with pending invitations see "Join Team" flow instead of "Create Organization"
+  - Invitation details shown: organization name and assigned role
+  - Company name field hidden when joining existing team
+  - Single form to confirm name and join team
+
+- **Email Invitations with Token Links**
+  - Invitation emails now include "Accept Invitation" button with secure token
+  - Updated email templates (HTML and text versions)
+  - Emails include organization name, role description, and next steps
+
+### Changed
+- `acceptInvitation()` now accepts optional `fullName` parameter
+- Onboarding page detects pending invitations and adjusts UI accordingly
+- `vercel.json` updated with `/invite` route
+
+### Technical
+- New files: `admin/pages/invite.html`, `admin/pages/invite.js`
+- Updated: `admin/pages/onboarding.js` - Pending invitation check and join team UI
+- Updated: `admin/supabase.js` - `acceptInvitation(invitationId, fullName)`, `getInvitationByToken()`, `getPendingInvitationByEmail()`
+- Updated: `api/invite-worker.js` - Email templates with token links
+- Updated: `admin/pages/settings.js` - Passes token and orgName to invite emails
+
+---
+
+## [2.3.0] - 2025-12-16 - Extension Authentication Bridge
+
+### Added
+- **Extension ↔ Web App Authentication Bridge**
+  - Chrome extension now authenticates via web app using Chrome's external messaging API
+  - Single sign-on: Login once in web app, extension automatically authenticated
+  - Extension fetches organization-specific content from Supabase when logged in
+  - Session sync: Logout from either place logs out everywhere
+
+- **Sidepanel Auth States**
+  - **Logged Out**: Shows "Sign In Required" with login button
+  - **Logged In**: Shows user email and Sign Out button in Settings tab
+  - API token section hidden when authenticated (not needed for cloud mode)
+  - Admin Panel button opens app.revguide.io when logged in, local admin when logged out
+
+- **Extension Login Callback Page**
+  - New `/extension/logged-in` route in web app
+  - Receives auth token from Supabase session
+  - Sends `AUTH_STATE_CHANGED` message to extension via `chrome.runtime.sendMessage`
+  - Shows success/error status with instructions
+
+- **Background Script Enhancements**
+  - `onMessageExternal` listener for web app authentication messages
+  - Origin validation against allowlist (app.revguide.io, localhost)
+  - Auth state management with token storage
+  - Supabase REST API client for fetching cloud content
+  - New message actions: `getAuthState`, `isAuthValid`, `logout`, `getContent`, `refreshCloudContent`
+
+- **Content Loading from Cloud**
+  - Content script now fetches via background script (`getContent` action)
+  - Background determines source: Supabase (when authenticated) or local storage
+  - Cloud content cached locally for offline access
+
+### Changed
+- `manifest.json`: Added `externally_connectable` for app.revguide.io and localhost
+- `login.js`: Handles `request_path` parameter for redirect after login
+- `vercel.json`: Added `/extension/logged-in` route
+
+### Technical
+- New files: `admin/pages/extension-logged-in.html`, `admin/pages/extension-logged-in.js`
+- `background/background.js`: Auth state management, Supabase REST API, external message listener
+- `sidepanel/sidepanel.js`: Auth state UI, login/logout handling, conditional admin panel URL
+- `sidepanel/sidepanel.html`: Logged out state UI with login button
+- `sidepanel/sidepanel.css`: Auth status styles
+- `content/content.js`: Updated `loadData()` to use background script for content
+- `content/modules/banners.js`: Updated to use background script for play lookup
+
+---
+
+## [2.2.2] - 2025-12-16 - Supabase CSP Fix
+
+### Fixed
+- **Chrome Extension Content Security Policy (CSP) Compliance**
+  - Supabase JS library now bundled locally instead of loaded from CDN
+  - Fixes "script-src 'self'" CSP violation in Manifest V3 extensions
+  - Library auto-detects context: uses local bundle in extension, CDN in web app
+
+### Added
+- `admin/lib/supabase.min.js` - Local Supabase JS v2 bundle
+- `admin/lib/*` added to `web_accessible_resources` in manifest
+
+### Technical
+- `admin/supabase.js` uses `chrome.runtime.getURL()` for extension context
+- Falls back to CDN for web app context (app.revguide.io)
+- New `createUserWithOrganization()` method in RevGuideDB for onboarding flow
+
+---
+
 ## [2.2.1] - 2025-12-16 - Data Persistence Fix
 
 ### Fixed

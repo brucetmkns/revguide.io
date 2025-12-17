@@ -22,8 +22,13 @@ plugin/
 │   │   ├── wiki.html/js/css      # Wiki glossary
 │   │   ├── libraries.html/js/css # Content library browser
 │   │   ├── settings.html/js      # Settings & team management
-│   │   ├── login.html            # Web app login (Supabase)
-│   │   └── signup.html           # Web app signup
+│   │   ├── login.html/js         # Web app login (Supabase)
+│   │   ├── signup.html           # Web app signup
+│   │   ├── invite.html/js        # Invitation acceptance page
+│   │   ├── onboarding.html/js    # New user onboarding
+│   │   └── extension-logged-in.html/js  # Extension auth callback
+│   ├── lib/                 # Bundled third-party libraries
+│   │   └── supabase.min.js  # Supabase JS v2 (local for CSP compliance)
 │   ├── shared.js            # Common utilities (AdminShared)
 │   ├── shared.css           # Design system & components
 │   ├── supabase.js          # Supabase client (RevGuideAuth, RevGuideDB)
@@ -94,6 +99,7 @@ The admin panel is the main interface for managing RevGuide content.
 | `shared.css` | Design system: CSS variables, component styles, layout classes |
 | `supabase.js` | `RevGuideAuth` (auth) and `RevGuideDB` (database) clients |
 | `hubspot.js` | `RevGuideHubSpot` client for OAuth flow |
+| `lib/supabase.min.js` | Bundled Supabase JS library (CSP compliance for extensions) |
 
 **Context Detection:**
 ```javascript
@@ -128,14 +134,19 @@ class Module {
 Service worker handling:
 - Extension icon clicks → opens side panel
 - Message routing between content script, side panel, admin
+- **External message listener** for web app authentication bridge
+- Auth state management (token storage, session validation)
+- Supabase REST API client for cloud content fetching
 - HubSpot API proxy (for extension context)
 - Invite email sending (via Cloudflare Worker)
 
 ### 4. Side Panel (`sidepanel/`)
 
-Chrome's native side panel showing:
+Chrome's native side panel with auth-aware UI:
+- **Logged out state**: Shows "Sign In Required" with login button
+- **Logged in state**: Shows user email and Sign Out button
 - **Plays tab**: Contextual battle cards for current record
-- **Settings tab**: Quick toggles and configuration
+- **Settings tab**: Quick toggles, auth status, admin panel link
 
 ### 5. Supabase Backend (`supabase/`)
 
@@ -146,7 +157,7 @@ Chrome's native side panel showing:
 | `users` | User profiles linked to auth.users |
 | `hubspot_connections` | OAuth tokens (encrypted) |
 | `oauth_states` | CSRF protection for OAuth |
-| `invitations` | Pending team invites |
+| `invitations` | Pending team invites with tokens |
 | `banners` | Banner configurations |
 | `plays` | Play/battle card configurations |
 | `wiki_entries` | Wiki glossary entries |
@@ -159,15 +170,75 @@ Chrome's native side panel showing:
 Single worker handling team invitation emails via Resend SMTP.
 - Endpoint: `https://revguide-api.revguide.workers.dev/api/invite`
 
+## Team Invitation System
+
+RevGuide supports two methods for adding users to organizations:
+
+### Method 1: Token Link (Direct Accept)
+```
+Admin sends invitation → User receives email with token link
+    ↓
+User clicks link → /invite?token=xxx
+    ↓
+If logged in → Shows invitation details → Accept/Decline
+If not logged in → Redirects to login → Returns to invite page
+    ↓
+Accept → Creates user profile with org link → Redirects to dashboard
+```
+
+### Method 2: Email Match (Auto-Join During Onboarding)
+```
+Admin sends invitation → Invitation stored with user's email
+    ↓
+User signs up (with invited email) → Redirects to onboarding
+    ↓
+Onboarding checks for pending invitation → Shows "Join Team" flow
+    ↓
+User confirms name → Accepts invitation → Joins organization
+```
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Invite page | `admin/pages/invite.html/js` | Token-based acceptance UI |
+| Onboarding | `admin/pages/onboarding.js` | Auto-join detection |
+| Settings | `admin/pages/settings.js` | Send invitations |
+| Supabase | `admin/supabase.js` | `acceptInvitation()`, `getInvitationByToken()`, `getPendingInvitationByEmail()` |
+| Email worker | `api/invite-worker.js` | Sends branded emails with token links |
+
+### Invitation Data Structure
+```javascript
+{
+  id: "uuid",
+  organization_id: "org-uuid",
+  email: "user@example.com",
+  role: "member" | "admin",
+  token: "secure-random-token",
+  expires_at: "2025-12-23T00:00:00Z",  // 7 days
+  accepted_at: null,  // Set when accepted
+  created_at: "2025-12-16T00:00:00Z"
+}
+```
+
 ## Data Flow
 
-### Extension Context
+### Extension Context (Authenticated)
+```
+HubSpot Page → content.js → background.js → Supabase REST API
+                    ↓                              ↓
+              sidepanel.js ←──────────── organization content
+                    ↓
+         app.revguide.io (admin panel)
+```
+
+### Extension Context (Not Authenticated)
 ```
 HubSpot Page → content.js → chrome.storage.local
                     ↓
               sidepanel.js ← chrome.runtime.sendMessage → background.js
                     ↓                                          ↓
-              admin pages                              HubSpot API (proxy)
+         local admin pages                             HubSpot API (proxy)
 ```
 
 ### Web App Context
@@ -176,6 +247,60 @@ app.revguide.io → admin pages → Supabase (via RevGuideDB)
                        ↓
                  RevGuideHubSpot → Edge Function → HubSpot OAuth
 ```
+
+## Extension ↔ Web App Authentication Bridge
+
+The extension authenticates via the web app using Chrome's external messaging API.
+
+### Authentication Flow
+```
+User clicks "Sign In" in extension sidepanel
+    ↓
+Opens: app.revguide.io/login?request_path=/extension/logged-in&eid={extensionId}
+    ↓
+User logs in (or already logged in → auto-redirects)
+    ↓
+Callback page (/extension/logged-in) sends message to extension:
+    chrome.runtime.sendMessage(extensionId, { type: 'AUTH_STATE_CHANGED', payload: {...} })
+    ↓
+Extension background.js receives via onMessageExternal listener
+    ↓
+Stores auth token in chrome.storage.local
+    ↓
+Extension fetches content from Supabase using stored token
+```
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| External listener | `background/background.js` | `onMessageExternal` receives auth messages |
+| Callback page | `admin/pages/extension-logged-in.html/js` | Sends auth token to extension |
+| Login redirect | `admin/pages/login.js` | Handles `request_path` parameter |
+| Sidepanel auth | `sidepanel/sidepanel.js` | Auth state UI, login button |
+| Manifest config | `manifest.json` | `externally_connectable` for app.revguide.io |
+
+### Auth State Storage
+```javascript
+// Stored in chrome.storage.local
+{
+  authState: {
+    isAuthenticated: true,
+    accessToken: "eyJ...",
+    refreshToken: "...",
+    expiresAt: 1702000000,
+    user: { id: "uuid", email: "user@example.com" },
+    profile: { id: "uuid", name: "User Name", organizationId: "org-uuid", role: "admin" }
+  }
+}
+```
+
+### UI States
+
+| Auth State | Sidepanel Plays Tab | Settings Tab | Admin Panel Button |
+|------------|---------------------|--------------|-------------------|
+| Logged Out | "Sign In Required" | Shows API token field | Opens local admin |
+| Logged In | Organization content | Shows email + Sign Out | Opens app.revguide.io |
 
 ## Key Files Reference
 
@@ -255,15 +380,38 @@ Defined in `admin/shared.css`:
 ### Chrome Storage (Extension)
 ```javascript
 {
+  // Content (local mode)
   rules: [],           // Banners
   battleCards: [],     // Plays
   presentations: [],   // Media embeds
   wikiEntries: [],     // Wiki glossary
+
+  // Settings
   settings: {},        // User preferences
   invitedUsers: [],    // Team invites (legacy)
+
+  // Wiki cache
   wikiTermMapCache: {},    // Pre-built term map
   wikiEntriesById: {},     // Entry lookup by ID
-  wikiCacheVersion: 0      // Cache invalidation
+  wikiCacheVersion: 0,     // Cache invalidation
+
+  // Authentication (when signed in via web app)
+  authState: {
+    isAuthenticated: true,
+    accessToken: "...",
+    refreshToken: "...",
+    expiresAt: 0,
+    user: { id, email },
+    profile: { id, name, organizationId, role }
+  },
+
+  // Cloud content cache
+  cloudContent: {        // Cached org content from Supabase
+    rules: [],
+    battleCards: [],
+    wikiEntries: []
+  },
+  cloudContentLastFetch: 0  // Timestamp
 }
 ```
 
@@ -310,6 +458,6 @@ git push origin main
 
 ## Version History
 
-Current: **v2.2.0** (December 2024) - Beta Release
+Current: **v2.4.0** (December 2024) - Team Invitation System
 
 See `CHANGELOG.md` for full history.

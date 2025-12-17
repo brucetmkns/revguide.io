@@ -267,16 +267,26 @@
     // ============ DATA LOADING ============
 
     /**
-     * Load configuration data from Chrome storage
+     * Load configuration data - tries cloud first (via background script), falls back to local
      * Also loads pre-built wiki term map cache for faster tooltip initialization
      */
     async loadData() {
-      return new Promise((resolve) => {
+      // First, try to get content via background script (handles cloud vs local)
+      const contentResult = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+          if (chrome.runtime.lastError) {
+            log('Error getting content:', chrome.runtime.lastError.message);
+            resolve(null);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+
+      // Get settings and wiki cache from local storage
+      const localData = await new Promise((resolve) => {
         chrome.storage.local.get({
-          rules: [],
-          battleCards: [],
           presentations: [],
-          wikiEntries: [],
           wikiTermMapCache: null,
           wikiEntriesById: null,
           wikiCacheVersion: 0,
@@ -289,34 +299,51 @@
             bannerPosition: 'top',
             theme: 'light'
           }
-        }, (data) => {
-          this.rules = data.rules;
-          this.battleCards = data.battleCards;
-          this.presentations = data.presentations;
-          this.wikiEntries = data.wikiEntries;
-          this.settings = data.settings;
-
-          // Store pre-built wiki cache for faster tooltip loading
-          this.wikiTermMapCache = data.wikiTermMapCache;
-          this.wikiEntriesById = data.wikiEntriesById;
-          this.wikiCacheVersion = data.wikiCacheVersion;
-
-          // Also store in sessionStorage for instant subsequent page loads
-          // (sessionStorage is synchronous and faster than chrome.storage)
-          if (data.wikiTermMapCache && data.wikiEntriesById) {
-            try {
-              sessionStorage.setItem('hshelper_wikiTermMapCache', JSON.stringify(data.wikiTermMapCache));
-              sessionStorage.setItem('hshelper_wikiEntriesById', JSON.stringify(data.wikiEntriesById));
-              sessionStorage.setItem('hshelper_wikiCacheVersion', String(data.wikiCacheVersion));
-            } catch (e) {
-              // SessionStorage may be unavailable or full - not critical
-              log('Could not save to sessionStorage:', e.message);
-            }
-          }
-
-          resolve();
-        });
+        }, resolve);
       });
+
+      // Use content from background script if available
+      if (contentResult && contentResult.content) {
+        log('Content loaded from:', contentResult.source);
+        const content = contentResult.content;
+        this.rules = content.rules || [];
+        this.battleCards = content.battleCards || [];
+        this.wikiEntries = content.wikiEntries || [];
+      } else {
+        // Fall back to local storage directly
+        log('Content loaded from: local storage fallback');
+        const fallbackData = await new Promise((resolve) => {
+          chrome.storage.local.get({
+            rules: [],
+            battleCards: [],
+            wikiEntries: []
+          }, resolve);
+        });
+        this.rules = fallbackData.rules;
+        this.battleCards = fallbackData.battleCards;
+        this.wikiEntries = fallbackData.wikiEntries;
+      }
+
+      // Always use local data for presentations and settings
+      this.presentations = localData.presentations;
+      this.settings = localData.settings;
+
+      // Store pre-built wiki cache for faster tooltip loading
+      this.wikiTermMapCache = localData.wikiTermMapCache;
+      this.wikiEntriesById = localData.wikiEntriesById;
+      this.wikiCacheVersion = localData.wikiCacheVersion;
+
+      // Also store in sessionStorage for instant subsequent page loads
+      if (localData.wikiTermMapCache && localData.wikiEntriesById) {
+        try {
+          sessionStorage.setItem('hshelper_wikiTermMapCache', JSON.stringify(localData.wikiTermMapCache));
+          sessionStorage.setItem('hshelper_wikiEntriesById', JSON.stringify(localData.wikiEntriesById));
+          sessionStorage.setItem('hshelper_wikiCacheVersion', String(localData.wikiCacheVersion));
+        } catch (e) {
+          // SessionStorage may be unavailable or full - not critical
+          log('Could not save to sessionStorage:', e.message);
+        }
+      }
     }
 
     /**

@@ -704,7 +704,13 @@ class SettingsPage {
     try {
       // Step 1: Create invitation in database (web context) or local storage (extension)
       let invitationData;
+      let orgName = null;
+
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        // Get organization name for the email
+        const { data: org } = await RevGuideDB.getOrganization();
+        orgName = org?.name;
+
         const { data, error } = await RevGuideDB.createInvitation(email, role);
         if (error) {
           throw new Error(error.message);
@@ -713,7 +719,9 @@ class SettingsPage {
       }
 
       // Step 2: Send email via Cloudflare Worker API (Resend)
-      await this.sendInviteEmail(email, role);
+      // Include token and org name so the email has an accept link
+      const token = invitationData?.token;
+      await this.sendInviteEmail(email, role, token, orgName);
 
       // Update local state
       if (invitationData) {
@@ -759,7 +767,7 @@ class SettingsPage {
   /**
    * Send invitation email via Cloudflare Worker (Resend SMTP)
    */
-  async sendInviteEmail(email, role) {
+  async sendInviteEmail(email, role, token, orgName) {
     const INVITE_API_URL = 'https://revguide-api.revguide.workers.dev/api/invite';
 
     // In extension context, use background script
@@ -768,7 +776,9 @@ class SettingsPage {
         chrome.runtime.sendMessage({
           action: 'sendInviteEmail',
           email: email,
-          role: role
+          role: role,
+          token: token,
+          orgName: orgName
         }, (response) => {
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message));
@@ -785,7 +795,7 @@ class SettingsPage {
     const response = await fetch(INVITE_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, role })
+      body: JSON.stringify({ email, role, token, orgName })
     });
 
     const result = await response.json();
@@ -802,7 +812,18 @@ class SettingsPage {
    */
   async resendInvitation(inviteId, email, role) {
     try {
-      await this.sendInviteEmail(email, role);
+      // Find the invitation to get its token
+      const invitation = this.pendingInvitations.find(i => i.id === inviteId);
+      const token = invitation?.token;
+
+      // Get org name
+      let orgName = null;
+      if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        const { data: org } = await RevGuideDB.getOrganization();
+        orgName = org?.name;
+      }
+
+      await this.sendInviteEmail(email, role, token, orgName);
       AdminShared.showToast(`Invitation resent to ${email}`, 'success');
     } catch (error) {
       console.error('Failed to resend invitation:', error);

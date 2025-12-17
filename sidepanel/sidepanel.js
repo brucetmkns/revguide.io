@@ -3,6 +3,9 @@
  * Displays plays and settings in Chrome's native side panel
  */
 
+// Web app URL for authentication
+const WEB_APP_URL = 'https://app.revguide.io';
+
 class SidePanel {
   constructor() {
     this.cards = [];
@@ -10,6 +13,7 @@ class SidePanel {
     this.properties = {};  // Current record properties
     this.context = {};     // Current record context (objectType, recordId, etc.)
     this.propertyMetadata = {}; // Property definitions from HubSpot API
+    this.authState = { isAuthenticated: false };
     this.init();
   }
 
@@ -20,8 +24,14 @@ class SidePanel {
     // Load settings
     await this.loadSettings();
 
+    // Check auth state
+    await this.checkAuthState();
+
     // Set up settings event handlers
     this.setupSettingsHandlers();
+
+    // Set up auth handlers
+    this.setupAuthHandlers();
 
     // Check if we should open to settings tab (from extension icon click)
     await this.checkOpenTab();
@@ -37,6 +47,10 @@ class SidePanel {
       }
       if (message.action === 'showNotHubspot') {
         this.showNotHubspotState();
+      }
+      if (message.action === 'authStateChanged') {
+        // Re-check auth state when it changes
+        this.checkAuthState();
       }
     });
 
@@ -101,6 +115,121 @@ class SidePanel {
     }
   }
 
+  // ============ AUTHENTICATION ============
+
+  async checkAuthState() {
+    try {
+      this.authState = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getAuthState' }, (response) => {
+          resolve(response || { isAuthenticated: false });
+        });
+      });
+
+      console.log('[RevGuide] Auth state:', this.authState.isAuthenticated ? 'authenticated' : 'not authenticated');
+
+      // Update UI based on auth state
+      this.updateAuthUI();
+
+      // If not authenticated, show logged out state
+      if (!this.authState.isAuthenticated) {
+        this.showLoggedOutState();
+      }
+    } catch (e) {
+      console.error('[RevGuide] Error checking auth state:', e);
+      this.authState = { isAuthenticated: false };
+    }
+  }
+
+  updateAuthUI() {
+    // Update settings section with auth status if authenticated
+    const settingsContainer = document.querySelector('.settings-container');
+    if (!settingsContainer) return;
+
+    // Remove existing auth status if any
+    const existingStatus = settingsContainer.querySelector('.auth-status');
+    if (existingStatus) {
+      existingStatus.remove();
+    }
+
+    // Show/hide API token section based on auth state
+    const apiTokenSection = document.getElementById('apiTokenSection');
+    if (apiTokenSection) {
+      apiTokenSection.style.display = this.authState.isAuthenticated ? 'none' : 'block';
+    }
+
+    // Update admin hint text
+    const adminHint = document.getElementById('adminHint');
+    if (adminHint) {
+      adminHint.textContent = this.authState.isAuthenticated
+        ? 'Opens app.revguide.io to manage your content'
+        : 'Manage rules, plays, wiki entries, and media';
+    }
+
+    if (this.authState.isAuthenticated) {
+      const authStatusHtml = `
+        <div class="auth-status authenticated">
+          <div class="auth-status-info">
+            <div class="auth-status-email">${this.escapeHtml(this.authState.user?.email || 'Signed in')}</div>
+            ${this.authState.profile?.name ? `<div class="auth-status-org">${this.escapeHtml(this.authState.profile.name)}</div>` : ''}
+          </div>
+          <button class="btn btn-secondary btn-sm" id="logoutBtn">Sign Out</button>
+        </div>
+      `;
+      settingsContainer.insertAdjacentHTML('afterbegin', authStatusHtml);
+
+      // Add logout handler
+      document.getElementById('logoutBtn')?.addEventListener('click', () => this.handleLogout());
+    }
+  }
+
+  setupAuthHandlers() {
+    // Login button in logged out state
+    document.getElementById('loginBtn')?.addEventListener('click', () => {
+      this.openLoginPage();
+    });
+
+    // Signup link
+    document.getElementById('signupLink')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: `${WEB_APP_URL}/signup` });
+    });
+  }
+
+  openLoginPage() {
+    // Get extension ID and construct login URL with callback
+    const extensionId = chrome.runtime.id;
+    const callbackPath = `/extension/logged-in?eid=${extensionId}`;
+    const loginUrl = `${WEB_APP_URL}/login?request_path=${encodeURIComponent(callbackPath)}`;
+
+    chrome.tabs.create({ url: loginUrl });
+  }
+
+  async handleLogout() {
+    try {
+      await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'logout' }, resolve);
+      });
+
+      this.authState = { isAuthenticated: false };
+      this.updateAuthUI();
+      this.showLoggedOutState();
+    } catch (e) {
+      console.error('[RevGuide] Logout error:', e);
+    }
+  }
+
+  showLoggedOutState() {
+    const container = document.getElementById('cardsContainer');
+    const emptyState = document.getElementById('emptyState');
+    const notHubspotState = document.getElementById('notHubspotState');
+    const loggedOutState = document.getElementById('loggedOutState');
+
+    if (container) container.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
+    if (notHubspotState) notHubspotState.style.display = 'none';
+    if (loggedOutState) loggedOutState.style.display = 'flex';
+  }
+
   // ============ SETTINGS ============
 
   async loadSettings() {
@@ -158,9 +287,13 @@ class SidePanel {
       setTimeout(() => { status.textContent = ''; }, 2000);
     });
 
-    // Admin Panel button
+    // Admin Panel button - open web app if authenticated, local if not
     document.getElementById('openAdminBtn').addEventListener('click', () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('admin/pages/home.html') });
+      if (this.authState.isAuthenticated) {
+        chrome.tabs.create({ url: `${WEB_APP_URL}/home` });
+      } else {
+        chrome.tabs.create({ url: chrome.runtime.getURL('admin/pages/home.html') });
+      }
     });
 
     // Export
@@ -237,6 +370,12 @@ class SidePanel {
   // ============ PLAYS ============
 
   async requestCardsFromContentScript(retryCount = 0) {
+    // If not authenticated, show logged out state
+    if (!this.authState.isAuthenticated) {
+      this.showLoggedOutState();
+      return;
+    }
+
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -279,8 +418,10 @@ class SidePanel {
     const container = document.getElementById('cardsContainer');
     const emptyState = document.getElementById('emptyState');
     const notHubspotState = document.getElementById('notHubspotState');
+    const loggedOutState = document.getElementById('loggedOutState');
 
     notHubspotState.style.display = 'none';
+    loggedOutState.style.display = 'none';
 
     if (this.cards.length === 0) {
       container.style.display = 'none';
@@ -424,12 +565,14 @@ class SidePanel {
   showEmptyState() {
     document.getElementById('cardsContainer').style.display = 'none';
     document.getElementById('notHubspotState').style.display = 'none';
+    document.getElementById('loggedOutState').style.display = 'none';
     document.getElementById('emptyState').style.display = 'flex';
   }
 
   showNotHubspotState() {
     document.getElementById('cardsContainer').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('loggedOutState').style.display = 'none';
     document.getElementById('notHubspotState').style.display = 'flex';
   }
 

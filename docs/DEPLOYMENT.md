@@ -236,7 +236,39 @@ const SUPABASE_URL = 'https://your-project-ref.supabase.co';
 const SUPABASE_ANON_KEY = 'your-anon-key';
 ```
 
-### 5.2 Build Extension
+Also update `background/background.js` (Supabase REST API):
+```javascript
+const SUPABASE_URL = 'https://your-project-ref.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+```
+
+### 5.2 Configure Extension Auth Bridge
+
+The extension uses Chrome's external messaging API to authenticate with the web app.
+
+**Manifest Configuration** (`manifest.json`):
+```json
+{
+  "externally_connectable": {
+    "matches": [
+      "https://app.revguide.io/*",
+      "http://localhost:*/*"
+    ]
+  }
+}
+```
+
+**Vercel Routes** (`vercel.json`):
+Ensure the extension callback route is configured:
+```json
+{
+  "rewrites": [
+    { "source": "/extension/logged-in", "destination": "/admin/pages/extension-logged-in.html" }
+  ]
+}
+```
+
+### 5.3 Build Extension
 
 The extension doesn't require a build step - it's ready to load as-is.
 
@@ -270,8 +302,11 @@ After deployment, verify each component:
 
 ### Extension
 - [ ] Loads in Chrome developer mode
-- [ ] Connects to web app
-- [ ] HubSpot OAuth flow works
+- [ ] Connects to web app via auth bridge
+- [ ] Sign In button opens app.revguide.io login
+- [ ] After login, extension receives auth token
+- [ ] Authenticated extension fetches cloud content
+- [ ] Sign Out clears auth state
 
 ---
 

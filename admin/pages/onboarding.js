@@ -56,27 +56,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     // No profile yet, continue with onboarding
   }
 
+  // Check if user has a pending invitation (auto-join flow)
+  let pendingInvitation = null;
+  try {
+    const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(session.user.email);
+    if (invitation) {
+      pendingInvitation = invitation;
+      console.log('[Onboarding] Found pending invitation for', session.user.email);
+    }
+  } catch (e) {
+    // No pending invitation
+  }
+
   // Get user data from Supabase (includes metadata from signup)
   const { data: { user } } = await RevGuideAuth.getUser();
+
+  // If user has a pending invitation, show the join team UI
+  if (pendingInvitation) {
+    showJoinTeamUI(pendingInvitation);
+  }
 
   // Pre-fill form from user metadata (stored during signup)
   if (user?.user_metadata) {
     fullNameInput.value = user.user_metadata.full_name || '';
-    companyNameInput.value = user.user_metadata.company_name || '';
+    if (!pendingInvitation) {
+      companyNameInput.value = user.user_metadata.company_name || '';
+    }
   }
 
   // Fallback to sessionStorage if metadata is empty
-  if (!fullNameInput.value || !companyNameInput.value) {
+  if (!fullNameInput.value || (!companyNameInput.value && !pendingInvitation)) {
     const signupData = getSignupData();
     if (signupData) {
       if (!fullNameInput.value) fullNameInput.value = signupData.fullName || '';
-      if (!companyNameInput.value) companyNameInput.value = signupData.companyName || '';
+      if (!companyNameInput.value && !pendingInvitation) companyNameInput.value = signupData.companyName || '';
     }
   }
 
   // Set email from session (read-only)
   if (user?.email) {
     emailInput.value = user.email;
+  }
+
+  /**
+   * Show UI for joining an existing team via invitation
+   */
+  function showJoinTeamUI(invitation) {
+    const orgName = invitation.organizations?.name || 'your team';
+    const roleName = invitation.role === 'admin' ? 'Admin' : 'Member';
+
+    // Update step 1 title and description
+    const stepTitle = step1.querySelector('.step-title');
+    const stepDescription = step1.querySelector('.step-description');
+    if (stepTitle) stepTitle.textContent = 'Join your team';
+    if (stepDescription) stepDescription.textContent = `You've been invited to join ${orgName}`;
+
+    // Hide company name field since they're joining existing org
+    const companyGroup = companyNameInput.closest('.form-group');
+    if (companyGroup) companyGroup.style.display = 'none';
+
+    // Show invitation info
+    const inviteInfo = document.createElement('div');
+    inviteInfo.className = 'invite-info';
+    inviteInfo.innerHTML = `
+      <div style="background: var(--color-bg-subtle); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+          <span style="color: var(--color-text-tertiary); font-size: var(--font-size-sm);">Organization</span>
+          <span style="color: var(--color-text-primary); font-weight: var(--font-weight-semibold);">${escapeHtml(orgName)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--color-text-tertiary); font-size: var(--font-size-sm);">Your Role</span>
+          <span style="color: var(--color-text-primary); font-weight: var(--font-weight-semibold);">${roleName}</span>
+        </div>
+      </div>
+    `;
+
+    // Insert before the continue button
+    const formElement = document.getElementById('profileForm');
+    formElement.insertBefore(inviteInfo, continueBtn);
+
+    // Update button text
+    continueBtn.textContent = 'Join Team';
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   // Handle profile form submission
@@ -89,24 +158,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fullName = fullNameInput.value.trim();
     const companyName = companyNameInput.value.trim();
 
-    console.log('[Onboarding] Form submitted with:', { fullName, companyName });
+    console.log('[Onboarding] Form submitted with:', { fullName, companyName, hasPendingInvitation: !!pendingInvitation });
 
-    if (!fullName || !companyName) {
+    // Only require company name if not joining via invitation
+    if (!fullName || (!pendingInvitation && !companyName)) {
       showMessage('Please fill in all fields', 'error');
       return;
     }
 
     continueBtn.disabled = true;
-    continueBtn.textContent = 'Setting up...';
+    continueBtn.textContent = pendingInvitation ? 'Joining team...' : 'Setting up...';
 
     try {
-      // Create user profile and organization using shared method
-      console.log('[Onboarding] Calling createUserWithOrganization...');
-      const result = await RevGuideDB.createUserWithOrganization(fullName, companyName);
-      console.log('[Onboarding] Result:', result);
+      if (pendingInvitation) {
+        // Accept the invitation to join existing organization
+        console.log('[Onboarding] Accepting invitation:', pendingInvitation.id);
+        const { data, error } = await RevGuideDB.acceptInvitation(pendingInvitation.id, fullName);
 
-      if (result.error) {
-        throw new Error(result.error.message || 'Failed to create account');
+        if (error) {
+          throw new Error(error.message || 'Failed to join team');
+        }
+
+        console.log('[Onboarding] Invitation accepted:', data);
+      } else {
+        // Create user profile and organization using shared method
+        console.log('[Onboarding] Calling createUserWithOrganization...');
+        const result = await RevGuideDB.createUserWithOrganization(fullName, companyName);
+        console.log('[Onboarding] Result:', result);
+
+        if (result.error) {
+          throw new Error(result.error.message || 'Failed to create account');
+        }
       }
 
       // Clear signup data from sessionStorage
@@ -119,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Onboarding error:', error);
       showMessage(error.message || 'Failed to set up account. Please try again.', 'error');
       continueBtn.disabled = false;
-      continueBtn.textContent = 'Continue';
+      continueBtn.textContent = pendingInvitation ? 'Join Team' : 'Continue';
     }
   });
 

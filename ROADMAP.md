@@ -760,12 +760,36 @@ Would you like me to suggest values?"
 - [ ] Bulk entry management (select multiple, delete, enable/disable)
 - [ ] Entry merge tool for consolidating duplicates
 
+### Performance Optimization (Admin Pages)
+
+**Goal:** Improve load times for `/banners`, `/plays`, and `/wiki` pages.
+
+**Full Implementation Details:** See [docs/PERFORMANCE_OPTIMIZATION.md](docs/PERFORMANCE_OPTIMIZATION.md)
+
+| Phase | Description | Effort | Impact |
+|-------|-------------|--------|--------|
+| 1 | Loading skeletons (perceived performance) | Low | High |
+| 2 | Persistent organization ID cache (24hr TTL) | Low | Medium |
+| 3 | Pagination (50 items per page) | Medium | High* |
+| 4 | Parallel auth + data loading | Medium | Medium |
+| 5 | Stale-while-revalidate caching | Medium | High |
+| 6 | Database indexing (Supabase) | Low | Variable |
+
+*High impact for organizations with 50+ entries.
+
+**Root Causes Identified:**
+- Sequential auth → data loading blocks rendering
+- No pagination (full table scans on every load)
+- Organization ID lookup requires 2 extra queries
+- Short cache TTLs (5-10 min) cause frequent cold loads
+- No loading skeleton shows blank screen during load
+
 ### UI/UX Enhancements
 - [x] Inline sidebar HTML for instant navigation rendering
+- [x] **Skeleton loading states for content** - See Performance Optimization above
 - [ ] **Collapsible sidebar navigation** - Toggle sidebar to icon-only mode for more content space
 - [ ] **Single Page App (SPA) conversion** - Client-side routing for seamless page transitions without full reloads
 - [ ] Page transition animations
-- [ ] Skeleton loading states for content
 
 ### Account & Settings
 - [x] **User Profile section** - View/edit profile info (name, email display, company name)

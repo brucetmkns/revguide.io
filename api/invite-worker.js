@@ -18,10 +18,12 @@
 // ===========================================
 
 const CONFIG = {
-  fromEmail: 'RevGuide <team@supered.io>', // Update with your verified domain
+  fromEmail: 'RevGuide <team@revguide.io>', // Update with your verified domain
+  appUrl: 'https://app.revguide.io',
   chromeStoreUrl: 'https://chrome.google.com/webstore', // Update when published
   allowedOrigins: [
     'chrome-extension://*',
+    'https://app.revguide.io',
     'https://supered.io',
   ]
 };
@@ -30,11 +32,14 @@ const CONFIG = {
 // EMAIL TEMPLATES
 // ===========================================
 
-function buildInvitationEmailHtml(role) {
-  const roleText = role === 'admin' ? 'an Admin' : 'a User';
+function buildInvitationEmailHtml(role, token, orgName) {
+  const roleText = role === 'admin' ? 'an Admin' : 'a Member';
   const roleDescription = role === 'admin'
     ? 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.'
-    : 'As a User, you can use all the contextual guidance features within HubSpot.';
+    : 'As a Member, you can use all the contextual guidance features within HubSpot.';
+
+  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
+  const orgDisplay = orgName ? ` at <strong>${orgName}</strong>` : '';
 
   return `
 <!DOCTYPE html>
@@ -44,35 +49,24 @@ function buildInvitationEmailHtml(role) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">You're Invited!</h1>
+  <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">You're Invited to RevGuide!</h1>
   </div>
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      You've been invited to join <strong>RevGuide</strong> as ${roleText}.
+      You've been invited to join${orgDisplay} as ${roleText}.
     </p>
 
-    <p style="margin-bottom: 20px;">
-      RevGuide is a Chrome extension that provides contextual guidance, wiki tooltips, and plays directly within HubSpot.
+    <p style="margin-bottom: 25px;">
+      RevGuide provides contextual guidance, wiki tooltips, and plays directly within HubSpot to help your team work smarter.
     </p>
 
-    <h2 style="font-size: 18px; color: #111827; margin-bottom: 15px;">Getting Started:</h2>
-
-    <ol style="padding-left: 20px; margin-bottom: 25px;">
-      <li style="margin-bottom: 10px;">
-        <strong>Install the Extension</strong><br>
-        <a href="${CONFIG.chromeStoreUrl}" style="color: #667eea;">Download from Chrome Web Store</a>
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Log in with HubSpot</strong><br>
-        Open the extension and connect your HubSpot account
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Start Using</strong><br>
-        Navigate to any HubSpot record to see contextual banners, plays, and wiki tooltips
-      </li>
-    </ol>
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${inviteLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        Accept Invitation
+      </a>
+    </div>
 
     <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
       <p style="margin: 0; font-size: 14px; color: #6b7280;">
@@ -81,48 +75,71 @@ function buildInvitationEmailHtml(role) {
       </p>
     </div>
 
-    <p style="font-size: 14px; color: #6b7280; margin-bottom: 0;">
-      Questions? Reply to this email or contact your team administrator.
+    <h2 style="font-size: 16px; color: #111827; margin-bottom: 15px;">After accepting:</h2>
+
+    <ol style="padding-left: 20px; margin-bottom: 25px; font-size: 14px;">
+      <li style="margin-bottom: 8px;">
+        <strong>Install the Chrome Extension</strong><br>
+        <a href="${CONFIG.chromeStoreUrl}" style="color: #0091ae;">Download from Chrome Web Store</a>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <strong>Sign in to the extension</strong><br>
+        Click "Sign In" in the extension sidebar
+      </li>
+      <li style="margin-bottom: 8px;">
+        <strong>Browse HubSpot</strong><br>
+        See contextual banners, plays, and wiki tooltips on record pages
+      </li>
+    </ol>
+
+    <p style="font-size: 13px; color: #9ca3af; margin-bottom: 0;">
+      This invitation expires in 7 days. Questions? Reply to this email.
     </p>
   </div>
 
   <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-    Sent via RevGuide
+    RevGuide - Contextual guidance for your revenue team
   </div>
 </body>
 </html>`;
 }
 
-function buildInvitationEmailText(role) {
-  const roleText = role === 'admin' ? 'an Admin' : 'a User';
+function buildInvitationEmailText(role, token, orgName) {
+  const roleText = role === 'admin' ? 'an Admin' : 'a Member';
   const roleDescription = role === 'admin'
     ? 'As an Admin, you can manage content, create banners, plays, wiki entries, and invite other team members.'
-    : 'As a User, you can use all the contextual guidance features within HubSpot.';
+    : 'As a Member, you can use all the contextual guidance features within HubSpot.';
+
+  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
+  const orgDisplay = orgName ? ` at ${orgName}` : '';
 
   return `You're Invited to RevGuide!
 
-You've been invited to join RevGuide as ${roleText}.
+You've been invited to join${orgDisplay} as ${roleText}.
 
-RevGuide is a Chrome extension that provides contextual guidance, wiki tooltips, and plays directly within HubSpot.
+RevGuide provides contextual guidance, wiki tooltips, and plays directly within HubSpot to help your team work smarter.
 
-Getting Started:
-
-1. Install the Extension
-   Download from Chrome Web Store: ${CONFIG.chromeStoreUrl}
-
-2. Log in with HubSpot
-   Open the extension and connect your HubSpot account
-
-3. Start Using
-   Navigate to any HubSpot record to see contextual banners, plays, and wiki tooltips
+Accept your invitation here:
+${inviteLink}
 
 Your Role: ${role.charAt(0).toUpperCase() + role.slice(1)}
 ${roleDescription}
 
-Questions? Reply to this email or contact your team administrator.
+After accepting:
+
+1. Install the Chrome Extension
+   Download from Chrome Web Store: ${CONFIG.chromeStoreUrl}
+
+2. Sign in to the extension
+   Click "Sign In" in the extension sidebar
+
+3. Browse HubSpot
+   See contextual banners, plays, and wiki tooltips on record pages
+
+This invitation expires in 7 days. Questions? Reply to this email.
 
 ---
-Sent via RevGuide`;
+RevGuide - Contextual guidance for your revenue team`;
 }
 
 // ===========================================
@@ -190,7 +207,7 @@ async function handleInvite(request, env, corsHeaders) {
   try {
     // Parse request body
     const body = await request.json();
-    const { email, role } = body;
+    const { email, role, token, orgName } = body;
 
     // Validate input
     if (!email || !isValidEmail(email)) {
@@ -200,8 +217,17 @@ async function handleInvite(request, env, corsHeaders) {
       });
     }
 
-    if (!role || !['user', 'admin'].includes(role)) {
-      return new Response(JSON.stringify({ error: 'Role must be "user" or "admin"' }), {
+    // Accept both 'user' and 'member' roles (map user -> member)
+    const normalizedRole = role === 'user' ? 'member' : role;
+    if (!normalizedRole || !['member', 'admin'].includes(normalizedRole)) {
+      return new Response(JSON.stringify({ error: 'Role must be "member" or "admin"' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -227,9 +253,9 @@ async function handleInvite(request, env, corsHeaders) {
       body: JSON.stringify({
         from: CONFIG.fromEmail,
         to: [email],
-        subject: "You're invited to RevGuide",
-        html: buildInvitationEmailHtml(role),
-        text: buildInvitationEmailText(role)
+        subject: orgName ? `You're invited to join ${orgName} on RevGuide` : "You're invited to RevGuide",
+        html: buildInvitationEmailHtml(normalizedRole, token, orgName),
+        text: buildInvitationEmailText(normalizedRole, token, orgName)
       })
     });
 

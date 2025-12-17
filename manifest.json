@@ -57,5 +57,11 @@
       "resources": ["q360favicon.png", "admin/pages/*", "admin/lib/*", "sidepanel/sidepanel.html"],
       "matches": ["https://*.hubspot.com/*"]
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://app.revguide.io/*",
+      "http://localhost:*/*"
+    ]
+  }
 }

@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v2.2.0 (Beta Release)
+**Current Version:** v2.3.0 (Extension Auth Bridge)
 
 ## Beta Program
 
@@ -98,8 +98,23 @@ RevGuide is available as a hosted web application at [app.revguide.io](https://a
 
 ### Authentication
 - **Magic Link**: Passwordless sign-in via email
+- **Email + Password**: Traditional credentials
 - **Google OAuth**: Sign in with Google (coming soon)
 - Powered by [Supabase Auth](https://supabase.com/auth)
+
+### Extension Authentication Bridge
+The Chrome extension authenticates with the web app via Chrome's external messaging API:
+
+1. **Sign In**: Click "Sign In" in extension sidepanel → opens web app login
+2. **Auth Token Transfer**: After login, web app sends auth token to extension
+3. **Cloud Content**: Extension fetches organization-specific content from Supabase
+4. **Single Sign-On**: Login once in web app, extension automatically authenticated
+5. **Session Sync**: Logout from either place logs out everywhere
+
+| State | Extension Content | Admin Panel Button |
+|-------|-------------------|-------------------|
+| **Logged Out** | Local storage | Opens local admin |
+| **Logged In** | Supabase (org content) | Opens app.revguide.io |
 
 ### Email Notifications
 - Transactional emails sent via [Resend](https://resend.com)

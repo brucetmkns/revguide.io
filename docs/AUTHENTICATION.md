@@ -6,10 +6,11 @@ This document outlines the authentication architecture for RevGuide, covering bo
 
 1. [Current Implementation](#current-implementation)
 2. [User Authentication (Supabase)](#user-authentication-supabase)
-3. [CRM Authentication (HubSpot)](#crm-authentication-hubspot)
-4. [Email Configuration](#email-configuration)
-5. [Recommended Future Architecture](#recommended-future-architecture)
-6. [Multi-CRM Support](#multi-crm-support)
+3. [Extension Authentication Bridge](#extension-authentication-bridge)
+4. [CRM Authentication (HubSpot)](#crm-authentication-hubspot)
+5. [Email Configuration](#email-configuration)
+6. [Recommended Future Architecture](#recommended-future-architecture)
+7. [Multi-CRM Support](#multi-crm-support)
 
 ---
 
@@ -82,6 +83,137 @@ if (isExtensionContext) {
 } else {
   // Use Supabase for auth and data
 }
+```
+
+---
+
+## Extension Authentication Bridge
+
+The Chrome extension authenticates with the web app using Chrome's external messaging API. This allows the extension to access organization-specific content stored in Supabase.
+
+### Overview
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ Chrome Extension │────▶│  app.revguide.io │────▶│    Supabase      │
+│   (Sidepanel)    │     │    (Web App)     │     │  (Org Content)   │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+        │                         │
+        │  chrome.runtime.        │
+        │  sendMessage()          │
+        │◀────────────────────────│
+        │  (Auth token)           │
+```
+
+### Authentication Flow
+
+```
+1. User opens extension sidepanel
+   └── Shows "Sign In Required" with login button
+
+2. User clicks "Sign In"
+   └── Opens: app.revguide.io/login?request_path=/extension/logged-in&eid={extensionId}
+
+3. User logs in (or already logged in)
+   └── Redirects to: /extension/logged-in?eid={extensionId}
+
+4. Callback page sends message to extension:
+   └── chrome.runtime.sendMessage(extensionId, { type: 'AUTH_STATE_CHANGED', payload })
+
+5. Extension background.js receives via onMessageExternal
+   └── Stores auth token in chrome.storage.local
+
+6. Extension fetches organization content from Supabase
+   └── Uses stored access token for API authentication
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `manifest.json` | `externally_connectable` config for app.revguide.io |
+| `background/background.js` | `onMessageExternal` listener, Supabase REST API |
+| `admin/pages/extension-logged-in.html/js` | Callback page that sends auth to extension |
+| `admin/pages/login.js` | Handles `request_path` redirect parameter |
+| `sidepanel/sidepanel.js` | Auth state UI, login/logout handling |
+
+### Manifest Configuration
+
+```json
+{
+  "externally_connectable": {
+    "matches": [
+      "https://app.revguide.io/*",
+      "http://localhost:*/*"
+    ]
+  }
+}
+```
+
+### Auth State Storage
+
+```javascript
+// Stored in chrome.storage.local
+{
+  authState: {
+    isAuthenticated: true,
+    accessToken: "eyJ...",      // Supabase JWT
+    refreshToken: "...",
+    expiresAt: 1702000000,      // Unix timestamp
+    user: {
+      id: "user-uuid",
+      email: "user@example.com"
+    },
+    profile: {
+      id: "profile-uuid",
+      name: "User Name",
+      organizationId: "org-uuid",
+      role: "admin"
+    }
+  }
+}
+```
+
+### Background Script API
+
+The background script exposes these message actions:
+
+| Action | Purpose | Response |
+|--------|---------|----------|
+| `getAuthState` | Get current auth state | `{ isAuthenticated, user, profile, ... }` |
+| `isAuthValid` | Check if token is valid (not expired) | `boolean` |
+| `logout` | Clear auth state | `{ success: true }` |
+| `getContent` | Get content (cloud if authenticated, else local) | `{ source, content }` |
+| `refreshCloudContent` | Force refresh from Supabase | `{ success, content }` |
+
+### UI States
+
+| State | Sidepanel Plays Tab | Settings Tab | Admin Panel Button |
+|-------|---------------------|--------------|-------------------|
+| **Logged Out** | "Sign In Required" | HubSpot API token field visible | Opens local admin |
+| **Logged In** | Organization content | Email + Sign Out button | Opens app.revguide.io |
+
+### Security Considerations
+
+1. **Origin Validation**: Background script validates `sender.origin` against allowlist
+2. **Token Storage**: Stored in `chrome.storage.local` (extension-only access)
+3. **HTTPS Only**: `externally_connectable` only allows HTTPS origins (except localhost)
+4. **Token Expiry**: Client checks `expiresAt` before making API calls
+
+### Logout Flow
+
+```
+1. User clicks "Sign Out" in sidepanel
+   └── Calls background.js with action: 'logout'
+
+2. Background clears authState from storage
+   └── chrome.storage.local.remove('authState')
+
+3. Background notifies all contexts
+   └── chrome.runtime.sendMessage({ action: 'authStateChanged', isAuthenticated: false })
+
+4. Sidepanel updates UI
+   └── Shows "Sign In Required" state
 ```
 
 ---

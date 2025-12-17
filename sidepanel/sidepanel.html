@@ -65,6 +65,28 @@
         <h2>Not a HubSpot Page</h2>
         <p>Navigate to a HubSpot record page to see relevant plays and tips.</p>
       </div>
+
+      <!-- Logged Out State -->
+      <div class="logged-out-state" id="loggedOutState" style="display: none;">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+        </div>
+        <h2>Sign In Required</h2>
+        <p>Sign in to your RevGuide account to access your team's plays, wiki, and banners.</p>
+        <button class="btn btn-primary" id="loginBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          Sign In
+        </button>
+        <p class="login-hint">Don't have an account? <a href="#" id="signupLink">Sign up free</a></p>
+      </div>
     </div>
 
     <!-- Settings Tab Content -->
@@ -125,8 +147,8 @@
           </div>
         </div>
 
-        <!-- HubSpot API -->
-        <div class="settings-section">
+        <!-- HubSpot API (only shown when not authenticated) -->
+        <div class="settings-section" id="apiTokenSection">
           <h3 class="settings-section-title">HubSpot API</h3>
           <div class="settings-form-group">
             <label for="hubspotApiToken">Private App Access Token</label>
@@ -148,7 +170,7 @@
             </svg>
             Open Admin Panel
           </button>
-          <p class="settings-hint" style="margin-top: 8px;">Manage rules, plays, wiki entries, and media</p>
+          <p class="settings-hint" id="adminHint" style="margin-top: 8px;">Manage rules, plays, wiki entries, and media</p>
         </div>
 
         <!-- Data -->

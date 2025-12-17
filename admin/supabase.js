@@ -469,20 +469,167 @@ const RevGuideDB = {
       .order('created_at', { ascending: false });
   },
 
-  async createInvitation(email, role = 'editor') {
+  async createInvitation(email, role = 'member') {
     const client = await RevGuideAuth.waitForClient();
     const orgId = await this.getOrganizationId();
     if (!orgId) return { error: new Error('No organization') };
+
+    const { data: { user } } = await client.auth.getUser();
+    const { data: profile } = await this.getUserProfile();
 
     return client
       .from('invitations')
       .insert({
         organization_id: orgId,
         email,
-        role
+        role,
+        invited_by: profile?.id || null
       })
       .select()
       .single();
+  },
+
+  /**
+   * Get invitation by token (for accepting invites)
+   */
+  async getInvitationByToken(token) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('invitations')
+      .select('*, organizations(name)')
+      .eq('token', token)
+      .is('accepted_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+  },
+
+  /**
+   * Get pending invitation by email (for auto-joining during signup)
+   */
+  async getPendingInvitationByEmail(email) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('invitations')
+      .select('*, organizations(name)')
+      .eq('email', email.toLowerCase())
+      .is('accepted_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+  },
+
+  /**
+   * Accept an invitation - links user to organization
+   */
+  async acceptInvitation(invitationId, fullName = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) {
+      return { error: new Error('Must be logged in to accept invitation') };
+    }
+
+    // Get the invitation details
+    const { data: invitation, error: fetchError } = await client
+      .from('invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .is('accepted_at', null)
+      .single();
+
+    if (fetchError || !invitation) {
+      return { error: new Error('Invitation not found or already accepted') };
+    }
+
+    // Check if invitation has expired
+    if (new Date(invitation.expires_at) < new Date()) {
+      return { error: new Error('Invitation has expired') };
+    }
+
+    // Check if user already exists in the users table
+    const { data: existingProfile } = await client
+      .from('users')
+      .select('*')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (existingProfile?.organization_id) {
+      // User already belongs to an organization
+      return { error: new Error('You already belong to an organization') };
+    }
+
+    // Determine the name to use: provided fullName > metadata > email prefix
+    const userName = fullName || user.user_metadata?.full_name || user.email.split('@')[0];
+
+    // Start transaction-like operations
+    // 1. Create or update user profile with organization
+    let userProfile;
+    if (existingProfile) {
+      // Update existing profile
+      const { data, error } = await client
+        .from('users')
+        .update({
+          organization_id: invitation.organization_id,
+          role: invitation.role,
+          name: userName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingProfile.id)
+        .select()
+        .single();
+
+      if (error) return { error };
+      userProfile = data;
+    } else {
+      // Create new profile
+      const { data, error } = await client
+        .from('users')
+        .insert({
+          auth_user_id: user.id,
+          email: user.email,
+          name: userName,
+          organization_id: invitation.organization_id,
+          role: invitation.role
+        })
+        .select()
+        .single();
+
+      if (error) return { error };
+      userProfile = data;
+    }
+
+    // 2. Mark invitation as accepted
+    const { error: updateError } = await client
+      .from('invitations')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('id', invitationId);
+
+    if (updateError) {
+      console.error('Failed to mark invitation as accepted:', updateError);
+      // Don't fail the whole operation, user is already linked
+    }
+
+    // 3. Cache the organization ID
+    this.setCachedOrgId(invitation.organization_id);
+
+    return { data: userProfile, error: null };
+  },
+
+  /**
+   * Delete an invitation
+   */
+  async deleteInvitation(invitationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+
+    return client
+      .from('invitations')
+      .delete()
+      .eq('id', invitationId)
+      .eq('organization_id', orgId);
   },
 
   // ============================================
