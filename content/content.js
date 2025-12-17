@@ -776,29 +776,46 @@
      * @returns {string} Tab number as string ('1', '2', '3', etc.) or 'all'
      */
     detectCurrentTab() {
-      // Method 1: Look for active tab button with aria-selected
-      const activeTab = document.querySelector('[role="tab"][aria-selected="true"]');
-      if (activeTab) {
-        // Try to get tab index from parent's children
-        const tabList = activeTab.closest('[role="tablist"]');
-        if (tabList) {
-          const tabs = Array.from(tabList.querySelectorAll('[role="tab"]'));
-          const index = tabs.indexOf(activeTab);
-          if (index >= 0) {
-            log('Detected current tab via aria-selected:', index + 1);
-            return String(index + 1);
+      // Method 1 (PREFERRED): Use HubSpot's data-test-id which contains the tab number
+      // Format: data-test-id="tab-0-content", data-test-id="tab-1-content", etc. (0-indexed)
+      const tabContents = document.querySelectorAll('[data-test-id^="tab-"][data-test-id$="-content"]');
+      for (const tab of tabContents) {
+        if (tab.offsetHeight > 0 && tab.offsetWidth > 0) {
+          // Extract tab number from data-test-id (e.g., "tab-0-content" -> 0)
+          const match = tab.getAttribute('data-test-id').match(/tab-(\d+)-content/);
+          if (match) {
+            const tabNumber = parseInt(match[1], 10) + 1; // Convert 0-indexed to 1-indexed
+            log('Detected current tab via data-test-id:', tabNumber);
+            return String(tabNumber);
           }
         }
       }
 
-      // Method 2: Look for visible tab content with data-test-id
-      const tabContents = document.querySelectorAll('[data-test-id^="tab-"][data-test-id$="-content"]');
-      let tabIndex = 0;
-      for (const tab of tabContents) {
-        tabIndex++;
-        if (tab.offsetHeight > 0 && tab.offsetWidth > 0) {
-          log('Detected current tab via visible content:', tabIndex);
-          return String(tabIndex);
+      // Method 2: Look for active tab button with aria-selected
+      const activeTab = document.querySelector('[role="tab"][aria-selected="true"]');
+      if (activeTab) {
+        // Try to get tab index from the tab's own data-test-id if available
+        const tabTestId = activeTab.getAttribute('data-test-id');
+        if (tabTestId) {
+          const match = tabTestId.match(/tab-(\d+)/);
+          if (match) {
+            const tabNumber = parseInt(match[1], 10) + 1;
+            log('Detected current tab via tab data-test-id:', tabNumber);
+            return String(tabNumber);
+          }
+        }
+
+        // Fall back to counting position in tablist
+        const tabList = activeTab.closest('[role="tablist"]');
+        if (tabList) {
+          // Only count visible tabs (filter out hidden "More" dropdowns or collapsed tabs)
+          const tabs = Array.from(tabList.querySelectorAll('[role="tab"]'))
+            .filter(tab => tab.offsetWidth > 0 && tab.offsetHeight > 0);
+          const index = tabs.indexOf(activeTab);
+          if (index >= 0) {
+            log('Detected current tab via aria-selected position:', index + 1, 'of', tabs.length, 'visible tabs');
+            return String(index + 1);
+          }
         }
       }
 

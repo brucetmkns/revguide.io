@@ -123,6 +123,72 @@ async function isAuthValid() {
   return (authState.expiresAt * 1000) > (Date.now() + 5 * 60 * 1000);
 }
 
+/**
+ * Refresh the access token using the refresh token
+ */
+async function refreshAccessToken() {
+  const authState = await getAuthState();
+  if (!authState.refreshToken) {
+    console.log('[RevGuide] No refresh token available');
+    return false;
+  }
+
+  console.log('[RevGuide] Refreshing access token...');
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        refresh_token: authState.refreshToken
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[RevGuide] Token refresh failed:', response.status, error);
+      // Clear auth state on refresh failure - user needs to re-login
+      await chrome.storage.local.remove('authState');
+      notifyContentScriptsAuthChanged(false);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log('[RevGuide] Token refreshed successfully');
+
+    // Update stored auth state with new tokens
+    await chrome.storage.local.set({
+      authState: {
+        ...authState,
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
+        lastUpdated: Date.now()
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[RevGuide] Token refresh error:', error);
+    return false;
+  }
+}
+
+/**
+ * Ensure we have a valid access token, refreshing if needed
+ */
+async function ensureValidToken() {
+  if (await isAuthValid()) {
+    return true;
+  }
+
+  console.log('[RevGuide] Token expired or invalid, attempting refresh...');
+  return await refreshAccessToken();
+}
+
 // ============ SUPABASE API ============
 
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
@@ -132,6 +198,12 @@ const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
  * Make authenticated request to Supabase REST API
  */
 async function supabaseFetch(table, options = {}) {
+  // Ensure we have a valid token before making the request
+  const tokenValid = await ensureValidToken();
+  if (!tokenValid) {
+    throw new Error('Not authenticated - please log in again');
+  }
+
   const authState = await getAuthState();
   if (!authState.isAuthenticated || !authState.accessToken) {
     throw new Error('Not authenticated');
@@ -168,6 +240,69 @@ async function supabaseFetch(table, options = {}) {
 }
 
 /**
+ * Map banner from Supabase snake_case to camelCase
+ */
+function mapBannerFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    title: data.title,
+    message: data.message,
+    type: data.type,
+    priority: data.priority,
+    objectTypes: data.object_types,
+    objectType: data.object_type,
+    conditions: data.conditions,
+    logic: data.logic,
+    displayOnAll: data.display_on_all,
+    tabVisibility: data.tab_visibility,
+    relatedPlayId: data.related_play_id,
+    enabled: data.enabled,
+    url: data.url,
+    embedUrl: data.embed_url,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+/**
+ * Map play from Supabase snake_case to camelCase
+ */
+function mapPlayFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    cardType: data.card_type,
+    subtitle: data.subtitle,
+    link: data.link,
+    objectType: data.object_type,
+    conditions: data.conditions,
+    logic: data.logic,
+    displayOnAll: data.display_on_all,
+    sections: data.sections,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+/**
+ * Map wiki entry from Supabase snake_case to camelCase
+ */
+function mapWikiFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    term: data.term,
+    definition: data.definition,
+    objectTypes: data.object_types,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+/**
  * Fetch all content (banners, plays, wiki) for the user's organization
  */
 async function fetchCloudContent() {
@@ -201,11 +336,11 @@ async function fetchCloudContent() {
       wikiEntries: wikiEntries?.length || 0
     });
 
-    // Transform to match local storage format
+    // Transform to match local storage format (snake_case to camelCase)
     const content = {
-      rules: banners || [],
-      battleCards: plays || [],
-      wikiEntries: wikiEntries || []
+      rules: (banners || []).map(mapBannerFromSupabase),
+      battleCards: (plays || []).map(mapPlayFromSupabase),
+      wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase)
     };
 
     // Cache in local storage for offline access
