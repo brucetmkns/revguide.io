@@ -2,6 +2,54 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.5.0] - 2025-12-17 - Improved Signup Flow
+
+### Added
+- **Email/Password Authentication**
+  - Replaced magic link authentication with traditional email/password signup
+  - Password field added to signup form with 8-character minimum
+  - Password field added to login form
+  - "Forgot password?" link on login page triggers password reset email
+
+- **User Profile Collection During Signup**
+  - Name and Company Name fields on signup form
+  - Data stored in Supabase user metadata during signup
+  - Persists through email confirmation flow
+  - Auto-creates user profile and organization on first login
+
+- **Password Reset Flow**
+  - New `/reset-password` page for setting new password
+  - Email sent via Resend SMTP through Supabase
+  - Handles token from email redirect
+
+- **Resend Confirmation Email**
+  - Added `resendConfirmation()` method for expired confirmation links
+  - Helpful error message with resend option when link expires
+  - Addresses Outlook SafeLinks consuming one-time tokens
+
+### Changed
+- **Signup Flow**: Now collects name/company upfront instead of during HubSpot OAuth
+- **Login Flow**: Uses password instead of magic link
+- **Profile Creation**: Moved from HubSpot OAuth callback to first authenticated page load
+- **RLS Policies**: Recreated with proper role targeting (`authenticated` vs `public`)
+
+### Technical
+- **PostgreSQL Function**: `create_user_with_organization()` - SECURITY DEFINER function that atomically creates organization and user profile, bypassing RLS INSERT+SELECT issues
+- **Files Modified**:
+  - `admin/pages/signup.html` - Added name, company, password fields
+  - `admin/pages/login.html` - Added password field, forgot password link
+  - `admin/pages/login.js` - Password auth, forgot password handler
+  - `admin/pages/reset-password.html` - New password reset page
+  - `admin/supabase.js` - signUp, signIn, resetPassword, updatePassword, resendConfirmation, createUserWithOrganization (RPC)
+  - `admin/shared.js` - Auto-create profile from auth metadata in checkAuth()
+  - `vercel.json` - Added /reset-password route
+
+### Database Changes
+- New RLS policies on `organizations` table with explicit `TO authenticated` targeting
+- New PostgreSQL function `create_user_with_organization(p_name, p_company_name)` with SECURITY DEFINER
+
+---
+
 ## [2.4.0] - 2025-12-16 - Team Invitation System
 
 ### Added

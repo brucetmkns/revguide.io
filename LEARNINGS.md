@@ -944,4 +944,232 @@ ALTER TABLE banners ADD COLUMN IF NOT EXISTS embed_url TEXT;
 
 ---
 
+## Email/Password Authentication (v2.5.0)
+
+### Magic Links vs Passwords
+**Lesson**: Magic links can be problematic with corporate email security systems like Outlook SafeLinks.
+
+**Problem**: Outlook SafeLinks pre-fetches URLs in emails to scan for malware. This consumes one-time tokens (OTP) before the user clicks the link, causing "link expired" errors even seconds after receiving the email.
+
+**Solution options**:
+1. **Switch to password auth** (recommended) - No one-time tokens to expire
+2. **Disable email confirmation** - Users can login immediately
+3. **Increase OTP expiry** - Gives more time, but doesn't solve SafeLinks
+4. **Resend confirmation** - Allow users to request new link
+
+**Implementation**: We switched to email/password authentication:
+```javascript
+// Signup with password
+await client.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: redirectUrl,
+    data: { full_name, company_name }  // Stored in user metadata
+  }
+});
+
+// Login with password
+await client.auth.signInWithPassword({ email, password });
+```
+
+### Persisting Data Through Email Confirmation
+**Lesson**: Data entered on signup form is lost when email confirmation redirects to a different page/context.
+
+**Problem**: User enters name/company on `/signup`, but after clicking email confirmation link:
+- `sessionStorage` is cleared (different browser session/context)
+- Form data is gone
+- User must re-enter information
+
+**Solution**: Store signup data in Supabase user metadata:
+```javascript
+// During signup - store in auth metadata
+await client.auth.signUp({
+  email,
+  password,
+  options: {
+    data: {
+      full_name: name,
+      company_name: company
+    }
+  }
+});
+
+// Later - retrieve from authenticated user
+const { data: { user } } = await client.auth.getUser();
+const name = user.user_metadata?.full_name;
+const company = user.user_metadata?.company_name;
+```
+
+**Key insight**: Supabase `user_metadata` persists across sessions and is available immediately after authentication.
+
+### Forgot Password for Legacy Users
+**Lesson**: When switching auth methods, provide migration path for existing users.
+
+**Problem**: Users who previously used magic links don't have passwords. They can't login with the new password form.
+
+**Solution**: Add "Forgot password?" link that sends password reset email:
+```javascript
+// Reset password flow
+await client.auth.resetPasswordForEmail(email, {
+  redirectTo: window.location.origin + '/reset-password'
+});
+
+// On reset-password page, update the password
+await client.auth.updateUser({ password: newPassword });
+```
+
+---
+
+## RLS INSERT + SELECT Combination Issues (v2.5.0)
+
+### The Problem with .select() After INSERT
+**Lesson**: PostgREST's `.select()` after `.insert()` can fail even when INSERT policy allows the operation.
+
+**Problem**: This query fails with RLS even when INSERT policy is `WITH CHECK (true)`:
+```javascript
+const { data, error } = await client
+  .from('organizations')
+  .insert({ name: 'Test', slug: 'test' })
+  .select()  // <-- This SELECT fails!
+  .single();
+```
+
+**Why**: The INSERT succeeds, but the subsequent SELECT fails because:
+1. SELECT policy: "Can only see organizations where user is a member"
+2. User just created org but isn't linked to it yet (user record not created)
+3. SELECT policy blocks returning the newly created row
+4. Entire operation appears to fail with 403
+
+**Diagnosis**: Test INSERT without `.select()`:
+```javascript
+// This returns status: 201 (success)
+const result = await client
+  .from('organizations')
+  .insert({ name: 'Test', slug: 'test' });
+// data is null, but row was created!
+```
+
+### Solution: SECURITY DEFINER Functions
+**Lesson**: Use PostgreSQL functions with SECURITY DEFINER for atomic multi-table operations.
+
+**Pattern**: Create a function that runs with elevated privileges:
+```sql
+CREATE OR REPLACE FUNCTION create_user_with_organization(
+  p_name TEXT,
+  p_company_name TEXT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER  -- Runs as function owner, bypasses RLS
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_org_id UUID;
+BEGIN
+  v_user_id := auth.uid();
+
+  -- Create organization
+  INSERT INTO organizations (name, slug)
+  VALUES (p_company_name, generate_slug(p_company_name))
+  RETURNING id INTO v_org_id;
+
+  -- Create user linked to org
+  INSERT INTO users (auth_user_id, name, organization_id, role)
+  VALUES (v_user_id, p_name, v_org_id, 'admin');
+
+  RETURN json_build_object('success', true, 'organization_id', v_org_id);
+END;
+$$;
+```
+
+**Call from JavaScript**:
+```javascript
+const { data, error } = await client.rpc('create_user_with_organization', {
+  p_name: name,
+  p_company_name: companyName
+});
+```
+
+**Benefits**:
+- Atomic operation (both succeed or both fail)
+- Bypasses RLS for internal operations
+- Returns data without SELECT policy issues
+- Cleaner client-side code
+
+### RLS Policy Role Targeting
+**Lesson**: RLS policies must explicitly target the `authenticated` role for client-side access.
+
+**Problem**: Policy with `TO public` doesn't work for authenticated Supabase clients:
+```sql
+-- WRONG - {public} role doesn't include authenticated in Supabase context
+CREATE POLICY "allow_insert" ON organizations FOR INSERT;  -- defaults to public
+```
+
+**Solution**: Explicitly specify `TO authenticated`:
+```sql
+-- CORRECT - explicitly targets authenticated users
+CREATE POLICY "allow_insert" ON organizations
+FOR INSERT TO authenticated
+WITH CHECK (true);
+```
+
+**Debugging**: Check policy roles:
+```sql
+SELECT policyname, roles, with_check
+FROM pg_policies
+WHERE tablename = 'organizations';
+```
+
+### Schema Cache Refresh
+**Lesson**: PostgREST caches the schema. Policy changes may not take effect immediately.
+
+**Pattern**: After changing policies, refresh the cache:
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+Or wait ~30 seconds for automatic refresh.
+
+---
+
+## Auto-Profile Creation on First Login (v2.5.0)
+
+### Handling Missing Profiles
+**Lesson**: Auth users may exist without corresponding profile records. Handle gracefully.
+
+**Problem**: User completes Supabase auth (email confirmation) but profile creation fails or is skipped. On next page load, user is authenticated but has no profile in `users` table.
+
+**Solution**: Check and create profile in `checkAuth()`:
+```javascript
+async function checkAuth() {
+  const { data: { session } } = await RevGuideAuth.getSession();
+  if (!session) {
+    redirect('/login');
+    return false;
+  }
+
+  let { data: profile } = await RevGuideDB.getUserProfile();
+
+  // Auto-create profile if missing
+  if (!profile) {
+    const { data: { user } } = await RevGuideAuth.getUser();
+    const fullName = user.user_metadata?.full_name;
+    const companyName = user.user_metadata?.company_name;
+
+    if (fullName && companyName) {
+      await RevGuideDB.createUserWithOrganization(fullName, companyName);
+      profile = (await RevGuideDB.getUserProfile()).data;
+    }
+  }
+
+  return true;
+}
+```
+
+**Key insight**: User metadata from signup is always available via `auth.getUser()`, even if profile creation initially failed.
+
+---
+
 *Last updated: December 2024*

@@ -18,18 +18,18 @@ This document outlines the authentication architecture for RevGuide, covering bo
 
 RevGuide uses a **dual authentication** approach:
 
-1. **User Authentication**: Supabase Auth (Magic Link + Google OAuth) for web app access
-2. **CRM Authentication**: HubSpot Private App Tokens for CRM data access
+1. **User Authentication**: Supabase Auth (Email/Password) for web app access
+2. **CRM Authentication**: HubSpot OAuth via Nango for CRM data access
 
 ```
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
 │   Web App User   │────▶│   Supabase Auth  │────▶│   app.revguide.io│
-│   (Magic Link)   │     │   (JWT tokens)   │     │   (Dashboard)    │
+│ (Email/Password) │     │   (JWT tokens)   │     │   (Dashboard)    │
 └──────────────────┘     └──────────────────┘     └──────────────────┘
 
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Chrome Extension│────▶│  HubSpot Token   │────▶│   HubSpot API    │
-│  (User's browser)│     │  (Private App)   │     │   (CRM Data)     │
+│  Chrome Extension│────▶│  Nango OAuth     │────▶│   HubSpot API    │
+│  (User's browser)│     │  (Token mgmt)    │     │   (CRM Data)     │
 └──────────────────┘     └──────────────────┘     └──────────────────┘
 ```
 
@@ -45,17 +45,20 @@ The web app at [app.revguide.io](https://app.revguide.io) uses **Supabase Auth**
 
 | Method | Status | Description |
 |--------|--------|-------------|
-| Magic Link | **Active** | Passwordless email sign-in |
-| Google OAuth | **Active** | Sign in with Google account |
-| Email + Password | Planned | Traditional credentials |
+| Email + Password | **Active** | Traditional credentials with email confirmation |
+| Password Reset | **Active** | Email-based password reset for existing users |
+| Magic Link | Deprecated | Replaced due to Outlook SafeLinks issues |
+| Google OAuth | Disabled | Not configured in Supabase |
 
 ### Implementation
 
 **Files:**
-- `/admin/supabase.js` - Supabase client initialization
-- `/admin/pages/login.html` - Login page UI
-- `/admin/pages/signup.html` - Sign up page UI
-- `/admin/shared.js` - Auth state checking and redirects
+- `/admin/supabase.js` - Supabase client, auth methods (signUp, signIn, resetPassword, etc.)
+- `/admin/pages/login.html` - Login page with password field
+- `/admin/pages/login.js` - Login logic, forgot password handler
+- `/admin/pages/signup.html` - Signup with name, company, email, password
+- `/admin/pages/reset-password.html` - Password reset page
+- `/admin/shared.js` - Auth state checking, auto-profile creation
 
 **Configuration:**
 ```javascript
@@ -65,13 +68,29 @@ const SUPABASE_ANON_KEY = '[anon-key]';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 ```
 
-**Auth Flow:**
+**Signup Flow:**
+1. User visits `/signup`
+2. Enters name, company name, email, password
+3. Clicks "Get started free"
+4. Data stored in Supabase user metadata
+5. Confirmation email sent via Resend SMTP
+6. User clicks confirmation link → Returns to `/signup`
+7. Profile + organization created via `create_user_with_organization()` RPC
+8. Redirected to `/home`
+
+**Login Flow:**
 1. User visits `/login`
-2. Enters email address
-3. Clicks "Send Magic Link"
-4. Receives branded email from `hello@revguide.io`
-5. Clicks link → Redirected to `/home` with active session
-6. Session stored in browser (localStorage via Supabase)
+2. Enters email and password
+3. Clicks "Sign in"
+4. If no profile exists, auto-created from user metadata
+5. Redirected to `/home`
+
+**Password Reset Flow:**
+1. User clicks "Forgot password?" on login page
+2. Enters email, reset link sent
+3. Clicks link → Opens `/reset-password`
+4. Enters new password
+5. Redirected to `/home`
 
 **Context Detection:**
 ```javascript
