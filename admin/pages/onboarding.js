@@ -56,15 +56,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // No profile yet, continue with onboarding
   }
 
-  // Pre-fill form from signup data stored in sessionStorage
-  const signupData = getSignupData();
-  if (signupData) {
-    fullNameInput.value = signupData.fullName || '';
-    companyNameInput.value = signupData.companyName || '';
+  // Get user data from Supabase (includes metadata from signup)
+  const { data: { user } } = await RevGuideAuth.getUser();
+
+  // Pre-fill form from user metadata (stored during signup)
+  if (user?.user_metadata) {
+    fullNameInput.value = user.user_metadata.full_name || '';
+    companyNameInput.value = user.user_metadata.company_name || '';
+  }
+
+  // Fallback to sessionStorage if metadata is empty
+  if (!fullNameInput.value || !companyNameInput.value) {
+    const signupData = getSignupData();
+    if (signupData) {
+      if (!fullNameInput.value) fullNameInput.value = signupData.fullName || '';
+      if (!companyNameInput.value) companyNameInput.value = signupData.companyName || '';
+    }
   }
 
   // Set email from session (read-only)
-  const { data: { user } } = await RevGuideAuth.getUser();
   if (user?.email) {
     emailInput.value = user.email;
   }
@@ -92,16 +102,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       // Create user profile and organization using shared method
       console.log('[Onboarding] Calling createUserWithOrganization...');
-      alert('Creating account with: ' + fullName + ' / ' + companyName); // Visible debug
       const result = await RevGuideDB.createUserWithOrganization(fullName, companyName);
       console.log('[Onboarding] Result:', result);
 
       if (result.error) {
-        alert('Error: ' + (result.error.message || JSON.stringify(result.error))); // Visible debug
         throw new Error(result.error.message || 'Failed to create account');
       }
-
-      alert('Success! User and org created.'); // Visible debug
 
       // Clear signup data from sessionStorage
       sessionStorage.removeItem('revguide_signup_data');
@@ -111,7 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
       console.error('Onboarding error:', error);
-      alert('Catch error: ' + error.message); // Visible debug
       showMessage(error.message || 'Failed to set up account. Please try again.', 'error');
       continueBtn.disabled = false;
       continueBtn.textContent = 'Continue';

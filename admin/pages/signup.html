@@ -414,7 +414,10 @@
         }));
 
         try {
-          const { data, error } = await RevGuideAuth.signUp(email, password);
+          const { data, error } = await RevGuideAuth.signUp(email, password, {
+            fullName,
+            companyName
+          });
 
           if (error) {
             showMessage(error.message, 'error');

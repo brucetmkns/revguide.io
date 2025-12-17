@@ -75,12 +75,21 @@ const RevGuideAuth = {
 
   /**
    * Sign up with email and password
+   * @param {string} email
+   * @param {string} password
+   * @param {Object} metadata - Optional user metadata (fullName, companyName)
    */
-  async signUp(email, password) {
+  async signUp(email, password, metadata = {}) {
     const client = await this.waitForClient();
     return client.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          full_name: metadata.fullName || '',
+          company_name: metadata.companyName || ''
+        }
+      }
     });
   },
 
