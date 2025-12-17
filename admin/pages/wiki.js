@@ -101,16 +101,14 @@ class WikiPage {
       if (h2) h2.appendChild(badge);
     }
 
-    // Hide card action buttons (duplicate, delete)
-    const cardActions = document.querySelector('.wiki-card-actions');
-    if (cardActions) {
-      cardActions.style.display = 'none';
-    }
-
-    // Hide save/cancel buttons
+    // Hide card action buttons (duplicate, delete, save)
+    const duplicateBtn = document.getElementById('duplicateEntryBtn');
+    const deleteBtn = document.getElementById('deleteEntryBtn');
     const saveWikiBtn = document.getElementById('saveWikiBtn');
     const cancelWikiBtn = document.getElementById('cancelWikiBtn');
     const saveEntryBtnTop = document.getElementById('saveEntryBtnTop');
+    if (duplicateBtn) duplicateBtn.style.display = 'none';
+    if (deleteBtn) deleteBtn.style.display = 'none';
     if (saveWikiBtn) saveWikiBtn.style.display = 'none';
     if (cancelWikiBtn) cancelWikiBtn.style.display = 'none';
     if (saveEntryBtnTop) saveEntryBtnTop.style.display = 'none';
