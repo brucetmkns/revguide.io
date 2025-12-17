@@ -70,8 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Handle profile form submission
+  console.log('[Onboarding] Setting up form handler, profileForm:', profileForm);
+
   profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('[Onboarding] Form submit triggered!');
 
     const fullName = fullNameInput.value.trim();
     const companyName = companyNameInput.value.trim();
@@ -89,12 +92,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       // Create user profile and organization using shared method
       console.log('[Onboarding] Calling createUserWithOrganization...');
+      alert('Creating account with: ' + fullName + ' / ' + companyName); // Visible debug
       const result = await RevGuideDB.createUserWithOrganization(fullName, companyName);
       console.log('[Onboarding] Result:', result);
 
       if (result.error) {
+        alert('Error: ' + (result.error.message || JSON.stringify(result.error))); // Visible debug
         throw new Error(result.error.message || 'Failed to create account');
       }
+
+      alert('Success! User and org created.'); // Visible debug
 
       // Clear signup data from sessionStorage
       sessionStorage.removeItem('revguide_signup_data');
@@ -104,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
       console.error('Onboarding error:', error);
+      alert('Catch error: ' + error.message); // Visible debug
       showMessage(error.message || 'Failed to set up account. Please try again.', 'error');
       continueBtn.disabled = false;
       continueBtn.textContent = 'Continue';
