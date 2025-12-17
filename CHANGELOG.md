@@ -2,6 +2,25 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.5.1] - 2025-12-17 - Banner Tab Visibility & Token Refresh
+
+### Fixed
+- **Banner Tab Visibility**: Banners now display on the correct tab
+  - Fixed snake_case to camelCase mapping for cloud content (`tab_visibility` → `tabVisibility`)
+  - Fixed tab detection to use HubSpot's `data-test-id` attribute directly instead of counting tab elements (resolves off-by-one issues with hidden tabs)
+
+- **JWT Token Auto-Refresh**: Extension now automatically refreshes expired tokens
+  - Added `refreshAccessToken()` function using Supabase refresh token endpoint
+  - Added `ensureValidToken()` check before every API call
+  - No more "JWT expired" errors after ~1 hour of use
+
+### Technical
+- **Files Modified**:
+  - `background/background.js` - Added mapping functions, token refresh logic
+  - `content/content.js` - Improved `detectCurrentTab()` to parse `data-test-id`
+
+---
+
 ## [2.5.0] - 2025-12-17 - Improved Signup Flow
 
 ### Added

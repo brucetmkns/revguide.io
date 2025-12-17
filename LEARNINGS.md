@@ -1315,4 +1315,95 @@ CREATE POLICY "invitations_admin_insert" ON invitations
 
 ---
 
+## Extension Background Script Data Mapping
+
+### Cloud Content Must Be Mapped to camelCase
+**Lesson**: When fetching data from Supabase in the background script, apply snake_case to camelCase mapping before passing to content scripts.
+
+**Problem**: Banner `tab_visibility` field from Supabase was not being mapped to `tabVisibility`. Content script checked `rule.tabVisibility` which was `undefined`, causing display rules to malfunction.
+
+**Context**: The admin panel has mapping functions (`mapBannerFromSupabase`, etc.) but the background script's `fetchCloudContent()` was returning raw Supabase data without transformation.
+
+**Solution**: Add mapping functions to `background/background.js` and apply them:
+```javascript
+// In fetchCloudContent()
+const content = {
+  rules: (banners || []).map(mapBannerFromSupabase),
+  battleCards: (plays || []).map(mapPlayFromSupabase),
+  wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase)
+};
+```
+
+**Key insight**: Data flows through multiple paths (admin panel, background script, content script). Each path must apply consistent field name transformations.
+
+---
+
+## JWT Token Management
+
+### Automatic Token Refresh
+**Lesson**: Supabase JWT tokens expire (default 1 hour). The extension must refresh tokens automatically to avoid 401 errors.
+
+**Problem**: After ~1 hour of use, cloud content fetches failed with `JWT expired` error. Users had to re-login via the web app.
+
+**Solution**: Check token validity before API calls and refresh if needed:
+```javascript
+async function ensureValidToken() {
+  if (await isAuthValid()) return true;
+  return await refreshAccessToken();
+}
+
+async function refreshAccessToken() {
+  const authState = await getAuthState();
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ refresh_token: authState.refreshToken })
+  });
+  // Update stored tokens with response
+}
+
+// Use before every API call
+async function supabaseFetch(table, options = {}) {
+  const tokenValid = await ensureValidToken();
+  if (!tokenValid) throw new Error('Not authenticated - please log in again');
+  // ... proceed with fetch
+}
+```
+
+**Key insight**: Store both `accessToken` and `refreshToken` from auth. Check validity with 5-minute buffer before expiry.
+
+---
+
+## HubSpot Tab Detection
+
+### Use data-test-id for Reliable Tab Identification
+**Lesson**: HubSpot's `[role="tablist"]` may contain hidden elements (overflow menus, dropdowns). Counting tab elements leads to off-by-one errors.
+
+**Problem**: Banner set to display on tab "1" (Overview) appeared on tab "2" (Activities). The tablist contained hidden elements being counted.
+
+**Solution**: Extract tab number directly from HubSpot's `data-test-id` attribute:
+```javascript
+detectCurrentTab() {
+  // HubSpot uses: data-test-id="tab-0-content", "tab-1-content", etc. (0-indexed)
+  const tabContents = document.querySelectorAll('[data-test-id^="tab-"][data-test-id$="-content"]');
+  for (const tab of tabContents) {
+    if (tab.offsetHeight > 0 && tab.offsetWidth > 0) {
+      const match = tab.getAttribute('data-test-id').match(/tab-(\d+)-content/);
+      if (match) {
+        const tabNumber = parseInt(match[1], 10) + 1; // Convert to 1-indexed
+        return String(tabNumber);
+      }
+    }
+  }
+  return 'all';
+}
+```
+
+**Key insight**: HubSpot's `data-test-id` attributes are stable and contain the actual tab index. More reliable than counting DOM elements.
+
+---
+
 *Last updated: December 2024*
