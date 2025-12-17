@@ -54,7 +54,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["q360favicon.png", "admin/pages/*", "sidepanel/sidepanel.html"],
+      "resources": ["q360favicon.png", "admin/pages/*", "admin/lib/*", "sidepanel/sidepanel.html"],
       "matches": ["https://*.hubspot.com/*"]
     }
   ]
