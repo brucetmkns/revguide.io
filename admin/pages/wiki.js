@@ -26,8 +26,8 @@ class WikiPage {
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
 
-    // Check if user is a member (view-only mode)
-    this.isViewOnly = AdminShared.isMember();
+    // Check if user can edit content (admins, owners, editors can; viewers cannot)
+    this.isViewOnly = !AdminShared.canEditContent();
 
     // Render sidebar
     AdminShared.renderSidebar('wiki');

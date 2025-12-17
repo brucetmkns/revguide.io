@@ -241,8 +241,14 @@ function renderSidebar(activePage) {
       nameEl.parentNode.insertBefore(roleIndicator, nameEl.nextSibling);
     }
     if (roleIndicator) {
-      const roleLabel = currentUser.role === 'owner' ? 'Owner' :
-                        currentUser.role === 'admin' ? 'Admin' : 'Viewer';
+      const roleLabels = {
+        owner: 'Owner',
+        admin: 'Admin',
+        editor: 'Editor',
+        viewer: 'Viewer',
+        member: 'Viewer' // Legacy role
+      };
+      const roleLabel = roleLabels[currentUser.role] || 'Viewer';
       roleIndicator.textContent = roleLabel;
       roleIndicator.className = `role-indicator ${currentUser.role || 'member'}`;
     }
@@ -1387,17 +1393,38 @@ function isAdmin() {
 }
 
 /**
- * Check if current user is a member (view-only access)
+ * Check if current user is a viewer (view-only access)
+ * Returns true for 'viewer' and legacy 'member' roles
  * @returns {boolean}
  */
 function isMember() {
   if (isExtensionContext) return false;
-  return currentUser?.role === 'member';
+  const role = currentUser?.role;
+  return role === 'viewer' || role === 'member';
+}
+
+/**
+ * Check if current user is an editor (can edit content but not manage team)
+ * @returns {boolean}
+ */
+function isEditor() {
+  if (isExtensionContext) return true; // Extension context has full access
+  return currentUser?.role === 'editor';
+}
+
+/**
+ * Check if current user can edit content (admin, owner, or editor)
+ * @returns {boolean}
+ */
+function canEditContent() {
+  if (isExtensionContext) return true;
+  const role = currentUser?.role;
+  return role === 'owner' || role === 'admin' || role === 'editor';
 }
 
 /**
  * Get current user's role
- * @returns {string} 'owner' | 'admin' | 'member' | null
+ * @returns {string} 'owner' | 'admin' | 'editor' | 'viewer' | 'member' | null
  */
 function getUserRole() {
   if (isExtensionContext) return 'owner'; // Extension context treated as owner
@@ -1416,7 +1443,9 @@ window.AdminShared = {
   get currentOrganization() { return currentOrganization; },
   // Role helpers
   isAdmin,
+  isEditor,
   isMember,
+  canEditContent,
   getUserRole,
   // UI
   renderSidebar,
