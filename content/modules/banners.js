@@ -49,11 +49,14 @@ class BannersModule {
    * @param {Array} rules - Array of rule objects that matched current context
    */
   render(rules) {
+    console.log('[RevGuide Banners] render() called with', rules.length, 'rules, showBanners:', this.helper.settings.showBanners);
     if (!this.helper.settings.showBanners || rules.length === 0) {
+      console.log('[RevGuide Banners] Skipping render - showBanners:', this.helper.settings.showBanners, 'rules.length:', rules.length);
       return;
     }
 
     const injectTarget = this.helper.findInjectTarget();
+    console.log('[RevGuide Banners] Inject target found:', injectTarget?.tagName, injectTarget?.className?.substring?.(0, 50));
 
     if (injectTarget) {
       // Create inline banner container

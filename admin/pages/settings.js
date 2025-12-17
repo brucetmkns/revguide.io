@@ -54,19 +54,20 @@ class SettingsPage {
     console.log('[Settings] isAuthenticated:', isAuthenticated);
     if (!isAuthenticated) return;
 
-    // Check if user is a member (view-only mode)
-    this.isViewOnly = AdminShared.isMember();
+    // Check user role
+    this.isViewOnly = AdminShared.isMember(); // viewer role
+    this.isAdmin = AdminShared.isAdmin(); // owner or admin role
 
     // Render sidebar
     AdminShared.renderSidebar('settings');
 
-    // Setup view-only UI if member
-    if (this.isViewOnly) {
-      this.setupViewOnlyMode();
+    // Setup restricted UI for non-admin users
+    if (!this.isAdmin) {
+      this.setupNonAdminMode();
     }
 
     // Check if returning from OAuth flow (web context only, admin only)
-    if (!AdminShared.isExtensionContext && !this.isViewOnly) {
+    if (!AdminShared.isExtensionContext && this.isAdmin) {
       await this.handleOAuthCallback();
     }
 
@@ -79,8 +80,8 @@ class SettingsPage {
     this.updateSettingsUI();
 
     // Load team members from database (web context) or local storage (extension)
-    // Only load if admin - members don't need to see the team list
-    if (!this.isViewOnly) {
+    // Only load if admin - non-admins don't need to see the team list
+    if (this.isAdmin) {
       await this.loadTeamData();
       this.renderUsersTable();
     }
@@ -90,7 +91,7 @@ class SettingsPage {
     await this.loadAccountSettings();
 
     // Load HubSpot connection status (admin only)
-    if (!this.isViewOnly) {
+    if (this.isAdmin) {
       await this.loadHubSpotConnectionStatus();
     }
 
@@ -99,21 +100,20 @@ class SettingsPage {
     console.log('[Settings] init() completed');
   }
 
-  setupViewOnlyMode() {
-    // Hide HubSpot connection section
-    const hubspotCard = document.getElementById('hubspotSettingsCard');
-    const hubspotExtCard = document.getElementById('hubspotExtensionCard');
+  setupNonAdminMode() {
+    // Hide HubSpot connection section (admin only)
+    const hubspotCard = document.getElementById('hubspotOAuthCard');
     if (hubspotCard) hubspotCard.style.display = 'none';
-    if (hubspotExtCard) hubspotExtCard.style.display = 'none';
 
-    // Hide team management section
-    const teamCard = document.getElementById('teamSettingsCard');
-    if (teamCard) teamCard.style.display = 'none';
+    // Hide team members section (admin only)
+    const teamSection = document.querySelector('.team-members-section');
+    if (teamSection) teamSection.style.display = 'none';
 
-    // Hide Import/Export section for viewers
-    const exportBtn = document.getElementById('exportBtn');
-    const importBtn = document.getElementById('importBtn');
-    if (exportBtn) exportBtn.closest('.settings-card')?.remove();
+    // Hide Import/Export section for viewers only (editors can still export)
+    if (this.isViewOnly) {
+      const exportBtn = document.getElementById('exportBtn');
+      if (exportBtn) exportBtn.closest('.settings-card')?.remove();
+    }
 
     // Update page title/description
     const sectionDesc = document.querySelector('.section-description');
@@ -121,7 +121,7 @@ class SettingsPage {
       sectionDesc.textContent = 'Manage your account preferences.';
     }
 
-    // Add view-only note to account section
+    // Add note to account section for non-admins
     const accountCard = document.getElementById('accountSettingsCard');
     if (accountCard) {
       const note = document.createElement('p');
