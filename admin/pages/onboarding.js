@@ -76,6 +76,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fullName = fullNameInput.value.trim();
     const companyName = companyNameInput.value.trim();
 
+    console.log('[Onboarding] Form submitted with:', { fullName, companyName });
+
     if (!fullName || !companyName) {
       showMessage('Please fill in all fields', 'error');
       return;
@@ -86,7 +88,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       // Create user profile and organization using shared method
+      console.log('[Onboarding] Calling createUserWithOrganization...');
       const result = await RevGuideDB.createUserWithOrganization(fullName, companyName);
+      console.log('[Onboarding] Result:', result);
 
       if (result.error) {
         throw new Error(result.error.message || 'Failed to create account');
