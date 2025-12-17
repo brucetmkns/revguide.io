@@ -81,10 +81,13 @@ const RevGuideAuth = {
    */
   async signUp(email, password, metadata = {}) {
     const client = await this.waitForClient();
+    const redirectUrl = window.location.origin + '/onboarding';
+
     return client.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: redirectUrl,
         data: {
           full_name: metadata.fullName || '',
           company_name: metadata.companyName || ''
