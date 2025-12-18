@@ -28,7 +28,8 @@ plugin/
 │   │   ├── onboarding.html/js    # New user onboarding
 │   │   └── extension-logged-in.html/js  # Extension auth callback
 │   ├── lib/                 # Bundled third-party libraries
-│   │   └── supabase.min.js  # Supabase JS v2 (local for CSP compliance)
+│   │   ├── supabase.min.js  # Supabase JS v2 (local for CSP compliance)
+│   │   └── purify.min.js    # DOMPurify v3 (XSS sanitization for imports)
 │   ├── shared.js            # Common utilities (AdminShared)
 │   ├── shared.css           # Design system & components
 │   ├── supabase.js          # Supabase client (RevGuideAuth, RevGuideDB)

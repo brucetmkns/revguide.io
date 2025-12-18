@@ -338,6 +338,16 @@ class SettingsPage {
     });
     document.getElementById('importFile').addEventListener('change', (e) => this.importData(e));
 
+    // Import Modal
+    document.getElementById('closeImportModal').addEventListener('click', () => this.closeImportModal());
+    document.getElementById('cancelImportBtn').addEventListener('click', () => this.closeImportModal());
+    document.getElementById('confirmImportBtn').addEventListener('click', () => this.confirmImport());
+    document.getElementById('importModal').addEventListener('click', (e) => {
+      if (e.target.id === 'importModal') {
+        this.closeImportModal();
+      }
+    });
+
     // User Management
     document.getElementById('inviteUserBtn').addEventListener('click', () => this.openInviteModal());
     document.getElementById('inviteUserEmptyBtn').addEventListener('click', () => this.openInviteModal());
@@ -604,37 +614,92 @@ class SettingsPage {
         throw new Error('Invalid backup file format');
       }
 
-      // Confirm import
-      const confirmMsg = `This will replace your current data with:\n` +
-        `- ${importData.rules?.length || 0} rules\n` +
-        `- ${importData.battleCards?.length || 0} plays\n` +
-        `- ${importData.presentations?.length || 0} media items\n` +
-        `- ${importData.wikiEntries?.length || 0} wiki entries\n\n` +
-        `Continue?`;
+      // Store the parsed data for later use
+      this.pendingImportData = importData;
 
-      if (!confirm(confirmMsg)) {
-        event.target.value = '';
-        return;
-      }
+      // Build summary HTML
+      const wikiCount = importData.wikiEntries?.length || 0;
+      const bannerCount = importData.rules?.length || 0;
+      const playCount = importData.battleCards?.length || 0;
 
-      // Import data
-      await AdminShared.saveStorageData({
+      const summaryHtml = `
+        <h4>File contains:</h4>
+        <ul>
+          <li><span class="count">${wikiCount}</span> wiki entries</li>
+          <li><span class="count">${bannerCount}</span> banners</li>
+          <li><span class="count">${playCount}</span> plays</li>
+        </ul>
+      `;
+
+      document.getElementById('importSummary').innerHTML = summaryHtml;
+
+      // Show modal
+      document.getElementById('importModal').classList.add('open');
+    } catch (error) {
+      AdminShared.showToast(`Import failed: ${error.message}`, 'error');
+    }
+
+    // Reset file input so same file can be selected again
+    event.target.value = '';
+  }
+
+  closeImportModal() {
+    document.getElementById('importModal').classList.remove('open');
+    this.pendingImportData = null;
+  }
+
+  async confirmImport() {
+    if (!this.pendingImportData) {
+      this.closeImportModal();
+      return;
+    }
+
+    const importMode = document.querySelector('input[name="importMode"]:checked')?.value || 'replace';
+    const confirmBtn = document.getElementById('confirmImportBtn');
+    const originalText = confirmBtn.innerHTML;
+
+    // Show loading state
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="icon icon-refresh icon--sm spinning"></span> Importing...';
+
+    try {
+      // Sanitize imported data to prevent XSS attacks
+      const importData = AdminShared.sanitizeImportData(this.pendingImportData);
+
+      // Import data with selected mode
+      const results = await AdminShared.saveStorageData({
         rules: importData.rules || [],
         battleCards: importData.battleCards || [],
-        presentations: importData.presentations || [],
         wikiEntries: importData.wikiEntries || [],
         settings: importData.settings || this.settings
-      });
+      }, { importMode });
 
-      AdminShared.showToast('Data imported successfully! Refreshing...', 'success');
+      // Close modal
+      this.closeImportModal();
+
+      // Show success message with counts
+      const totalImported = (results?.wikiEntries || 0) + (results?.banners || 0) + (results?.plays || 0);
+
+      if (results?.errors?.length > 0) {
+        console.warn('[Import] Some items failed:', results.errors);
+        AdminShared.showToast(
+          `Imported ${totalImported} items with ${results.errors.length} errors. Check console for details.`,
+          'warning'
+        );
+      } else {
+        AdminShared.showToast(
+          `Successfully imported ${results?.wikiEntries || 0} wiki entries, ${results?.banners || 0} banners, and ${results?.plays || 0} plays!`,
+          'success'
+        );
+      }
 
       // Reload to show imported data
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       AdminShared.showToast(`Import failed: ${error.message}`, 'error');
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = originalText;
     }
-
-    event.target.value = '';
   }
 
   // ================================

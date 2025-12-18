@@ -530,7 +530,50 @@
     </div>
   </div>
 
+  <!-- Import Data Modal -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Import Data</h2>
+        <button class="modal-close" id="closeImportModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="import-summary" id="importSummary">
+          <!-- Populated by JS -->
+        </div>
+        <div class="form-group" style="margin-top: 16px;">
+          <label>Import Mode</label>
+          <div class="import-mode-options">
+            <label class="radio-option">
+              <input type="radio" name="importMode" value="replace" checked>
+              <div class="radio-content">
+                <strong>Replace All</strong>
+                <span class="radio-description">Delete existing content and import fresh. Best for syncing from a primary source.</span>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="importMode" value="merge">
+              <div class="radio-content">
+                <strong>Merge / Add</strong>
+                <span class="radio-description">Add imported content alongside existing. May create duplicates if content overlaps.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelImportBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmImportBtn">
+          <span class="icon icon-download icon--sm"></span> Import Data
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>console.log('[Settings HTML] Scripts loading...');</script>
+  <script src="/admin/lib/purify.min.js"></script>
   <script src="/admin/supabase.js?v=4"></script>
   <script src="/admin/hubspot.js?v=4"></script>
   <script src="/lib/wiki-cache.js"></script>

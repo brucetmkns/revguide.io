@@ -1126,6 +1126,49 @@ function stripHtml(html) {
 }
 
 /**
+ * Sanitize imported data to prevent XSS attacks
+ * Uses DOMPurify to strip dangerous HTML while preserving safe formatting
+ * @param {Object} data - The imported data object
+ * @returns {Object} - Sanitized data
+ */
+function sanitizeImportData(data) {
+  // Check if DOMPurify is available
+  if (typeof DOMPurify === 'undefined') {
+    console.warn('[Sanitize] DOMPurify not loaded, skipping sanitization');
+    return data;
+  }
+
+  const sanitized = { ...data };
+
+  // Sanitize wiki entries - definition field contains HTML
+  if (Array.isArray(sanitized.wikiEntries)) {
+    sanitized.wikiEntries = sanitized.wikiEntries.map(entry => ({
+      ...entry,
+      definition: entry.definition ? DOMPurify.sanitize(entry.definition) : ''
+    }));
+  }
+
+  // Sanitize battle cards (plays) - body field contains HTML
+  if (Array.isArray(sanitized.battleCards)) {
+    sanitized.battleCards = sanitized.battleCards.map(card => ({
+      ...card,
+      body: card.body ? DOMPurify.sanitize(card.body) : ''
+    }));
+  }
+
+  // Sanitize banners (rules) - message field may contain HTML
+  if (Array.isArray(sanitized.rules)) {
+    sanitized.rules = sanitized.rules.map(rule => ({
+      ...rule,
+      message: rule.message ? DOMPurify.sanitize(rule.message) : ''
+    }));
+  }
+
+  console.log('[Sanitize] Import data sanitized successfully');
+  return sanitized;
+}
+
+/**
  * Notify content script of data changes
  */
 function notifyContentScript() {
@@ -1888,6 +1931,7 @@ window.AdminShared = {
   showConfirmDialog,
   escapeHtml,
   stripHtml,
+  sanitizeImportData,
   notifyContentScript,
   fetchProperties,
   initSearchableSelect,

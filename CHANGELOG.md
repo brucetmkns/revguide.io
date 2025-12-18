@@ -2,6 +2,26 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.1] - 2025-12-18 - Import Security (XSS Sanitization)
+
+### Security
+- **XSS Protection for JSON Import**: Added DOMPurify sanitization to prevent cross-site scripting attacks from malicious import files
+  - Sanitizes HTML content in wiki entry `definition` fields
+  - Sanitizes HTML content in play/battle card `body` fields
+  - Sanitizes HTML content in banner `message` fields
+  - Strips dangerous elements (`<script>`, `onerror=`, `javascript:` URLs) while preserving safe formatting
+
+### Added
+- **DOMPurify Library** (`admin/lib/purify.min.js`) - Industry-standard HTML sanitizer (v3.2.2)
+- **`sanitizeImportData()` function** in `admin/shared.js` - Sanitizes imported data before saving
+
+### Technical
+- DOMPurify loaded in settings.html before other scripts
+- Sanitization runs in `confirmImport()` before data is passed to `saveStorageData()`
+- Graceful fallback if DOMPurify is not loaded (logs warning, continues without sanitization)
+
+---
+
 ## [2.7.0] - 2025-12-18 - Multi-Portal Support (Phase 0 & 1)
 
 ### Added
