@@ -788,14 +788,31 @@ async function performUninstall() {
     let wikiEntries = data.wikiEntries || [];
 
     // Remove entries from this library
-    const entryIdsToRemove = new Set(installInfo.entryIds || []);
-    wikiEntries = wikiEntries.filter(entry => !entryIdsToRemove.has(entry.id));
+    const entryIdsToRemove = installInfo.entryIds || [];
+
+    // Delete from Supabase in web context
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      for (const entryId of entryIdsToRemove) {
+        try {
+          const { error } = await RevGuideDB.deleteWikiEntry(entryId);
+          if (error) console.error(`[Library Uninstall] Failed to delete ${entryId}:`, error);
+        } catch (e) {
+          console.error(`[Library Uninstall] Failed to delete ${entryId}:`, e);
+        }
+      }
+      AdminShared.clearStorageCache();
+    } else {
+      // Extension context - save filtered array
+      wikiEntries = wikiEntries.filter(entry => !entryIdsToRemove.includes(entry.id));
+      await AdminShared.saveStorageData({ wikiEntries });
+    }
+
+    // Remove from local array
+    wikiEntries = wikiEntries.filter(entry => !entryIdsToRemove.includes(entry.id));
 
     // Remove from installed libraries
     delete installedLibraries[currentLibrary.id];
 
-    // Save everything
-    await AdminShared.saveStorageData({ wikiEntries });
     await AdminShared.saveInstalledLibraries(installedLibraries);
 
     // Update local state
