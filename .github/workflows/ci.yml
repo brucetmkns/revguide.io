@@ -104,33 +104,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build minified extension
+        run: npm run build
+
       - name: Create extension package
         run: |
-          mkdir -p dist
-
-          # Create zip excluding development files
-          zip -r dist/revguide-extension.zip . \
-            -x "*.git*" \
-            -x "node_modules/*" \
-            -x "dist/*" \
-            -x "docs/*" \
-            -x "supabase/*" \
-            -x "api/*" \
-            -x "backups/*" \
-            -x "*.md" \
-            -x ".env*" \
-            -x ".github/*" \
-            -x "RevGuide/*" \
-            -x "*.log"
-
-          echo "Extension package created: dist/revguide-extension.zip"
-          ls -lh dist/
+          cd dist
+          zip -r ../revguide-extension.zip .
+          cd ..
+          echo "Extension package created: revguide-extension.zip"
+          ls -lh revguide-extension.zip
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
           name: revguide-extension
-          path: dist/revguide-extension.zip
+          path: revguide-extension.zip
           retention-days: 30
 
   # Deploy Edge Functions (only on main branch)

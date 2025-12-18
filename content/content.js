@@ -242,6 +242,23 @@
       this.presentations = localData.presentations;
       this.settings = localData.settings;
 
+      // Get auth state to determine if user can edit content
+      const authState = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getAuthState' }, (response) => {
+          if (chrome.runtime.lastError) {
+            log('Error getting auth state:', chrome.runtime.lastError.message);
+            resolve({ isAuthenticated: false });
+          } else {
+            resolve(response || { isAuthenticated: false });
+          }
+        });
+      });
+
+      // Determine if user can edit content (owner, admin, or editor roles)
+      const role = authState.profile?.role;
+      const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
+      this.settings.canEditContent = canEditContent;
+
       // Store pre-built wiki cache for faster tooltip loading
       this.wikiTermMapCache = localData.wikiTermMapCache;
       this.wikiEntriesById = localData.wikiEntriesById;

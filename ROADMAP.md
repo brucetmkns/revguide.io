@@ -283,6 +283,22 @@ The extension uses HubSpot Private App tokens which require specific scopes:
 - [ ] Audit log viewer in admin panel
 - [ ] Per-user permissions when SaaS version launches
 
+### Server-Side Rule Evaluation (Privacy Enhancement)
+
+**Goal:** Move rule evaluation from the Chrome extension to a Supabase Edge Function, so the extension never directly accesses HubSpot CRM record data.
+
+**Current State:** The Chrome extension fetches HubSpot record properties via `api.hubapi.com` and evaluates rules locally in the browser. This is accurate and we don't store CRM data, but the extension *does* access it.
+
+**Proposed State:** The extension sends `{ portalId, objectType, recordId }` to an edge function, which fetches properties server-side, evaluates rules, and returns only the IDs of matching banners/plays. The extension never sees CRM data.
+
+**Privacy Benefit:** Enables the claim "Chrome Extension does not access HubSpot CRM data" (matching competitor positioning like Supered).
+
+**Effort Estimate:** 8-12 hours
+
+**Implementation Details:** See `docs/TECHNICAL_DEBT.md`
+
+**Status:** Deferred - Current privacy policy is accurate ("we access but don't store")
+
 ---
 
 ## Phase 1: Content Libraries

@@ -1,0 +1,21 @@
+{
+  "name": "revguide-extension",
+  "version": "1.9.9",
+  "description": "Surface plays, recommendations, and contextual help on HubSpot records",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:dev": "node scripts/build.js --dev",
+    "clean": "rm -rf dist",
+    "package": "npm run build && cd dist && zip -r ../revguide-extension.zip .",
+    "lint": "eslint admin/**/*.js content/**/*.js background/**/*.js lib/**/*.js sidepanel/**/*.js"
+  },
+  "devDependencies": {
+    "terser": "^5.36.0",
+    "clean-css": "^5.3.3",
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

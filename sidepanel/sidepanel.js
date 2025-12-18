@@ -618,8 +618,10 @@ class SidePanel {
       </div>
     ` : '';
 
-    // Admin edit link
-    const showAdminLinks = this.settings.showAdminLinks !== false;
+    // Admin edit link - only show for users who can edit content (owner, admin, editor)
+    const role = this.authState.profile?.role;
+    const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
+    const showAdminLinks = this.settings.showAdminLinks !== false && canEditContent;
     const adminEditHtml = showAdminLinks ? `
       <div class="card-admin-edit">
         <a href="#" class="admin-edit-link" data-card-id="${card.id}">

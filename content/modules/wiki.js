@@ -567,7 +567,7 @@ class WikiModule {
     const categoryClass = `wiki-category-${category}`;
     const displayTitle = entry.title || entry.trigger || entry.term;
 
-    const showAdminLinks = this.helper.settings.showAdminLinks !== false;
+    const showAdminLinks = this.helper.settings.showAdminLinks !== false && this.helper.settings.canEditContent !== false;
     const editLinkHtml = showAdminLinks ? `
       <a href="#" class="wiki-tooltip-edit" data-entry-id="${entry.id}" title="Edit in Admin Panel">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

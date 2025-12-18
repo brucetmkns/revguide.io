@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "RevGuide",
+  "name": "RevGuide (Beta)",
   "version": "1.9.9",
   "description": "Surface plays, recommendations, and contextual help on HubSpot records based on property rules",
   "permissions": [

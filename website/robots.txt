@@ -1,0 +1,7 @@
+# robots.txt for revguide.io
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://revguide.io/sitemap.xml
