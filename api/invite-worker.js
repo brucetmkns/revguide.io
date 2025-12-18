@@ -578,9 +578,9 @@ async function handleInvite(request, env, corsHeaders) {
     }
 
     // Accept valid roles
-    const validRoles = ['viewer', 'editor', 'admin'];
+    const validRoles = ['viewer', 'editor', 'admin', 'consultant'];
     if (!role || !validRoles.includes(role)) {
-      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", or "admin"' }), {
+      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", "admin", or "consultant"' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
