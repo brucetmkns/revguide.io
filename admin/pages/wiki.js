@@ -998,8 +998,34 @@ class WikiPage {
       return;
     }
 
-    // Process data
+    // Check for duplicate trigger words
+    if (trigger) {
+      const duplicateTrigger = this.findDuplicateTrigger(trigger, this.selectedEntryId);
+      if (duplicateTrigger) {
+        const proceed = await this.showDuplicateTriggerWarning(trigger, duplicateTrigger);
+        if (!proceed) {
+          this.switchTab('content');
+          document.getElementById('wikiTrigger').focus();
+          return;
+        }
+      }
+    }
+
+    // Check for duplicate aliases
     const aliases = aliasesStr ? aliasesStr.split(',').map(a => a.trim()).filter(a => a) : [];
+    if (aliases.length > 0) {
+      const duplicateAlias = this.findDuplicateAlias(aliases, this.selectedEntryId);
+      if (duplicateAlias) {
+        const proceed = await this.showDuplicateAliasWarning(duplicateAlias.alias, duplicateAlias.entry);
+        if (!proceed) {
+          this.switchTab('content');
+          document.getElementById('wikiAliases').focus();
+          return;
+        }
+      }
+    }
+
+    // Process data (aliases already parsed above for duplicate check)
     const urlPatterns = urlPatternsStr ? urlPatternsStr.split('\n').map(p => p.trim()).filter(p => p) : [];
 
     if (link && !link.startsWith('https://') && !link.startsWith('http://')) {
@@ -1878,6 +1904,116 @@ class WikiPage {
   }
 
   // ============ UTILITIES ============
+
+  /**
+   * Find an existing entry with a matching trigger word (case-insensitive)
+   * Also checks aliases for conflicts
+   * @param {string} trigger - The trigger word to check
+   * @param {string|null} excludeId - Entry ID to exclude (for editing existing entries)
+   * @returns {Object|null} The conflicting entry, or null if no conflict
+   */
+  findDuplicateTrigger(trigger, excludeId = null) {
+    if (!trigger) return null;
+
+    const triggerLower = trigger.toLowerCase();
+
+    for (const entry of this.wikiEntries) {
+      // Skip the entry being edited
+      if (excludeId && entry.id === excludeId) continue;
+
+      // Skip disabled entries (they won't cause tooltip conflicts)
+      if (entry.enabled === false) continue;
+
+      // Check if this entry's trigger matches
+      if (entry.trigger && entry.trigger.toLowerCase() === triggerLower) {
+        return entry;
+      }
+
+      // Check if any of this entry's aliases match
+      if (entry.aliases && entry.aliases.length > 0) {
+        const matchingAlias = entry.aliases.find(a => a.toLowerCase() === triggerLower);
+        if (matchingAlias) {
+          return entry;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Show a warning dialog when a duplicate trigger is found
+   * @param {string} trigger - The duplicate trigger word
+   * @param {Object} existingEntry - The entry that already uses this trigger
+   * @returns {Promise<boolean>} True if user wants to proceed anyway
+   */
+  async showDuplicateTriggerWarning(trigger, existingEntry) {
+    const result = await AdminShared.showConfirmDialog({
+      title: 'Duplicate Trigger Word',
+      message: `The trigger word "${trigger}" is already used by "${existingEntry.title}". Having duplicate triggers can cause unpredictable tooltip behavior.\n\nDo you want to save anyway?`,
+      primaryLabel: 'Save Anyway',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    return result === 'primary';
+  }
+
+  /**
+   * Find an existing entry where one of the provided aliases conflicts
+   * with another entry's trigger or aliases
+   * @param {string[]} aliases - The aliases to check
+   * @param {string|null} excludeId - Entry ID to exclude (for editing existing entries)
+   * @returns {Object|null} Object with { alias, entry } or null if no conflict
+   */
+  findDuplicateAlias(aliases, excludeId = null) {
+    if (!aliases || aliases.length === 0) return null;
+
+    for (const alias of aliases) {
+      const aliasLower = alias.toLowerCase();
+
+      for (const entry of this.wikiEntries) {
+        // Skip the entry being edited
+        if (excludeId && entry.id === excludeId) continue;
+
+        // Skip disabled entries
+        if (entry.enabled === false) continue;
+
+        // Check if this entry's trigger matches the alias
+        if (entry.trigger && entry.trigger.toLowerCase() === aliasLower) {
+          return { alias, entry };
+        }
+
+        // Check if any of this entry's aliases match
+        if (entry.aliases && entry.aliases.length > 0) {
+          const matchingAlias = entry.aliases.find(a => a.toLowerCase() === aliasLower);
+          if (matchingAlias) {
+            return { alias, entry };
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Show a warning dialog when a duplicate alias is found
+   * @param {string} alias - The duplicate alias
+   * @param {Object} existingEntry - The entry that already uses this alias/trigger
+   * @returns {Promise<boolean>} True if user wants to proceed anyway
+   */
+  async showDuplicateAliasWarning(alias, existingEntry) {
+    const result = await AdminShared.showConfirmDialog({
+      title: 'Duplicate Alias',
+      message: `The alias "${alias}" conflicts with "${existingEntry.title}". Having duplicate triggers/aliases can cause unpredictable tooltip behavior.\n\nDo you want to save anyway?`,
+      primaryLabel: 'Save Anyway',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    return result === 'primary';
+  }
 
   // Map Supabase snake_case response to camelCase for local use
   mapWikiFromSupabase(data) {

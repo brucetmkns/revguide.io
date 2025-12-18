@@ -2,6 +2,27 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.3] - 2025-12-18 - Duplicate Trigger Word Validation
+
+### Added
+- **Duplicate Trigger Word Validation**
+  - Warning dialog when saving a wiki entry with a trigger word already used by another entry
+  - Also validates aliases for conflicts with existing triggers/aliases
+  - Case-insensitive matching prevents "MQL" and "mql" duplicates
+  - Disabled entries are excluded from duplicate checks (they don't cause tooltip conflicts)
+  - Users can override the warning and save anyway if they have a legitimate reason
+  - Dialog identifies the conflicting entry by name for easy resolution
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/wiki.js` - Added `findDuplicateTrigger()`, `findDuplicateAlias()`, `showDuplicateTriggerWarning()`, `showDuplicateAliasWarning()` methods
+  - Validation runs before save in `saveWikiEntry()`
+
+### Note
+- This change only affects the web app (app.revguide.io), not the Chrome extension package under review
+
+---
+
 ## [2.6.2] - 2025-12-17 - Plays HubSpot Properties Fix
 
 ### Fixed

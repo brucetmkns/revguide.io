@@ -145,18 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 ## Medium Priority
 
-### 2. Duplicate Trigger Word Validation
-
-**Status:** Not Started
-**Effort:** 2-3 hours
-
-**Issue:** Users can save wiki entries with trigger words that already exist, causing unpredictable tooltip behavior.
-
-**Solution:** Add validation in `admin/pages/wiki.js` to check for existing triggers before save, show warning dialog.
-
----
-
-### 3. SPA Conversion for Admin Panel
+### 2. SPA Conversion for Admin Panel
 
 **Status:** Not Started
 **Effort:** 2-3 days
@@ -167,7 +156,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 ---
 
-### 4. Bulk Entry Management
+### 3. Bulk Entry Management
 
 **Status:** Not Started
 **Effort:** 1-2 days
@@ -180,7 +169,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 ## Low Priority
 
-### 5. Test Coverage Expansion
+### 4. Test Coverage Expansion
 
 **Status:** Ongoing
 **Current:** 23 tests (conditions, storage)
@@ -192,7 +181,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 ---
 
-### 6. Error Boundary Components
+### 5. Error Boundary Components
 
 **Status:** Not Started
 
@@ -206,6 +195,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 | Item | Completed | Notes |
 |------|-----------|-------|
+| Duplicate trigger word validation | v2.6.3 | Warning dialog with override option |
 | Snake_case/camelCase mapping | v2.2.1 | Fixed data persistence bug |
 | RLS policy circular dependencies | v2.1.2 | Added `get_user_organization_id()` |
 | OAuth token encryption | v2.1.0 | Using pgcrypto |
