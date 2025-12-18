@@ -565,13 +565,65 @@ const RevGuideDB = {
       .eq('auth_user_id', user.id)
       .single();
 
+    // Determine the name to use: provided fullName > metadata > email prefix
+    const userName = fullName || user.user_metadata?.full_name || user.email.split('@')[0];
+
+    // Check if this is a consultant invitation
+    const isConsultantInvitation = invitation.invitation_type === 'consultant' || invitation.role === 'consultant';
+
+    if (isConsultantInvitation) {
+      // CONSULTANT INVITATION FLOW
+      // Add user to organization_members with consultant role (don't change their primary org)
+
+      let userProfile = existingProfile;
+
+      // If user doesn't have a profile yet, create one (but don't set organization_id)
+      if (!existingProfile) {
+        const { data, error } = await client
+          .from('users')
+          .insert({
+            auth_user_id: user.id,
+            email: user.email,
+            name: userName
+            // Note: NOT setting organization_id - consultant may not have their own org yet
+          })
+          .select()
+          .single();
+
+        if (error) return { error };
+        userProfile = data;
+      }
+
+      // Add to organization_members as consultant
+      const { error: memberError } = await client
+        .from('organization_members')
+        .upsert({
+          user_id: userProfile.id,
+          organization_id: invitation.organization_id,
+          role: 'consultant'
+        }, {
+          onConflict: 'user_id,organization_id'
+        });
+
+      if (memberError) {
+        console.error('Failed to add consultant to organization_members:', memberError);
+        return { error: memberError };
+      }
+
+      // Mark invitation as accepted
+      await client
+        .from('invitations')
+        .update({ accepted_at: new Date().toISOString() })
+        .eq('id', invitationId);
+
+      return { data: userProfile, error: null };
+    }
+
+    // REGULAR TEAM INVITATION FLOW
     if (existingProfile?.organization_id) {
       // User already belongs to an organization
       return { error: new Error('You already belong to an organization') };
     }
-
-    // Determine the name to use: provided fullName > metadata > email prefix
-    const userName = fullName || user.user_metadata?.full_name || user.email.split('@')[0];
 
     // Start transaction-like operations
     // 1. Create or update user profile with organization
