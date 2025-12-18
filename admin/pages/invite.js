@@ -33,24 +33,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   // User is logged in - fetch and verify the invitation
   try {
     // Try to get the invitation first (including already-accepted ones)
+    console.log('[Invite] Fetching invitation with token:', token);
     const { data: invitation, error } = await RevGuideDB.getInvitationByToken(token, true);
+    console.log('[Invite] Invitation result:', { invitation, error });
 
     // Check if this is a consultant invitation
     const isConsultantInvitation = inviteType === 'consultant' ||
       invitation?.invitation_type === 'consultant' ||
       invitation?.role === 'consultant';
+    console.log('[Invite] Is consultant invitation:', isConsultantInvitation, 'inviteType:', inviteType);
 
     // Check if user already has a profile with an organization
     const { data: userProfile } = await RevGuideDB.getUserProfile();
+    console.log('[Invite] User profile:', userProfile);
 
     // For regular (non-consultant) invitations, if user already has an org, show success
     if (userProfile?.organization_id && !isConsultantInvitation) {
       // User already belongs to an org - they're all set!
+      console.log('[Invite] User already has org, showing success');
       showSuccess(userProfile.organizations?.name || 'your team');
       return;
     }
 
     if (error || !invitation) {
+      console.log('[Invite] No invitation found, error:', error);
       showError('Invitation Not Found', 'This invitation may have expired or is invalid. Please ask your team admin to send a new invitation.');
       return;
     }
