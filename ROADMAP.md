@@ -543,6 +543,58 @@ Extension → Background.js → Supabase API → Postgres
 
 ---
 
+## Consultant System Improvements (Planned)
+
+**Goal:** Improve the consultant invitation and onboarding flow to handle various user scenarios correctly.
+
+### Consultant Signup Flow Fixes
+
+#### Problem: Invited Consultants Forced Through Wrong Flow
+When a consultant is invited but doesn't have an existing account, they're currently forced through the "new organization member" signup flow where:
+- The organization name field is pre-filled and uneditable
+- They can't create their own admin/partner account
+- They end up as a member of the inviting org instead of having their own consultant account
+
+#### Solution: Consultant-Specific Signup
+- [ ] Detect consultant invitation type in signup flow
+- [ ] Consultant signup should create their own organization (agency/partner account)
+- [ ] After signup, auto-accept the consultant invitation (adding them as consultant to client org)
+- [ ] Consultant ends up with: own org as admin + consultant access to inviting org
+
+### Consultants Creating Client Portals
+
+#### Current State
+Consultants can only be invited to existing organizations or request access to them.
+
+#### Planned Feature
+- [ ] "Create Client Portal" option in Clients page
+- [ ] Consultant enters client org name, creates new organization on their behalf
+- [ ] Consultant automatically added as consultant to the new org
+- [ ] Optional: Send invite email to client admin to claim their org
+- [ ] Client can later add their own admin users
+
+### Secure Consultant Access Requests
+
+#### Problem: Organization Search Reveals Private Information
+The current "search organizations by name" feature for consultant access requests reveals private information (org names) that could be exploited.
+
+#### Solution: Email-Based Request Flow
+- [ ] Remove organization search functionality
+- [ ] New flow: "Enter your client's admin email address"
+- [ ] System checks if email belongs to an admin of any organization
+- [ ] If yes: Send access request notification to that admin
+- [ ] If no account exists: Show message "This email is not associated with a RevGuide admin account. Ask your client to sign up first."
+- [ ] Admin receives email: "[Consultant Name] is requesting consultant access to [Org Name]"
+- [ ] Admin can approve/decline from Settings page or email link
+
+#### Security Benefits
+- No organization enumeration possible
+- Consultant must know client's email (existing relationship)
+- Client admin must approve (explicit consent)
+- No private org names exposed to unauthenticated requests
+
+---
+
 ## Phase 3: Multi-Portal for Consultants (Local)
 
 **Goal:** Enable HubSpot consultants/agencies to manage multiple client portals with reusable content libraries, all within the Chrome extension (before SaaS).
