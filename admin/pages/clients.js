@@ -247,7 +247,7 @@ class ClientsPage {
     const submitBtn = document.getElementById('submitRequestAccessBtn');
 
     if (modal) {
-      modal.classList.add('active');
+      modal.classList.add('open');
       if (searchInput) {
         searchInput.value = '';
         searchInput.focus();
@@ -262,7 +262,7 @@ class ClientsPage {
   closeRequestAccessModal() {
     const modal = document.getElementById('requestAccessModal');
     if (modal) {
-      modal.classList.remove('active');
+      modal.classList.remove('open');
     }
   }
 

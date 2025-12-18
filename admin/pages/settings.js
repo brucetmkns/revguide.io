@@ -1342,7 +1342,7 @@ class SettingsPage {
     const modal = document.getElementById('inviteConsultantModal');
     const emailInput = document.getElementById('consultantEmail');
     if (modal) {
-      modal.classList.add('active');
+      modal.classList.add('open');
       if (emailInput) {
         emailInput.value = '';
         emailInput.focus();
@@ -1353,7 +1353,7 @@ class SettingsPage {
   closeInviteConsultantModal() {
     const modal = document.getElementById('inviteConsultantModal');
     if (modal) {
-      modal.classList.remove('active');
+      modal.classList.remove('open');
     }
   }
 
