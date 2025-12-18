@@ -92,8 +92,9 @@ class PlaysPage {
     // Search and filter
     document.getElementById('playsSearch').addEventListener('input', () => this.renderPlays());
     document.getElementById('playsSearchClear').addEventListener('click', () => this.clearSearch());
-    document.getElementById('playsFilter').addEventListener('change', () => this.renderPlays());
-    document.getElementById('playsObjectFilter').addEventListener('change', () => this.renderPlays());
+    document.getElementById('playsFilter').addEventListener('change', () => this.updateFilterState());
+    document.getElementById('playsObjectFilter').addEventListener('change', () => this.updateFilterState());
+    document.getElementById('playsFiltersClear').addEventListener('click', () => this.clearAllFilters());
 
     // Refresh button
     document.getElementById('refreshPlaysBtn').addEventListener('click', () => this.refreshData());
@@ -154,6 +155,24 @@ class PlaysPage {
     const searchInput = document.getElementById('playsSearch');
     searchInput.value = '';
     searchInput.focus();
+    this.renderPlays();
+  }
+
+  clearAllFilters() {
+    document.getElementById('playsFilter').value = 'all';
+    document.getElementById('playsObjectFilter').value = 'all';
+    this.updateFilterState();
+  }
+
+  updateFilterState() {
+    // Show/hide the combined filter clear button
+    const typeFilter = document.getElementById('playsFilter');
+    const objectFilter = document.getElementById('playsObjectFilter');
+    const clearBtn = document.getElementById('playsFiltersClear');
+
+    const hasActiveFilter = typeFilter.value !== 'all' || objectFilter.value !== 'all';
+    clearBtn.classList.toggle('visible', hasActiveFilter);
+
     this.renderPlays();
   }
 

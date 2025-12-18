@@ -105,8 +105,9 @@ class BannersPage {
     // Search and filter
     document.getElementById('rulesSearch').addEventListener('input', () => this.renderRules());
     document.getElementById('rulesSearchClear').addEventListener('click', () => this.clearSearch());
-    document.getElementById('rulesFilter').addEventListener('change', () => this.renderRules());
-    document.getElementById('rulesObjectFilter').addEventListener('change', () => this.renderRules());
+    document.getElementById('rulesFilter').addEventListener('change', () => this.updateFilterState());
+    document.getElementById('rulesObjectFilter').addEventListener('change', () => this.updateFilterState());
+    document.getElementById('rulesFiltersClear').addEventListener('click', () => this.clearAllFilters());
 
     // Refresh button
     document.getElementById('refreshBannersBtn').addEventListener('click', () => this.refreshData());
@@ -190,6 +191,24 @@ class BannersPage {
     const searchInput = document.getElementById('rulesSearch');
     searchInput.value = '';
     searchInput.focus();
+    this.renderRules();
+  }
+
+  clearAllFilters() {
+    document.getElementById('rulesFilter').value = 'all';
+    document.getElementById('rulesObjectFilter').value = 'all';
+    this.updateFilterState();
+  }
+
+  updateFilterState() {
+    // Show/hide the combined filter clear button
+    const typeFilter = document.getElementById('rulesFilter');
+    const objectFilter = document.getElementById('rulesObjectFilter');
+    const clearBtn = document.getElementById('rulesFiltersClear');
+
+    const hasActiveFilter = typeFilter.value !== 'all' || objectFilter.value !== 'all';
+    clearBtn.classList.toggle('visible', hasActiveFilter);
+
     this.renderRules();
   }
 

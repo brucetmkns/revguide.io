@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Embed Media in Banners</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+    pre { background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>How to Embed Media in Banners</h1>
+  <p class="subtitle">Add videos, images, and rich content to your banners</p>
+
+  <p>Enhance your banners with embedded media to create more engaging and informative content. RevGuide supports videos from popular platforms, images, and rich formatting.</p>
+
+  <h2>Supported Media Types</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Supported Sources</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Videos</td>
+        <td>Loom, YouTube, Vimeo</td>
+      </tr>
+      <tr>
+        <td>Images</td>
+        <td>Any publicly accessible URL</td>
+      </tr>
+      <tr>
+        <td>Links</td>
+        <td>Any URL</td>
+      </tr>
+      <tr>
+        <td>Rich Text</td>
+        <td>Bold, italic, lists, headings</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Embedding Loom Videos</h2>
+  <p>Loom is ideal for quick training videos and process walkthroughs.</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Get Your Loom Share Link</strong>
+    <p>Open your Loom video and click "Share". Copy the share link (e.g., <code>https://www.loom.com/share/abc123...</code>)</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Add to Banner</strong>
+    <p>In the banner editor, paste the Loom URL directly into the message field. RevGuide will automatically convert it to an embedded video.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Preview</strong>
+    <p>Save the banner and preview it in HubSpot. The video will appear as an expandable player.</p>
+  </div>
+
+  <div class="tip">
+    <strong>Tip:</strong> Keep Loom videos short (under 2 minutes) for banners. Link to longer content instead of embedding it.
+  </div>
+
+  <h2>Embedding YouTube Videos</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Get the YouTube URL</strong>
+    <p>Copy the video URL from your browser or click "Share" on YouTube and copy the link.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Paste in Banner</strong>
+    <p>Add the YouTube URL to your banner message. Supported formats:</p>
+    <ul>
+      <li><code>https://www.youtube.com/watch?v=VIDEO_ID</code></li>
+      <li><code>https://youtu.be/VIDEO_ID</code></li>
+    </ul>
+  </div>
+
+  <h2>Embedding Vimeo Videos</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Get the Vimeo URL</strong>
+    <p>Copy the video URL (e.g., <code>https://vimeo.com/123456789</code>)</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Add to Banner</strong>
+    <p>Paste the Vimeo URL into your banner message.</p>
+  </div>
+
+  <h2>Adding Images</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Host Your Image</strong>
+    <p>Upload your image to a hosting service and get the direct image URL. The URL should end in .jpg, .png, .gif, or .webp.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Add to Banner</strong>
+    <p>Use the image button in the rich text editor, or paste the image URL directly.</p>
+  </div>
+
+  <div class="note">
+    <strong>Note:</strong> Use images hosted on reliable services. Images hosted on temporary URLs may break over time.
+  </div>
+
+  <h2>Adding Links</h2>
+
+  <h3>Using the Rich Text Editor</h3>
+  <ol>
+    <li>Select the text you want to link</li>
+    <li>Click the link button in the toolbar</li>
+    <li>Enter the URL</li>
+    <li>Click to save</li>
+  </ol>
+
+  <h3>Link Best Practices</h3>
+  <ul>
+    <li>Use descriptive link text (not "click here")</li>
+    <li>Links open in new tabs by default</li>
+    <li>Test links to ensure they work</li>
+  </ul>
+
+  <h2>Rich Text Formatting</h2>
+  <p>The banner editor supports standard formatting:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Format</th>
+        <th>How to Use</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bold</td>
+        <td>Select text, click B or Ctrl/Cmd+B</td>
+      </tr>
+      <tr>
+        <td>Italic</td>
+        <td>Select text, click I or Ctrl/Cmd+I</td>
+      </tr>
+      <tr>
+        <td>Bullet List</td>
+        <td>Click bullet list button</td>
+      </tr>
+      <tr>
+        <td>Numbered List</td>
+        <td>Click numbered list button</td>
+      </tr>
+      <tr>
+        <td>Heading</td>
+        <td>Select heading size from dropdown</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Design Tips for Media Banners</h2>
+
+  <h3>Keep It Scannable</h3>
+  <ul>
+    <li>Use short paragraphs</li>
+    <li>Break up text with lists</li>
+    <li>One main message per banner</li>
+  </ul>
+
+  <h3>Video Recommendations</h3>
+  <ul>
+    <li>Keep banner videos under 2 minutes</li>
+    <li>Front-load the key information</li>
+    <li>Include a text summary alongside video</li>
+    <li>Consider using a link for longer videos</li>
+  </ul>
+
+  <h3>Image Guidelines</h3>
+  <ul>
+    <li>Use appropriate image sizes (not too large)</li>
+    <li>Ensure good contrast and readability</li>
+    <li>Add alt text for accessibility</li>
+    <li>Optimize file sizes for fast loading</li>
+  </ul>
+
+  <h2>Example: Training Banner with Video</h2>
+  <pre>
+&lt;h3&gt;New Feature: Enhanced Reporting&lt;/h3&gt;
+
+&lt;p&gt;We've updated the reporting dashboard with new metrics and filters.
+Watch this 90-second overview to learn what's new.&lt;/p&gt;
+
+https://www.loom.com/share/abc123example
+
+&lt;p&gt;&lt;strong&gt;Key changes:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;New date range selector&lt;/li&gt;
+  &lt;li&gt;Export to Excel option&lt;/li&gt;
+  &lt;li&gt;Team comparison view&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href="https://docs.example.com/reporting"&gt;Read full documentation&lt;/a&gt;&lt;/p&gt;
+  </pre>
+
+  <div class="tip">
+    <strong>Tip:</strong> Preview your banner on different screen sizes. HubSpot users may have varying browser widths.
+  </div>
+
+  <h2>Troubleshooting</h2>
+
+  <h3>Video Not Loading</h3>
+  <ul>
+    <li>Check that the video URL is correct and public</li>
+    <li>Ensure the video isn't password protected</li>
+    <li>Try using the embed URL instead of the share URL</li>
+  </ul>
+
+  <h3>Image Not Displaying</h3>
+  <ul>
+    <li>Verify the image URL is publicly accessible</li>
+    <li>Check that the URL points directly to the image file</li>
+    <li>Try a different hosting service</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-create-your-first-banner.html">Create your first banner</a></li>
+    <li><a href="how-to-set-up-display-conditions.html">Target specific pages</a></li>
+    <li><a href="how-to-create-plays.html">Create detailed plays with media</a></li>
+  </ul>
+</body>
+</html>

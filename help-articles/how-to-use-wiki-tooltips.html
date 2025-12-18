@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Use Wiki Tooltips</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+    .example-tooltip { background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin: 16px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .example-tooltip-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .example-tooltip-term { font-weight: 600; color: #333; }
+    .example-tooltip-category { background: #e9ecef; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .example-tooltip-content { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>How to Use Wiki Tooltips</h1>
+  <p class="subtitle">Get instant definitions as you work in HubSpot</p>
+
+  <p>Wiki tooltips are contextual definitions that appear automatically when you encounter defined terms while working in HubSpot. They help your team understand terminology, field meanings, and processes without leaving their workflow.</p>
+
+  <h2>How Tooltips Work</h2>
+
+  <h3>Automatic Detection</h3>
+  <p>RevGuide scans HubSpot pages for text that matches your wiki entries. When a match is found:</p>
+  <ol>
+    <li>The matching text gets a subtle underline indicator</li>
+    <li>Hovering over the text reveals the tooltip</li>
+    <li>The tooltip shows the title, category, and definition</li>
+  </ol>
+
+  <h3>What Triggers a Tooltip</h3>
+  <p>A tooltip appears when:</p>
+  <ul>
+    <li>Text matches a wiki entry's <strong>trigger word</strong></li>
+    <li>Text matches one of the entry's <strong>aliases</strong> (if enabled)</li>
+    <li>The wiki entry is <strong>enabled</strong></li>
+    <li>The current page matches any <strong>URL pattern</strong> conditions</li>
+  </ul>
+
+  <h2>Example Tooltip</h2>
+  <div class="example-tooltip">
+    <div class="example-tooltip-header">
+      <span class="example-tooltip-term">MQL</span>
+      <span class="example-tooltip-category">General</span>
+    </div>
+    <div class="example-tooltip-content">
+      <p><strong>Marketing Qualified Lead</strong> - A lead that has engaged with marketing content and meets qualification criteria.</p>
+      <p>MQL criteria: Downloaded 2+ content pieces, visited pricing page, company size 50+ employees.</p>
+    </div>
+  </div>
+
+  <h2>Interacting with Tooltips</h2>
+
+  <h3>Viewing a Tooltip</h3>
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Find Underlined Text</strong>
+    <p>Look for text with a subtle dotted underline - this indicates a tooltip is available.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Hover to View</strong>
+    <p>Move your mouse over the underlined text. The tooltip appears after a brief delay.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Read the Content</strong>
+    <p>The tooltip stays visible while you hover. Move away to dismiss it.</p>
+  </div>
+
+  <h3>Tooltip Elements</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Title</strong></td>
+        <td>The entry's display name</td>
+      </tr>
+      <tr>
+        <td><strong>Category Badge</strong></td>
+        <td>Shows if it's a field, term, process, etc.</td>
+      </tr>
+      <tr>
+        <td><strong>Definition</strong></td>
+        <td>The full explanation text</td>
+      </tr>
+      <tr>
+        <td><strong>Learn More Link</strong></td>
+        <td>Optional link to additional documentation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Where Tooltips Appear</h2>
+  <p>Tooltips can appear throughout HubSpot:</p>
+  <ul>
+    <li><strong>Record Pages:</strong> Contact, company, deal, and ticket records</li>
+    <li><strong>Property Labels:</strong> Field names and descriptions</li>
+    <li><strong>List Views:</strong> Column headers and cell values</li>
+    <li><strong>Navigation:</strong> Menu items and section headers</li>
+    <li><strong>Workflows:</strong> Workflow names and descriptions</li>
+  </ul>
+
+  <h2>Tooltip Display Options</h2>
+
+  <h3>Frequency Settings</h3>
+  <p>How often the same tooltip appears on a page:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Behavior</th>
+        <th>Best For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Once per page</strong></td>
+        <td>Only first occurrence is underlined</td>
+        <td>Most entries - reduces visual clutter</td>
+      </tr>
+      <tr>
+        <td><strong>Every occurrence</strong></td>
+        <td>All instances are underlined</td>
+        <td>Critical terms users need to see everywhere</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Match Types</h3>
+  <p>How text matching works:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Behavior</th>
+        <th>Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Exact</strong></td>
+        <td>Matches whole words only</td>
+        <td>"MQL" matches, "MQLs" doesn't</td>
+      </tr>
+      <tr>
+        <td><strong>Contains</strong></td>
+        <td>Matches anywhere in text</td>
+        <td>"lead" matches "Leads", "unleaded"</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <strong>Tip:</strong> Use "Exact" match for most entries to avoid false matches. Use "Contains" only when you want to catch variations.
+  </div>
+
+  <h2>Common Tooltip Use Cases</h2>
+
+  <h3>Acronyms and Abbreviations</h3>
+  <p>Help team members understand company-specific acronyms:</p>
+  <ul>
+    <li>MQL, SQL, SAL (lead stages)</li>
+    <li>ARR, MRR, ACV (revenue metrics)</li>
+    <li>CS, CSM, TAM (team roles)</li>
+  </ul>
+
+  <h3>HubSpot Field Definitions</h3>
+  <p>Explain what fields mean and how to fill them:</p>
+  <ul>
+    <li>Custom property definitions</li>
+    <li>Dropdown option explanations</li>
+    <li>Required vs. optional field guidance</li>
+  </ul>
+
+  <h3>Process Terminology</h3>
+  <p>Define your company's specific processes:</p>
+  <ul>
+    <li>Deal stages and exit criteria</li>
+    <li>Lead scoring rules</li>
+    <li>Handoff procedures</li>
+  </ul>
+
+  <h3>Product Terms</h3>
+  <p>Keep everyone aligned on product language:</p>
+  <ul>
+    <li>Feature names</li>
+    <li>Plan/tier names</li>
+    <li>Technical terms</li>
+  </ul>
+
+  <h2>Best Practices for End Users</h2>
+
+  <h3>Using Tooltips Effectively</h3>
+  <ul>
+    <li>Hover over unfamiliar terms - there may be a tooltip</li>
+    <li>Click "Learn More" links for detailed information</li>
+    <li>Use tooltips to learn standard terminology</li>
+    <li>Report missing definitions to your admin</li>
+  </ul>
+
+  <h3>When Tooltips Help Most</h3>
+  <ul>
+    <li><strong>Onboarding:</strong> New team members learning systems</li>
+    <li><strong>Data Entry:</strong> Understanding field meanings</li>
+    <li><strong>Cross-team Work:</strong> Understanding other departments' terms</li>
+    <li><strong>Sales Calls:</strong> Quick product/feature lookups</li>
+  </ul>
+
+  <h2>Requesting New Tooltips</h2>
+  <p>If you encounter a term that should have a tooltip:</p>
+  <ol>
+    <li>Note the term and where you saw it</li>
+    <li>Contact your RevGuide admin (check Settings for admins)</li>
+    <li>Suggest a definition if you know what the term means</li>
+  </ol>
+
+  <div class="note">
+    <strong>Note:</strong> Only Editors, Admins, and Owners can create new wiki entries. Viewers can request entries but cannot create them directly.
+  </div>
+
+  <h2>Troubleshooting Tooltips</h2>
+
+  <h3>Tooltip Not Appearing</h3>
+  <ul>
+    <li>Verify the term has a wiki entry with a trigger word</li>
+    <li>Check that the entry is enabled</li>
+    <li>The term must appear exactly as the trigger (for exact match)</li>
+    <li>Check page type restrictions on the entry</li>
+    <li>Refresh the HubSpot page</li>
+  </ul>
+
+  <h3>Wrong Tooltip Showing</h3>
+  <ul>
+    <li>Multiple entries may have overlapping triggers</li>
+    <li>Check aliases for conflicts</li>
+    <li>Higher priority entries take precedence</li>
+    <li>Report to admin to resolve conflicts</li>
+  </ul>
+
+  <h3>Too Many Tooltips</h3>
+  <ul>
+    <li>Admins can set entries to "once per page" frequency</li>
+    <li>Page type filters can limit where entries appear</li>
+    <li>Entries can be disabled temporarily</li>
+  </ul>
+
+  <h2>Privacy and Performance</h2>
+  <p>Tooltips are designed to be lightweight:</p>
+  <ul>
+    <li>Definitions are cached locally for speed</li>
+    <li>No data is sent when you view a tooltip</li>
+    <li>Page performance impact is minimal</li>
+    <li>All content is shared within your organization only</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-create-wiki-entries.html">Create wiki entries (for admins/editors)</a></li>
+    <li><a href="how-to-import-hubspot-fields-to-wiki.html">Import HubSpot fields</a></li>
+    <li><a href="how-to-use-the-side-panel.html">Use the side panel for more details</a></li>
+  </ul>
+</body>
+</html>

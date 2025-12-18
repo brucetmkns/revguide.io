@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Import HubSpot Fields to Wiki</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+  <h1>How to Import HubSpot Fields to Wiki</h1>
+  <p class="subtitle">Automatically document your HubSpot properties</p>
+
+  <p>RevGuide can import field definitions directly from your HubSpot portal, creating wiki entries for each property. This helps document your CRM schema and provides instant tooltips for field names throughout HubSpot.</p>
+
+  <h2>Prerequisites</h2>
+  <ul>
+    <li>HubSpot portal connected to RevGuide (<a href="how-to-connect-hubspot.html">How to connect</a>)</li>
+    <li>Admin or Owner role in your RevGuide organization</li>
+  </ul>
+
+  <h2>Import Steps</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Wiki</strong>
+    <p>Open the RevGuide admin panel and click "Wiki" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Click Import Fields</strong>
+    <p>Click the "Import Fields" button next to "Add Entry". The import modal will open.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Select Object Type</strong>
+    <p>Choose which HubSpot object type to import fields from:</p>
+    <ul>
+      <li><strong>Contacts:</strong> Contact properties</li>
+      <li><strong>Companies:</strong> Company properties</li>
+      <li><strong>Deals:</strong> Deal properties</li>
+      <li><strong>Tickets:</strong> Ticket properties</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Review Available Fields</strong>
+    <p>RevGuide will fetch all properties from HubSpot and display them grouped by property group. Each field shows:</p>
+    <ul>
+      <li>Field label (display name)</li>
+      <li>Field API name</li>
+      <li>"Already added" badge for existing wiki entries</li>
+      <li>"Dropdown" badge for fields with options</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <strong>Select Fields to Import</strong>
+    <p>Check the boxes next to fields you want to import. You can:</p>
+    <ul>
+      <li>Select individual fields</li>
+      <li>Select entire property groups with the group checkbox</li>
+      <li>Use "Select All" to import everything</li>
+      <li>Use the search box to filter fields</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">6</span>
+    <strong>Import Dropdown Values (Optional)</strong>
+    <p>Check "Import dropdown values as nested entries" to create child wiki entries for each option in dropdown/select fields.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">7</span>
+    <strong>Click Import Selected</strong>
+    <p>Click the import button to create wiki entries for all selected fields.</p>
+  </div>
+
+  <h2>What Gets Imported</h2>
+  <p>Each imported field creates a wiki entry with:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Wiki Field</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Title</td>
+        <td>HubSpot field label</td>
+      </tr>
+      <tr>
+        <td>Trigger</td>
+        <td>HubSpot field label (for tooltips)</td>
+      </tr>
+      <tr>
+        <td>Aliases</td>
+        <td>HubSpot API name</td>
+      </tr>
+      <tr>
+        <td>Category</td>
+        <td>Set to "Field"</td>
+      </tr>
+      <tr>
+        <td>Object Type</td>
+        <td>Selected object (contacts, deals, etc.)</td>
+      </tr>
+      <tr>
+        <td>Property Group</td>
+        <td>HubSpot property group name</td>
+      </tr>
+      <tr>
+        <td>Definition</td>
+        <td>Auto-generated with field type and options</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Importing Dropdown Values</h2>
+  <p>When you enable "Import dropdown values as nested entries", RevGuide creates additional wiki entries for each option in dropdown fields:</p>
+  <ul>
+    <li>Each option becomes a child entry linked to the parent field</li>
+    <li>Child entries include the option label, value, and description</li>
+    <li>Child entries appear nested under the parent in the wiki tree</li>
+    <li>Tooltips will appear for both field names and option values</li>
+  </ul>
+
+  <div class="tip">
+    <strong>Tip:</strong> Importing dropdown values is especially useful for fields like Lead Status, Lifecycle Stage, or custom picklists where users need to understand what each option means.
+  </div>
+
+  <h2>Updating Existing Entries</h2>
+  <p>If you've previously imported a field, you'll see "Already added" badge. Selecting these fields again will update them with the latest property group information without overwriting your custom definitions.</p>
+
+  <h2>Organizing Imported Fields</h2>
+  <p>After import, your wiki entries are organized by:</p>
+  <ol>
+    <li><strong>Object Type:</strong> Contacts, Companies, Deals, Tickets, or Custom Terms</li>
+    <li><strong>Property Group:</strong> The HubSpot property group (e.g., "Contact Information", "Deal Information")</li>
+  </ol>
+
+  <p>Use the filters in the wiki navigation to view fields by object type or browse the tree structure.</p>
+
+  <h2>Enhancing Imported Entries</h2>
+  <p>Imported entries provide a starting point. Enhance them by:</p>
+  <ul>
+    <li>Adding detailed definitions explaining how your team uses the field</li>
+    <li>Including examples of proper values</li>
+    <li>Adding links to related documentation</li>
+    <li>Setting custom aliases for common abbreviations</li>
+  </ul>
+
+  <div class="note">
+    <strong>Note:</strong> Imported definitions are automatically generated. Review and customize them to provide more value to your team.
+  </div>
+
+  <h2>Troubleshooting</h2>
+
+  <h3>No fields appear</h3>
+  <ul>
+    <li>Verify your HubSpot connection is active in Settings</li>
+    <li>Check that you have permission to view properties in HubSpot</li>
+    <li>Try disconnecting and reconnecting HubSpot</li>
+  </ul>
+
+  <h3>Import button is disabled</h3>
+  <ul>
+    <li>Select at least one field to import</li>
+    <li>Ensure you're not only selecting "Already added" fields</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-create-wiki-entries.html">Create custom wiki entries</a></li>
+    <li><a href="how-to-use-wiki-tooltips.html">Learn how wiki tooltips work</a></li>
+    <li><a href="how-to-connect-hubspot.html">Manage your HubSpot connection</a></li>
+  </ul>
+</body>
+</html>

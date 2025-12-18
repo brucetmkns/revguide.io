@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Export and Import Data</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .warning { background: #f8d7da; border: 1px solid #dc3545; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+    pre { background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>How to Export and Import Data</h1>
+  <p class="subtitle">Back up your content and restore from backups</p>
+
+  <p>RevGuide allows you to export all your content to a JSON file for backup purposes, migration, or sharing. You can also import data from a backup file to restore content.</p>
+
+  <h2>Who Can Export/Import</h2>
+  <ul>
+    <li><strong>Export:</strong> Editors, Admins, and Owners</li>
+    <li><strong>Import:</strong> Admins and Owners only</li>
+  </ul>
+
+  <h2>Exporting Data</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Settings</strong>
+    <p>Open the RevGuide admin panel and click "Settings" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Find Import/Export Section</strong>
+    <p>Scroll to the "Import/Export" card.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Click Export Data</strong>
+    <p>Click the "Export Data" button. Your browser will download a JSON file.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Save the File</strong>
+    <p>The file is automatically named with the date: <code>revguide-backup-YYYY-MM-DD.json</code></p>
+  </div>
+
+  <h2>What Gets Exported</h2>
+  <p>The export file includes:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Content Type</th>
+        <th>Included</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Banners</td>
+        <td>All banners with their settings and conditions</td>
+      </tr>
+      <tr>
+        <td>Plays (Battle Cards)</td>
+        <td>All plays with categories and content</td>
+      </tr>
+      <tr>
+        <td>Wiki Entries</td>
+        <td>All wiki entries including imported fields</td>
+      </tr>
+      <tr>
+        <td>Display Settings</td>
+        <td>Banner position and visibility preferences</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Not Included in Export</h3>
+  <ul>
+    <li>Team members and invitations</li>
+    <li>HubSpot connection details</li>
+    <li>Account credentials</li>
+    <li>User-specific preferences</li>
+  </ul>
+
+  <h2>Export File Format</h2>
+  <p>The export is a JSON file with this structure:</p>
+
+  <pre>{
+  "version": "1.0",
+  "exportedAt": "2024-01-15T10:30:00Z",
+  "rules": [...],           // Banners
+  "battleCards": [...],     // Plays
+  "presentations": [...],   // Media items
+  "wikiEntries": [...],     // Wiki entries
+  "settings": {...}         // Display settings
+}</pre>
+
+  <div class="tip">
+    <strong>Tip:</strong> Store export files in a secure location. They contain all your organization's RevGuide content.
+  </div>
+
+  <h2>Importing Data</h2>
+
+  <div class="warning">
+    <strong>Warning:</strong> Importing data <strong>replaces</strong> your existing content. Always export a backup before importing.
+  </div>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Export Current Data First</strong>
+    <p>Create a backup of your current content before importing.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Navigate to Settings</strong>
+    <p>Go to Settings and find the Import/Export section.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Click Import Data</strong>
+    <p>Click the "Import Data" button. A file picker will open.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Select Your Backup File</strong>
+    <p>Choose the RevGuide JSON backup file you want to import.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <strong>Review and Confirm</strong>
+    <p>RevGuide will show you what will be imported:</p>
+    <ul>
+      <li>Number of banners</li>
+      <li>Number of plays</li>
+      <li>Number of media items</li>
+      <li>Number of wiki entries</li>
+    </ul>
+    <p>Confirm to proceed with the import.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">6</span>
+    <strong>Wait for Completion</strong>
+    <p>The page will refresh automatically after import. All imported content will be immediately available.</p>
+  </div>
+
+  <h2>Use Cases for Export/Import</h2>
+
+  <h3>Regular Backups</h3>
+  <p>Schedule regular exports to protect against accidental deletion:</p>
+  <ul>
+    <li>Weekly exports for active organizations</li>
+    <li>Monthly exports for stable content</li>
+    <li>Before making major changes</li>
+  </ul>
+
+  <h3>Content Migration</h3>
+  <p>Move content between organizations:</p>
+  <ol>
+    <li>Export from the source organization</li>
+    <li>Sign in to the destination organization</li>
+    <li>Import the backup file</li>
+  </ol>
+
+  <h3>Staging/Testing</h3>
+  <p>Test changes in a separate environment:</p>
+  <ol>
+    <li>Export production content</li>
+    <li>Import to a test organization</li>
+    <li>Make and test changes</li>
+    <li>Export tested content</li>
+    <li>Import back to production</li>
+  </ol>
+
+  <h3>Sharing Content</h3>
+  <p>Share templates with other organizations:</p>
+  <ul>
+    <li>Export your best banners and plays</li>
+    <li>Share the JSON file</li>
+    <li>Other organizations can import as a starting point</li>
+  </ul>
+
+  <h2>Troubleshooting</h2>
+
+  <h3>Invalid Backup File Error</h3>
+  <ul>
+    <li>Ensure the file is a valid JSON file</li>
+    <li>Check that it was exported from RevGuide</li>
+    <li>Verify the file wasn't corrupted during transfer</li>
+    <li>Try opening the file in a text editor to check for issues</li>
+  </ul>
+
+  <h3>Import Failed</h3>
+  <ul>
+    <li>Check your internet connection</li>
+    <li>Ensure you have Admin or Owner permissions</li>
+    <li>Try a smaller import if the file is very large</li>
+    <li>Contact support if the issue persists</li>
+  </ul>
+
+  <h3>Missing Content After Import</h3>
+  <ul>
+    <li>Import replaces all content - check your backup file contains everything</li>
+    <li>Verify you imported the correct file</li>
+    <li>Check if the content was disabled (toggle enabled status)</li>
+  </ul>
+
+  <div class="note">
+    <strong>Note:</strong> Import is an all-or-nothing operation. You cannot selectively import specific items from a backup file. The entire file is imported at once.
+  </div>
+
+  <h2>Best Practices</h2>
+  <ul>
+    <li><strong>Regular Exports:</strong> Create backups before major changes and on a regular schedule</li>
+    <li><strong>Version Your Backups:</strong> Keep multiple dated backups, not just the latest</li>
+    <li><strong>Test Imports:</strong> When migrating, test in a separate organization first</li>
+    <li><strong>Document Changes:</strong> Note what's in each backup for easier recovery</li>
+    <li><strong>Secure Storage:</strong> Store backups in a secure, accessible location</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-manage-display-settings.html">Configure display settings</a></li>
+    <li><a href="how-to-invite-team-members.html">Manage team access</a></li>
+    <li><a href="how-to-troubleshoot-common-issues.html">Troubleshoot issues</a></li>
+  </ul>
+</body>
+</html>

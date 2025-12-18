@@ -1,0 +1,9 @@
+<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="56" height="56" rx="12" fill="#fffbeb"/>
+  <!-- Icon -->
+  <g transform="translate(14, 14)" stroke="#f59e0b" stroke-width="2">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </g>
+</svg>

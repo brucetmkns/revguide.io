@@ -515,27 +515,13 @@
   display: flex;
 }
 
-/* Filter select with clear button */
-.filter-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.filter-wrapper .filter-select {
-  padding-right: 28px;
-}
-
+/* Filter clear button - clears all filters */
 .filter-clear-btn {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
   display: none;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   background: transparent;
   border: none;
@@ -550,7 +536,7 @@
   color: var(--color-text-primary);
 }
 
-.filter-wrapper.has-filter .filter-clear-btn {
+.filter-clear-btn.visible {
   display: flex;
 }
 

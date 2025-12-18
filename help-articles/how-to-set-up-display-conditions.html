@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Set Up Display Conditions</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+    pre { background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>How to Set Up Display Conditions</h1>
+  <p class="subtitle">Control where and when your content appears in HubSpot</p>
+
+  <p>Display conditions let you target specific HubSpot pages for your banners and wiki entries. Show the right content to the right people at the right time by using URL patterns and page types.</p>
+
+  <h2>Understanding URL Patterns</h2>
+  <p>RevGuide uses URL patterns to match HubSpot pages. Patterns can include wildcards (<code>*</code>) to match multiple pages.</p>
+
+  <h3>Pattern Syntax</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Pattern</th>
+        <th>Matches</th>
+        <th>Example URLs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>*</code></td>
+        <td>All pages</td>
+        <td>Everything in HubSpot</td>
+      </tr>
+      <tr>
+        <td><code>/contacts/*</code></td>
+        <td>All contact pages</td>
+        <td>Contact records, contact lists</td>
+      </tr>
+      <tr>
+        <td><code>/contacts/*/record/*</code></td>
+        <td>Contact record pages only</td>
+        <td>Individual contact views</td>
+      </tr>
+      <tr>
+        <td><code>/deals/*</code></td>
+        <td>All deal pages</td>
+        <td>Deal records, pipeline board</td>
+      </tr>
+      <tr>
+        <td><code>/companies/*</code></td>
+        <td>All company pages</td>
+        <td>Company records, lists</td>
+      </tr>
+      <tr>
+        <td><code>/tickets/*</code></td>
+        <td>All ticket pages</td>
+        <td>Ticket records, queue</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Common URL Patterns</h2>
+
+  <h3>CRM Object Pages</h3>
+  <pre>/contacts/*        - All contact pages
+/contacts/*/record/* - Contact record views only
+/companies/*       - All company pages
+/deals/*           - All deal pages
+/tickets/*         - All ticket pages</pre>
+
+  <h3>Specific Sections</h3>
+  <pre>/sales/*           - Sales tools
+/marketing/*       - Marketing tools
+/service/*         - Service tools
+/reports/*         - Reports and analytics
+/settings/*        - Settings pages</pre>
+
+  <h3>Pipeline and Board Views</h3>
+  <pre>/deals/board/*     - Deal pipeline board
+/tickets/board/*   - Ticket board view</pre>
+
+  <h2>Setting Conditions for Banners</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Open Banner Editor</strong>
+    <p>Create a new banner or edit an existing one.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Find URL Pattern Field</strong>
+    <p>In the banner settings, locate the URL pattern or display conditions section.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Enter URL Patterns</strong>
+    <p>Enter one or more URL patterns, one per line. The banner will show on pages matching any of the patterns.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Test Your Banner</strong>
+    <p>Navigate to a matching HubSpot page to verify your banner appears correctly.</p>
+  </div>
+
+  <h2>Setting Conditions for Wiki Entries</h2>
+  <p>Wiki entries have additional options in the Rules tab:</p>
+
+  <h3>Page Type</h3>
+  <p>Limit where tooltips appear:</p>
+  <ul>
+    <li><strong>Any:</strong> Show on all matching pages</li>
+    <li><strong>Record:</strong> Only on individual record pages</li>
+    <li><strong>List:</strong> Only on list views</li>
+    <li><strong>Board:</strong> Only on board/pipeline views</li>
+  </ul>
+
+  <h3>URL Patterns for Wiki</h3>
+  <p>Add URL patterns in the Rules tab to restrict where a specific tooltip appears. Leave empty to show everywhere.</p>
+
+  <h2>Multiple Conditions</h2>
+  <p>When you add multiple URL patterns:</p>
+  <ul>
+    <li>Patterns work with OR logic</li>
+    <li>Content shows if ANY pattern matches</li>
+    <li>Add more patterns to include more pages</li>
+  </ul>
+
+  <div class="tip">
+    <strong>Tip:</strong> Start with broader patterns and narrow down based on user feedback. It's easier to remove content from specific pages than to figure out which pages you forgot to include.
+  </div>
+
+  <h2>Examples by Use Case</h2>
+
+  <h3>Sales Team Content</h3>
+  <p>Show banners only for sales-related pages:</p>
+  <pre>/deals/*
+/contacts/*
+/companies/*</pre>
+
+  <h3>Support Team Content</h3>
+  <p>Target service and support pages:</p>
+  <pre>/tickets/*
+/service/*</pre>
+
+  <h3>Pipeline Stage Guidance</h3>
+  <p>Show content on deal board views:</p>
+  <pre>/deals/board/*</pre>
+
+  <h3>Record Page Only</h3>
+  <p>Show tooltips only when viewing individual records:</p>
+  <pre>/contacts/*/record/*
+/companies/*/record/*
+/deals/*/record/*</pre>
+
+  <h2>Testing Your Conditions</h2>
+
+  <ol>
+    <li><strong>Create the condition:</strong> Set your URL pattern</li>
+    <li><strong>Save the content:</strong> Ensure it's enabled</li>
+    <li><strong>Navigate to HubSpot:</strong> Go to a page that should match</li>
+    <li><strong>Verify display:</strong> Check that content appears</li>
+    <li><strong>Test non-matching pages:</strong> Verify content doesn't appear where it shouldn't</li>
+  </ol>
+
+  <div class="note">
+    <strong>Note:</strong> Changes take effect immediately. If you don't see your content, try refreshing the HubSpot page or clearing your browser cache.
+  </div>
+
+  <h2>Troubleshooting</h2>
+
+  <h3>Content Not Appearing</h3>
+  <ul>
+    <li>Verify the content is enabled (not disabled)</li>
+    <li>Check that your URL pattern matches the current page</li>
+    <li>Ensure there are no typos in the pattern</li>
+    <li>Try using a broader pattern like <code>*</code> to test</li>
+  </ul>
+
+  <h3>Content Appearing Everywhere</h3>
+  <ul>
+    <li>Check for overly broad patterns like <code>*</code></li>
+    <li>Add more specific patterns to narrow the scope</li>
+    <li>Verify you haven't left the pattern field empty (which defaults to all pages)</li>
+  </ul>
+
+  <h2>Best Practices</h2>
+  <ul>
+    <li><strong>Be Specific:</strong> Target the exact pages where content is relevant</li>
+    <li><strong>Test Thoroughly:</strong> Check both matching and non-matching pages</li>
+    <li><strong>Document Patterns:</strong> Use clear banner titles that indicate the target audience</li>
+    <li><strong>Review Regularly:</strong> As HubSpot's URL structure may change, verify patterns still work</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-create-your-first-banner.html">Create targeted banners</a></li>
+    <li><a href="how-to-create-wiki-entries.html">Set up wiki entry rules</a></li>
+    <li><a href="how-to-manage-display-settings.html">Configure global display settings</a></li>
+  </ul>
+</body>
+</html>

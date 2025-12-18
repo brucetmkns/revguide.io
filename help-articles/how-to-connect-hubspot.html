@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Connect HubSpot</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #1a2e05; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    .step { background: #f8f9fa; border-left: 4px solid #b2ef63; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #1a2e05; color: #b2ef63; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .warning { background: #f8d7da; border: 1px solid #dc3545; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul { padding-left: 24px; }
+    li { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>How to Connect HubSpot</h1>
+  <p class="subtitle">Enable advanced features by connecting your HubSpot portal</p>
+
+  <p>Connecting RevGuide to your HubSpot portal unlocks powerful features like importing HubSpot fields into your wiki, using property-based display conditions, and more.</p>
+
+  <h2>Why Connect HubSpot?</h2>
+  <ul>
+    <li><strong>Import Fields:</strong> Automatically import HubSpot property definitions into your wiki</li>
+    <li><strong>Property Groups:</strong> Organize wiki entries by HubSpot property groups</li>
+    <li><strong>Smart Conditions:</strong> Display banners and plays based on HubSpot object types</li>
+    <li><strong>Field Documentation:</strong> Include field types, options, and API names in wiki entries</li>
+  </ul>
+
+  <h2>Connection Steps</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Settings</strong>
+    <p>Open the RevGuide admin panel and click on "Settings" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Find the HubSpot Connection Section</strong>
+    <p>Scroll to the "HubSpot Connection" card. You'll see either a "Connect HubSpot" button or your current connection status.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Click Connect HubSpot</strong>
+    <p>Click the "Connect HubSpot" button. You'll be redirected to HubSpot's authorization page.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Authorize RevGuide</strong>
+    <p>On HubSpot's page, select the portal you want to connect and review the requested permissions. Click "Connect app" to authorize RevGuide.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <strong>Confirmation</strong>
+    <p>You'll be redirected back to RevGuide Settings. A success message will confirm your portal is connected, showing your portal name and domain.</p>
+  </div>
+
+  <h2>Required Permissions</h2>
+  <p>RevGuide requests the following HubSpot permissions:</p>
+  <ul>
+    <li><strong>CRM Schemas:</strong> Read access to understand your custom properties</li>
+    <li><strong>Properties:</strong> Read access to import field definitions</li>
+  </ul>
+
+  <div class="tip">
+    <strong>Tip:</strong> RevGuide only reads property metadata. It does not access, modify, or store your actual CRM data or contacts.
+  </div>
+
+  <h2>Disconnecting HubSpot</h2>
+  <p>To disconnect your HubSpot portal:</p>
+  <ol>
+    <li>Go to Settings</li>
+    <li>In the HubSpot Connection card, click "Disconnect"</li>
+    <li>Confirm the disconnection when prompted</li>
+  </ol>
+
+  <div class="warning">
+    <strong>Warning:</strong> Disconnecting HubSpot will disable field import and property-based features. Your existing wiki entries will remain but won't be updated from HubSpot.
+  </div>
+
+  <h2>Troubleshooting</h2>
+  <ul>
+    <li><strong>Connection Failed:</strong> Ensure you have admin or super admin access in your HubSpot portal</li>
+    <li><strong>Portal Not Listed:</strong> You can only connect portals where you have appropriate permissions</li>
+    <li><strong>Authorization Error:</strong> Try clearing your browser cache and cookies, then retry the connection</li>
+  </ul>
+
+  <div class="note">
+    <strong>Note:</strong> Only organization admins and owners can connect or disconnect HubSpot. Team members with viewer or editor roles cannot modify the HubSpot connection.
+  </div>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-import-hubspot-fields-to-wiki.html">Import HubSpot fields to your wiki</a></li>
+    <li><a href="how-to-create-wiki-entries.html">Create wiki entries manually</a></li>
+    <li><a href="how-to-set-up-display-conditions.html">Set up display conditions</a></li>
+  </ul>
+</body>
+</html>

@@ -38,6 +38,25 @@ async function loadUserOrganizations() {
     userOrganizations = orgs || [];
     console.log(`[Auth] Loaded ${userOrganizations.length} organizations`);
 
+    // If currentOrganization is not set, populate it from userOrganizations
+    // This ensures org name displays even if the separate organizations query failed
+    if (!currentOrganization && userOrganizations.length > 0 && currentUser) {
+      const activeOrgId = currentUser.active_organization_id || currentUser.organization_id;
+      const activeOrg = userOrganizations.find(o => o.organization_id === activeOrgId) || userOrganizations[0];
+
+      if (activeOrg) {
+        currentOrganization = {
+          id: activeOrg.organization_id,
+          name: activeOrg.organization_name,
+          hubspot_portal_id: activeOrg.portal_id
+        };
+        console.log('[Auth] Set currentOrganization from userOrganizations:', currentOrganization.name);
+
+        // Update cache with the corrected organization
+        saveUserToCache();
+      }
+    }
+
     // Check if user is a consultant
     isConsultantUser = await RevGuideDB.isConsultant();
 
@@ -49,6 +68,9 @@ async function loadUserOrganizations() {
         // Re-render sidebar to update role indicator with org-specific role
         renderSidebar();
       }, 100);
+    } else if (userOrganizations.length === 1) {
+      // Even with single org, re-render sidebar to show org name
+      setTimeout(() => renderSidebar(), 100);
     }
 
     orgsLoadedThisSession = true;

@@ -1,0 +1,10 @@
+<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="56" height="56" rx="12" fill="rgba(178, 239, 99, 0.12)"/>
+  <!-- Icon -->
+  <g transform="translate(14, 14)" stroke="#1a2e05" stroke-width="2">
+    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+    <polyline points="2 17 12 22 22 17"/>
+    <polyline points="2 12 12 17 22 12"/>
+  </g>
+</svg>

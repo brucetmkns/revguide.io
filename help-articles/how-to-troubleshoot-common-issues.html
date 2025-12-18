@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Troubleshoot Common Issues</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .warning { background: #f8d7da; border: 1px solid #dc3545; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .solution { background: #cce5ff; border: 1px solid #004085; padding: 12px 16px; border-radius: 8px; margin: 12px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    .issue-card { border: 1px solid #dee2e6; border-radius: 8px; margin: 16px 0; overflow: hidden; }
+    .issue-header { background: #f8f9fa; padding: 12px 16px; font-weight: 600; }
+    .issue-body { padding: 16px; }
+  </style>
+</head>
+<body>
+  <h1>How to Troubleshoot Common Issues</h1>
+  <p class="subtitle">Quick fixes for the most common RevGuide problems</p>
+
+  <p>This guide covers the most frequently encountered issues and their solutions. If you can't find your issue here, contact support for additional help.</p>
+
+  <h2>Extension Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Extension Not Working in HubSpot</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> No RevGuide icon, no tooltips, no banners appearing</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Verify the extension is installed: Check Chrome's extension menu (puzzle icon)</li>
+          <li>Ensure it's enabled: Extensions > RevGuide > toggle ON</li>
+          <li>Check you're on a HubSpot page (app.hubspot.com)</li>
+          <li>Refresh the HubSpot page</li>
+          <li>If still not working, remove and reinstall the extension</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Content Not Syncing</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Changes in admin panel don't appear in HubSpot</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Wait a few seconds - sync can take a moment</li>
+          <li>Refresh the HubSpot page</li>
+          <li>Check that the content is enabled (not disabled)</li>
+          <li>Verify you're signed in to the same organization</li>
+          <li>Clear browser cache and refresh</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>Banner Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Banner Not Appearing</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Created a banner but it doesn't show in HubSpot</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li><strong>Check enabled status:</strong> Ensure the banner is toggled ON</li>
+          <li><strong>Verify URL pattern:</strong> Confirm the pattern matches the current page
+            <ul>
+              <li>Try using <code>*</code> to match all pages as a test</li>
+              <li>Check for typos in URL patterns</li>
+            </ul>
+          </li>
+          <li><strong>Check display settings:</strong> Verify "Show Banners" is enabled in Settings</li>
+          <li><strong>Refresh the page:</strong> Sometimes content needs a page refresh</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Banner Appearing on Wrong Pages</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Banner shows on pages where it shouldn't</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Review your URL pattern - it may be too broad</li>
+          <li>Change from <code>*</code> to more specific patterns like <code>/contacts/*</code></li>
+          <li>Add multiple specific patterns instead of one broad pattern</li>
+          <li>Test by navigating to different page types</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>Wiki/Tooltip Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Tooltips Not Appearing</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Wiki entries exist but no tooltips show in HubSpot</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li><strong>Check trigger word:</strong> Ensure the entry has a trigger word set (not just a title)</li>
+          <li><strong>Verify enabled:</strong> Entry must be enabled</li>
+          <li><strong>Check match type:</strong> "Exact" only matches complete words</li>
+          <li><strong>Look at the page:</strong> The trigger word must actually appear on the page</li>
+          <li><strong>Check page type filter:</strong> Entry may be limited to specific page types</li>
+          <li><strong>Verify case:</strong> Triggers are case-insensitive but check spelling</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Wrong Tooltip Showing</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> A different definition appears than expected</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li><strong>Check for duplicates:</strong> Search for the trigger word in Wiki to find conflicts</li>
+          <li><strong>Review aliases:</strong> An alias on another entry may be matching</li>
+          <li><strong>Check priority:</strong> Higher priority entries take precedence</li>
+          <li><strong>Resolve conflicts:</strong> Adjust or merge duplicate entries</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>HubSpot Connection Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Can't Connect to HubSpot</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> OAuth flow fails or connection doesn't complete</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Ensure you have admin/super admin access in HubSpot</li>
+          <li>Disable popup blockers during OAuth</li>
+          <li>Clear browser cookies for both RevGuide and HubSpot</li>
+          <li>Try in an incognito/private window</li>
+          <li>Check that third-party cookies are enabled</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Field Import Not Working</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Can't import fields from HubSpot or fields list is empty</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Verify HubSpot is connected (check Settings)</li>
+          <li>If disconnected, reconnect HubSpot</li>
+          <li>Ensure you have permission to view properties in HubSpot</li>
+          <li>Try selecting a different object type</li>
+          <li>Refresh the page and try again</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>Login/Authentication Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Can't Sign In</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Login fails or page redirects repeatedly</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Verify email and password are correct</li>
+          <li>Check for caps lock</li>
+          <li>Try "Forgot Password" to reset</li>
+          <li>Clear browser cache and cookies for RevGuide</li>
+          <li>Try a different browser</li>
+          <li>Disable browser extensions that might interfere</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Session Expired Frequently</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Getting logged out unexpectedly</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Check that cookies aren't being blocked</li>
+          <li>Disable "clear cookies on exit" browser setting</li>
+          <li>Use the web app instead of extension if available</li>
+          <li>Check for conflicting browser extensions</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>Permission Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Can't Edit Content</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Edit buttons missing or disabled</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Check your role - Viewers can't edit content</li>
+          <li>Look for "View Only" badge indicating restricted access</li>
+          <li>Ask an admin to upgrade your role to Editor or Admin</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-header">Can't Access Settings</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Settings options hidden or greyed out</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Some settings require Admin or Owner role</li>
+          <li>HubSpot connection requires Admin access</li>
+          <li>Team management requires Admin access</li>
+          <li>Contact your organization admin for role changes</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>Performance Issues</h2>
+
+  <div class="issue-card">
+    <div class="issue-header">Slow Loading</div>
+    <div class="issue-body">
+      <p><strong>Symptoms:</strong> Pages take a long time to load</p>
+      <div class="solution">
+        <strong>Solutions:</strong>
+        <ol>
+          <li>Check your internet connection</li>
+          <li>Clear browser cache</li>
+          <li>Disable other browser extensions temporarily</li>
+          <li>Try in incognito mode</li>
+          <li>If using many wiki entries, consider disabling some</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <h2>General Troubleshooting Steps</h2>
+  <p>When something isn't working, try these steps in order:</p>
+
+  <ol>
+    <li><strong>Refresh the page</strong> - Solves many temporary issues</li>
+    <li><strong>Check enabled status</strong> - Ensure content is toggled on</li>
+    <li><strong>Verify your role</strong> - Some features require higher permissions</li>
+    <li><strong>Clear browser cache</strong> - Removes stale data</li>
+    <li><strong>Sign out and back in</strong> - Refreshes your session</li>
+    <li><strong>Try incognito mode</strong> - Rules out extension conflicts</li>
+    <li><strong>Reinstall extension</strong> - Last resort for extension issues</li>
+  </ol>
+
+  <div class="tip">
+    <strong>Tip:</strong> Before contacting support, try to reproduce the issue in an incognito window. This helps identify if browser extensions or settings are causing the problem.
+  </div>
+
+  <h2>Getting Help</h2>
+  <p>If these solutions don't resolve your issue:</p>
+  <ol>
+    <li>Note the exact error message (if any)</li>
+    <li>Take a screenshot of the problem</li>
+    <li>Note what steps led to the issue</li>
+    <li>Contact your organization admin first</li>
+    <li>If needed, reach out to RevGuide support with details</li>
+  </ol>
+
+  <div class="note">
+    <strong>Note:</strong> When reporting issues, include your browser version, whether you're using the extension or web app, and any error messages you see.
+  </div>
+
+  <h2>Related Articles</h2>
+  <ul>
+    <li><a href="how-to-install-revguide.html">Installation guide</a></li>
+    <li><a href="how-to-connect-hubspot.html">HubSpot connection</a></li>
+    <li><a href="how-to-manage-user-roles.html">User roles and permissions</a></li>
+    <li><a href="how-to-manage-display-settings.html">Display settings</a></li>
+  </ul>
+</body>
+</html>

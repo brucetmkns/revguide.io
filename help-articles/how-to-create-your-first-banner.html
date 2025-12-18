@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Create Your First Banner</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+  <h1>How to Create Your First Banner</h1>
+  <p class="subtitle">Display contextual messages and guidance in HubSpot</p>
+
+  <p>Banners are dynamic messages that appear at the top or bottom of HubSpot pages. Use them to share announcements, process reminders, training tips, or any contextual information your team needs.</p>
+
+  <h2>Creating a Banner</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Banners</strong>
+    <p>Open the RevGuide admin panel and click "Banners" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Click Add Banner</strong>
+    <p>Click the "Add Banner" button in the top right corner. A new banner form will appear.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Enter Banner Details</strong>
+    <p>Fill in the following fields:</p>
+    <ul>
+      <li><strong>Title:</strong> A descriptive name for your banner (internal use only)</li>
+      <li><strong>Message:</strong> The text that will display to users. You can use rich text formatting including bold, italic, links, and lists.</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Choose Banner Style</strong>
+    <p>Select a style that matches your message intent:</p>
+    <ul>
+      <li><strong>Info (Blue):</strong> General information and tips</li>
+      <li><strong>Success (Green):</strong> Positive updates or confirmations</li>
+      <li><strong>Warning (Yellow):</strong> Cautions or important reminders</li>
+      <li><strong>Error (Red):</strong> Critical alerts or urgent messages</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <strong>Set Display Conditions</strong>
+    <p>Define when and where your banner appears. See the conditions section below for details.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">6</span>
+    <strong>Save Your Banner</strong>
+    <p>Click "Save" to create your banner. It will be enabled by default and start appearing in HubSpot immediately.</p>
+  </div>
+
+  <h2>Display Conditions</h2>
+  <p>Banners can be targeted to specific pages or contexts using URL patterns:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Pattern</th>
+        <th>Description</th>
+        <th>Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>/contacts/*</code></td>
+        <td>All contact pages</td>
+        <td>Contact records, lists</td>
+      </tr>
+      <tr>
+        <td><code>/deals/*</code></td>
+        <td>All deal pages</td>
+        <td>Deal records, pipelines</td>
+      </tr>
+      <tr>
+        <td><code>/companies/*</code></td>
+        <td>All company pages</td>
+        <td>Company records</td>
+      </tr>
+      <tr>
+        <td><code>/tickets/*</code></td>
+        <td>All ticket pages</td>
+        <td>Ticket records</td>
+      </tr>
+      <tr>
+        <td><code>*</code></td>
+        <td>All HubSpot pages</td>
+        <td>Global announcement</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Banner Position</h2>
+  <p>By default, banners appear at the top of the page. You can change the position in Settings:</p>
+  <ol>
+    <li>Go to Settings</li>
+    <li>Find "Display Options"</li>
+    <li>Change "Banner Position" to Top or Bottom</li>
+  </ol>
+
+  <h2>Adding Media to Banners</h2>
+  <p>Banners can include embedded content:</p>
+  <ul>
+    <li><strong>Videos:</strong> Embed Loom, YouTube, or Vimeo videos</li>
+    <li><strong>Images:</strong> Add screenshots or diagrams</li>
+    <li><strong>Links:</strong> Include links to documentation or resources</li>
+  </ul>
+
+  <div class="tip">
+    <strong>Tip:</strong> Keep banner messages concise. For longer content, use a link to full documentation or consider creating a Play instead.
+  </div>
+
+  <h2>Managing Banners</h2>
+
+  <h3>Enable/Disable</h3>
+  <p>Toggle a banner on or off without deleting it. Click the status indicator on the banner card to toggle.</p>
+
+  <h3>Edit</h3>
+  <p>Click on any banner in the list to open it for editing. Make your changes and click Save.</p>
+
+  <h3>Duplicate</h3>
+  <p>Create a copy of an existing banner using the duplicate button. This is useful for creating similar banners with different conditions.</p>
+
+  <h3>Delete</h3>
+  <p>Click the delete button on a banner card to remove it permanently.</p>
+
+  <div class="note">
+    <strong>Note:</strong> Banners are visible to all users in your organization. Use display conditions to target specific audiences based on the pages they visit.
+  </div>
+
+  <h2>Best Practices</h2>
+  <ul>
+    <li>Use descriptive titles so you can easily identify banners later</li>
+    <li>Choose appropriate styles - don't overuse warning/error for non-urgent messages</li>
+    <li>Keep messages actionable - tell users what to do, not just what to know</li>
+    <li>Set specific URL patterns to avoid banner fatigue</li>
+    <li>Review and update banners regularly to keep content fresh</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-set-up-display-conditions.html">Learn more about display conditions</a></li>
+    <li><a href="how-to-embed-media-in-banners.html">Embed videos and images in banners</a></li>
+    <li><a href="how-to-create-plays.html">Create plays for detailed guidance</a></li>
+  </ul>
+</body>
+</html>

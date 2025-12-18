@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Create Wiki Entries</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+  <h1>How to Create Wiki Entries</h1>
+  <p class="subtitle">Build a knowledge base with instant tooltips in HubSpot</p>
+
+  <p>Wiki entries are definitions and explanations that appear as tooltips when users hover over matching terms in HubSpot. Create entries for acronyms, industry terms, process definitions, field explanations, and any other knowledge your team needs.</p>
+
+  <h2>Creating a Wiki Entry</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Wiki</strong>
+    <p>Open the RevGuide admin panel and click "Wiki" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Click Add Entry</strong>
+    <p>Click the "Add Entry" button. The entry editor will appear on the right side.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Fill in the Content Tab</strong>
+    <p>Enter the following information:</p>
+    <ul>
+      <li><strong>Title:</strong> The display name of your entry</li>
+      <li><strong>Trigger Word:</strong> The text that activates the tooltip (optional)</li>
+      <li><strong>Aliases:</strong> Additional words that trigger this tooltip (comma-separated)</li>
+      <li><strong>Definition:</strong> The explanation shown in the tooltip</li>
+      <li><strong>Learn More Link:</strong> Optional URL for additional resources</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <strong>Configure the Rules Tab</strong>
+    <p>Set how and where the tooltip appears:</p>
+    <ul>
+      <li><strong>Category:</strong> Term type (General, Field, Process, etc.)</li>
+      <li><strong>Match Type:</strong> Exact match or contains</li>
+      <li><strong>Frequency:</strong> Show once per page or every occurrence</li>
+      <li><strong>Priority:</strong> Tooltip precedence when terms overlap</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <strong>Save Your Entry</strong>
+    <p>Click "Save" to create the entry. It will be enabled by default.</p>
+  </div>
+
+  <h2>Understanding Entry Fields</h2>
+
+  <h3>Title vs. Trigger Word</h3>
+  <ul>
+    <li><strong>Title:</strong> The name shown in the admin panel and tooltip header. Always required.</li>
+    <li><strong>Trigger Word:</strong> The text that activates the tooltip. Leave empty if you don't want a tooltip (documentation only).</li>
+  </ul>
+
+  <p>Example: You might have a title "Marketing Qualified Lead" with trigger word "MQL".</p>
+
+  <h3>Aliases</h3>
+  <p>Aliases are alternative words that show the same tooltip. Enter multiple aliases separated by commas.</p>
+  <p>Example: For "Marketing Qualified Lead", aliases might be: <code>MQL, Marketing-Qualified Lead, Marketing Qualified</code></p>
+
+  <div class="tip">
+    <strong>Tip:</strong> Use aliases for common abbreviations, alternate spellings, and related terms that should show the same definition.
+  </div>
+
+  <h3>Categories</h3>
+  <p>Organize entries by category:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Use For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>General</td>
+        <td>Business terms, acronyms, definitions</td>
+      </tr>
+      <tr>
+        <td>Field</td>
+        <td>HubSpot property definitions</td>
+      </tr>
+      <tr>
+        <td>Process</td>
+        <td>Workflow and procedure explanations</td>
+      </tr>
+      <tr>
+        <td>Product</td>
+        <td>Product-related terminology</td>
+      </tr>
+      <tr>
+        <td>Competitor</td>
+        <td>Competitor names and information</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Match Type Options</h2>
+
+  <h3>Exact Match (Default)</h3>
+  <p>Only matches the exact trigger word as a complete word. "MQL" won't match "MQLs" or "preMQL".</p>
+
+  <h3>Contains</h3>
+  <p>Matches the trigger word anywhere it appears. Use carefully to avoid unintended matches.</p>
+
+  <h2>Frequency Options</h2>
+
+  <h3>Once Per Page (Default)</h3>
+  <p>Only the first occurrence on each page gets a tooltip indicator. Reduces visual clutter.</p>
+
+  <h3>Every Occurrence</h3>
+  <p>Every instance of the trigger word gets a tooltip indicator. Use for critical terms users need to see everywhere.</p>
+
+  <h2>Priority System</h2>
+  <p>When multiple wiki entries could match the same text, priority determines which tooltip shows:</p>
+  <ul>
+    <li>Higher priority numbers win (1-100 scale)</li>
+    <li>Default priority is 50</li>
+    <li>Use 75-100 for critical definitions</li>
+    <li>Use 25-49 for nice-to-have entries</li>
+  </ul>
+
+  <h2>Writing Good Definitions</h2>
+
+  <h3>Best Practices</h3>
+  <ul>
+    <li><strong>Be Concise:</strong> Keep definitions brief and scannable</li>
+    <li><strong>Front-load Information:</strong> Put the key point first</li>
+    <li><strong>Use Formatting:</strong> Bold key terms, use lists for multiple points</li>
+    <li><strong>Include Examples:</strong> Show how the term is used in context</li>
+    <li><strong>Add Links:</strong> Reference detailed documentation when available</li>
+  </ul>
+
+  <h3>Example Definition</h3>
+  <p><strong>Term:</strong> MQL</p>
+  <p><strong>Definition:</strong></p>
+  <blockquote>
+    <strong>Marketing Qualified Lead</strong> - A lead that has engaged with marketing content and meets our qualification criteria.<br><br>
+    MQL criteria:<br>
+    - Downloaded 2+ content pieces<br>
+    - Visited pricing page<br>
+    - Company size 50+ employees<br><br>
+    MQLs are automatically routed to Sales for follow-up within 24 hours.
+  </blockquote>
+
+  <h2>Managing Wiki Entries</h2>
+
+  <h3>Bulk Operations</h3>
+  <p>Use select mode to manage multiple entries:</p>
+  <ol>
+    <li>Click the checkbox icon to enter select mode</li>
+    <li>Check entries you want to modify</li>
+    <li>Use bulk actions to delete selected entries</li>
+  </ol>
+
+  <h3>Duplicate Entry Warning</h3>
+  <p>RevGuide warns you if a trigger word or alias conflicts with an existing entry. Duplicate triggers can cause unpredictable tooltip behavior.</p>
+
+  <div class="note">
+    <strong>Note:</strong> Entries without a trigger word won't show tooltips but remain searchable in the wiki tree. Use this for documentation-only entries.
+  </div>
+
+  <h2>Organizing Entries</h2>
+  <p>Wiki entries are organized in a tree structure:</p>
+  <ol>
+    <li><strong>Object Type Level:</strong> Contacts, Companies, Deals, Tickets, Custom Terms</li>
+    <li><strong>Property Group Level:</strong> Groups from HubSpot or custom groupings</li>
+    <li><strong>Entry Level:</strong> Individual wiki entries</li>
+  </ol>
+
+  <p>Use the filters and search to find entries quickly.</p>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-use-wiki-tooltips.html">Learn how tooltips work in HubSpot</a></li>
+    <li><a href="how-to-import-hubspot-fields-to-wiki.html">Import HubSpot fields automatically</a></li>
+    <li><a href="how-to-set-up-display-conditions.html">Configure where tooltips appear</a></li>
+  </ul>
+</body>
+</html>

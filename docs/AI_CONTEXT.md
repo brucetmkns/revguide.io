@@ -156,6 +156,7 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `active_organization_id` tracks which portal is currently active
 - Portal selector dropdown appears in sidebar when user has 2+ portals
 - Consultant role enables library creation and multi-portal management
+- **Import/Export** (v2.7.2+): JSON export from one portal, import to another with Replace All or Merge mode
 
 **Key tables:**
 - `organization_members` - Many-to-many user↔org with per-org roles
@@ -166,6 +167,10 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `getUserOrganizations()` - Get all portals user can access
 - `switchOrganization(orgId)` - Switch active portal
 - `isConsultant()` - Check consultant privileges
+
+**Import/Export (AdminShared):**
+- `saveStorageData(data, {importMode})` - Bulk insert with 'replace' or 'merge' mode
+- `sanitizeImportData(data)` - XSS protection via DOMPurify
 
 See: [MULTI_PORTAL_DEV.md](MULTI_PORTAL_DEV.md)
 
@@ -263,4 +268,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024*
+*Last updated: December 2024 (v2.7.2)*

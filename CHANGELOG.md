@@ -2,6 +2,30 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.2] - 2025-12-18 - Import/Export Fix & Mode Selection
+
+### Fixed
+- **JSON Import Now Works in Web App**: Fixed critical bug where import showed success but data wasn't saved to Supabase
+  - `saveStorageData()` now properly bulk-inserts data to Supabase in web context
+  - Previously only logged "will be synced individually" and returned without saving
+
+### Added
+- **Import Mode Selection**: New modal when importing JSON with two options:
+  - **Replace All**: Deletes existing content before importing (clean sync from primary source)
+  - **Merge / Add**: Adds imported content alongside existing data (may create duplicates)
+- **Import Summary**: Modal shows count of wiki entries, banners, and plays in the file before importing
+- **Import Results**: Success toast now shows specific counts of imported items
+- **Error Reporting**: Partial failures logged to console with item-specific error messages
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.js` - `saveStorageData()` now accepts `options.importMode` ('replace' | 'merge')
+  - `admin/pages/settings.js` - New `confirmImport()` method with modal flow, replaces browser `confirm()`
+  - `admin/pages/settings.html` - Added import modal with radio options
+  - `admin/shared.css` - Added `.radio-option`, `.import-summary` styles
+
+---
+
 ## [2.7.1] - 2025-12-18 - Import Security (XSS Sanitization)
 
 ### Security

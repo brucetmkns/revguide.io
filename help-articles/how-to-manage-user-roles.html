@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Manage User Roles</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .warning { background: #f8d7da; border: 1px solid #dc3545; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+  <h1>How to Manage User Roles</h1>
+  <p class="subtitle">Understand and configure permissions for your team</p>
+
+  <p>RevGuide uses a role-based access control system to manage what team members can see and do. Understanding roles helps you set up appropriate permissions and maintain security.</p>
+
+  <h2>Available Roles</h2>
+
+  <h3>Owner</h3>
+  <p>The highest level of access. Each organization has exactly one owner.</p>
+  <ul>
+    <li>Full administrative access</li>
+    <li>Can transfer ownership to another admin</li>
+    <li>Cannot be removed by other admins</li>
+    <li>Responsible for billing (when applicable)</li>
+  </ul>
+
+  <h3>Admin</h3>
+  <p>Full administrative access except ownership functions.</p>
+  <ul>
+    <li>Manage team members (invite, remove, change roles)</li>
+    <li>Connect and disconnect HubSpot</li>
+    <li>Update organization settings</li>
+    <li>Create, edit, and delete all content</li>
+    <li>Import and export data</li>
+  </ul>
+
+  <h3>Editor</h3>
+  <p>Content management without administrative access.</p>
+  <ul>
+    <li>Create, edit, and delete banners, plays, and wiki entries</li>
+    <li>Import fields from HubSpot</li>
+    <li>Export organization data</li>
+    <li>Cannot manage team members or settings</li>
+  </ul>
+
+  <h3>Viewer</h3>
+  <p>Read-only access to all content.</p>
+  <ul>
+    <li>View all banners, plays, and wiki entries</li>
+    <li>Use the RevGuide side panel in HubSpot</li>
+    <li>See wiki tooltips throughout HubSpot</li>
+    <li>Cannot create, edit, or delete any content</li>
+  </ul>
+
+  <h2>Role Permissions Matrix</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Viewer</th>
+        <th>Editor</th>
+        <th>Admin</th>
+        <th>Owner</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="5"><strong>Content Access</strong></td>
+      </tr>
+      <tr>
+        <td>View banners</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>View plays</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>View wiki</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Create/edit content</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Delete content</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td colspan="5"><strong>HubSpot Features</strong></td>
+      </tr>
+      <tr>
+        <td>Use side panel</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>See tooltips</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Import HubSpot fields</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Connect HubSpot</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td colspan="5"><strong>Team Management</strong></td>
+      </tr>
+      <tr>
+        <td>Invite members</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Remove members</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Change roles</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Transfer ownership</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td colspan="5"><strong>Settings</strong></td>
+      </tr>
+      <tr>
+        <td>View settings</td>
+        <td>Limited</td>
+        <td>Limited</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Update org settings</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Export data</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Import data</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Choosing the Right Role</h2>
+
+  <h3>Assign Viewer When:</h3>
+  <ul>
+    <li>The person only needs to consume content, not create it</li>
+    <li>They're new to the team and learning the system</li>
+    <li>They're in a role that doesn't require content management</li>
+  </ul>
+
+  <h3>Assign Editor When:</h3>
+  <ul>
+    <li>The person will create and maintain content</li>
+    <li>They need to import fields or update wiki entries</li>
+    <li>They're a content contributor but not a team manager</li>
+  </ul>
+
+  <h3>Assign Admin When:</h3>
+  <ul>
+    <li>The person needs to manage team members</li>
+    <li>They're responsible for HubSpot integration</li>
+    <li>They're a team lead or manager</li>
+    <li>You need backup administrative coverage</li>
+  </ul>
+
+  <div class="tip">
+    <strong>Tip:</strong> Follow the principle of least privilege. Give users the minimum role needed for their job. You can always upgrade roles later.
+  </div>
+
+  <h2>Role Indicators</h2>
+  <p>User roles are displayed throughout RevGuide:</p>
+  <ul>
+    <li><strong>Sidebar:</strong> Your role appears next to your name</li>
+    <li><strong>Team Table:</strong> Each member's role is shown as a badge</li>
+    <li><strong>Page Restrictions:</strong> View-only users see a badge on restricted pages</li>
+  </ul>
+
+  <h2>What Viewers See</h2>
+  <p>When a viewer accesses RevGuide:</p>
+  <ul>
+    <li>Edit buttons are hidden on all content pages</li>
+    <li>Add/Create buttons are hidden</li>
+    <li>Delete and duplicate functions are unavailable</li>
+    <li>A "View Only" badge appears on content pages</li>
+    <li>The Team Members section is hidden in Settings</li>
+  </ul>
+
+  <h2>Transferring Ownership</h2>
+  <p>Only the current owner can transfer ownership:</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Promote to Admin First</strong>
+    <p>The person receiving ownership must first be an Admin. Change their role if needed.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Contact Support</strong>
+    <p>For security reasons, ownership transfers require contacting RevGuide support.</p>
+  </div>
+
+  <div class="warning">
+    <strong>Warning:</strong> Ownership transfer is permanent. The current owner becomes an Admin after transfer. Make sure you're transferring to the right person.
+  </div>
+
+  <h2>Best Practices</h2>
+
+  <h3>Multiple Admins</h3>
+  <p>Have at least two admins in your organization. This ensures:</p>
+  <ul>
+    <li>Coverage when one admin is unavailable</li>
+    <li>Ability to manage the team if someone leaves</li>
+    <li>Shared responsibility for administrative tasks</li>
+  </ul>
+
+  <h3>Regular Audits</h3>
+  <p>Periodically review team roles:</p>
+  <ul>
+    <li>Remove users who have left the company</li>
+    <li>Downgrade roles for users who no longer need them</li>
+    <li>Upgrade roles for users who need additional access</li>
+  </ul>
+
+  <h3>Documentation</h3>
+  <p>Document who has admin access and why. This helps with:</p>
+  <ul>
+    <li>Security audits</li>
+    <li>Onboarding new team leads</li>
+    <li>Understanding permission history</li>
+  </ul>
+
+  <div class="note">
+    <strong>Note:</strong> Role changes take effect immediately. The user may need to refresh their browser to see updated permissions.
+  </div>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-invite-team-members.html">Invite team members</a></li>
+    <li><a href="how-to-manage-display-settings.html">Configure organization settings</a></li>
+    <li><a href="how-to-troubleshoot-common-issues.html">Troubleshoot access issues</a></li>
+  </ul>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Manage Display Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+    h1 { color: #7c3aed; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 18px; margin-bottom: 32px; }
+    h2 { color: #333; margin-top: 32px; }
+    h3 { color: #555; margin-top: 24px; }
+    .step { background: #f8f9fa; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+    .step-number { background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    .note { background: #fef3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    .tip { background: #d4edda; border: 1px solid #28a745; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+  <h1>How to Manage Display Settings</h1>
+  <p class="subtitle">Configure how RevGuide content appears in HubSpot</p>
+
+  <p>Display settings control how banners, plays, and other RevGuide features appear when you're working in HubSpot. Customize these settings to match your team's preferences.</p>
+
+  <h2>Accessing Display Settings</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Navigate to Settings</strong>
+    <p>Open the RevGuide admin panel and click "Settings" in the left sidebar.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Find Display Options</strong>
+    <p>Scroll to the "Display Options" card. These settings affect how content appears in HubSpot.</p>
+  </div>
+
+  <h2>Available Settings</h2>
+
+  <h3>Show Banners</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ON (Default)</td>
+        <td>Banners appear in HubSpot according to their conditions</td>
+      </tr>
+      <tr>
+        <td>OFF</td>
+        <td>No banners appear, even if enabled</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Use this to temporarily hide all banners without disabling individual banners.</p>
+
+  <h3>Show Battle Cards (Plays)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ON (Default)</td>
+        <td>Plays are available in the side panel</td>
+      </tr>
+      <tr>
+        <td>OFF</td>
+        <td>Plays tab is hidden in the side panel</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Show Presentations (Media)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ON (Default)</td>
+        <td>Media content is available in the side panel</td>
+      </tr>
+      <tr>
+        <td>OFF</td>
+        <td>Media tab is hidden in the side panel</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Show Admin Links</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ON (Default)</td>
+        <td>Quick link to admin panel appears in side panel</td>
+      </tr>
+      <tr>
+        <td>OFF</td>
+        <td>Admin link is hidden (users go to web app directly)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Banner Position</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Position</th>
+        <th>Where Banners Appear</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Top (Default)</td>
+        <td>Above the main HubSpot content area</td>
+      </tr>
+      <tr>
+        <td>Bottom</td>
+        <td>Below the main HubSpot content area</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <strong>Tip:</strong> Top position is more visible for important announcements. Bottom position is less intrusive for informational content.
+  </div>
+
+  <h2>Changing Settings</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <strong>Toggle the Setting</strong>
+    <p>Click the toggle switch next to the setting you want to change.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <strong>Auto-Save</strong>
+    <p>Settings save automatically when changed. You'll see a confirmation toast.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <strong>Refresh HubSpot</strong>
+    <p>Changes take effect immediately. Refresh HubSpot pages to see the changes.</p>
+  </div>
+
+  <h2>Organization-Wide vs. Personal Settings</h2>
+
+  <div class="note">
+    <strong>Important:</strong> Display settings are organization-wide. When you change a setting, it affects all users in your organization.
+  </div>
+
+  <p>Settings apply to:</p>
+  <ul>
+    <li>All team members in your organization</li>
+    <li>Both extension and web app users</li>
+    <li>All content of the affected type</li>
+  </ul>
+
+  <h2>Common Use Cases</h2>
+
+  <h3>Launching RevGuide Gradually</h3>
+  <p>Start with minimal features and enable more over time:</p>
+  <ol>
+    <li>Disable all display options initially</li>
+    <li>Create and test your content</li>
+    <li>Enable wiki tooltips first (most unobtrusive)</li>
+    <li>Add plays once wiki is established</li>
+    <li>Enable banners for major announcements</li>
+  </ol>
+
+  <h3>Reducing Distractions</h3>
+  <p>If users report too much content:</p>
+  <ul>
+    <li>Move banners to bottom position</li>
+    <li>Disable banners temporarily</li>
+    <li>Review and reduce active content</li>
+    <li>Make banner conditions more specific</li>
+  </ul>
+
+  <h3>Focus on Specific Features</h3>
+  <p>Emphasize what matters most:</p>
+  <ul>
+    <li>Sales team: Enable plays, keep banners minimal</li>
+    <li>Onboarding: Enable all features including media</li>
+    <li>Announcements: Enable banners at top position</li>
+  </ul>
+
+  <h2>Settings for Different Roles</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Can View Settings</th>
+        <th>Can Change Settings</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Viewer</td>
+        <td>Limited</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Editor</td>
+        <td>Yes</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Admin</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Owner</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Best Practices</h2>
+
+  <h3>Communicate Changes</h3>
+  <ul>
+    <li>Let team members know when you change display settings</li>
+    <li>Explain why settings were changed</li>
+    <li>Create a banner to announce major changes</li>
+  </ul>
+
+  <h3>Test Before Rolling Out</h3>
+  <ul>
+    <li>Test setting changes during off-peak hours</li>
+    <li>Get feedback from a few users first</li>
+    <li>Be ready to revert if issues arise</li>
+  </ul>
+
+  <h3>Document Your Configuration</h3>
+  <ul>
+    <li>Note your preferred settings configuration</li>
+    <li>Include settings documentation in team onboarding</li>
+    <li>Review settings when team needs change</li>
+  </ul>
+
+  <h2>Troubleshooting</h2>
+
+  <h3>Setting Not Taking Effect</h3>
+  <ul>
+    <li>Refresh the HubSpot page</li>
+    <li>Clear browser cache</li>
+    <li>Verify the setting saved (check the toggle state)</li>
+    <li>Sign out and back in</li>
+  </ul>
+
+  <h3>Can't Change Settings</h3>
+  <ul>
+    <li>Verify you have Admin or Owner role</li>
+    <li>Check that you're on the Settings page (not a content page)</li>
+    <li>Try refreshing the admin panel</li>
+  </ul>
+
+  <h2>Related Settings</h2>
+  <p>Other areas that affect display:</p>
+  <ul>
+    <li><strong>Banner conditions:</strong> Individual banner URL patterns</li>
+    <li><strong>Wiki rules:</strong> Tooltip frequency, match type, page type filters</li>
+    <li><strong>Content enabled status:</strong> Individual item on/off toggles</li>
+  </ul>
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="how-to-set-up-display-conditions.html">Configure display conditions</a></li>
+    <li><a href="how-to-create-your-first-banner.html">Create banners</a></li>
+    <li><a href="how-to-use-the-side-panel.html">Learn about the side panel</a></li>
+  </ul>
+</body>
+</html>

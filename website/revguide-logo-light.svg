@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48">
+  <!-- Logo mark -->
+  <g transform="translate(24, 24)">
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#b2ef63" stroke-width="3"/>
+    <circle cx="0" cy="0" r="12" fill="none" stroke="#b2ef63" stroke-width="3"/>
+    <circle cx="0" cy="0" r="4" fill="#b2ef63"/>
+  </g>
+  <!-- RevGuide text (white for dark backgrounds) -->
+  <text x="56" y="32" font-family="Manrope, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="600" fill="#ffffff">RevGuide</text>
+</svg>
