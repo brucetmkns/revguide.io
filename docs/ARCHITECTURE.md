@@ -458,6 +458,6 @@ git push origin main
 
 ## Version History
 
-Current: **v2.6.0** (December 2024) - Cloud Content Display Fixes
+Current: **v2.6.6** (December 2024) - View Modal Redesign
 
 See `CHANGELOG.md` for full history.

@@ -325,82 +325,95 @@ class PlaysPage {
 
     const icon = AdminShared.CARD_TYPE_ICONS[play.cardType] || '';
     const typeLabel = AdminShared.CARD_TYPE_LABELS[play.cardType] || play.cardType;
+    const conditionsCount = play.conditions?.length || 0;
+    const sectionsCount = play.sections?.length || 0;
 
-    // Build sections HTML
+    // Build sections HTML with new design
     const sectionsHtml = (play.sections || []).map(section => {
       if (section.type === 'media') {
         return `
-          <div class="detail-section">
-            <strong>${AdminShared.escapeHtml(section.title || 'Media')}</strong>
-            <p class="detail-message">${AdminShared.escapeHtml(section.mediaUrl || '-')}</p>
+          <div class="view-details-section">
+            <div class="view-details-section-label">${AdminShared.escapeHtml(section.title || 'Media')}</div>
+            <div class="view-details-media-box">
+              <div class="view-details-media-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div class="view-details-media-info">
+                <span class="view-details-media-title">${AdminShared.escapeHtml(section.title || 'Media')}</span>
+                <a href="${AdminShared.escapeHtml(section.mediaUrl || '#')}" target="_blank" class="view-details-media-link">${AdminShared.escapeHtml(section.mediaUrl || '-')}</a>
+              </div>
+            </div>
           </div>
         `;
       } else if (section.type === 'fields') {
-        const fieldsList = (section.fields || []).map(f => f.label || f.property).join(', ');
+        const fieldTags = (section.fields || []).map(f =>
+          `<span class="view-details-field-tag">${AdminShared.escapeHtml(f.label || f.property)}</span>`
+        ).join('');
         return `
-          <div class="detail-section">
-            <strong>${AdminShared.escapeHtml(section.title || 'Fields')}</strong>
-            <p>${fieldsList || 'No fields'}</p>
+          <div class="view-details-section">
+            <div class="view-details-section-label">${AdminShared.escapeHtml(section.title || 'Fields')}</div>
+            <div class="view-details-fields-list">
+              ${fieldTags || '<span class="view-details-field-tag">No fields</span>'}
+            </div>
           </div>
         `;
       } else {
         return `
-          <div class="detail-section">
-            <strong>${AdminShared.escapeHtml(section.title || 'Section')}</strong>
-            <div class="detail-message">${AdminShared.escapeHtml(section.content || '-')}</div>
+          <div class="view-details-section">
+            <div class="view-details-section-label">${AdminShared.escapeHtml(section.title || 'Content')}</div>
+            <div class="view-details-content-box">${AdminShared.escapeHtml(section.content || '-')}</div>
           </div>
         `;
       }
     }).join('');
 
-    // Create modal
+    // Create modal with new design
     const modal = document.createElement('div');
     modal.className = 'view-details-modal';
     modal.innerHTML = `
       <div class="view-details-overlay"></div>
       <div class="view-details-content">
-        <div class="view-details-header">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span class="card-icon ${play.cardType}" style="width: 32px; height: 32px;">${icon}</span>
-            <div>
-              <h3 style="margin: 0;">${AdminShared.escapeHtml(play.name)}</h3>
-              <span style="font-size: 12px; color: var(--color-text-tertiary);">${typeLabel}</span>
-            </div>
+        <div class="view-details-type-header ${play.cardType}">
+          <div class="view-details-type-header-content">
+            ${icon}
+            <span class="view-details-type-label">${typeLabel}</span>
           </div>
-          <button class="btn-icon close-details-btn" title="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="view-details-close-btn" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
         <div class="view-details-body">
-          ${play.subtitle ? `
-            <div class="detail-row">
-              <label>Subtitle:</label>
-              <span>${AdminShared.escapeHtml(play.subtitle)}</span>
-            </div>
-          ` : ''}
+          <h2 class="view-details-title">${AdminShared.escapeHtml(play.name)}</h2>
+          ${play.subtitle ? `<p class="view-details-subtitle">${AdminShared.escapeHtml(play.subtitle)}</p>` : '<p class="view-details-subtitle"></p>'}
+
           ${play.link ? `
-            <div class="detail-row">
-              <label>Link:</label>
-              <a href="${AdminShared.escapeHtml(play.link)}" target="_blank" style="color: var(--color-primary);">${AdminShared.escapeHtml(play.link)}</a>
-            </div>
+            <a href="${AdminShared.escapeHtml(play.link)}" target="_blank" class="view-details-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              ${AdminShared.escapeHtml(play.link)}
+            </a>
           ` : ''}
-          <div class="detail-row">
-            <label>Object Type:</label>
-            <span>${play.objectType || 'Any'}</span>
-          </div>
-          <div class="detail-row">
-            <label>Conditions:</label>
-            <span>${play.conditions?.length || 0} condition${(play.conditions?.length || 0) !== 1 ? 's' : ''}</span>
-          </div>
-          ${sectionsHtml ? `
-            <div class="detail-row" style="border-bottom: none;">
-              <label>Sections:</label>
+
+          ${sectionsHtml}
+
+          <div class="view-details-meta-row">
+            <div class="view-details-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+              ${play.objectType || 'Any'}
             </div>
-            ${sectionsHtml}
-          ` : ''}
+            <div class="view-details-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              ${conditionsCount} condition${conditionsCount !== 1 ? 's' : ''}
+            </div>
+            ${sectionsCount > 0 ? `
+              <div class="view-details-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                ${sectionsCount} section${sectionsCount !== 1 ? 's' : ''}
+              </div>
+            ` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -409,7 +422,7 @@ class PlaysPage {
 
     // Close handlers
     const closeModal = () => modal.remove();
-    modal.querySelector('.close-details-btn').addEventListener('click', closeModal);
+    modal.querySelector('.view-details-close-btn').addEventListener('click', closeModal);
     modal.querySelector('.view-details-overlay').addEventListener('click', closeModal);
     document.addEventListener('keydown', function escHandler(e) {
       if (e.key === 'Escape') {

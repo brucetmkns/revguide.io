@@ -376,45 +376,79 @@ class BannersPage {
     const rule = this.rules.find(r => r.id === ruleId);
     if (!rule) return;
 
-    // Create a simple modal to show rule details
+    // Get icon and type label
+    const iconMap = {
+      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+      success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      embed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>'
+    };
+    const icon = iconMap[rule.type] || iconMap.info;
+    const typeLabel = AdminShared.TYPE_LABELS[rule.type] || rule.type;
+    const conditionsCount = rule.conditions?.length || 0;
+    const objectType = rule.objectTypes?.[0] || 'All';
+
+    // Build message content
+    const messageHtml = rule.type === 'embed'
+      ? `
+        <div class="view-details-section">
+          <div class="view-details-section-label">Embed URL</div>
+          <div class="view-details-media-box">
+            <div class="view-details-media-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <div class="view-details-media-info">
+              <span class="view-details-media-title">Embedded Content</span>
+              <a href="${AdminShared.escapeHtml(rule.url || rule.embedUrl || '#')}" target="_blank" class="view-details-media-link">${AdminShared.escapeHtml(rule.url || rule.embedUrl || '-')}</a>
+            </div>
+          </div>
+        </div>
+      `
+      : `
+        <div class="view-details-section">
+          <div class="view-details-section-label">Message</div>
+          <div class="view-details-content-box">${rule.message || '-'}</div>
+        </div>
+      `;
+
+    // Create modal with new design
     const modal = document.createElement('div');
     modal.className = 'view-details-modal';
     modal.innerHTML = `
       <div class="view-details-overlay"></div>
       <div class="view-details-content">
-        <div class="view-details-header">
-          <h3>${AdminShared.escapeHtml(rule.name)}</h3>
-          <button class="btn-icon close-details-btn" title="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="view-details-type-header ${rule.type}">
+          <div class="view-details-type-header-content">
+            ${icon}
+            <span class="view-details-type-label">${typeLabel}</span>
+          </div>
+          <button class="view-details-close-btn" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
         <div class="view-details-body">
-          <div class="detail-row">
-            <label>Title:</label>
-            <span>${AdminShared.escapeHtml(rule.title || '-')}</span>
-          </div>
-          <div class="detail-row">
-            <label>Type:</label>
-            <span class="type-badge-inline" style="background: ${AdminShared.TYPE_COLORS[rule.type] || AdminShared.TYPE_COLORS.info}">${AdminShared.TYPE_LABELS[rule.type] || rule.type}</span>
-          </div>
-          <div class="detail-row">
-            <label>Message:</label>
-            <div class="detail-message">${rule.message || '-'}</div>
-          </div>
-          <div class="detail-row">
-            <label>Object Type:</label>
-            <span>${rule.objectTypes?.[0] || 'All'}</span>
-          </div>
-          <div class="detail-row">
-            <label>Conditions:</label>
-            <span>${rule.conditions?.length || 0} condition${(rule.conditions?.length || 0) !== 1 ? 's' : ''}</span>
-          </div>
-          <div class="detail-row">
-            <label>Status:</label>
-            <span class="status-badge ${rule.enabled !== false ? 'active' : 'inactive'}">${rule.enabled !== false ? 'Active' : 'Inactive'}</span>
+          <h2 class="view-details-title">${AdminShared.escapeHtml(rule.name)}</h2>
+          ${rule.title && rule.title !== rule.name ? `<p class="view-details-subtitle">${AdminShared.escapeHtml(rule.title)}</p>` : '<p class="view-details-subtitle"></p>'}
+
+          ${messageHtml}
+
+          <div class="view-details-meta-row">
+            <div class="view-details-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+              ${objectType}
+            </div>
+            <div class="view-details-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              ${rule.displayOnAll ? 'All records' : `${conditionsCount} condition${conditionsCount !== 1 ? 's' : ''}`}
+            </div>
+            <div class="view-details-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${rule.enabled !== false ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>' : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'}</svg>
+              ${rule.enabled !== false ? 'Active' : 'Inactive'}
+            </div>
           </div>
         </div>
       </div>
@@ -424,7 +458,7 @@ class BannersPage {
 
     // Close handlers
     const closeModal = () => modal.remove();
-    modal.querySelector('.close-details-btn').addEventListener('click', closeModal);
+    modal.querySelector('.view-details-close-btn').addEventListener('click', closeModal);
     modal.querySelector('.view-details-overlay').addEventListener('click', closeModal);
     document.addEventListener('keydown', function escHandler(e) {
       if (e.key === 'Escape') {

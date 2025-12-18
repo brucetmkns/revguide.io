@@ -2,6 +2,43 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.6] - 2025-12-18 - View Modal Redesign
+
+### Changed
+- **Redesigned View-Only Modals**: New light header design for non-editor users viewing plays and banners
+  - Light tinted header bar with type-specific colors matching existing tag/badge styling
+  - Type icon and label prominently displayed in header
+  - Clean body layout with title, subtitle, and content sections
+  - Meta row showing object type, conditions count, and status
+  - Consistent design language across both Plays and Banners modals
+
+### Visual Design
+- **Play Types** (light backgrounds with dark text):
+  - Competitor: Amber tint (#fef3c7) with brown text (#92400e)
+  - Objection: Pink tint (#fce7f3) with pink text (#9d174d)
+  - Tip: Blue tint (#dbeafe) with blue text (#1e40af)
+  - Process: Green tint (#d1fae5) with green text (#065f46)
+- **Banner Types** (light backgrounds with dark text):
+  - Info: Blue tint (#dbeafe) with blue text (#1e40af)
+  - Success: Green tint (#d1fae5) with green text (#065f46)
+  - Warning: Amber tint (#fef3c7) with brown text (#92400e)
+  - Error: Red tint (#fee2e2) with red text (#991b1b)
+  - Embed: Purple tint (#ede9fe) with purple text (#5b21b6)
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.css` - Added new `.view-details-*` CSS classes for modal styling
+  - `admin/pages/plays.js` - Rewrote `viewPlayDetails()` method with new design
+  - `admin/pages/banners.js` - Rewrote `viewRuleDetails()` method with new design
+- **New CSS Classes**:
+  - `.view-details-type-header` with type-specific modifiers
+  - `.view-details-body`, `.view-details-title`, `.view-details-subtitle`
+  - `.view-details-section`, `.view-details-content-box`
+  - `.view-details-media-box` for embed/media content display
+  - `.view-details-meta-row` for footer metadata
+
+---
+
 ## [2.6.5] - 2025-12-18 - Compact Card Layout for Banners & Plays
 
 ### Changed
