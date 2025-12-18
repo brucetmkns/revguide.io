@@ -282,6 +282,7 @@ The extension uses HubSpot Private App tokens which require specific scopes:
 - [ ] Session timeout for sensitive operations
 - [ ] Audit log viewer in admin panel
 - [ ] Per-user permissions when SaaS version launches
+- [ ] **User enumeration prevention** - Password reset always shows "If your email exists, you'll receive a reset link" regardless of whether account exists (prevents attackers from discovering valid accounts)
 
 ### Server-Side Rule Evaluation (Privacy Enhancement)
 
