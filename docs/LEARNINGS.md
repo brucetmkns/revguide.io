@@ -1779,4 +1779,61 @@ console.log('[RevGuide Wiki] Built sorted term list:', sortedTerms.length, 'term
 
 ---
 
+## Multi-Portal Role Permissions (v2.7.3)
+
+### Org-Specific Roles vs Primary Role
+**Lesson**: In multi-portal systems, users have different roles per organization. Permission checks must use the role for the *current* organization, not the user's primary role.
+
+**Problem**: User with `admin` role in their primary org and `consultant` role in another org could access admin features (team invites) in both, because `isAdmin()` only checked `currentUser.role`.
+
+**Solution**: Create `getEffectiveRole()` that checks `organization_members` for the current org:
+```javascript
+function getEffectiveRole() {
+  // If we have org memberships and a current org, use the org-specific role
+  if (userOrganizations.length > 0 && currentOrganization?.id) {
+    const membership = userOrganizations.find(
+      o => o.organization_id === currentOrganization.id
+    );
+    if (membership?.role) {
+      return membership.role;
+    }
+  }
+  // Fallback to user's primary role
+  return currentUser?.role || null;
+}
+
+// Update all role helpers to use it
+function isAdmin() {
+  const role = getEffectiveRole();
+  return role === 'owner' || role === 'admin';
+}
+```
+
+**Key insight**: The `organization_members` table stores per-org roles. The `users.role` field is just the primary/default role.
+
+### Populating Organization Data from Multiple Sources
+**Lesson**: When one data source fails (RLS blocking org query), use data that's already successfully loaded.
+
+**Problem**: `currentOrganization` was `undefined` because the direct organizations query failed due to RLS, even though `userOrganizations` (from RPC function) had the correct data including org names.
+
+**Solution**: In `loadUserOrganizations()`, populate `currentOrganization` from `userOrganizations` if not set:
+```javascript
+if (!currentOrganization && userOrganizations.length > 0 && currentUser) {
+  const activeOrgId = currentUser.active_organization_id || currentUser.organization_id;
+  const activeOrg = userOrganizations.find(o => o.organization_id === activeOrgId);
+
+  if (activeOrg) {
+    currentOrganization = {
+      id: activeOrg.organization_id,
+      name: activeOrg.organization_name,
+      hubspot_portal_id: activeOrg.portal_id
+    };
+  }
+}
+```
+
+**Key insight**: RPC functions with `SECURITY DEFINER` bypass RLS and can return data that direct queries can't. Use that data as a fallback.
+
+---
+
 *Last updated: December 2024*

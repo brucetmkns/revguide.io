@@ -2,6 +2,28 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.3] - 2025-12-18 - Multi-Portal Role Fixes
+
+### Fixed
+- **Organization Name Display**: Fixed issue where organization names weren't displaying in sidebar and settings
+  - `currentOrganization` now populated from `userOrganizations` data when direct query fails
+  - Organization name appears correctly in portal selector and sidebar
+
+- **Role Permissions Use Org-Specific Role**: Role helper functions now use per-organization roles
+  - `isAdmin()`, `isMember()`, `canEditContent()`, `getUserRole()` now call `getEffectiveRole()`
+  - `getEffectiveRole()` checks `organization_members` table for current org's role
+  - Consultants can no longer access admin features (like team invites) in portals where they're not admins
+  - Falls back to `currentUser.role` when org membership data unavailable
+
+### Removed
+- **Add Portal Button**: Removed non-functional "Add Portal..." button from portal selector dropdown
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.js` - Added `getEffectiveRole()`, updated role helpers, removed `showAddPortalModal()`
+
+---
+
 ## [2.7.2] - 2025-12-18 - Import/Export Fix & Mode Selection
 
 ### Fixed

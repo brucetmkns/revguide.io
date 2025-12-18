@@ -168,6 +168,10 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `switchOrganization(orgId)` - Switch active portal
 - `isConsultant()` - Check consultant privileges
 
+**Role helpers (AdminShared) - v2.7.3+:**
+- `getEffectiveRole()` - Returns org-specific role from `organization_members`, falls back to `currentUser.role`
+- `isAdmin()`, `isMember()`, `canEditContent()` - All use `getEffectiveRole()` for per-org permissions
+
 **Import/Export (AdminShared):**
 - `saveStorageData(data, {importMode})` - Bulk insert with 'replace' or 'merge' mode
 - `sanitizeImportData(data)` - XSS protection via DOMPurify
@@ -268,4 +272,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024 (v2.7.2)*
+*Last updated: December 2024 (v2.7.3)*
