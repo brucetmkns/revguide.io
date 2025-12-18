@@ -512,23 +512,17 @@ async function switchPortal(organizationId) {
       };
     }
 
-    // Clear caches
+    // Clear all caches so fresh data loads after reload
     clearStorageDataCache();
+    clearUserCache(); // Clear auth cache so new active org is used
+    orgsLoadedThisSession = false; // Reset orgs loading flag
 
-    // Re-render portal selector
-    renderPortalSelector();
+    showToast(`Switching to ${newOrg?.organization_name || 'portal'}...`, 'success');
 
-    // Notify the page that portal changed
-    window.dispatchEvent(new CustomEvent('portal-changed', {
-      detail: { organizationId }
-    }));
-
-    showToast(`Switched to ${newOrg?.organization_name || 'portal'}`, 'success');
-
-    // Reload the page to refresh content
+    // Reload the page to refresh content with new organization
     setTimeout(() => {
       window.location.reload();
-    }, 500);
+    }, 300);
 
   } catch (e) {
     console.error('Error switching portal:', e);

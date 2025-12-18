@@ -908,11 +908,15 @@ const RevGuideDB = {
 
     if (!user) return { success: false, error: new Error('Not authenticated') };
 
-    // Verify user has access to this organization
-    const { data: hasAccess } = await client.rpc('user_has_org_access', {
-      p_auth_uid: user.id,
+    // Verify user has access to this organization (function uses auth.uid() internally)
+    const { data: hasAccess, error: accessError } = await client.rpc('user_has_org_access', {
       p_org_id: organizationId
     });
+
+    if (accessError) {
+      console.error('Error checking org access:', accessError);
+      return { success: false, error: accessError };
+    }
 
     if (!hasAccess) {
       return { success: false, error: new Error('No access to this organization') };

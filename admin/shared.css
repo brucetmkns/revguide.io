@@ -270,7 +270,7 @@
 
 .portal-dropdown-menu {
   position: absolute;
-  top: calc(100% + var(--space-1));
+  bottom: calc(100% + var(--space-1));
   left: 0;
   right: 0;
   background: var(--color-surface);
@@ -512,6 +512,45 @@
 }
 
 .search-input-wrapper .search-input:not(:placeholder-shown) + .search-clear-btn {
+  display: flex;
+}
+
+/* Filter select with clear button */
+.filter-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-wrapper .filter-select {
+  padding-right: 28px;
+}
+
+.filter-clear-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+}
+
+.filter-clear-btn:hover {
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
+}
+
+.filter-wrapper.has-filter .filter-clear-btn {
   display: flex;
 }
 
