@@ -172,6 +172,22 @@ async function checkAuth() {
     // Still load organizations for portal switching (lightweight call)
     loadUserOrganizations();
 
+    // Background check: verify user still exists in database
+    // This catches cases where a user was deleted but session is still active
+    setTimeout(async () => {
+      try {
+        const { data: profile } = await RevGuideDB.getUserProfile();
+        if (!profile) {
+          console.log('[Auth] Background check: user no longer exists, forcing logout...');
+          clearUserCache();
+          await RevGuideAuth.signOut();
+          window.location.href = '/login';
+        }
+      } catch (e) {
+        console.warn('[Auth] Background check failed:', e);
+      }
+    }, 1000);
+
     return true;
   }
 
@@ -228,20 +244,21 @@ async function checkAuth() {
           // Load user's organizations for portal switching (multi-portal feature)
           loadUserOrganizations();
         } else {
-          // Fallback to basic auth user info
-          const { data: { user } } = await RevGuideAuth.getUser();
-          if (user) {
-            currentUser = { email: user.email, auth_user_id: user.id };
-            saveUserToCache();
-          }
+          // No profile found and couldn't create one - user was deleted
+          // Force logout
+          console.log('[Auth] User profile not found in database, forcing logout...');
+          clearUserCache();
+          await RevGuideAuth.signOut();
+          window.location.href = '/login';
+          return false;
         }
       } catch (profileError) {
         console.warn('Error loading user profile:', profileError);
-        const { data: { user } } = await RevGuideAuth.getUser();
-        if (user) {
-          currentUser = { email: user.email, auth_user_id: user.id };
-          saveUserToCache();
-        }
+        // If we can't load the profile, force logout to be safe
+        clearUserCache();
+        await RevGuideAuth.signOut();
+        window.location.href = '/login';
+        return false;
       }
 
       return true;
