@@ -2,6 +2,47 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.4] - 2025-12-18 - Web App Data Operations Fix
+
+### Fixed
+- **Import Field Mapping**: JSON import now correctly maps camelCase fields to Supabase snake_case columns
+  - Added `mapWikiToSupabase()`, `mapBannerToSupabase()`, `mapPlayToSupabase()` functions
+  - Import no longer fails with 400 Bad Request errors
+
+- **Bulk Wiki Delete**: "Select All > Delete" now actually deletes entries from Supabase
+  - Previously only removed from local array, entries reappeared on refresh
+  - Now calls `RevGuideDB.deleteWikiEntry()` for each selected entry
+
+- **Library Installation**: Installing content libraries now saves entries to Supabase
+  - Previously showed success message but entries weren't persisted
+  - Now uses `mapWikiToSupabase()` before inserting to database
+  - Stores actual Supabase UUIDs (not local IDs) for uninstall tracking
+
+- **Library Uninstall**: Uninstalling libraries now deletes the associated wiki entries
+  - Previously only removed from installed list, entries remained in database
+  - Now deletes each entry by its Supabase UUID
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.js` - Added `mapWikiToSupabase()`, `mapBannerToSupabase()`, `mapPlayToSupabase()` exports; improved delete logging
+  - `admin/pages/wiki.js` - Bulk delete now uses `RevGuideDB.deleteWikiEntry()` in web context
+  - `admin/pages/libraries.js` - Install/uninstall now use Supabase directly; track actual entry IDs
+  - `admin/pages/settings.js` - Fixed duplicate variable declaration
+
+### Pattern: Web vs Extension Context
+All data operations now follow this pattern:
+```javascript
+if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+  // Web context: Use Supabase directly
+  await RevGuideDB.createWikiEntry(mappedEntry);
+} else {
+  // Extension context: Use Chrome storage
+  await AdminShared.saveStorageData({ wikiEntries });
+}
+```
+
+---
+
 ## [2.7.3] - 2025-12-18 - Multi-Portal Role Fixes
 
 ### Fixed

@@ -1836,4 +1836,84 @@ if (!currentOrganization && userOrganizations.length > 0 && currentUser) {
 
 ---
 
+## Web vs Extension Context: Data Operations (v2.7.4)
+
+### The Dual-Context Problem
+**Lesson**: The admin panel runs in two contexts - as a Chrome extension popup AND as a standalone web app. Data operations must handle both.
+
+**Problem**: Many data operations (bulk delete, library install/uninstall, JSON import) were written for Chrome storage but failed silently in the web app context because they just modified local arrays without persisting to Supabase.
+
+**Symptoms**:
+- Success message shown but data not persisted
+- Data reappears after page refresh
+- Import shows "0 entries imported"
+
+### The Pattern
+Always check context and use appropriate storage backend:
+
+```javascript
+if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+  // Web context: Use Supabase directly
+  for (const entry of entries) {
+    const { error } = await RevGuideDB.createWikiEntry(mappedEntry);
+    if (error) console.error('Failed:', error);
+  }
+  AdminShared.clearStorageCache();
+} else {
+  // Extension context: Use Chrome storage
+  await AdminShared.saveStorageData({ wikiEntries });
+}
+```
+
+### Field Name Mapping
+**Lesson**: JavaScript uses camelCase, Supabase/PostgreSQL uses snake_case. Always map before database operations.
+
+**Functions added** (`admin/shared.js`):
+- `mapWikiToSupabase(data)` - Maps wiki entry fields
+- `mapBannerToSupabase(data)` - Maps banner fields
+- `mapPlayToSupabase(data)` - Maps play fields
+
+**Example mapping**:
+```javascript
+function mapWikiToSupabase(data) {
+  return {
+    title: data.title,
+    object_type: data.objectType,      // camelCase → snake_case
+    property_group: data.propertyGroup,
+    match_type: data.matchType,
+    include_aliases: data.includeAliases,
+    page_type: data.pageType,
+    url_patterns: data.urlPatterns,
+    enabled: data.enabled !== false
+  };
+}
+```
+
+### Tracking Database-Generated IDs
+**Lesson**: When Supabase creates records, it generates UUIDs. Don't store locally-generated IDs for later operations.
+
+**Problem**: Library install generated local IDs like `wiki_1234...`, stored them for uninstall, but Supabase created different UUIDs. Uninstall couldn't find entries.
+
+**Solution**: Capture the actual ID returned by Supabase:
+```javascript
+const { data, error } = await RevGuideDB.createWikiEntry(mappedEntry);
+if (!error && data?.id) {
+  createdEntryIds.push(data.id); // Store actual Supabase UUID
+}
+```
+
+### Operations That Needed Fixing
+1. **Bulk delete** (wiki.js) - Was saving filtered array, not calling delete API
+2. **JSON import** (settings.js, shared.js) - Missing field mapping
+3. **Library install** (libraries.js) - Not calling Supabase at all
+4. **Library uninstall** (libraries.js) - Not deleting from Supabase, wrong IDs stored
+
+### Debugging Tips
+- Add context logging: `console.log('[Import] Web context:', !AdminShared.isExtensionContext)`
+- Log mapped data before insert: `console.log('[Import] Mapped:', mappedEntry)`
+- Check for 400 errors in Network tab - usually means wrong field names
+- If data "saves" but disappears on refresh, it's not reaching Supabase
+
+---
+
 *Last updated: December 2024*
