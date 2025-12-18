@@ -693,8 +693,11 @@ class SettingsPage {
         );
       }
 
-      // Reload to show imported data
-      setTimeout(() => window.location.reload(), 1500);
+      // Reload to show imported data (only if some items were imported successfully)
+      const totalImported = (results?.wikiEntries || 0) + (results?.banners || 0) + (results?.plays || 0);
+      if (totalImported > 0) {
+        setTimeout(() => window.location.reload(), 1500);
+      }
     } catch (error) {
       AdminShared.showToast(`Import failed: ${error.message}`, 'error');
       confirmBtn.disabled = false;

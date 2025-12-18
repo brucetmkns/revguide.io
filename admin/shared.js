@@ -676,6 +676,81 @@ function mapWikiFromSupabase(data) {
   };
 }
 
+// Map camelCase to Supabase snake_case for import
+// IMPORTANT: Only include fields that exist in the database schema
+function mapBannerToSupabase(data) {
+  if (!data) return null;
+  const mapped = {
+    name: data.name,
+    title: data.title || null,
+    message: data.message || null,
+    type: data.type || 'info',
+    priority: data.priority ?? 0,
+    object_types: data.objectTypes || [],
+    object_type: data.objectType || null,
+    conditions: data.conditions || [],
+    logic: data.logic || 'AND',
+    display_on_all: data.displayOnAll ?? false,
+    tab_visibility: data.tabVisibility || 'all',
+    related_play_id: data.relatedPlayId || null,
+    enabled: data.enabled !== false,
+    url: data.url || null,
+    embed_url: data.embedUrl || null
+  };
+  // Remove undefined/null values that might cause issues
+  Object.keys(mapped).forEach(key => {
+    if (mapped[key] === undefined) delete mapped[key];
+  });
+  return mapped;
+}
+
+function mapPlayToSupabase(data) {
+  if (!data) return null;
+  const mapped = {
+    name: data.name,
+    card_type: data.cardType || 'tip',
+    subtitle: data.subtitle || null,
+    link: data.link || null,
+    object_type: data.objectType || null,
+    object_types: data.objectTypes || [],
+    conditions: data.conditions || [],
+    logic: data.logic || 'AND',
+    display_on_all: data.displayOnAll ?? false,
+    sections: data.sections || [],
+    enabled: data.enabled !== false
+  };
+  Object.keys(mapped).forEach(key => {
+    if (mapped[key] === undefined) delete mapped[key];
+  });
+  return mapped;
+}
+
+function mapWikiToSupabase(data) {
+  if (!data) return null;
+  const mapped = {
+    title: data.title || data.name, // fallback to name for library imports
+    trigger: data.trigger || null,
+    aliases: data.aliases || [],
+    category: data.category || 'general',
+    object_type: data.objectType || null,
+    property_group: data.propertyGroup || null,
+    definition: data.definition || null,
+    link: data.link || null,
+    parent_id: data.parentId || data.parent_id || null,
+    match_type: data.matchType || 'exact',
+    frequency: data.frequency || 'first',
+    include_aliases: data.includeAliases ?? true,
+    priority: data.priority ?? 50,
+    page_type: data.pageType || 'record',
+    url_patterns: data.urlPatterns || null,
+    enabled: data.enabled !== false
+  };
+  Object.keys(mapped).forEach(key => {
+    if (mapped[key] === undefined) delete mapped[key];
+  });
+  return mapped;
+}
+
 async function loadStorageData(forceRefresh = false) {
   const defaults = {
     rules: [],
@@ -791,18 +866,21 @@ async function saveStorageData(data, options = {}) {
           console.log(`[Import] Importing ${data.wikiEntries.length} wiki entries...`);
           for (const entry of data.wikiEntries) {
             try {
-              // Remove id and org fields - let Supabase generate new ones
-              const { id, organization_id, created_at, updated_at, ...entryData } = entry;
+              // Map camelCase to snake_case for Supabase
+              const mappedEntry = mapWikiToSupabase(entry);
+              console.log('[Import] Wiki entry mapped:', mappedEntry);
               const { error } = await client
                 .from('wiki_entries')
-                .insert({ ...entryData, organization_id: orgId });
+                .insert({ ...mappedEntry, organization_id: orgId });
               if (error) {
-                results.errors.push(`Wiki "${entry.title}": ${error.message}`);
+                console.error('[Import] Wiki insert error:', error);
+                results.errors.push(`Wiki "${entry.title || entry.name}": ${error.message}`);
               } else {
                 results.wikiEntries++;
               }
             } catch (e) {
-              results.errors.push(`Wiki "${entry.title}": ${e.message}`);
+              console.error('[Import] Wiki exception:', e);
+              results.errors.push(`Wiki "${entry.title || entry.name}": ${e.message}`);
             }
           }
         }
@@ -812,10 +890,11 @@ async function saveStorageData(data, options = {}) {
           console.log(`[Import] Importing ${data.rules.length} banners...`);
           for (const banner of data.rules) {
             try {
-              const { id, organization_id, created_at, updated_at, ...bannerData } = banner;
+              // Map camelCase to snake_case for Supabase
+              const mappedBanner = mapBannerToSupabase(banner);
               const { error } = await client
                 .from('banners')
-                .insert({ ...bannerData, organization_id: orgId });
+                .insert({ ...mappedBanner, organization_id: orgId });
               if (error) {
                 results.errors.push(`Banner "${banner.name}": ${error.message}`);
               } else {
@@ -832,10 +911,11 @@ async function saveStorageData(data, options = {}) {
           console.log(`[Import] Importing ${data.battleCards.length} plays...`);
           for (const play of data.battleCards) {
             try {
-              const { id, organization_id, created_at, updated_at, ...playData } = play;
+              // Map camelCase to snake_case for Supabase
+              const mappedPlay = mapPlayToSupabase(play);
               const { error } = await client
                 .from('plays')
-                .insert({ ...playData, organization_id: orgId });
+                .insert({ ...mappedPlay, organization_id: orgId });
               if (error) {
                 results.errors.push(`Play "${play.name}": ${error.message}`);
               } else {
