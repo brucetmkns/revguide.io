@@ -285,10 +285,14 @@ plugin/
     ├── README.md              # This file
     ├── CHANGELOG.md           # Version history
     ├── ROADMAP.md             # Product roadmap
-    ├── INSTALL.md             # Installation guide
-    ├── PRIVACY.md             # Privacy policy
-    ├── LEARNINGS.md           # Development lessons learned and patterns
-    └── HUBSPOT_DOM_STRUCTURE.md  # HubSpot DOM reference for developers
+    └── docs/
+        ├── INSTALL.md         # Installation guide
+        ├── LEARNINGS.md       # Development lessons and patterns
+        ├── HUBSPOT_DOM.md     # HubSpot DOM reference
+        ├── ARCHITECTURE.md    # System architecture
+        ├── AUTHENTICATION.md  # Auth implementation
+        ├── PRIVACY_POLICY.md  # Privacy policy
+        └── ...                # Other documentation
 ```
 
 ## Architecture
@@ -440,7 +444,7 @@ const DEBUG = true;
 ```
 
 ### Key Technical Notes
-- See [HUBSPOT_DOM_STRUCTURE.md](HUBSPOT_DOM_STRUCTURE.md) for details on HubSpot's DOM structure
+- See [docs/HUBSPOT_DOM.md](docs/HUBSPOT_DOM.md) for details on HubSpot's DOM structure
 - The extension fetches all deal properties via HubSpot API for accurate condition evaluation
 - Property names are normalized to handle differences between API names and page-extracted labels
 - Presentations support Google Slides, OneDrive, and SharePoint embed URLs
@@ -457,15 +461,17 @@ The wiki tooltip system is optimized for large numbers of entries (1000+):
    - Second pass at 800ms only if HubSpot loading indicators are detected
    - Third pass at 2000ms only if content count increased
 
-See [LEARNINGS.md](LEARNINGS.md) for detailed technical documentation on the caching architecture.
+See [docs/LEARNINGS.md](docs/LEARNINGS.md) for detailed technical documentation on the caching architecture.
 
 ### Version History
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [ROADMAP.md](ROADMAP.md) for planned features.
 
 ### Additional Documentation
-- [INSTALL.md](INSTALL.md) - Detailed installation and setup guide
-- [LEARNINGS.md](LEARNINGS.md) - Development lessons learned, code patterns, and debugging tips
-- [HUBSPOT_DOM_STRUCTURE.md](HUBSPOT_DOM_STRUCTURE.md) - HubSpot DOM reference for developers
+- [docs/INSTALL.md](docs/INSTALL.md) - Detailed installation and setup guide
+- [docs/LEARNINGS.md](docs/LEARNINGS.md) - Development lessons learned, code patterns, and debugging tips
+- [docs/HUBSPOT_DOM.md](docs/HUBSPOT_DOM.md) - HubSpot DOM reference for developers
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture overview
+- [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) - Authentication implementation
 - [api/README.md](api/README.md) - API setup and deployment guide
 
 ### Beta & Deployment Documentation
