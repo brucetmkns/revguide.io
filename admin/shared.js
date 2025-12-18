@@ -334,15 +334,18 @@ async function renderPortalSelector() {
   // Find the portal selector container in the sidebar
   let selectorContainer = document.getElementById('portalSelectorContainer');
 
-  // If no dedicated container, create one after the user profile
+  // If no dedicated container, create one after the user info section
   if (!selectorContainer) {
-    const userProfile = document.querySelector('.user-profile');
-    if (userProfile) {
+    // Try multiple possible parent elements
+    const userInfo = document.querySelector('.user-info') || document.querySelector('.sidebar-footer');
+    if (userInfo) {
       selectorContainer = document.createElement('div');
       selectorContainer.id = 'portalSelectorContainer';
       selectorContainer.className = 'portal-selector-container';
-      userProfile.parentNode.insertBefore(selectorContainer, userProfile.nextSibling);
+      // Insert after the user-info div (inside sidebar-footer)
+      userInfo.parentNode.insertBefore(selectorContainer, userInfo.nextSibling);
     } else {
+      console.warn('[Portal Selector] Could not find .user-info or .sidebar-footer');
       return; // Can't find where to put it
     }
   }
