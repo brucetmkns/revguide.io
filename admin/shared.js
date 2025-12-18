@@ -44,7 +44,11 @@ async function loadUserOrganizations() {
     // Render portal selector if user has multiple orgs
     if (userOrganizations.length > 1) {
       console.log('[Auth] Multiple orgs detected, rendering portal selector');
-      setTimeout(() => renderPortalSelector(), 100);
+      setTimeout(() => {
+        renderPortalSelector();
+        // Re-render sidebar to update role indicator with org-specific role
+        renderSidebar();
+      }, 100);
     }
 
     orgsLoadedThisSession = true;
@@ -280,11 +284,20 @@ function renderSidebar(activePage) {
     }
 
     // Add role indicator badge next to user name
+    // Use role from organization_members for current org, fallback to user.role
+    let currentRole = currentUser.role || 'member';
+    if (userOrganizations.length > 0 && currentOrganization?.id) {
+      const currentOrgMembership = userOrganizations.find(o => o.organization_id === currentOrganization.id);
+      if (currentOrgMembership) {
+        currentRole = currentOrgMembership.role;
+      }
+    }
+
     let roleIndicator = document.getElementById('sidebarRoleIndicator');
     if (!roleIndicator && nameEl) {
       roleIndicator = document.createElement('span');
       roleIndicator.id = 'sidebarRoleIndicator';
-      roleIndicator.className = `role-indicator ${currentUser.role || 'member'}`;
+      roleIndicator.className = `role-indicator ${currentRole}`;
       nameEl.parentNode.insertBefore(roleIndicator, nameEl.nextSibling);
     }
     if (roleIndicator) {
@@ -293,11 +306,12 @@ function renderSidebar(activePage) {
         admin: 'Admin',
         editor: 'Editor',
         viewer: 'Viewer',
+        consultant: 'Consultant',
         member: 'Viewer' // Legacy role
       };
-      const roleLabel = roleLabels[currentUser.role] || 'Viewer';
+      const roleLabel = roleLabels[currentRole] || 'Viewer';
       roleIndicator.textContent = roleLabel;
-      roleIndicator.className = `role-indicator ${currentUser.role || 'member'}`;
+      roleIndicator.className = `role-indicator ${currentRole}`;
     }
   }
 
