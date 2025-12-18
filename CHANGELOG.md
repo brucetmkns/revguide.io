@@ -2,6 +2,61 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.0] - 2025-12-18 - Multi-Portal Support (Phase 0 & 1)
+
+### Added
+- **Multi-Portal Foundation** - Database and UI support for managing multiple HubSpot portals
+  - New `consultant` role for agency/consultant users
+  - Users can now belong to multiple organizations with different roles per org
+  - `organization_members` junction table enables many-to-many user-organization relationships
+  - `active_organization_id` column tracks which portal the user is currently viewing
+
+- **Portal Switching UI** - Portal selector dropdown appears in sidebar when user has 2+ portals
+  - Color-coded portal indicators for visual distinction
+  - Shows organization name and role for each portal
+  - "Add Portal" button to connect additional HubSpot portals
+  - Switching portals reloads content for the selected organization
+
+- **Consultant Libraries (Database Foundation)** - Tables for reusable content packages
+  - `consultant_libraries` table stores library metadata and content (JSON)
+  - `library_installations` table tracks which libraries are installed in which orgs
+  - Version tracking for installed libraries
+
+- **New RevGuideDB Methods**:
+  - `getUserOrganizations()` - Get all portals user has access to
+  - `switchOrganization(orgId)` - Switch active portal context
+  - `isConsultant()` - Check if user has consultant privileges
+  - `joinOrganization()` / `leaveOrganization()` - Manage org memberships
+  - `getMyLibraries()` / `createLibrary()` / `updateLibrary()` / `deleteLibrary()` - Library CRUD
+  - `installLibrary()` / `getInstalledLibraries()` / `checkLibraryUpdates()` - Library installation
+
+- **New Database Functions** (PostgreSQL):
+  - `get_user_organizations(auth_uid)` - Returns all orgs a user can access
+  - `user_has_org_access(auth_uid, org_id)` - Check access to specific org
+  - `user_can_edit_in_org(auth_uid, org_id)` - Check edit permissions
+  - `user_is_consultant(auth_uid)` - Check consultant status
+
+### Technical
+- **Database Migration**: `013_multi_portal_support.sql`
+  - Adds `consultant` to user role constraint
+  - Creates `organization_members` table with RLS policies
+  - Creates `consultant_libraries` table with RLS policies
+  - Creates `library_installations` table with RLS policies
+  - Updates `get_user_organization_id()` to use active org
+  - Updates `check_user_can_edit_content()` for membership-based permissions
+
+- **Files Modified**:
+  - `admin/supabase.js` - Added multi-portal API methods
+  - `admin/shared.js` - Added portal selector rendering, switching logic, consultant check
+  - `admin/shared.css` - Added portal selector styles, role indicator badges for consultant/editor/viewer
+
+### Note
+- This is Phase 0 & 1 of multi-portal development
+- Phase 2 (My Libraries UI) and Phase 3 (Library installation UI) coming next
+- See `docs/MULTI_PORTAL_DEV.md` for full implementation plan
+
+---
+
 ## [2.6.7] - 2025-12-18 - Search & Object Filters for Plays and Banners
 
 ### Added

@@ -13,6 +13,8 @@ const isExtensionContext = typeof chrome !== 'undefined' && chrome.storage && ch
  */
 let currentUser = null;
 let currentOrganization = null;
+let userOrganizations = []; // All organizations user has access to (for consultants)
+let isConsultantUser = false; // Whether user has consultant privileges
 
 /**
  * Session cache keys
@@ -154,6 +156,23 @@ async function checkAuth() {
           currentUser = profile;
           currentOrganization = profile.organizations;
           saveUserToCache();
+
+          // Load user's organizations for portal switching (multi-portal feature)
+          try {
+            const { data: orgs } = await RevGuideDB.getUserOrganizations();
+            userOrganizations = orgs || [];
+
+            // Check if user is a consultant
+            isConsultantUser = await RevGuideDB.isConsultant();
+
+            // Render portal selector if user has multiple orgs
+            if (userOrganizations.length > 1) {
+              setTimeout(() => renderPortalSelector(), 100);
+            }
+          } catch (orgError) {
+            console.warn('Failed to load user organizations:', orgError);
+            userOrganizations = [];
+          }
         } else {
           // Fallback to basic auth user info
           const { data: { user } } = await RevGuideAuth.getUser();
@@ -272,6 +291,287 @@ function renderSidebar(activePage) {
       librariesLink.style.display = 'none';
     }
   }
+}
+
+/**
+ * Render the portal selector dropdown (for consultants with multiple portals)
+ * Should be called after checkAuth() has populated userOrganizations
+ */
+async function renderPortalSelector() {
+  // Only show for web context with multiple organizations
+  if (isExtensionContext || userOrganizations.length <= 1) {
+    return;
+  }
+
+  // Find the portal selector container in the sidebar
+  let selectorContainer = document.getElementById('portalSelectorContainer');
+
+  // If no dedicated container, create one after the user profile
+  if (!selectorContainer) {
+    const userProfile = document.querySelector('.user-profile');
+    if (userProfile) {
+      selectorContainer = document.createElement('div');
+      selectorContainer.id = 'portalSelectorContainer';
+      selectorContainer.className = 'portal-selector-container';
+      userProfile.parentNode.insertBefore(selectorContainer, userProfile.nextSibling);
+    } else {
+      return; // Can't find where to put it
+    }
+  }
+
+  const currentOrgId = currentOrganization?.id;
+
+  selectorContainer.innerHTML = `
+    <div class="portal-selector">
+      <label class="portal-selector-label">Portal</label>
+      <div class="portal-dropdown" id="portalDropdown">
+        <button type="button" class="portal-dropdown-trigger" id="portalDropdownTrigger">
+          <span class="portal-color" style="background: ${getPortalColor(currentOrgId)}"></span>
+          <span class="portal-name">${escapeHtml(currentOrganization?.name || 'Select Portal')}</span>
+          <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="portal-dropdown-menu" id="portalDropdownMenu">
+          ${userOrganizations.map(org => `
+            <button type="button" class="portal-dropdown-item ${org.organization_id === currentOrgId ? 'active' : ''}"
+                    data-org-id="${org.organization_id}">
+              <span class="portal-color" style="background: ${getPortalColor(org.organization_id)}"></span>
+              <div class="portal-item-content">
+                <span class="portal-item-name">${escapeHtml(org.organization_name || 'Unnamed Portal')}</span>
+                <span class="portal-item-role">${org.role}</span>
+              </div>
+              ${org.organization_id === currentOrgId ? `
+                <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ` : ''}
+            </button>
+          `).join('')}
+          <div class="portal-dropdown-divider"></div>
+          <button type="button" class="portal-dropdown-item portal-add-new" id="addPortalBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Add Portal...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Set up event listeners
+  initPortalSelector();
+}
+
+/**
+ * Generate a consistent color for a portal based on its ID
+ * @param {string} orgId
+ * @returns {string} Hex color
+ */
+function getPortalColor(orgId) {
+  if (!orgId) return '#6b7280';
+
+  const colors = [
+    '#ff7a59', // HubSpot orange
+    '#00bda5', // Teal
+    '#516f90', // Slate blue
+    '#f5c26b', // Gold
+    '#7c98b3', // Steel blue
+    '#e06666', // Coral
+    '#93c47d', // Sage
+    '#8e7cc3', // Purple
+    '#76a5af', // Seafoam
+    '#d5a6bd'  // Rose
+  ];
+
+  // Simple hash function to get consistent color index
+  let hash = 0;
+  for (let i = 0; i < orgId.length; i++) {
+    hash = ((hash << 5) - hash) + orgId.charCodeAt(i);
+    hash = hash & hash;
+  }
+
+  return colors[Math.abs(hash) % colors.length];
+}
+
+/**
+ * Initialize portal selector event listeners
+ */
+function initPortalSelector() {
+  const trigger = document.getElementById('portalDropdownTrigger');
+  const menu = document.getElementById('portalDropdownMenu');
+  const dropdown = document.getElementById('portalDropdown');
+
+  if (!trigger || !menu || !dropdown) return;
+
+  // Toggle dropdown
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  // Handle portal selection
+  menu.addEventListener('click', async (e) => {
+    const item = e.target.closest('.portal-dropdown-item');
+    if (!item) return;
+
+    // Handle "Add Portal" button
+    if (item.id === 'addPortalBtn') {
+      dropdown.classList.remove('open');
+      showAddPortalModal();
+      return;
+    }
+
+    const orgId = item.dataset.orgId;
+    if (!orgId || orgId === currentOrganization?.id) {
+      dropdown.classList.remove('open');
+      return;
+    }
+
+    // Switch portal
+    dropdown.classList.remove('open');
+    await switchPortal(orgId);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  // Close on escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdown.classList.remove('open');
+    }
+  });
+}
+
+/**
+ * Switch to a different portal/organization
+ * @param {string} organizationId
+ */
+async function switchPortal(organizationId) {
+  if (typeof RevGuideDB === 'undefined') return;
+
+  // Show loading state
+  const trigger = document.getElementById('portalDropdownTrigger');
+  if (trigger) {
+    trigger.classList.add('loading');
+  }
+
+  try {
+    const { success, error } = await RevGuideDB.switchOrganization(organizationId);
+
+    if (!success) {
+      showToast(error?.message || 'Failed to switch portal', 'error');
+      return;
+    }
+
+    // Update current organization
+    const newOrg = userOrganizations.find(o => o.organization_id === organizationId);
+    if (newOrg) {
+      currentOrganization = {
+        id: newOrg.organization_id,
+        name: newOrg.organization_name,
+        hubspot_portal_id: newOrg.portal_id
+      };
+    }
+
+    // Clear caches
+    clearStorageDataCache();
+
+    // Re-render portal selector
+    renderPortalSelector();
+
+    // Notify the page that portal changed
+    window.dispatchEvent(new CustomEvent('portal-changed', {
+      detail: { organizationId }
+    }));
+
+    showToast(`Switched to ${newOrg?.organization_name || 'portal'}`, 'success');
+
+    // Reload the page to refresh content
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+
+  } catch (e) {
+    console.error('Error switching portal:', e);
+    showToast('Failed to switch portal', 'error');
+  } finally {
+    if (trigger) {
+      trigger.classList.remove('loading');
+    }
+  }
+}
+
+/**
+ * Show modal to add a new portal
+ */
+function showAddPortalModal() {
+  // Remove existing modal
+  const existingModal = document.querySelector('.add-portal-modal-overlay');
+  if (existingModal) existingModal.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'add-portal-modal-overlay modal-overlay';
+
+  overlay.innerHTML = `
+    <div class="modal add-portal-modal">
+      <div class="modal-header">
+        <h2>Add Portal</h2>
+        <button class="modal-close" id="closeAddPortalModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">
+          To add a new HubSpot portal, you'll need to connect via OAuth. This allows you to manage multiple client portals from one account.
+        </p>
+        <div class="add-portal-options">
+          <button class="btn btn-primary add-portal-connect" id="connectNewPortalBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            Connect HubSpot Portal
+          </button>
+        </div>
+        <div class="add-portal-hint">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>You can also be invited to portals by other admins or consultants.</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Event listeners
+  const closeBtn = document.getElementById('closeAddPortalModal');
+  const connectBtn = document.getElementById('connectNewPortalBtn');
+
+  closeBtn.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  connectBtn.addEventListener('click', () => {
+    // Redirect to settings page to connect HubSpot
+    overlay.remove();
+    window.location.href = '/settings#connect-hubspot';
+  });
 }
 
 /**
@@ -466,30 +766,113 @@ async function loadStorageData(forceRefresh = false) {
 /**
  * Save data to Chrome storage or Supabase (web context)
  * @param {Object} data - The data to save
- * @returns {Promise<void>}
+ * @param {Object} options - Optional settings
+ * @param {string} options.importMode - 'replace' (delete existing first) or 'merge' (add to existing)
+ * @returns {Promise<Object>} - Results summary for bulk operations
  */
-async function saveStorageData(data) {
+async function saveStorageData(data, options = {}) {
   // Invalidate storage cache when saving
   clearStorageDataCache();
 
   // In web context, save to Supabase
   if (!isExtensionContext && typeof RevGuideDB !== 'undefined') {
+    const results = { wikiEntries: 0, banners: 0, plays: 0, errors: [] };
+    const importMode = options.importMode || 'individual';
+
     try {
-      // Save wiki entries
-      if (data.wikiEntries !== undefined) {
-        // Note: For now, we handle individual creates/updates in page JS
-        // This function will be enhanced for bulk operations later
-        console.log('Wiki entries will be synced individually');
+      const client = await RevGuideAuth.waitForClient();
+      const orgId = await RevGuideDB.getOrganizationId();
+
+      if (!orgId) {
+        throw new Error('No organization found');
       }
-      // Save banners (rules)
-      if (data.rules !== undefined) {
-        console.log('Banners will be synced individually');
+
+      // Bulk import mode - used by import functionality
+      if (importMode === 'replace' || importMode === 'merge') {
+
+        // If replace mode, delete existing data first
+        if (importMode === 'replace') {
+          console.log('[Import] Replace mode: deleting existing data...');
+
+          if (data.wikiEntries !== undefined) {
+            await client.from('wiki_entries').delete().eq('organization_id', orgId);
+          }
+          if (data.rules !== undefined) {
+            await client.from('banners').delete().eq('organization_id', orgId);
+          }
+          if (data.battleCards !== undefined) {
+            await client.from('plays').delete().eq('organization_id', orgId);
+          }
+        }
+
+        // Import wiki entries
+        if (data.wikiEntries?.length > 0) {
+          console.log(`[Import] Importing ${data.wikiEntries.length} wiki entries...`);
+          for (const entry of data.wikiEntries) {
+            try {
+              // Remove id and org fields - let Supabase generate new ones
+              const { id, organization_id, created_at, updated_at, ...entryData } = entry;
+              const { error } = await client
+                .from('wiki_entries')
+                .insert({ ...entryData, organization_id: orgId });
+              if (error) {
+                results.errors.push(`Wiki "${entry.title}": ${error.message}`);
+              } else {
+                results.wikiEntries++;
+              }
+            } catch (e) {
+              results.errors.push(`Wiki "${entry.title}": ${e.message}`);
+            }
+          }
+        }
+
+        // Import banners (rules)
+        if (data.rules?.length > 0) {
+          console.log(`[Import] Importing ${data.rules.length} banners...`);
+          for (const banner of data.rules) {
+            try {
+              const { id, organization_id, created_at, updated_at, ...bannerData } = banner;
+              const { error } = await client
+                .from('banners')
+                .insert({ ...bannerData, organization_id: orgId });
+              if (error) {
+                results.errors.push(`Banner "${banner.name}": ${error.message}`);
+              } else {
+                results.banners++;
+              }
+            } catch (e) {
+              results.errors.push(`Banner "${banner.name}": ${e.message}`);
+            }
+          }
+        }
+
+        // Import plays (battleCards)
+        if (data.battleCards?.length > 0) {
+          console.log(`[Import] Importing ${data.battleCards.length} plays...`);
+          for (const play of data.battleCards) {
+            try {
+              const { id, organization_id, created_at, updated_at, ...playData } = play;
+              const { error } = await client
+                .from('plays')
+                .insert({ ...playData, organization_id: orgId });
+              if (error) {
+                results.errors.push(`Play "${play.name}": ${error.message}`);
+              } else {
+                results.plays++;
+              }
+            } catch (e) {
+              results.errors.push(`Play "${play.name}": ${e.message}`);
+            }
+          }
+        }
+
+        console.log('[Import] Complete:', results);
+        return results;
       }
-      // Save plays (battleCards)
-      if (data.battleCards !== undefined) {
-        console.log('Plays will be synced individually');
-      }
-      return;
+
+      // Individual save mode (default) - handled by page-specific code
+      // This path is for single-item saves, not bulk imports
+      return results;
     } catch (e) {
       console.error('Failed to save to Supabase:', e);
       throw e;
@@ -1422,6 +1805,14 @@ function getUserRole() {
   return currentUser?.role || null;
 }
 
+/**
+ * Check if current user is a consultant
+ * @returns {boolean}
+ */
+function isConsultant() {
+  return isConsultantUser;
+}
+
 // Export for use in page scripts
 window.AdminShared = {
   // Context detection
@@ -1432,12 +1823,19 @@ window.AdminShared = {
   refreshUserCache,
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
+  get userOrganizations() { return userOrganizations; },
+  get isConsultantUser() { return isConsultantUser; },
   // Role helpers
   isAdmin,
   isEditor,
   isMember,
+  isConsultant,
   canEditContent,
   getUserRole,
+  // Multi-portal
+  renderPortalSelector,
+  switchPortal,
+  getPortalColor,
   // UI
   renderSidebar,
   loadStorageData,

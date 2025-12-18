@@ -140,11 +140,34 @@ The codebase uses mixed terminology due to evolution:
 - **Web app** (app.revguide.io): Supabase JWT auth
 - **Extension**: Chrome storage + message passing to background.js
 
-**Roles:** Owner > Admin > Editor > Viewer
+**Roles:** Owner > Admin > Editor > Viewer > Consultant (multi-portal)
 
 **HubSpot OAuth:** Direct integration via `admin/hubspot.js` (replaced Nango in v2.1.0, but `nango.js` still referenced in `home.js`)
 
 See: [AUTHENTICATION.md](AUTHENTICATION.md)
+
+---
+
+## Multi-Portal Support (v2.7.0+)
+
+**For agencies/consultants managing multiple HubSpot portals:**
+
+- Users can belong to multiple organizations via `organization_members` table
+- `active_organization_id` tracks which portal is currently active
+- Portal selector dropdown appears in sidebar when user has 2+ portals
+- Consultant role enables library creation and multi-portal management
+
+**Key tables:**
+- `organization_members` - Many-to-many user↔org with per-org roles
+- `consultant_libraries` - Reusable content packages
+- `library_installations` - Track installed libraries per org
+
+**Key functions (RevGuideDB):**
+- `getUserOrganizations()` - Get all portals user can access
+- `switchOrganization(orgId)` - Switch active portal
+- `isConsultant()` - Check consultant privileges
+
+See: [MULTI_PORTAL_DEV.md](MULTI_PORTAL_DEV.md)
 
 ---
 
@@ -167,11 +190,14 @@ Build script: `scripts/build.js`
 
 **Key tables:**
 - `organizations` - Multi-tenant orgs
-- `users` - Team members (role-based)
+- `users` - Team members (role-based, with `active_organization_id` for portal switching)
+- `organization_members` - Many-to-many user↔org with per-org roles (v2.7.0+)
 - `banners` - Banner rules
 - `plays` - Battle cards
 - `wiki_entries` - Wiki glossary
 - `hubspot_connections` - OAuth tokens (encrypted)
+- `consultant_libraries` - Reusable content packages (v2.7.0+)
+- `library_installations` - Track installed libraries per org (v2.7.0+)
 
 **RLS:** Row-level security enforced for all tables.
 

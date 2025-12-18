@@ -874,6 +874,370 @@ const RevGuideDB = {
         callback
       )
       .subscribe();
+  },
+
+  // ============================================
+  // Multi-Portal Support (Consultant Feature)
+  // ============================================
+
+  /**
+   * Get all organizations the current user has access to
+   * @returns {Promise<{data: Array<{organization_id, organization_name, portal_id, role}>, error}>}
+   */
+  async getUserOrganizations() {
+    const client = await RevGuideAuth.waitForClient();
+
+    const { data, error } = await client.rpc('get_user_organizations');
+
+    if (error) {
+      console.error('Failed to get user organizations:', error);
+      return { data: [], error };
+    }
+
+    return { data: data || [], error: null };
+  },
+
+  /**
+   * Switch to a different organization/portal
+   * @param {string} organizationId - The organization ID to switch to
+   * @returns {Promise<{success: boolean, error}>}
+   */
+  async switchOrganization(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { success: false, error: new Error('Not authenticated') };
+
+    // Verify user has access to this organization
+    const { data: hasAccess } = await client.rpc('user_has_org_access', {
+      p_auth_uid: user.id,
+      p_org_id: organizationId
+    });
+
+    if (!hasAccess) {
+      return { success: false, error: new Error('No access to this organization') };
+    }
+
+    // Update the active organization
+    const { error } = await client
+      .from('users')
+      .update({ active_organization_id: organizationId })
+      .eq('auth_user_id', user.id);
+
+    if (error) {
+      console.error('Failed to switch organization:', error);
+      return { success: false, error };
+    }
+
+    // Update cache
+    this.setCachedOrgId(organizationId);
+
+    // Dispatch event for other components to react
+    window.dispatchEvent(new CustomEvent('organization-changed', {
+      detail: { organizationId }
+    }));
+
+    return { success: true, error: null };
+  },
+
+  /**
+   * Check if current user is a consultant (can manage multiple portals)
+   * @returns {Promise<boolean>}
+   */
+  async isConsultant() {
+    const client = await RevGuideAuth.waitForClient();
+
+    const { data } = await client.rpc('user_is_consultant');
+    return data === true;
+  },
+
+  /**
+   * Get the current user's role in the active organization
+   * @returns {Promise<string|null>}
+   */
+  async getCurrentRole() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return null;
+
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return null;
+
+    const { data } = await client
+      .from('organization_members')
+      .select('role')
+      .eq('organization_id', orgId)
+      .eq('user_id', (await this.getUserProfile()).data?.id)
+      .single();
+
+    return data?.role || null;
+  },
+
+  /**
+   * Add user to an organization (for consultants adding themselves to client portals)
+   * @param {string} organizationId - The organization to join
+   * @param {string} role - The role to have in that org (default: consultant)
+   */
+  async joinOrganization(organizationId, role = 'consultant') {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!profile) return { error: new Error('Not authenticated') };
+
+    return client
+      .from('organization_members')
+      .insert({
+        user_id: profile.id,
+        organization_id: organizationId,
+        role
+      })
+      .select()
+      .single();
+  },
+
+  /**
+   * Leave an organization (remove membership)
+   * @param {string} organizationId - The organization to leave
+   */
+  async leaveOrganization(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!profile) return { error: new Error('Not authenticated') };
+
+    // Can't leave your primary organization
+    if (profile.organization_id === organizationId) {
+      return { error: new Error('Cannot leave your primary organization') };
+    }
+
+    return client
+      .from('organization_members')
+      .delete()
+      .eq('user_id', profile.id)
+      .eq('organization_id', organizationId);
+  },
+
+  // ============================================
+  // Consultant Libraries
+  // ============================================
+
+  /**
+   * Get all libraries owned by the current user
+   */
+  async getMyLibraries() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!profile) return { data: [], error: new Error('Not authenticated') };
+
+    return client
+      .from('consultant_libraries')
+      .select('*')
+      .eq('owner_id', profile.id)
+      .order('updated_at', { ascending: false });
+  },
+
+  /**
+   * Create a new library
+   * @param {Object} library - { name, description, content }
+   */
+  async createLibrary(library) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!profile) return { error: new Error('Not authenticated') };
+
+    return client
+      .from('consultant_libraries')
+      .insert({
+        owner_id: profile.id,
+        name: library.name,
+        description: library.description || '',
+        content: library.content || { wikiEntries: [], plays: [], banners: [] },
+        version: '1.0.0'
+      })
+      .select()
+      .single();
+  },
+
+  /**
+   * Update a library
+   * @param {string} libraryId
+   * @param {Object} updates - { name?, description?, content? }
+   * @param {boolean} bumpVersion - If true, increment minor version
+   */
+  async updateLibrary(libraryId, updates, bumpVersion = true) {
+    const client = await RevGuideAuth.waitForClient();
+
+    // Get current library to bump version
+    if (bumpVersion) {
+      const { data: current } = await client
+        .from('consultant_libraries')
+        .select('version')
+        .eq('id', libraryId)
+        .single();
+
+      if (current) {
+        const [major, minor, patch] = current.version.split('.').map(Number);
+        updates.version = `${major}.${minor + 1}.0`;
+      }
+    }
+
+    updates.updated_at = new Date().toISOString();
+
+    return client
+      .from('consultant_libraries')
+      .update(updates)
+      .eq('id', libraryId)
+      .select()
+      .single();
+  },
+
+  /**
+   * Delete a library
+   * @param {string} libraryId
+   */
+  async deleteLibrary(libraryId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('consultant_libraries')
+      .delete()
+      .eq('id', libraryId);
+  },
+
+  /**
+   * Get libraries installed in an organization
+   * @param {string} organizationId - If not provided, uses active org
+   */
+  async getInstalledLibraries(organizationId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = organizationId || await this.getOrganizationId();
+
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('library_installations')
+      .select('*, consultant_libraries(name, version, description)')
+      .eq('organization_id', orgId)
+      .order('installed_at', { ascending: false });
+  },
+
+  /**
+   * Install a library to an organization
+   * @param {string} libraryId
+   * @param {string} organizationId - If not provided, uses active org
+   */
+  async installLibrary(libraryId, organizationId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+    const orgId = organizationId || await this.getOrganizationId();
+
+    if (!profile) return { error: new Error('Not authenticated') };
+    if (!orgId) return { error: new Error('No organization') };
+
+    // Get the library content
+    const { data: library, error: libError } = await client
+      .from('consultant_libraries')
+      .select('*')
+      .eq('id', libraryId)
+      .single();
+
+    if (libError || !library) {
+      return { error: new Error('Library not found') };
+    }
+
+    // Install content to the organization
+    const content = library.content;
+    const results = { wikiEntries: 0, plays: 0, banners: 0 };
+
+    // Install wiki entries
+    if (content.wikiEntries?.length > 0) {
+      for (const entry of content.wikiEntries) {
+        const { id, ...entryData } = entry;
+        const { error } = await client
+          .from('wiki_entries')
+          .insert({ ...entryData, organization_id: orgId });
+        if (!error) results.wikiEntries++;
+      }
+    }
+
+    // Install plays
+    if (content.plays?.length > 0) {
+      for (const play of content.plays) {
+        const { id, ...playData } = play;
+        const { error } = await client
+          .from('plays')
+          .insert({ ...playData, organization_id: orgId });
+        if (!error) results.plays++;
+      }
+    }
+
+    // Install banners
+    if (content.banners?.length > 0) {
+      for (const banner of content.banners) {
+        const { id, ...bannerData } = banner;
+        const { error } = await client
+          .from('banners')
+          .insert({ ...bannerData, organization_id: orgId });
+        if (!error) results.banners++;
+      }
+    }
+
+    // Record the installation
+    const { data: installation, error: installError } = await client
+      .from('library_installations')
+      .upsert({
+        library_id: libraryId,
+        organization_id: orgId,
+        installed_version: library.version,
+        installed_by: profile.id,
+        items_installed: results
+      }, {
+        onConflict: 'library_id,organization_id'
+      })
+      .select()
+      .single();
+
+    return {
+      data: {
+        installation,
+        itemsInstalled: results
+      },
+      error: installError
+    };
+  },
+
+  /**
+   * Check for available updates to installed libraries
+   * @param {string} organizationId - If not provided, uses active org
+   */
+  async checkLibraryUpdates(organizationId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = organizationId || await this.getOrganizationId();
+
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    const { data: installations } = await client
+      .from('library_installations')
+      .select('*, consultant_libraries(id, name, version, updated_at)')
+      .eq('organization_id', orgId);
+
+    if (!installations) return { data: [], error: null };
+
+    // Find libraries with newer versions
+    const updates = installations
+      .filter(inst => inst.consultant_libraries &&
+        inst.consultant_libraries.version !== inst.installed_version)
+      .map(inst => ({
+        libraryId: inst.library_id,
+        libraryName: inst.consultant_libraries.name,
+        installedVersion: inst.installed_version,
+        availableVersion: inst.consultant_libraries.version,
+        installedAt: inst.installed_at
+      }));
+
+    return { data: updates, error: null };
   }
 };
 

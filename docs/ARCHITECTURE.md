@@ -58,7 +58,8 @@ plugin/
 │   └── migrations/          # Database migrations
 │       ├── 001_add_hubspot_connection.sql
 │       ├── 002_direct_hubspot_oauth.sql
-│       └── 003_fix_rls_policies.sql
+│       ├── 003_fix_rls_policies.sql
+│       └── 013_multi_portal_support.sql  # v2.7.0 - Multi-portal
 │
 ├── api/                     # Cloudflare Worker
 │   ├── invite-worker.js     # Email invitation API
@@ -154,13 +155,16 @@ Chrome's native side panel with auth-aware UI:
 | Table | Purpose |
 |-------|---------|
 | `organizations` | Teams/workspaces |
-| `users` | User profiles linked to auth.users |
+| `users` | User profiles linked to auth.users (includes `active_organization_id` for portal switching) |
+| `organization_members` | Many-to-many user↔org with per-org roles (v2.7.0+) |
 | `hubspot_connections` | OAuth tokens (encrypted) |
 | `oauth_states` | CSRF protection for OAuth |
 | `invitations` | Pending team invites with tokens |
 | `banners` | Banner configurations |
 | `plays` | Play/battle card configurations |
 | `wiki_entries` | Wiki glossary entries |
+| `consultant_libraries` | Reusable content packages for consultants (v2.7.0+) |
+| `library_installations` | Track which libraries installed in which orgs (v2.7.0+) |
 
 **Edge Functions:**
 - `hubspot-oauth` - Handles OAuth flow: `/authorize`, `/callback`, `/connection`, `/disconnect`, `/proxy`
@@ -458,6 +462,6 @@ git push origin main
 
 ## Version History
 
-Current: **v2.6.6** (December 2024) - View Modal Redesign
+Current: **v2.7.0** (December 2024) - Multi-Portal Support (Phase 0 & 1)
 
 See `CHANGELOG.md` for full history.

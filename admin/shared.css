@@ -176,6 +176,236 @@
   color: #c4b5fd;
 }
 
+.role-indicator.consultant {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+}
+
+.role-indicator.editor {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.role-indicator.viewer {
+  background: rgba(107, 114, 128, 0.2);
+  color: #d1d5db;
+}
+
+
+/* ----------------------------------------
+   Portal Selector (Multi-Portal Feature)
+   ---------------------------------------- */
+.portal-selector-container {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.portal-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.portal-selector-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.portal-dropdown {
+  position: relative;
+}
+
+.portal-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+.portal-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.portal-dropdown-trigger.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.portal-dropdown-trigger .portal-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.portal-dropdown-trigger .portal-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-dropdown-trigger .dropdown-arrow {
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+  opacity: 0.6;
+}
+
+.portal-dropdown.open .portal-dropdown-trigger .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.portal-dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  display: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.portal-dropdown.open .portal-dropdown-menu {
+  display: block;
+  animation: fadeIn 0.15s ease;
+}
+
+.portal-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  text-align: left;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.portal-dropdown-item:hover {
+  background: var(--color-bg-muted);
+}
+
+.portal-dropdown-item.active {
+  background: var(--color-primary-bg);
+}
+
+.portal-dropdown-item .portal-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.portal-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-item-name {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-item-role {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.portal-dropdown-item .check-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.portal-dropdown-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-1) 0;
+}
+
+.portal-dropdown-item.portal-add-new {
+  color: var(--color-primary);
+}
+
+.portal-dropdown-item.portal-add-new:hover {
+  background: var(--color-primary-bg);
+}
+
+.portal-dropdown-item.portal-add-new svg {
+  width: 16px;
+  height: 16px;
+}
+
+
+/* ----------------------------------------
+   Add Portal Modal
+   ---------------------------------------- */
+.add-portal-modal {
+  max-width: 420px;
+}
+
+.add-portal-modal .modal-description {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-5);
+}
+
+.add-portal-options {
+  margin-bottom: var(--space-4);
+}
+
+.add-portal-connect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.add-portal-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.add-portal-hint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+}
+
 
 /* ----------------------------------------
    Main Content
@@ -1358,4 +1588,86 @@
   .compact-card-actions {
     margin-left: auto;
   }
+}
+
+/* =========================================
+   Import Mode Radio Options
+   ========================================= */
+
+.import-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.radio-option:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-subtle);
+}
+
+.radio-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.radio-option input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+}
+
+.radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio-content strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.radio-description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.import-summary {
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.import-summary h4 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.import-summary ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+}
+
+.import-summary li {
+  margin-bottom: 4px;
+}
+
+.import-summary .count {
+  font-weight: 600;
+  color: var(--color-text);
 }
