@@ -1,6 +1,18 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/pages/index.html" }
+    { "source": "/", "destination": "/pages/index.html" },
+    { "source": "/home", "destination": "/pages/home.html" },
+    { "source": "/banners", "destination": "/pages/banners.html" },
+    { "source": "/plays", "destination": "/pages/plays.html" },
+    { "source": "/wiki", "destination": "/pages/wiki.html" },
+    { "source": "/libraries", "destination": "/pages/libraries.html" },
+    { "source": "/settings", "destination": "/pages/settings.html" },
+    { "source": "/clients", "destination": "/pages/clients.html" },
+    { "source": "/login", "destination": "/pages/login.html" },
+    { "source": "/signup", "destination": "/pages/signup.html" },
+    { "source": "/invite", "destination": "/pages/invite.html" },
+    { "source": "/reset-password", "destination": "/pages/reset-password.html" },
+    { "source": "/onboarding", "destination": "/pages/onboarding.html" }
   ],
   "headers": [
     {
