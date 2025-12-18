@@ -846,12 +846,19 @@ class SettingsPage {
     try {
       let invitationData;
       let orgName = null;
+      let inviterName = null;
       let autoConnected = false;
 
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-        // Get organization name for the email
+        // Get organization name and inviter info for the email
         const { data: org } = await RevGuideDB.getOrganizationWithConnection();
         orgName = org?.name;
+
+        // Get current user's name as inviter
+        const { data: profile } = await RevGuideDB.getUserProfile();
+        inviterName = profile?.name || profile?.email;
+
+        console.log('[Invite] Org name:', orgName, 'Inviter:', inviterName);
 
         if (isConsultant) {
           // Use consultant invitation flow (with auto-connect check)
@@ -892,7 +899,7 @@ class SettingsPage {
       // Send email if not auto-connected
       if (!autoConnected && invitationData) {
         const token = invitationData.token;
-        await this.sendInviteEmail(email, role, token, orgName);
+        await this.sendInviteEmail(email, role, token, orgName, inviterName);
         AdminShared.showToast(`Invitation sent to ${email}`, 'success');
       }
 
@@ -944,7 +951,7 @@ class SettingsPage {
   /**
    * Send invitation email via Cloudflare Worker (Resend SMTP)
    */
-  async sendInviteEmail(email, role, token, orgName) {
+  async sendInviteEmail(email, role, token, orgName, inviterName = null) {
     const INVITE_API_URL = 'https://revguide-api.revguide.workers.dev/api/invite';
 
     // In extension context, use background script
@@ -955,7 +962,8 @@ class SettingsPage {
           email: email,
           role: role,
           token: token,
-          orgName: orgName
+          orgName: orgName,
+          inviterName: inviterName
         }, (response) => {
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message));
@@ -972,7 +980,7 @@ class SettingsPage {
     const response = await fetch(INVITE_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, role, token, orgName })
+      body: JSON.stringify({ email, role, token, orgName, inviterName })
     });
 
     const result = await response.json();

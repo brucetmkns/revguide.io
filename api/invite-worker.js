@@ -33,10 +33,10 @@ const CONFIG = {
 // EMAIL TEMPLATES
 // ===========================================
 
-function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team') {
+function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team', inviterName = null) {
   // Handle consultant invitations separately
   if (invitationType === 'consultant' || role === 'consultant') {
-    return buildConsultantInvitationEmailHtml(token, orgName);
+    return buildConsultantInvitationEmailHtml(token, orgName, inviterName);
   }
 
   const roleLabels = {
@@ -54,6 +54,7 @@ function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team')
 
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
   const orgDisplay = orgName ? ` at <strong>${orgName}</strong>` : '';
+  const inviterDisplay = inviterName ? `<strong>${inviterName}</strong> has invited you` : "You've been invited";
 
   return `
 <!DOCTYPE html>
@@ -69,7 +70,7 @@ function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team')
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      You've been invited to join${orgDisplay} as ${roleText}.
+      ${inviterDisplay} to join${orgDisplay} as ${roleText}.
     </p>
 
     <p style="margin-bottom: 25px;">
@@ -118,10 +119,10 @@ function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team')
 </html>`;
 }
 
-function buildInvitationEmailText(role, token, orgName, invitationType = 'team') {
+function buildInvitationEmailText(role, token, orgName, invitationType = 'team', inviterName = null) {
   // Handle consultant invitations separately
   if (invitationType === 'consultant' || role === 'consultant') {
-    return buildConsultantInvitationEmailText(token, orgName);
+    return buildConsultantInvitationEmailText(token, orgName, inviterName);
   }
 
   const roleLabels = {
@@ -139,10 +140,11 @@ function buildInvitationEmailText(role, token, orgName, invitationType = 'team')
 
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}`;
   const orgDisplay = orgName ? ` at ${orgName}` : '';
+  const inviterDisplay = inviterName ? `${inviterName} has invited you` : "You've been invited";
 
   return `You're Invited to RevGuide!
 
-You've been invited to join${orgDisplay} as ${roleText}.
+${inviterDisplay} to join${orgDisplay} as ${roleText}.
 
 RevGuide provides contextual guidance, wiki tooltips, and plays directly within HubSpot to help your team work smarter.
 
@@ -173,9 +175,10 @@ RevGuide - Contextual guidance for your revenue team`;
 // CONSULTANT EMAIL TEMPLATES
 // ===========================================
 
-function buildConsultantInvitationEmailHtml(token, orgName) {
+function buildConsultantInvitationEmailHtml(token, orgName, inviterName = null) {
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=consultant`;
   const orgDisplay = orgName ? `<strong>${orgName}</strong>` : 'a RevGuide organization';
+  const inviterDisplay = inviterName ? `<strong>${inviterName}</strong> has invited you` : "You've been invited";
 
   return `
 <!DOCTYPE html>
@@ -191,7 +194,7 @@ function buildConsultantInvitationEmailHtml(token, orgName) {
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      You've been invited to join ${orgDisplay} as a <strong>Consultant</strong> on RevGuide.
+      ${inviterDisplay} to join ${orgDisplay} as a <strong>Consultant</strong> on RevGuide.
     </p>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
@@ -229,13 +232,14 @@ function buildConsultantInvitationEmailHtml(token, orgName) {
 </html>`;
 }
 
-function buildConsultantInvitationEmailText(token, orgName) {
+function buildConsultantInvitationEmailText(token, orgName, inviterName = null) {
   const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=consultant`;
   const orgDisplay = orgName || 'a RevGuide organization';
+  const inviterDisplay = inviterName ? `${inviterName} has invited you` : "You've been invited";
 
   return `Consultant Access Invitation
 
-You've been invited to join ${orgDisplay} as a Consultant on RevGuide.
+${inviterDisplay} to join ${orgDisplay} as a Consultant on RevGuide.
 
 As a Consultant, you can:
 - Access and manage this client's RevGuide content
@@ -567,7 +571,7 @@ async function handleInvite(request, env, corsHeaders) {
   try {
     // Parse request body
     const body = await request.json();
-    const { email, role, token, orgName } = body;
+    const { email, role, token, orgName, inviterName } = body;
 
     // Validate input
     if (!email || !isValidEmail(email)) {
@@ -614,8 +618,8 @@ async function handleInvite(request, env, corsHeaders) {
         from: CONFIG.fromEmail,
         to: [email],
         subject: orgName ? `You're invited to join ${orgName} on RevGuide` : "You're invited to RevGuide",
-        html: buildInvitationEmailHtml(role, token, orgName),
-        text: buildInvitationEmailText(role, token, orgName)
+        html: buildInvitationEmailHtml(role, token, orgName, 'team', inviterName),
+        text: buildInvitationEmailText(role, token, orgName, 'team', inviterName)
       })
     });
 
