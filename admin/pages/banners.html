@@ -80,7 +80,12 @@
         </div>
 
         <div class="toolbar">
-          <input type="text" class="search-input" id="rulesSearch" placeholder="Search banners...">
+          <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="rulesSearch" placeholder="Search banners...">
+            <button type="button" class="search-clear-btn" id="rulesSearchClear" title="Clear search">
+              <span class="icon icon-x icon--sm"></span>
+            </button>
+          </div>
           <select class="filter-select" id="rulesFilter">
             <option value="all">All Types</option>
             <option value="info">Info</option>
@@ -88,6 +93,13 @@
             <option value="warning">Warning</option>
             <option value="error">Error</option>
             <option value="embed">Embed</option>
+          </select>
+          <select class="filter-select" id="rulesObjectFilter">
+            <option value="all">All Objects</option>
+            <option value="contacts">Contacts</option>
+            <option value="companies">Companies</option>
+            <option value="deals">Deals</option>
+            <option value="tickets">Tickets</option>
           </select>
           <button class="btn btn-icon btn-sm" id="refreshBannersBtn" title="Refresh">
             <span class="icon icon-refresh"></span>

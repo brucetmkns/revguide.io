@@ -91,7 +91,9 @@ class PlaysPage {
 
     // Search and filter
     document.getElementById('playsSearch').addEventListener('input', () => this.renderPlays());
+    document.getElementById('playsSearchClear').addEventListener('click', () => this.clearSearch());
     document.getElementById('playsFilter').addEventListener('change', () => this.renderPlays());
+    document.getElementById('playsObjectFilter').addEventListener('change', () => this.renderPlays());
 
     // Refresh button
     document.getElementById('refreshPlaysBtn').addEventListener('click', () => this.refreshData());
@@ -148,6 +150,13 @@ class PlaysPage {
     });
   }
 
+  clearSearch() {
+    const searchInput = document.getElementById('playsSearch');
+    searchInput.value = '';
+    searchInput.focus();
+    this.renderPlays();
+  }
+
   async refreshData() {
     const btn = document.getElementById('refreshPlaysBtn');
     const icon = btn.querySelector('.icon');
@@ -175,6 +184,7 @@ class PlaysPage {
   renderPlays() {
     const search = document.getElementById('playsSearch').value.toLowerCase();
     const filter = document.getElementById('playsFilter').value;
+    const objectFilter = document.getElementById('playsObjectFilter').value;
     const cardList = document.getElementById('playsCardList');
     const emptyState = document.getElementById('playsEmptyState');
 
@@ -184,6 +194,13 @@ class PlaysPage {
       }
       if (filter !== 'all' && card.cardType !== filter) {
         return false;
+      }
+      // Object filter - show if no objectType set (applies to all) or matches the filter
+      if (objectFilter !== 'all') {
+        if (card.objectType && card.objectType !== objectFilter) {
+          return false;
+        }
+        // If card has no objectType, it applies to all objects, so include it
       }
       return true;
     });

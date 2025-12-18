@@ -104,7 +104,9 @@ class BannersPage {
 
     // Search and filter
     document.getElementById('rulesSearch').addEventListener('input', () => this.renderRules());
+    document.getElementById('rulesSearchClear').addEventListener('click', () => this.clearSearch());
     document.getElementById('rulesFilter').addEventListener('change', () => this.renderRules());
+    document.getElementById('rulesObjectFilter').addEventListener('change', () => this.renderRules());
 
     // Refresh button
     document.getElementById('refreshBannersBtn').addEventListener('click', () => this.refreshData());
@@ -184,6 +186,13 @@ class BannersPage {
     });
   }
 
+  clearSearch() {
+    const searchInput = document.getElementById('rulesSearch');
+    searchInput.value = '';
+    searchInput.focus();
+    this.renderRules();
+  }
+
   async refreshData() {
     const btn = document.getElementById('refreshBannersBtn');
     const icon = btn.querySelector('.icon');
@@ -211,6 +220,7 @@ class BannersPage {
   renderRules() {
     const search = document.getElementById('rulesSearch').value.toLowerCase();
     const filter = document.getElementById('rulesFilter').value;
+    const objectFilter = document.getElementById('rulesObjectFilter').value;
     const cardList = document.getElementById('bannersCardList');
     const emptyState = document.getElementById('rulesEmptyState');
 
@@ -220,6 +230,24 @@ class BannersPage {
       }
       if (filter !== 'all' && rule.type !== filter) {
         return false;
+      }
+      // Object filter - check objectTypes array or objectType string
+      if (objectFilter !== 'all') {
+        const ruleObjectTypes = rule.objectTypes || [];
+        const ruleObjectType = rule.objectType || '';
+        // Convert singular form to match filter value (e.g., 'contact' -> 'contacts')
+        const objectTypeMap = { contact: 'contacts', company: 'companies', deal: 'deals', ticket: 'tickets' };
+        const normalizedTypes = ruleObjectTypes.map(t => objectTypeMap[t] || t);
+        const normalizedType = objectTypeMap[ruleObjectType] || ruleObjectType;
+
+        // Include if matches objectTypes array, objectType string, or if no object type set
+        const matchesArray = normalizedTypes.includes(objectFilter);
+        const matchesString = normalizedType === objectFilter;
+        const hasNoObjectType = ruleObjectTypes.length === 0 && !ruleObjectType;
+
+        if (!matchesArray && !matchesString && !hasNoObjectType) {
+          return false;
+        }
       }
       return true;
     });

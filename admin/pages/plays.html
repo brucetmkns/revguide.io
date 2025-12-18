@@ -81,13 +81,25 @@
         </div>
 
         <div class="toolbar">
-          <input type="text" class="search-input" id="playsSearch" placeholder="Search plays...">
+          <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="playsSearch" placeholder="Search plays...">
+            <button type="button" class="search-clear-btn" id="playsSearchClear" title="Clear search">
+              <span class="icon icon-x icon--sm"></span>
+            </button>
+          </div>
           <select class="filter-select" id="playsFilter">
             <option value="all">All Types</option>
             <option value="competitor">Competitor</option>
             <option value="objection">Objection</option>
             <option value="tip">Tip</option>
             <option value="process">Process</option>
+          </select>
+          <select class="filter-select" id="playsObjectFilter">
+            <option value="all">All Objects</option>
+            <option value="contacts">Contacts</option>
+            <option value="companies">Companies</option>
+            <option value="deals">Deals</option>
+            <option value="tickets">Tickets</option>
           </select>
           <button class="btn btn-icon btn-sm" id="refreshPlaysBtn" title="Refresh">
             <span class="icon icon-refresh"></span>

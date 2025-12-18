@@ -2,6 +2,27 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.7] - 2025-12-18 - Search & Object Filters for Plays and Banners
+
+### Added
+- **Search Clear Button**: Added (x) clear button to search inputs on Plays and Banners pages
+  - Button appears when search field has text (matches Wiki page behavior)
+  - Clicking clears search and refreshes results instantly
+- **Object Filter Dropdown**: Added "All Objects" filter to both Plays and Banners pages
+  - Filter options: All Objects, Contacts, Companies, Deals, Tickets
+  - Entries with no object type set (applies to all) appear in every filter
+  - Banners: Handles both `objectType` string and `objectTypes` array formats
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/plays.html` - Added search wrapper and object filter dropdown
+  - `admin/pages/banners.html` - Added search wrapper and object filter dropdown
+  - `admin/pages/plays.js` - Added `clearSearch()` method, event listeners, and object filtering
+  - `admin/pages/banners.js` - Added `clearSearch()` method, event listeners, and object filtering with singular/plural normalization
+  - `admin/shared.css` - Added `.search-input-wrapper` and `.search-clear-btn` styles (moved from wiki-specific to shared)
+
+---
+
 ## [2.6.6] - 2025-12-18 - View Modal Redesign
 
 ### Changed
