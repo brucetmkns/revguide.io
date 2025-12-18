@@ -43,8 +43,42 @@
   gap: var(--space-2);
 }
 
-.wiki-nav-search {
+.search-input-wrapper {
+  position: relative;
   width: 100%;
+}
+
+.search-input-wrapper .wiki-nav-search {
+  width: 100%;
+  padding-right: 32px;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+}
+
+.search-clear-btn:hover {
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
+}
+
+.search-input-wrapper .wiki-nav-search:not(:placeholder-shown) + .search-clear-btn {
+  display: flex;
 }
 
 .wiki-nav-filters {

@@ -2,6 +2,23 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.4] - 2025-12-18 - Wiki Search Clear Button
+
+### Added
+- **Wiki Search Clear Button**
+  - Added (x) clear button to wiki search input
+  - Button appears when search field has text
+  - Clicking clears search and refreshes results instantly
+  - Improves UX by eliminating need to manually select and delete text
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/wiki.html` - Added search input wrapper and clear button
+  - `admin/pages/wiki.css` - Added styles for search wrapper and clear button
+  - `admin/pages/wiki.js` - Added `clearSearch()` method and event listener
+
+---
+
 ## [2.6.3] - 2025-12-18 - Duplicate Trigger Word Validation
 
 ### Added

@@ -91,7 +91,12 @@
           <aside class="wiki-nav-pane">
             <!-- Search & Filters -->
             <div class="wiki-nav-toolbar">
-              <input type="text" class="search-input wiki-nav-search" id="wikiSearch" placeholder="Search wiki entries...">
+              <div class="search-input-wrapper">
+                <input type="text" class="search-input wiki-nav-search" id="wikiSearch" placeholder="Search wiki entries...">
+                <button type="button" class="search-clear-btn" id="wikiSearchClear" title="Clear search">
+                  <span class="icon icon-x icon--sm"></span>
+                </button>
+              </div>
               <div class="wiki-nav-filters">
                 <select class="filter-select" id="wikiObjectFilter">
                   <option value="all">All Objects</option>

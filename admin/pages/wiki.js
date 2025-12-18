@@ -156,6 +156,7 @@ class WikiPage {
 
     // Search and filters
     document.getElementById('wikiSearch').addEventListener('input', () => this.renderNavTree());
+    document.getElementById('wikiSearchClear').addEventListener('click', () => this.clearSearch());
     document.getElementById('wikiFilter').addEventListener('change', () => this.renderNavTree());
     document.getElementById('wikiObjectFilter').addEventListener('change', () => this.renderNavTree());
 
@@ -890,6 +891,13 @@ class WikiPage {
         toggle.setAttribute('aria-expanded', 'false');
       }
     });
+  }
+
+  clearSearch() {
+    const searchInput = document.getElementById('wikiSearch');
+    searchInput.value = '';
+    searchInput.focus();
+    this.renderNavTree();
   }
 
   // ============ EDITING ============
