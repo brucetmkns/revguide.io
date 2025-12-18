@@ -1329,8 +1329,11 @@ const RevGuideDB = {
 
     const { data: profile } = await this.getUserProfile();
 
+    // Normalize email to lowercase for consistent matching
+    const normalizedEmail = email.toLowerCase();
+
     // Check if user already exists and is a consultant
-    const { data: existingUser } = await this.checkUserByEmail(email);
+    const { data: existingUser } = await this.checkUserByEmail(normalizedEmail);
 
     if (existingUser && existingUser.is_consultant) {
       // Auto-connect existing consultant
@@ -1345,7 +1348,7 @@ const RevGuideDB = {
           .from('invitations')
           .insert({
             organization_id: orgId,
-            email,
+            email: normalizedEmail,
             role: 'consultant',
             invitation_type: 'consultant',
             invited_by: profile?.id,
@@ -1365,7 +1368,7 @@ const RevGuideDB = {
       .from('invitations')
       .insert({
         organization_id: orgId,
-        email,
+        email: normalizedEmail,
         role: 'consultant',
         invitation_type: 'consultant',
         invited_by: profile?.id
