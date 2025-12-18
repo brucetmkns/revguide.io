@@ -674,17 +674,10 @@ async function performInstall() {
       await new Promise(r => setTimeout(r, 1));
     }
 
-    // Update installed libraries tracking
-    const updatedInstalledLibraries = await AdminShared.getInstalledLibraries();
-    updatedInstalledLibraries[currentLibrary.id] = {
-      version: currentLibrary.version,
-      installedAt: Date.now(),
-      entryIds: entryIds
-    };
-
     // Save to Supabase in web context, or Chrome storage in extension
     let successCount = 0;
     let errorCount = 0;
+    const createdEntryIds = []; // Track actual IDs from Supabase
 
     if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
       // Web context - insert entries directly to Supabase
@@ -707,6 +700,10 @@ async function performInstall() {
         } else {
           console.log('[Library Install] Created entry:', data);
           successCount++;
+          // Store the actual Supabase ID
+          if (data?.id) {
+            createdEntryIds.push(data.id);
+          }
         }
       }
       AdminShared.clearStorageCache();
@@ -714,7 +711,17 @@ async function performInstall() {
       // Extension context - save full array
       await AdminShared.saveStorageData({ wikiEntries });
       successCount = selectedEntries.length;
+      // Use the locally generated IDs for extension context
+      createdEntryIds.push(...entryIds);
     }
+
+    // Update installed libraries tracking with actual IDs
+    const updatedInstalledLibraries = await AdminShared.getInstalledLibraries();
+    updatedInstalledLibraries[currentLibrary.id] = {
+      version: currentLibrary.version,
+      installedAt: Date.now(),
+      entryIds: createdEntryIds
+    };
 
     // Only mark as installed if at least some entries were created
     if (successCount > 0) {
