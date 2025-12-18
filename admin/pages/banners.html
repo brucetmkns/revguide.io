@@ -94,31 +94,14 @@
           </button>
         </div>
 
-        <div class="table-container">
-          <table class="data-table" id="rulesTable">
-            <thead>
-              <tr>
-                <th width="40"></th>
-                <th>Name</th>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Object</th>
-                <th>Conditions</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th width="100">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="rulesTableBody">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-          <div class="empty-state" id="rulesEmptyState" style="display: none;">
-            <div class="empty-icon"><span class="icon icon-clipboard-list icon--3xl"></span></div>
-            <h3>No banners yet</h3>
-            <p>Create your first banner to get started</p>
-            <button class="btn btn-primary" id="createRuleEmptyBtn">Create Banner</button>
-          </div>
+        <div class="compact-card-list" id="bannersCardList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="rulesEmptyState" style="display: none;">
+          <div class="empty-icon"><span class="icon icon-clipboard-list icon--3xl"></span></div>
+          <h3>No banners yet</h3>
+          <p>Create your first banner to get started</p>
+          <button class="btn btn-primary" id="createRuleEmptyBtn">Create Banner</button>
         </div>
       </section>
 

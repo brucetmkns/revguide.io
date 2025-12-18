@@ -211,9 +211,8 @@ class BannersPage {
   renderRules() {
     const search = document.getElementById('rulesSearch').value.toLowerCase();
     const filter = document.getElementById('rulesFilter').value;
-    const tbody = document.getElementById('rulesTableBody');
+    const cardList = document.getElementById('bannersCardList');
     const emptyState = document.getElementById('rulesEmptyState');
-    const table = document.getElementById('rulesTable');
 
     let filtered = this.rules.filter(rule => {
       if (search && !rule.name.toLowerCase().includes(search) && !rule.title?.toLowerCase().includes(search)) {
@@ -226,86 +225,150 @@ class BannersPage {
     });
 
     if (filtered.length === 0) {
-      table.style.display = 'none';
+      cardList.style.display = 'none';
       emptyState.style.display = 'block';
       return;
     }
 
-    table.style.display = 'table';
+    cardList.style.display = 'flex';
     emptyState.style.display = 'none';
 
-    tbody.innerHTML = filtered.map(rule => {
+    cardList.innerHTML = filtered.map(rule => {
       const objectType = rule.objectTypes?.[0] || 'All';
       const conditionCount = rule.conditions?.length || 0;
+      const conditionText = rule.displayOnAll ? 'All records' : `${conditionCount} condition${conditionCount !== 1 ? 's' : ''}`;
+      const typeLabel = AdminShared.TYPE_LABELS[rule.type] || rule.type;
+      const description = rule.title ? `${rule.title}${rule.message ? ' - ' + AdminShared.stripHtml(rule.message).substring(0, 60) : ''}` : AdminShared.stripHtml(rule.message || '').substring(0, 80) || 'No description';
 
-      // Build action buttons based on view-only mode
-      const actionButtons = this.isViewOnly ? `
-        <button class="btn-icon view-rule-btn" data-id="${rule.id}" title="View Details">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-      ` : `
-        <button class="btn-icon edit-rule-btn" data-id="${rule.id}" title="Edit">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-        </button>
-        <button class="btn-icon btn-icon-danger delete-rule-btn" data-id="${rule.id}" title="Delete">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-        </button>
-      `;
+      // Icon based on type
+      const iconMap = {
+        info: 'icon-info',
+        success: 'icon-check-circle',
+        warning: 'icon-alert-triangle',
+        error: 'icon-x-circle',
+        embed: 'icon-presentation'
+      };
+      const iconClass = iconMap[rule.type] || 'icon-info';
 
-      // Toggle is disabled for view-only users
-      const toggleHtml = this.isViewOnly ? `
+      // Build dropdown menu for editors, simple view button for viewers
+      const actionsHtml = this.isViewOnly ? `
         <span class="status-badge ${rule.enabled !== false ? 'active' : 'inactive'}">${rule.enabled !== false ? 'Active' : 'Inactive'}</span>
       ` : `
-        <label class="toggle-small">
-          <input type="checkbox" class="toggle-rule" data-id="${rule.id}" ${rule.enabled !== false ? 'checked' : ''}>
-          <span class="toggle-slider-small"></span>
-        </label>
+        <span class="status-badge ${rule.enabled !== false ? 'active' : 'inactive'}">${rule.enabled !== false ? 'Active' : 'Inactive'}</span>
+        <div class="compact-card-dropdown">
+          <button class="compact-card-menu-btn" data-id="${rule.id}" title="Actions">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="12" cy="5" r="1"/>
+              <circle cx="12" cy="19" r="1"/>
+            </svg>
+          </button>
+          <div class="compact-card-dropdown-menu">
+            <button class="compact-card-dropdown-item edit-rule-btn" data-id="${rule.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </button>
+            <button class="compact-card-dropdown-item toggle-rule-btn" data-id="${rule.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                ${rule.enabled !== false ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>' : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'}
+              </svg>
+              ${rule.enabled !== false ? 'Disable' : 'Enable'}
+            </button>
+            <button class="compact-card-dropdown-item danger delete-rule-btn" data-id="${rule.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
       `;
 
       return `
-        <tr data-id="${rule.id}">
-          <td>
-            <span class="type-badge" style="background: ${AdminShared.TYPE_COLORS[rule.type] || AdminShared.TYPE_COLORS.info}"></span>
-          </td>
-          <td><strong>${AdminShared.escapeHtml(rule.name)}</strong></td>
-          <td>${AdminShared.escapeHtml(rule.title || '-')}</td>
-          <td>${AdminShared.TYPE_LABELS[rule.type] || rule.type}</td>
-          <td><span class="object-badge">${objectType}</span></td>
-          <td>${conditionCount} condition${conditionCount !== 1 ? 's' : ''}</td>
-          <td>${rule.priority || 10}</td>
-          <td>${toggleHtml}</td>
-          <td>
-            <div class="action-buttons">${actionButtons}</div>
-          </td>
-        </tr>
+        <div class="compact-card" data-id="${rule.id}">
+          <div class="compact-card-icon ${rule.type}">
+            <span class="icon ${iconClass}"></span>
+          </div>
+          <div class="compact-card-content">
+            <div class="compact-card-header">
+              <span class="compact-card-title">${AdminShared.escapeHtml(rule.name)}</span>
+              <span class="compact-card-type ${rule.type}">${typeLabel}</span>
+            </div>
+            <div class="compact-card-description">${AdminShared.escapeHtml(description)}</div>
+          </div>
+          <div class="compact-card-meta">
+            <span class="compact-card-meta-item">${objectType}</span>
+            <span class="compact-card-meta-item">${conditionText}</span>
+          </div>
+          <div class="compact-card-actions">
+            ${actionsHtml}
+          </div>
+        </div>
       `;
     }).join('');
 
-    // Bind row events
-    tbody.querySelectorAll('.edit-rule-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.editRule(btn.dataset.id));
+    // Bind card click events - clicking card opens editor/viewer
+    cardList.querySelectorAll('.compact-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't trigger if clicking on dropdown or actions
+        if (e.target.closest('.compact-card-dropdown') || e.target.closest('.compact-card-actions')) {
+          return;
+        }
+        const ruleId = card.dataset.id;
+        if (this.isViewOnly) {
+          this.viewRuleDetails(ruleId);
+        } else {
+          this.editRule(ruleId);
+        }
+      });
     });
 
-    tbody.querySelectorAll('.delete-rule-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.deleteRule(btn.dataset.id));
+    // Bind dropdown menu toggle
+    cardList.querySelectorAll('.compact-card-menu-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = btn.closest('.compact-card-dropdown');
+        // Close all other dropdowns
+        cardList.querySelectorAll('.compact-card-dropdown.open').forEach(d => {
+          if (d !== dropdown) d.classList.remove('open');
+        });
+        dropdown.classList.toggle('open');
+      });
     });
 
-    tbody.querySelectorAll('.toggle-rule').forEach(checkbox => {
-      checkbox.addEventListener('change', () => this.toggleRule(checkbox.dataset.id));
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.compact-card-dropdown')) {
+        cardList.querySelectorAll('.compact-card-dropdown.open').forEach(d => {
+          d.classList.remove('open');
+        });
+      }
     });
 
-    // View button for view-only mode
-    tbody.querySelectorAll('.view-rule-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.viewRuleDetails(btn.dataset.id));
+    // Bind dropdown action events
+    cardList.querySelectorAll('.edit-rule-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editRule(btn.dataset.id);
+      });
+    });
+
+    cardList.querySelectorAll('.delete-rule-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteRule(btn.dataset.id);
+      });
+    });
+
+    cardList.querySelectorAll('.toggle-rule-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleRule(btn.dataset.id);
+      });
     });
   }
 

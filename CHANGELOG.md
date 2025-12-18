@@ -2,6 +2,37 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.6.5] - 2025-12-18 - Compact Card Layout for Banners & Plays
+
+### Changed
+- **Consistent Display Format**: Banners and Plays now both use a compact card layout
+  - Replaced table view on Banners page with horizontal compact cards
+  - Replaced grid cards on Plays page with horizontal compact cards
+  - Both pages now have consistent visual language
+- **Compact Card Design**:
+  - Icon on left with type-specific color background
+  - Title and type badge in header row
+  - Description/subtitle below title
+  - Metadata (object type, conditions count) on right
+  - Dropdown menu (⋮) for Edit/Delete/Toggle actions (editors only)
+  - Status badge (Active/Inactive) for banners
+- **Click-to-Open Behavior**:
+  - Clicking anywhere on a card opens the editor (for editors/admins)
+  - Clicking anywhere on a card opens view-only modal (for viewers)
+  - Action menu available via ⋮ button (editors only)
+- **View-Only Mode**: Non-editor users see cards without action menus; clicking opens read-only view
+
+### Technical
+- **Files Modified**:
+  - `admin/shared.css` - Added `.compact-card-*` CSS classes for new layout
+  - `admin/shared.js` - Added `stripHtml()` helper function
+  - `admin/pages/banners.html` - Replaced table with `.compact-card-list` container
+  - `admin/pages/banners.js` - Rewrote `renderRules()` to render compact cards
+  - `admin/pages/plays.html` - Replaced `.cards-grid` with `.compact-card-list` container
+  - `admin/pages/plays.js` - Rewrote `renderPlays()` to render compact cards
+
+---
+
 ## [2.6.4] - 2025-12-18 - Wiki Search Clear Button
 
 ### Added

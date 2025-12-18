@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v2.6.4 (Wiki Search Clear Button)
+**Current Version:** v2.6.5 (Compact Card Layout for Banners & Plays)
 
 ## Beta Program
 

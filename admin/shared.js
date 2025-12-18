@@ -692,6 +692,18 @@ function escapeHtml(text) {
 }
 
 /**
+ * Strip HTML tags from a string
+ * @param {string} html
+ * @returns {string}
+ */
+function stripHtml(html) {
+  if (!html) return '';
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+/**
  * Notify content script of data changes
  */
 function notifyContentScript() {
@@ -1438,6 +1450,7 @@ window.AdminShared = {
   showToast,
   showConfirmDialog,
   escapeHtml,
+  stripHtml,
   notifyContentScript,
   fetchProperties,
   initSearchableSelect,

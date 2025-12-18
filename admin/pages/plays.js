@@ -175,7 +175,7 @@ class PlaysPage {
   renderPlays() {
     const search = document.getElementById('playsSearch').value.toLowerCase();
     const filter = document.getElementById('playsFilter').value;
-    const grid = document.getElementById('playsGrid');
+    const cardList = document.getElementById('playsCardList');
     const emptyState = document.getElementById('playsEmptyState');
 
     let filtered = this.battleCards.filter(card => {
@@ -189,59 +189,133 @@ class PlaysPage {
     });
 
     if (filtered.length === 0) {
-      grid.style.display = 'none';
+      cardList.style.display = 'none';
       emptyState.style.display = 'block';
       return;
     }
 
-    grid.style.display = 'grid';
+    cardList.style.display = 'flex';
     emptyState.style.display = 'none';
 
-    grid.innerHTML = filtered.map(card => {
-      const icon = AdminShared.CARD_TYPE_ICONS[card.cardType] || '';
+    cardList.innerHTML = filtered.map(card => {
       const typeLabel = AdminShared.CARD_TYPE_LABELS[card.cardType] || card.cardType;
       const sectionCount = card.sections?.length || 0;
       const conditionCount = card.conditions?.length || 0;
+      const conditionText = card.displayOnAll ? 'All records' : `${conditionCount} condition${conditionCount !== 1 ? 's' : ''}`;
+      const description = card.subtitle || 'No description';
 
-      // Build action buttons based on view-only mode
-      const actionButtons = this.isViewOnly ? `
-        <button class="btn btn-secondary btn-sm view-play-btn" data-id="${card.id}">View</button>
-      ` : `
-        <button class="btn btn-secondary btn-sm edit-play-btn" data-id="${card.id}">Edit</button>
-        <button class="btn btn-danger btn-sm delete-play-btn" data-id="${card.id}">Delete</button>
+      // Icon based on type
+      const iconMap = {
+        competitor: 'icon-swords',
+        objection: 'icon-shield',
+        tip: 'icon-lightbulb',
+        process: 'icon-clipboard-list'
+      };
+      const iconClass = iconMap[card.cardType] || 'icon-layers';
+
+      // Build dropdown menu for editors, nothing extra for viewers
+      const actionsHtml = this.isViewOnly ? `` : `
+        <div class="compact-card-dropdown">
+          <button class="compact-card-menu-btn" data-id="${card.id}" title="Actions">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="12" cy="5" r="1"/>
+              <circle cx="12" cy="19" r="1"/>
+            </svg>
+          </button>
+          <div class="compact-card-dropdown-menu">
+            <button class="compact-card-dropdown-item edit-play-btn" data-id="${card.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </button>
+            <button class="compact-card-dropdown-item danger delete-play-btn" data-id="${card.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
       `;
 
       return `
-        <div class="card-item" data-id="${card.id}">
-          <div class="card-header">
-            <span class="card-icon ${card.cardType}">${icon}</span>
-            <span class="card-type-label">${typeLabel}</span>
+        <div class="compact-card" data-id="${card.id}">
+          <div class="compact-card-icon ${card.cardType}">
+            <span class="icon ${iconClass}"></span>
           </div>
-          <h3 class="card-title">${AdminShared.escapeHtml(card.name)}</h3>
-          <p class="card-subtitle">${AdminShared.escapeHtml(card.subtitle || '')}</p>
-          <div class="card-meta">
-            <span>${sectionCount} section${sectionCount !== 1 ? 's' : ''}</span>
-            <span>${conditionCount} condition${conditionCount !== 1 ? 's' : ''}</span>
+          <div class="compact-card-content">
+            <div class="compact-card-header">
+              <span class="compact-card-title">${AdminShared.escapeHtml(card.name)}</span>
+              <span class="compact-card-type ${card.cardType}">${typeLabel}</span>
+            </div>
+            <div class="compact-card-description">${AdminShared.escapeHtml(description)}</div>
           </div>
-          <div class="card-actions">
-            ${actionButtons}
+          <div class="compact-card-meta">
+            <span class="compact-card-meta-item">${sectionCount} section${sectionCount !== 1 ? 's' : ''}</span>
+            <span class="compact-card-meta-item">${conditionText}</span>
+          </div>
+          <div class="compact-card-actions">
+            ${actionsHtml}
           </div>
         </div>
       `;
     }).join('');
 
-    // Bind row events
-    grid.querySelectorAll('.edit-play-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.editPlay(btn.dataset.id));
+    // Bind card click events - clicking card opens editor/viewer
+    cardList.querySelectorAll('.compact-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't trigger if clicking on dropdown or actions
+        if (e.target.closest('.compact-card-dropdown') || e.target.closest('.compact-card-actions')) {
+          return;
+        }
+        const playId = card.dataset.id;
+        if (this.isViewOnly) {
+          this.viewPlayDetails(playId);
+        } else {
+          this.editPlay(playId);
+        }
+      });
     });
 
-    grid.querySelectorAll('.delete-play-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.deletePlay(btn.dataset.id));
+    // Bind dropdown menu toggle
+    cardList.querySelectorAll('.compact-card-menu-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = btn.closest('.compact-card-dropdown');
+        // Close all other dropdowns
+        cardList.querySelectorAll('.compact-card-dropdown.open').forEach(d => {
+          if (d !== dropdown) d.classList.remove('open');
+        });
+        dropdown.classList.toggle('open');
+      });
     });
 
-    // View button for view-only mode
-    grid.querySelectorAll('.view-play-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.viewPlayDetails(btn.dataset.id));
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.compact-card-dropdown')) {
+        cardList.querySelectorAll('.compact-card-dropdown.open').forEach(d => {
+          d.classList.remove('open');
+        });
+      }
+    });
+
+    // Bind dropdown action events
+    cardList.querySelectorAll('.edit-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editPlay(btn.dataset.id);
+      });
+    });
+
+    cardList.querySelectorAll('.delete-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deletePlay(btn.dataset.id);
+      });
     });
   }
 
