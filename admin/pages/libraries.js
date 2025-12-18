@@ -683,6 +683,9 @@ async function performInstall() {
     };
 
     // Save to Supabase in web context, or Chrome storage in extension
+    let successCount = 0;
+    let errorCount = 0;
+
     if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
       // Web context - insert entries directly to Supabase
       for (const entry of selectedEntries) {
@@ -695,28 +698,43 @@ async function performInstall() {
 
         // Map camelCase to snake_case for Supabase
         const mappedEntry = AdminShared.mapWikiToSupabase(cleanEntry);
-        const { error } = await RevGuideDB.createWikiEntry(mappedEntry);
+        console.log('[Library Install] Mapped entry:', mappedEntry);
+
+        const { data, error } = await RevGuideDB.createWikiEntry(mappedEntry);
         if (error) {
-          console.error('Failed to create wiki entry:', error);
+          console.error('[Library Install] Failed to create wiki entry:', error);
+          errorCount++;
+        } else {
+          console.log('[Library Install] Created entry:', data);
+          successCount++;
         }
       }
       AdminShared.clearStorageCache();
     } else {
       // Extension context - save full array
       await AdminShared.saveStorageData({ wikiEntries });
+      successCount = selectedEntries.length;
     }
 
-    await AdminShared.saveInstalledLibraries(updatedInstalledLibraries);
-
-    // Update local state
-    installedLibraries = updatedInstalledLibraries;
-    existingWikiEntries = wikiEntries;
+    // Only mark as installed if at least some entries were created
+    if (successCount > 0) {
+      await AdminShared.saveInstalledLibraries(updatedInstalledLibraries);
+      installedLibraries = updatedInstalledLibraries;
+      existingWikiEntries = wikiEntries;
+    }
 
     // Close modal and refresh
     closeInstallModal();
     renderLibraries();
 
-    AdminShared.showToast(`Successfully installed ${selectedEntries.length} entries from ${currentLibrary.name}`, 'success');
+    // Show appropriate message
+    if (errorCount > 0 && successCount > 0) {
+      AdminShared.showToast(`Installed ${successCount} entries, ${errorCount} failed. Check console for details.`, 'warning');
+    } else if (errorCount > 0 && successCount === 0) {
+      AdminShared.showToast(`Installation failed: All ${errorCount} entries failed. Check console for details.`, 'error');
+    } else {
+      AdminShared.showToast(`Successfully installed ${successCount} entries from ${currentLibrary.name}`, 'success');
+    }
     AdminShared.notifyContentScript();
 
   } catch (error) {
