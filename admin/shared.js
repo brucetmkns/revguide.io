@@ -15,6 +15,44 @@ let currentUser = null;
 let currentOrganization = null;
 let userOrganizations = []; // All organizations user has access to (for consultants)
 let isConsultantUser = false; // Whether user has consultant privileges
+let orgsLoadedThisSession = false; // Track if we've loaded orgs this session
+
+/**
+ * Load user's organizations for multi-portal feature
+ * Called from both fast and slow auth paths
+ */
+async function loadUserOrganizations() {
+  // Only load once per session to avoid repeated calls
+  if (orgsLoadedThisSession || isExtensionContext) return;
+  if (typeof RevGuideDB === 'undefined') return;
+
+  try {
+    console.log('[Auth] Loading user organizations...');
+    const { data: orgs, error } = await RevGuideDB.getUserOrganizations();
+
+    if (error) {
+      console.warn('[Auth] Failed to load organizations:', error);
+      return;
+    }
+
+    userOrganizations = orgs || [];
+    console.log(`[Auth] Loaded ${userOrganizations.length} organizations`);
+
+    // Check if user is a consultant
+    isConsultantUser = await RevGuideDB.isConsultant();
+
+    // Render portal selector if user has multiple orgs
+    if (userOrganizations.length > 1) {
+      console.log('[Auth] Multiple orgs detected, rendering portal selector');
+      setTimeout(() => renderPortalSelector(), 100);
+    }
+
+    orgsLoadedThisSession = true;
+  } catch (orgError) {
+    console.warn('[Auth] Error loading user organizations:', orgError);
+    userOrganizations = [];
+  }
+}
 
 /**
  * Session cache keys
@@ -104,6 +142,10 @@ async function checkAuth() {
     console.log('[Auth] Using cached auth (no API calls)');
     // Update sidebar immediately with cached data
     renderSidebar();
+
+    // Still load organizations for portal switching (lightweight call)
+    loadUserOrganizations();
+
     return true;
   }
 
@@ -158,21 +200,7 @@ async function checkAuth() {
           saveUserToCache();
 
           // Load user's organizations for portal switching (multi-portal feature)
-          try {
-            const { data: orgs } = await RevGuideDB.getUserOrganizations();
-            userOrganizations = orgs || [];
-
-            // Check if user is a consultant
-            isConsultantUser = await RevGuideDB.isConsultant();
-
-            // Render portal selector if user has multiple orgs
-            if (userOrganizations.length > 1) {
-              setTimeout(() => renderPortalSelector(), 100);
-            }
-          } catch (orgError) {
-            console.warn('Failed to load user organizations:', orgError);
-            userOrganizations = [];
-          }
+          loadUserOrganizations();
         } else {
           // Fallback to basic auth user info
           const { data: { user } } = await RevGuideAuth.getUser();
