@@ -415,14 +415,6 @@ async function renderPortalSelector() {
               ` : ''}
             </button>
           `).join('')}
-          <div class="portal-dropdown-divider"></div>
-          <button type="button" class="portal-dropdown-item portal-add-new" id="addPortalBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            <span>Add Portal...</span>
-          </button>
         </div>
       </div>
     </div>
@@ -483,13 +475,6 @@ function initPortalSelector() {
   menu.addEventListener('click', async (e) => {
     const item = e.target.closest('.portal-dropdown-item');
     if (!item) return;
-
-    // Handle "Add Portal" button
-    if (item.id === 'addPortalBtn') {
-      dropdown.classList.remove('open');
-      showAddPortalModal();
-      return;
-    }
 
     const orgId = item.dataset.orgId;
     if (!orgId || orgId === currentOrganization?.id) {
@@ -568,71 +553,6 @@ async function switchPortal(organizationId) {
       trigger.classList.remove('loading');
     }
   }
-}
-
-/**
- * Show modal to add a new portal
- */
-function showAddPortalModal() {
-  // Remove existing modal
-  const existingModal = document.querySelector('.add-portal-modal-overlay');
-  if (existingModal) existingModal.remove();
-
-  const overlay = document.createElement('div');
-  overlay.className = 'add-portal-modal-overlay modal-overlay';
-
-  overlay.innerHTML = `
-    <div class="modal add-portal-modal">
-      <div class="modal-header">
-        <h2>Add Portal</h2>
-        <button class="modal-close" id="closeAddPortalModal">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-description">
-          To add a new HubSpot portal, you'll need to connect via OAuth. This allows you to manage multiple client portals from one account.
-        </p>
-        <div class="add-portal-options">
-          <button class="btn btn-primary add-portal-connect" id="connectNewPortalBtn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-            Connect HubSpot Portal
-          </button>
-        </div>
-        <div class="add-portal-hint">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="16" x2="12" y2="12"/>
-            <line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
-          <span>You can also be invited to portals by other admins or consultants.</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  // Event listeners
-  const closeBtn = document.getElementById('closeAddPortalModal');
-  const connectBtn = document.getElementById('connectNewPortalBtn');
-
-  closeBtn.addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  connectBtn.addEventListener('click', () => {
-    // Redirect to settings page to connect HubSpot
-    overlay.remove();
-    window.location.href = '/settings#connect-hubspot';
-  });
 }
 
 /**
@@ -1861,52 +1781,76 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
 }
 
 /**
+ * Get the current user's effective role for the active organization
+ * Uses org-specific role from organization_members, falls back to user.role
+ * @returns {string} 'owner' | 'admin' | 'editor' | 'viewer' | 'consultant' | 'member' | null
+ */
+function getEffectiveRole() {
+  if (isExtensionContext) return 'owner'; // Extension context treated as owner
+
+  // If we have org memberships and a current org, use the org-specific role
+  if (userOrganizations.length > 0 && currentOrganization?.id) {
+    const membership = userOrganizations.find(o => o.organization_id === currentOrganization.id);
+    if (membership?.role) {
+      return membership.role;
+    }
+  }
+
+  // Fallback to user's primary role
+  return currentUser?.role || null;
+}
+
+/**
  * Check if current user has admin privileges (owner or admin role)
+ * Uses org-specific role for multi-portal users
  * @returns {boolean}
  */
 function isAdmin() {
   if (isExtensionContext) return true; // Extension context has full access
-  const role = currentUser?.role;
+  const role = getEffectiveRole();
   return role === 'owner' || role === 'admin';
 }
 
 /**
  * Check if current user is a viewer (view-only access)
  * Returns true for 'viewer' and legacy 'member' roles
+ * Uses org-specific role for multi-portal users
  * @returns {boolean}
  */
 function isMember() {
   if (isExtensionContext) return false;
-  const role = currentUser?.role;
+  const role = getEffectiveRole();
   return role === 'viewer' || role === 'member';
 }
 
 /**
  * Check if current user is an editor (can edit content but not manage team)
+ * Uses org-specific role for multi-portal users
  * @returns {boolean}
  */
 function isEditor() {
   if (isExtensionContext) return true; // Extension context has full access
-  return currentUser?.role === 'editor';
+  return getEffectiveRole() === 'editor';
 }
 
 /**
- * Check if current user can edit content (admin, owner, or editor)
+ * Check if current user can edit content (admin, owner, editor, or consultant)
+ * Uses org-specific role for multi-portal users
  * @returns {boolean}
  */
 function canEditContent() {
   if (isExtensionContext) return true;
-  const role = currentUser?.role;
-  return role === 'owner' || role === 'admin' || role === 'editor';
+  const role = getEffectiveRole();
+  return role === 'owner' || role === 'admin' || role === 'editor' || role === 'consultant';
 }
 
 /**
- * Get current user's role
- * @returns {string} 'owner' | 'admin' | 'editor' | 'viewer' | 'member' | null
+ * Get current user's role (org-specific if available)
+ * @returns {string} 'owner' | 'admin' | 'editor' | 'viewer' | 'consultant' | 'member' | null
  */
 function getUserRole() {
   if (isExtensionContext) return 'owner'; // Extension context treated as owner
-  return currentUser?.role || null;
+  return getEffectiveRole();
 }
 
 /**
@@ -1930,6 +1874,7 @@ window.AdminShared = {
   get userOrganizations() { return userOrganizations; },
   get isConsultantUser() { return isConsultantUser; },
   // Role helpers
+  getEffectiveRole,
   isAdmin,
   isEditor,
   isMember,
