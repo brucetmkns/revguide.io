@@ -851,13 +851,19 @@ async function saveStorageData(data, options = {}) {
           console.log('[Import] Replace mode: deleting existing data...');
 
           if (data.wikiEntries !== undefined) {
-            await client.from('wiki_entries').delete().eq('organization_id', orgId);
+            const { error: wikiDelError } = await client.from('wiki_entries').delete().eq('organization_id', orgId);
+            if (wikiDelError) console.error('[Import] Failed to delete wiki entries:', wikiDelError);
+            else console.log('[Import] Deleted existing wiki entries');
           }
           if (data.rules !== undefined) {
-            await client.from('banners').delete().eq('organization_id', orgId);
+            const { error: bannerDelError } = await client.from('banners').delete().eq('organization_id', orgId);
+            if (bannerDelError) console.error('[Import] Failed to delete banners:', bannerDelError);
+            else console.log('[Import] Deleted existing banners');
           }
           if (data.battleCards !== undefined) {
-            await client.from('plays').delete().eq('organization_id', orgId);
+            const { error: playDelError } = await client.from('plays').delete().eq('organization_id', orgId);
+            if (playDelError) console.error('[Import] Failed to delete plays:', playDelError);
+            else console.log('[Import] Deleted existing plays');
           }
         }
 

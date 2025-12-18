@@ -1432,7 +1432,24 @@ class WikiPage {
       return;
     }
 
-    // Remove selected entries
+    // Delete from Supabase in web context
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      for (const entryId of this.selectedEntryIds) {
+        try {
+          const { error } = await RevGuideDB.deleteWikiEntry(entryId);
+          if (error) console.error(`Failed to delete wiki entry ${entryId}:`, error);
+        } catch (e) {
+          console.error(`Failed to delete wiki entry ${entryId}:`, e);
+        }
+      }
+      AdminShared.clearStorageCache();
+    } else {
+      // Extension context - save filtered array
+      this.wikiEntries = this.wikiEntries.filter(e => !this.selectedEntryIds.has(e.id));
+      await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
+    }
+
+    // Remove selected entries from local array
     this.wikiEntries = this.wikiEntries.filter(e => !this.selectedEntryIds.has(e.id));
 
     // Clear selection if current entry was deleted
@@ -1440,8 +1457,6 @@ class WikiPage {
       this.selectedEntryId = this.wikiEntries.length > 0 ? this.wikiEntries[0].id : null;
     }
 
-    // Save
-    await AdminShared.saveStorageData({ wikiEntries: this.wikiEntries });
     AdminShared.notifyContentScript();
 
     // Exit select mode
