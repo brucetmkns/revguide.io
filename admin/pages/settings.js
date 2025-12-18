@@ -876,7 +876,8 @@ class SettingsPage {
               console.warn('Failed to send auto-connect notification:', emailError);
             }
           } else {
-            invitationData = data;
+            // Extract the invitation from the nested structure
+            invitationData = data.invitation;
           }
         } else {
           // Regular team invitation
