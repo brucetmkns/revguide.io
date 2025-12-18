@@ -355,6 +355,14 @@ function renderSidebar(activePage) {
       librariesLink.style.display = 'none';
     }
   }
+
+  // Show/hide Clients nav item for consultants
+  const clientsLink = sidebar.querySelector('[data-section="clients"]');
+  if (clientsLink) {
+    // Show Clients link for consultants (users with multiple orgs or consultant role)
+    const showClients = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
+    clientsLink.style.display = showClients ? 'flex' : 'none';
+  }
 }
 
 /**
@@ -1985,6 +1993,9 @@ window.AdminShared = {
   escapeHtml,
   stripHtml,
   sanitizeImportData,
+  mapWikiToSupabase,
+  mapBannerToSupabase,
+  mapPlayToSupabase,
   notifyContentScript,
   fetchProperties,
   initSearchableSelect,

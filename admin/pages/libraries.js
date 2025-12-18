@@ -682,8 +682,30 @@ async function performInstall() {
       entryIds: entryIds
     };
 
-    // Save everything
-    await AdminShared.saveStorageData({ wikiEntries });
+    // Save to Supabase in web context, or Chrome storage in extension
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      // Web context - insert entries directly to Supabase
+      for (const entry of selectedEntries) {
+        const { _status, _existingId, _existingTitle, _selected, ...cleanEntry } = entry;
+
+        // If duplicate, delete existing first
+        if (_status === 'duplicate' && _existingId) {
+          await RevGuideDB.deleteWikiEntry(_existingId);
+        }
+
+        // Map camelCase to snake_case for Supabase
+        const mappedEntry = AdminShared.mapWikiToSupabase(cleanEntry);
+        const { error } = await RevGuideDB.createWikiEntry(mappedEntry);
+        if (error) {
+          console.error('Failed to create wiki entry:', error);
+        }
+      }
+      AdminShared.clearStorageCache();
+    } else {
+      // Extension context - save full array
+      await AdminShared.saveStorageData({ wikiEntries });
+    }
+
     await AdminShared.saveInstalledLibraries(updatedInstalledLibraries);
 
     // Update local state
