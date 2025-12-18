@@ -478,8 +478,8 @@
 /* Search input with clear button */
 .search-input-wrapper {
   position: relative;
-  flex: 1;
   min-width: 200px;
+  max-width: 280px;
 }
 
 .search-input-wrapper .search-input {
