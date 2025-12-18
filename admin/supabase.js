@@ -252,14 +252,17 @@ const RevGuideDB = {
       return { data: null, error: userError };
     }
 
+    // Use active_organization_id if set, otherwise fall back to primary organization_id
+    const effectiveOrgId = userProfile.active_organization_id || userProfile.organization_id;
+
     // Cache org ID for fast access
-    if (userProfile.organization_id) {
-      this.setCachedOrgId(userProfile.organization_id);
+    if (effectiveOrgId) {
+      this.setCachedOrgId(effectiveOrgId);
 
       const { data: org, error: orgError } = await client
         .from('organizations')
         .select('*')
-        .eq('id', userProfile.organization_id)
+        .eq('id', effectiveOrgId)
         .single();
 
       if (org) {
