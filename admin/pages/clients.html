@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clients - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <style>
+    /* Client Cards Grid */
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-6);
+    }
+
+    .client-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .client-card:hover {
+      box-shadow: var(--shadow-sm);
+      border-color: var(--color-border);
+    }
+
+    .client-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .client-color {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .client-card-header h4 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .client-card-stats {
+      display: flex;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+      padding: var(--space-3);
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+    }
+
+    .client-stat {
+      text-align: center;
+      flex: 1;
+    }
+
+    .client-stat-value {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .client-stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .client-card-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .client-card-actions .btn {
+      flex: 1;
+    }
+
+    .client-card.active {
+      border-color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    .client-card.active .active-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-size-xs);
+      color: var(--color-primary-dark);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .active-indicator::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    /* Pending Requests Section */
+    .pending-requests-section {
+      margin-top: var(--space-8);
+      padding: var(--space-5);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    .pending-requests-section h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-4);
+      color: var(--color-text-primary);
+    }
+
+    .pending-request-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+    }
+
+    .pending-request-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .pending-request-info {
+      flex: 1;
+    }
+
+    .pending-request-info strong {
+      display: block;
+      color: var(--color-text-primary);
+    }
+
+    .pending-request-info span {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .badge-pending {
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .role-badge.consultant {
+      background-color: #f0fdf4;
+      color: #166534;
+    }
+
+    /* Request Access Modal */
+    .org-search-results {
+      margin-top: var(--space-4);
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .org-search-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .org-search-item:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    .org-search-item.selected {
+      border-color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    .org-search-item.has-request {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state h3 {
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/clients" class="nav-item active" data-section="clients">
+          <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+          Clients
+        </a>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="clientsSection">
+        <div class="section-header">
+          <div>
+            <h2>Your Clients</h2>
+            <p class="section-description">Manage your consulting client organizations</p>
+          </div>
+          <button class="btn btn-primary" id="requestAccessBtn">
+            <span class="icon icon-user-plus icon--sm"></span> Request Access
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="clientsLoadingState">
+          <span class="icon icon-loader icon--xl spin"></span>
+          <p>Loading clients...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="clientsEmptyState" style="display: none;">
+          <div class="empty-icon">
+            <span class="icon icon-users icon--2xl"></span>
+          </div>
+          <h3>No client organizations yet</h3>
+          <p>Request access to client organizations or wait for clients to invite you.</p>
+          <button class="btn btn-primary" id="requestAccessEmptyBtn">
+            <span class="icon icon-user-plus icon--sm"></span> Request Access
+          </button>
+        </div>
+
+        <!-- Clients Grid -->
+        <div class="clients-grid" id="clientsGrid" style="display: none;">
+          <!-- Client cards populated by JS -->
+        </div>
+
+        <!-- Pending Requests Section -->
+        <div class="pending-requests-section" id="pendingRequestsSection" style="display: none;">
+          <h3>Pending Access Requests</h3>
+          <div id="pendingRequestsList">
+            <!-- Pending requests populated by JS -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Request Access Modal -->
+  <div class="modal" id="requestAccessModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Request Client Access</h2>
+        <button class="modal-close" id="closeRequestAccessModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Search for Organization</label>
+          <input type="text" id="orgSearchInput" placeholder="Start typing organization name...">
+          <span class="form-hint">Search for a client organization to request consultant access</span>
+        </div>
+        <div class="org-search-results" id="orgSearchResults">
+          <!-- Search results populated by JS -->
+        </div>
+        <div class="form-group" style="margin-top: var(--space-4);">
+          <label>Message (Optional)</label>
+          <textarea id="accessRequestMessage" rows="3" placeholder="Introduce yourself or explain why you're requesting access..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelRequestAccessBtn">Cancel</button>
+        <button class="btn btn-primary" id="submitRequestAccessBtn" disabled>
+          <span class="icon icon-send icon--sm"></span> Send Request
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin/lib/purify.min.js"></script>
+  <script src="/admin/supabase.js?v=4"></script>
+  <script src="/admin/hubspot.js?v=4"></script>
+  <script src="/lib/wiki-cache.js"></script>
+  <script src="/admin/shared.js?v=4"></script>
+  <script src="/admin/pages/clients.js?v=1"></script>
+
+  <!-- Help Scout Beacon -->
+  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
+  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
+</body>
+</html>

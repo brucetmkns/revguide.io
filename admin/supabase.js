@@ -1245,6 +1245,236 @@ const RevGuideDB = {
       }));
 
     return { data: updates, error: null };
+  },
+
+  // ============================================
+  // Consultant Invitations & Access Requests
+  // ============================================
+
+  /**
+   * Check if a user exists by email and if they're a consultant
+   * @param {string} email - Email to check
+   * @returns {Promise<{data: {user_id, is_consultant, has_account}, error}>}
+   */
+  async checkUserByEmail(email) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('get_user_by_email', { p_email: email });
+    return { data: data?.[0] || null, error };
+  },
+
+  /**
+   * Create a consultant invitation (checks for auto-connect first)
+   * @param {string} email - Consultant's email
+   * @param {string} organizationId - Optional, uses active org if not provided
+   * @returns {Promise<{data: {autoConnected: boolean, invitation?}, error}>}
+   */
+  async createConsultantInvitation(email, organizationId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = organizationId || await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    const { data: profile } = await this.getUserProfile();
+
+    // Check if user already exists and is a consultant
+    const { data: existingUser } = await this.checkUserByEmail(email);
+
+    if (existingUser && existingUser.is_consultant) {
+      // Auto-connect existing consultant
+      const { data: success } = await client.rpc('auto_connect_consultant', {
+        p_user_id: existingUser.user_id,
+        p_organization_id: orgId
+      });
+
+      if (success) {
+        // Also create an invitation record marked as auto-accepted for audit trail
+        await client
+          .from('invitations')
+          .insert({
+            organization_id: orgId,
+            email,
+            role: 'consultant',
+            invitation_type: 'consultant',
+            invited_by: profile?.id,
+            auto_accepted: true,
+            accepted_at: new Date().toISOString()
+          });
+
+        return {
+          data: { autoConnected: true, consultantName: existingUser.user_name },
+          error: null
+        };
+      }
+    }
+
+    // Create a new consultant invitation
+    const { data: invitation, error } = await client
+      .from('invitations')
+      .insert({
+        organization_id: orgId,
+        email,
+        role: 'consultant',
+        invitation_type: 'consultant',
+        invited_by: profile?.id
+      })
+      .select()
+      .single();
+
+    return {
+      data: { autoConnected: false, invitation },
+      error
+    };
+  },
+
+  /**
+   * Get consultant invitations for current organization
+   */
+  async getConsultantInvitations() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('invitations')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('invitation_type', 'consultant')
+      .is('accepted_at', null)
+      .order('created_at', { ascending: false });
+  },
+
+  /**
+   * Create an access request (consultant requesting access to an org)
+   * @param {string} organizationId - The org to request access to
+   * @param {string} message - Optional message explaining the request
+   */
+  async createAccessRequest(organizationId, message = '') {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!profile) return { error: new Error('Not authenticated') };
+
+    return client
+      .from('consultant_access_requests')
+      .insert({
+        consultant_user_id: profile.id,
+        organization_id: organizationId,
+        message: message || null
+      })
+      .select()
+      .single();
+  },
+
+  /**
+   * Get access requests for the current organization (for admins)
+   */
+  async getAccessRequests() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    const { data, error } = await client.rpc('get_org_access_requests', { p_org_id: orgId });
+    return { data: data || [], error };
+  },
+
+  /**
+   * Approve an access request (adds consultant to org)
+   * @param {string} requestId - The request ID to approve
+   */
+  async approveAccessRequest(requestId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { success: false, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('approve_access_request', {
+      p_request_id: requestId,
+      p_reviewer_auth_uid: user.id
+    });
+
+    return { success: data === true, error };
+  },
+
+  /**
+   * Decline an access request
+   * @param {string} requestId - The request ID to decline
+   * @param {string} notes - Optional notes explaining why
+   */
+  async declineAccessRequest(requestId, notes = '') {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { success: false, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('decline_access_request', {
+      p_request_id: requestId,
+      p_reviewer_auth_uid: user.id,
+      p_notes: notes || null
+    });
+
+    return { success: data === true, error };
+  },
+
+  /**
+   * Search organizations for consultant to request access
+   * @param {string} query - Search term
+   */
+  async searchOrganizations(query) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { data: [], error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('search_organizations_for_consultant', {
+      p_auth_uid: user.id,
+      p_query: query
+    });
+
+    return { data: data || [], error };
+  },
+
+  /**
+   * Get consultant's own access requests (for their dashboard)
+   */
+  async getMyAccessRequests() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+
+    if (!user) return { data: [], error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_consultant_access_requests', {
+      p_auth_uid: user.id
+    });
+
+    return { data: data || [], error };
+  },
+
+  /**
+   * Cancel a pending access request
+   * @param {string} requestId - The request to cancel
+   */
+  async cancelAccessRequest(requestId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('consultant_access_requests')
+      .update({ status: 'cancelled' })
+      .eq('id', requestId)
+      .select()
+      .single();
+  },
+
+  /**
+   * Get admin emails for an organization (for sending notifications)
+   * @param {string} organizationId - The org to get admins for
+   */
+  async getOrgAdminEmails(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    const { data, error } = await client.rpc('get_org_admin_emails', {
+      p_org_id: organizationId
+    });
+
+    return { data: data || [], error };
   }
 };
 

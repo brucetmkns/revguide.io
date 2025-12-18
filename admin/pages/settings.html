@@ -219,6 +219,74 @@
       color: var(--color-text-muted);
       font-style: italic;
     }
+
+    /* Access Request Items */
+    .access-request-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4);
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .access-request-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .request-info {
+      flex: 1;
+    }
+
+    .request-info strong {
+      display: block;
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .request-info span {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .request-message {
+      margin-top: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      font-style: italic;
+      border-left: 3px solid var(--color-border);
+    }
+
+    .request-actions {
+      display: flex;
+      gap: var(--space-2);
+      margin-left: var(--space-4);
+    }
+
+    .request-actions .btn-sm {
+      padding: var(--space-1) var(--space-3);
+    }
+
+    .btn-success {
+      background: var(--color-success);
+      color: white;
+      border: none;
+    }
+
+    .btn-success:hover {
+      background: var(--color-success-dark);
+    }
+
+    /* Consultant role badge */
+    .role-badge.consultant {
+      background-color: #f0fdf4;
+      color: #166534;
+    }
   </style>
 </head>
 <body>
@@ -493,6 +561,53 @@
             </button>
           </div>
         </div>
+
+        <!-- Consultant Access Section -->
+        <div class="team-members-section" id="consultantSection" style="display: none;">
+          <div class="team-members-header">
+            <div>
+              <h3>Consultant Access</h3>
+              <p>Invite consultants to manage your RevGuide content</p>
+            </div>
+            <button class="btn btn-primary" id="inviteConsultantBtn">
+              <span class="icon icon-user-plus icon--sm"></span> Invite Consultant
+            </button>
+          </div>
+
+          <!-- Pending Access Requests -->
+          <div id="accessRequestsSection">
+            <h4 style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); margin-bottom: var(--space-3); color: var(--color-text-primary);">Pending Access Requests</h4>
+            <div id="accessRequestsList">
+              <!-- Populated by JS -->
+            </div>
+            <div class="empty-state" id="accessRequestsEmptyState">
+              <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">No pending access requests</p>
+            </div>
+          </div>
+
+          <!-- Active Consultants List -->
+          <div id="activeConsultantsSection" style="margin-top: var(--space-6);">
+            <h4 style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); margin-bottom: var(--space-3); color: var(--color-text-primary);">Active Consultants</h4>
+            <div class="table-container" id="consultantsTableContainer" style="display: none;">
+              <table class="data-table" id="consultantsTable">
+                <thead>
+                  <tr>
+                    <th>Consultant</th>
+                    <th>Status</th>
+                    <th>Added</th>
+                    <th width="80">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="consultantsTableBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="consultantsEmptyState">
+              <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">No consultants have been invited yet</p>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -567,6 +682,36 @@
         <button class="btn btn-secondary" id="cancelImportBtn">Cancel</button>
         <button class="btn btn-primary" id="confirmImportBtn">
           <span class="icon icon-download icon--sm"></span> Import Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite Consultant Modal -->
+  <div class="modal" id="inviteConsultantModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Invite Consultant</h2>
+        <button class="modal-close" id="closeInviteConsultantModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Consultant Email <span class="required">*</span></label>
+          <input type="email" id="consultantEmail" placeholder="consultant@agency.com">
+          <span class="form-hint">Consultant will receive an email with instructions to join your organization</span>
+        </div>
+        <div class="form-note" style="background: var(--color-success-bg); border-color: var(--color-success); margin-top: var(--space-4);">
+          <p style="margin: 0; font-size: var(--font-size-sm); color: var(--color-success-dark);">
+            <strong>Auto-connect:</strong> If this consultant already has a RevGuide account, they will be automatically added to your organization without needing to accept an invitation.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelInviteConsultantBtn">Cancel</button>
+        <button class="btn btn-primary" id="sendConsultantInviteBtn">
+          <span class="icon icon-send icon--sm"></span> Send Invitation
         </button>
       </div>
     </div>

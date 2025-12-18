@@ -9,9 +9,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const inviteMessage = document.getElementById('inviteMessage');
   const inviteContent = document.getElementById('inviteContent');
 
-  // Get token from URL
+  // Get token and type from URL
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
+  const inviteType = params.get('type'); // 'consultant' for consultant invitations
 
   if (!token) {
     showError('Invalid Invitation', 'No invitation token provided. Please check the link in your email.');
@@ -65,7 +66,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Show invitation details and accept button
-    showInvitation(invitation);
+    // Use different UI for consultant invitations
+    if (inviteType === 'consultant' || invitation.invitation_type === 'consultant' || invitation.role === 'consultant') {
+      showConsultantInvitation(invitation);
+    } else {
+      showInvitation(invitation);
+    }
 
   } catch (error) {
     console.error('Error loading invitation:', error);
@@ -116,6 +122,108 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Add accept handler
     document.getElementById('acceptBtn').addEventListener('click', () => acceptInvitation(invitation));
+  }
+
+  /**
+   * Show consultant invitation details with accept button
+   */
+  function showConsultantInvitation(invitation) {
+    const orgName = invitation.organizations?.name || 'Unknown Organization';
+
+    inviteContent.innerHTML = `
+      <svg class="invite-icon consultant" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <h2 class="invite-title">Consultant Access Invitation</h2>
+      <p class="invite-message">You've been invited to join as a consultant.</p>
+
+      <div class="invite-details">
+        <div class="invite-detail-row">
+          <span class="invite-detail-label">Organization</span>
+          <span class="invite-detail-value">${escapeHtml(orgName)}</span>
+        </div>
+        <div class="invite-detail-row">
+          <span class="invite-detail-label">Your Role</span>
+          <span class="invite-detail-value consultant-role">Consultant</span>
+        </div>
+        <div class="invite-detail-row">
+          <span class="invite-detail-label">Email</span>
+          <span class="invite-detail-value">${escapeHtml(invitation.email)}</span>
+        </div>
+      </div>
+
+      <div class="consultant-benefits">
+        <h4>As a Consultant, you can:</h4>
+        <ul>
+          <li>Access and manage this client's RevGuide content</li>
+          <li>Switch between multiple client portals</li>
+          <li>Create and deploy reusable content libraries</li>
+        </ul>
+      </div>
+
+      <div class="invite-actions">
+        <button class="invite-btn invite-btn-primary" id="acceptConsultantBtn">Accept Consultant Access</button>
+        <a href="/login" class="invite-btn invite-btn-secondary">Decline</a>
+      </div>
+
+      <div class="invite-footer">
+        <p>By accepting, you'll gain consultant access to ${escapeHtml(orgName)}'s RevGuide content.</p>
+      </div>
+    `;
+
+    // Add accept handler
+    document.getElementById('acceptConsultantBtn').addEventListener('click', () => acceptConsultantInvitation(invitation));
+  }
+
+  /**
+   * Accept consultant invitation
+   */
+  async function acceptConsultantInvitation(invitation) {
+    const acceptBtn = document.getElementById('acceptConsultantBtn');
+    acceptBtn.disabled = true;
+    acceptBtn.textContent = 'Accepting...';
+
+    try {
+      const { data, error } = await RevGuideDB.acceptInvitation(invitation.id);
+
+      if (error) {
+        throw error;
+      }
+
+      showConsultantSuccess(invitation.organizations?.name || 'the organization');
+
+    } catch (error) {
+      console.error('Failed to accept consultant invitation:', error);
+      acceptBtn.disabled = false;
+      acceptBtn.textContent = 'Accept Consultant Access';
+      showError('Failed to Accept', error.message || 'Something went wrong. Please try again.');
+    }
+  }
+
+  /**
+   * Show consultant success state
+   */
+  function showConsultantSuccess(orgName) {
+    inviteContent.innerHTML = `
+      <svg class="invite-icon success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <h2 class="invite-title">Consultant Access Granted!</h2>
+      <p class="invite-message">You now have consultant access to ${escapeHtml(orgName)}. You can manage their RevGuide content and switch between client portals.</p>
+
+      <div class="invite-actions">
+        <a href="/clients" class="invite-btn invite-btn-primary">View Your Clients</a>
+        <a href="/home" class="invite-btn invite-btn-secondary">Go to Dashboard</a>
+      </div>
+
+      <div class="invite-footer">
+        <p>Access your client organizations from the Clients page in the sidebar.</p>
+      </div>
+    `;
   }
 
   /**
