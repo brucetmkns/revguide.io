@@ -2,6 +2,38 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.7.5] - 2025-12-18 - Consultant Invitation Flow Fixes
+
+### Fixed
+- **Invitation Acceptance RLS Recursion**: Fixed "infinite recursion detected in policy for relation 'organization_members'" error that blocked invitation acceptance
+  - Created SECURITY DEFINER helper functions to break RLS recursion cycle
+  - `get_user_org_ids(auth_uid)` - Returns user's org memberships, bypassing RLS
+  - `get_user_id(auth_uid)` - Returns user's internal ID from auth ID
+  - `user_is_org_admin(auth_uid, org_id)` - Checks admin status for specific org
+
+- **Organization Name Display**: Fixed "Unknown Organization" appearing in invitation emails and acceptance page
+  - Added RLS policy allowing users to view organizations they're invited to (before accepting)
+  - Users can now see org details via valid invitation token before becoming members
+
+- **Inviter Name in Emails**: Invitation emails now show who sent the invite
+  - "John Smith has invited you to join..." instead of generic "You've been invited..."
+  - Improved email personalization and trust
+
+### Technical
+- **Database Migrations**:
+  - `019_fix_org_members_recursion.sql` - SECURITY DEFINER functions for RLS
+  - `020_allow_org_view_for_invites.sql` - Policy for viewing invited-to organizations
+
+- **Files Modified**:
+  - `admin/pages/settings.js` - Passes inviter name to invitation email API
+  - `api/invite-worker.js` - Email templates accept and display inviter name
+  - `admin/pages/invite.js` - Debug logging for invitation flow troubleshooting
+
+### Key Learning
+RLS policies that reference their own table can cause infinite recursion. Solution: Create `SECURITY DEFINER` functions that bypass RLS to perform internal checks, breaking the recursion cycle while maintaining security.
+
+---
+
 ## [2.7.4] - 2025-12-18 - Web App Data Operations Fix
 
 ### Fixed

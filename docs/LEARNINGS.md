@@ -1916,4 +1916,133 @@ if (!error && data?.id) {
 
 ---
 
+## RLS Infinite Recursion (v2.7.5)
+
+### The Problem: Self-Referencing Policies
+**Lesson**: RLS policies that reference their own table in the USING clause cause infinite recursion errors.
+
+**Problem**: Policy on `organization_members` tried to check if user belongs to the organization:
+```sql
+-- WRONG - causes "infinite recursion detected in policy for relation 'organization_members'"
+CREATE POLICY "Users can view org memberships" ON organization_members
+  FOR SELECT USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members om
+      JOIN users u ON u.id = om.user_id
+      WHERE u.auth_user_id = auth.uid()
+    )
+  );
+```
+
+The policy references `organization_members` → triggers the same policy → infinite loop.
+
+**Error**: `42P17: infinite recursion detected in policy for relation "organization_members"`
+
+### Solution: SECURITY DEFINER Helper Functions
+**Lesson**: Create `SECURITY DEFINER` functions to perform internal lookups that bypass RLS.
+
+**Pattern**:
+```sql
+-- Helper function bypasses RLS (runs as function owner)
+CREATE OR REPLACE FUNCTION get_user_org_ids(p_auth_uid UUID)
+RETURNS SETOF UUID AS $$
+  SELECT om.organization_id
+  FROM organization_members om
+  JOIN users u ON u.id = om.user_id
+  WHERE u.auth_user_id = p_auth_uid;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+GRANT EXECUTE ON FUNCTION get_user_org_ids TO authenticated;
+
+-- Policy uses function instead of subquery
+CREATE POLICY "Users can view org memberships" ON organization_members
+  FOR SELECT USING (
+    user_id = get_user_id(auth.uid())
+    OR organization_id IN (SELECT get_user_org_ids(auth.uid()))
+  );
+```
+
+**Key insight**: `SECURITY DEFINER` functions run with the privileges of the function owner (typically DB owner), bypassing RLS entirely. This breaks the recursion cycle.
+
+### Additional Helper Functions
+Common helpers that prevent recursion:
+
+```sql
+-- Get user's internal ID from auth ID
+CREATE OR REPLACE FUNCTION get_user_id(p_auth_uid UUID)
+RETURNS UUID AS $$
+  SELECT id FROM users WHERE auth_user_id = p_auth_uid LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Check if user is admin of specific org
+CREATE OR REPLACE FUNCTION user_is_org_admin(p_auth_uid UUID, p_org_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users u
+    LEFT JOIN organization_members om ON om.user_id = u.id AND om.organization_id = p_org_id
+    WHERE u.auth_user_id = p_auth_uid
+    AND (
+      (u.organization_id = p_org_id AND u.role IN ('owner', 'admin'))
+      OR om.role IN ('owner', 'admin', 'consultant')
+    )
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+```
+
+### When to Use This Pattern
+- Policy needs to check membership in a table that has RLS
+- Policy references its own table in WHERE/USING clause
+- Complex multi-table checks needed for authorization
+- Error message contains "infinite recursion detected in policy"
+
+### Files
+- `supabase/migrations/019_fix_org_members_recursion.sql` - Example implementation
+
+---
+
+## RLS for Invited Users (v2.7.5)
+
+### Viewing Data Before Membership
+**Lesson**: Users accepting invitations need to see organization details before becoming members. Standard membership-based policies block this.
+
+**Problem**: User receives invitation email, clicks to accept, but can't see organization name because:
+1. They're not a member yet (haven't accepted)
+2. RLS policy only allows viewing orgs you're a member of
+3. Results in "Unknown Organization" in UI
+
+**Solution**: Add a policy that allows viewing orgs via valid invitation:
+```sql
+CREATE POLICY "Users can view org for invitation" ON organizations
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM invitations
+      WHERE invitations.organization_id = organizations.id
+      AND LOWER(invitations.email) = LOWER(auth.jwt() ->> 'email')
+      AND invitations.expires_at > now()
+    )
+  );
+```
+
+**Security considerations**:
+- Only works for user's own email (from JWT)
+- Invitation must be valid (not expired)
+- Read-only access (SELECT only)
+- Once invitation expires, access revoked
+
+### Email Case Sensitivity
+**Lesson**: Always use case-insensitive email comparison in policies.
+
+**Problem**: `auth.jwt() ->> 'email'` returns email as user entered it, which may not match case of invitation.
+
+**Solution**: Use `LOWER()` on both sides:
+```sql
+AND LOWER(invitations.email) = LOWER(auth.jwt() ->> 'email')
+```
+
+### Files
+- `supabase/migrations/020_allow_org_view_for_invites.sql` - Example implementation
+
+---
+
 *Last updated: December 2024*
