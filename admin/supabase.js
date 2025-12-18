@@ -953,8 +953,10 @@ const RevGuideDB = {
    */
   async isConsultant() {
     const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return false;
 
-    const { data } = await client.rpc('user_is_consultant');
+    const { data } = await client.rpc('user_is_consultant', { p_auth_uid: user.id });
     return data === true;
   },
 
