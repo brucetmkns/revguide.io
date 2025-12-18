@@ -572,44 +572,6 @@
           </div>
         </div>
 
-        <!-- Consultant Access Section -->
-        <div class="team-members-section" id="consultantSection" style="display: none;">
-          <div class="team-members-header">
-            <div>
-              <h3>Consultant Access</h3>
-              <p>Invite consultants to manage your RevGuide content</p>
-            </div>
-            <button class="btn btn-primary" id="inviteConsultantBtn">
-              <span class="icon icon-user-plus icon--sm"></span> Invite Consultant
-            </button>
-          </div>
-
-          <!-- Unified Consultants Table -->
-          <div class="table-container" id="consultantsTableContainer" style="display: none;">
-            <table class="data-table" id="consultantsTable">
-              <thead>
-                <tr>
-                  <th>Consultant</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th width="120">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="consultantsTableBody">
-                <!-- Populated by JS -->
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Empty State -->
-          <div class="empty-state" id="consultantsEmptyState">
-            <div class="empty-icon">
-              <span class="icon icon-users icon--2xl"></span>
-            </div>
-            <h3>No consultants yet</h3>
-            <p>Invite consultants to help manage your RevGuide content, or they can request access.</p>
-          </div>
-        </div>
       </section>
     </main>
   </div>
@@ -635,7 +597,13 @@
             <option value="viewer">Viewer - Can view content</option>
             <option value="editor">Editor - Can edit content</option>
             <option value="admin">Admin - Can manage content and users</option>
+            <option value="consultant">Consultant - External partner access</option>
           </select>
+        </div>
+        <div class="form-note consultant-note" id="consultantNote" style="display: none; background: var(--color-success-bg); margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md);">
+          <p style="margin: 0; font-size: var(--font-size-sm); color: var(--color-success-dark);">
+            <strong>Auto-connect:</strong> If this consultant already has a RevGuide account, they will be automatically added to your organization without needing to accept an invitation.
+          </p>
         </div>
       </div>
       <div class="modal-footer">
@@ -684,36 +652,6 @@
         <button class="btn btn-secondary" id="cancelImportBtn">Cancel</button>
         <button class="btn btn-primary" id="confirmImportBtn">
           <span class="icon icon-download icon--sm"></span> Import Data
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Invite Consultant Modal -->
-  <div class="modal" id="inviteConsultantModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Invite Consultant</h2>
-        <button class="modal-close" id="closeInviteConsultantModal">
-          <span class="icon icon-x"></span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Consultant Email <span class="required">*</span></label>
-          <input type="email" id="consultantEmail" placeholder="consultant@agency.com">
-          <span class="form-hint">Consultant will receive an email with instructions to join your organization</span>
-        </div>
-        <div class="form-note" style="background: var(--color-success-bg); border-color: var(--color-success); margin-top: var(--space-4);">
-          <p style="margin: 0; font-size: var(--font-size-sm); color: var(--color-success-dark);">
-            <strong>Auto-connect:</strong> If this consultant already has a RevGuide account, they will be automatically added to your organization without needing to accept an invitation.
-          </p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelInviteConsultantBtn">Cancel</button>
-        <button class="btn btn-primary" id="sendConsultantInviteBtn">
-          <span class="icon icon-send icon--sm"></span> Send Invitation
         </button>
       </div>
     </div>

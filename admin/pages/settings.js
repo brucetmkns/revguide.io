@@ -84,10 +84,6 @@ class SettingsPage {
     if (this.isAdmin) {
       await this.loadTeamData();
       this.renderUsersTable();
-
-      // Load consultant section
-      await this.loadConsultantData();
-      this.renderConsultantSection();
     }
 
     // Load account settings (user email, company name)
@@ -176,158 +172,6 @@ class SettingsPage {
         created_at: u.invitedAt ? new Date(u.invitedAt).toISOString() : new Date().toISOString()
       }));
     }
-  }
-
-  /**
-   * Load consultant data (access requests and active consultants)
-   */
-  async loadConsultantData() {
-    this.accessRequests = [];
-    this.activeConsultants = [];
-
-    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-      try {
-        // Load access requests
-        const { data: requests, error: requestsError } = await RevGuideDB.getAccessRequests();
-        if (requestsError) {
-          console.error('[Settings] Error loading access requests:', requestsError);
-        } else {
-          this.accessRequests = requests || [];
-        }
-
-        // Get active consultants from team members (role = consultant)
-        this.activeConsultants = this.teamMembers.filter(m => m.role === 'consultant');
-
-        // Also check consultant invitations
-        const { data: consultantInvites, error: invitesError } = await RevGuideDB.getConsultantInvitations();
-        if (!invitesError && consultantInvites) {
-          this.pendingConsultantInvitations = consultantInvites;
-        } else {
-          this.pendingConsultantInvitations = [];
-        }
-
-        console.log('[Settings] Loaded', this.accessRequests.length, 'access requests and', this.activeConsultants.length, 'active consultants');
-      } catch (error) {
-        console.error('[Settings] Failed to load consultant data:', error);
-      }
-    }
-  }
-
-  /**
-   * Render the consultant access section
-   */
-  renderConsultantSection() {
-    const section = document.getElementById('consultantSection');
-    if (!section || !this.isAdmin) return;
-
-    // Show the section for admins
-    section.style.display = 'block';
-
-    // Render unified consultants table
-    this.renderConsultantsTable();
-  }
-
-  /**
-   * Render unified consultants table (access requests + invitations + active)
-   */
-  renderConsultantsTable() {
-    const tableContainer = document.getElementById('consultantsTableContainer');
-    const tbody = document.getElementById('consultantsTableBody');
-    const emptyState = document.getElementById('consultantsEmptyState');
-
-    if (!tableContainer || !tbody) return;
-
-    // Combine all consultant-related entries into one list
-    const allEntries = [
-      // Access requests (consultants requesting to join)
-      ...(this.accessRequests || []).map(req => ({
-        id: req.request_id,
-        email: req.consultant_email,
-        name: req.consultant_name,
-        message: req.message,
-        date: req.requested_at,
-        status: 'request',
-        type: 'request'
-      })),
-      // Pending invitations (admin invited, awaiting acceptance)
-      ...(this.pendingConsultantInvitations || []).map(inv => ({
-        id: inv.id,
-        email: inv.email,
-        name: null,
-        date: inv.created_at,
-        status: 'invited',
-        type: 'invitation'
-      })),
-      // Active consultants
-      ...(this.activeConsultants || []).map(c => ({
-        id: c.id,
-        email: c.email,
-        name: c.name,
-        date: c.created_at,
-        status: 'active',
-        type: 'member'
-      }))
-    ];
-
-    if (allEntries.length === 0) {
-      tableContainer.style.display = 'none';
-      if (emptyState) emptyState.style.display = 'block';
-      return;
-    }
-
-    tableContainer.style.display = 'block';
-    if (emptyState) emptyState.style.display = 'none';
-
-    tbody.innerHTML = allEntries.map(entry => {
-      let statusBadge = '';
-      let actions = '';
-
-      if (entry.status === 'request') {
-        // Access request - show approve/decline
-        statusBadge = '<span class="badge badge-warning">Requesting Access</span>';
-        actions = `
-          <button class="btn btn-success btn-sm approve-request-btn" data-id="${entry.id}" data-email="${AdminShared.escapeHtml(entry.email)}" title="Approve">
-            <span class="icon icon-check icon--sm"></span>
-          </button>
-          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${entry.id}" data-email="${AdminShared.escapeHtml(entry.email)}" title="Decline">
-            <span class="icon icon-x icon--sm"></span>
-          </button>
-        `;
-      } else if (entry.status === 'invited') {
-        // Pending invitation - show cancel
-        statusBadge = '<span class="badge badge-pending">Invited</span>';
-        actions = `
-          <button class="btn-icon-sm btn-danger-icon remove-consultant-btn" data-id="${entry.id}" data-type="invitation" data-email="${AdminShared.escapeHtml(entry.email)}" title="Cancel invitation">
-            <span class="icon icon-trash icon--sm"></span>
-          </button>
-        `;
-      } else {
-        // Active consultant - show remove
-        statusBadge = '<span class="badge badge-active">Active</span>';
-        actions = `
-          <button class="btn-icon-sm btn-danger-icon remove-consultant-btn" data-id="${entry.id}" data-type="member" data-email="${AdminShared.escapeHtml(entry.email)}" title="Remove">
-            <span class="icon icon-trash icon--sm"></span>
-          </button>
-        `;
-      }
-
-      return `
-        <tr data-id="${entry.id}" data-type="${entry.type}">
-          <td>
-            <strong>${AdminShared.escapeHtml(entry.name || entry.email)}</strong>
-            ${entry.name ? `<br><span class="text-muted">${AdminShared.escapeHtml(entry.email)}</span>` : ''}
-            ${entry.message ? `<br><span class="text-muted" style="font-style: italic; font-size: var(--font-size-xs);">"${AdminShared.escapeHtml(entry.message)}"</span>` : ''}
-          </td>
-          <td>${statusBadge}</td>
-          <td>${this.formatDate(entry.date)}</td>
-          <td>
-            <div class="action-buttons">
-              ${actions}
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
   }
 
   /**
@@ -511,6 +355,15 @@ class SettingsPage {
     document.getElementById('cancelInviteBtn').addEventListener('click', () => this.closeInviteModal());
     document.getElementById('sendInviteBtn').addEventListener('click', () => this.sendInvitation());
 
+    // Show/hide consultant note when role changes
+    const inviteRoleSelect = document.getElementById('inviteRole');
+    const consultantNote = document.getElementById('consultantNote');
+    if (inviteRoleSelect && consultantNote) {
+      inviteRoleSelect.addEventListener('change', (e) => {
+        consultantNote.style.display = e.target.value === 'consultant' ? 'block' : 'none';
+      });
+    }
+
     // Close modal on backdrop click
     document.getElementById('inviteModal').addEventListener('click', (e) => {
       if (e.target.id === 'inviteModal') {
@@ -538,62 +391,6 @@ class SettingsPage {
       }
     });
 
-    // Consultant Management
-    const inviteConsultantBtn = document.getElementById('inviteConsultantBtn');
-    const closeInviteConsultantModal = document.getElementById('closeInviteConsultantModal');
-    const cancelInviteConsultantBtn = document.getElementById('cancelInviteConsultantBtn');
-    const sendConsultantInviteBtn = document.getElementById('sendConsultantInviteBtn');
-    const inviteConsultantModal = document.getElementById('inviteConsultantModal');
-
-    if (inviteConsultantBtn) {
-      inviteConsultantBtn.addEventListener('click', () => this.openInviteConsultantModal());
-    }
-    if (closeInviteConsultantModal) {
-      closeInviteConsultantModal.addEventListener('click', () => this.closeInviteConsultantModal());
-    }
-    if (cancelInviteConsultantBtn) {
-      cancelInviteConsultantBtn.addEventListener('click', () => this.closeInviteConsultantModal());
-    }
-    if (sendConsultantInviteBtn) {
-      sendConsultantInviteBtn.addEventListener('click', () => this.sendConsultantInvitation());
-    }
-    if (inviteConsultantModal) {
-      inviteConsultantModal.addEventListener('click', (e) => {
-        if (e.target.id === 'inviteConsultantModal') {
-          this.closeInviteConsultantModal();
-        }
-      });
-    }
-
-    // Consultants table action buttons (delegated) - handles approve, decline, remove
-    const consultantsTableBody = document.getElementById('consultantsTableBody');
-    if (consultantsTableBody) {
-      consultantsTableBody.addEventListener('click', (e) => {
-        const approveBtn = e.target.closest('.approve-request-btn');
-        if (approveBtn) {
-          const requestId = approveBtn.dataset.id;
-          const email = approveBtn.dataset.email;
-          this.approveAccessRequest(requestId, email);
-          return;
-        }
-
-        const declineBtn = e.target.closest('.decline-request-btn');
-        if (declineBtn) {
-          const requestId = declineBtn.dataset.id;
-          const email = declineBtn.dataset.email;
-          this.declineAccessRequest(requestId, email);
-          return;
-        }
-
-        const removeBtn = e.target.closest('.remove-consultant-btn');
-        if (removeBtn) {
-          const id = removeBtn.dataset.id;
-          const type = removeBtn.dataset.type;
-          const email = removeBtn.dataset.email;
-          this.removeConsultant(id, type, email);
-        }
-      });
-    }
   }
 
   async saveSettings() {
@@ -1015,6 +812,7 @@ class SettingsPage {
   async sendInvitation() {
     const email = document.getElementById('inviteEmail').value.trim();
     const role = document.getElementById('inviteRole').value;
+    const isConsultant = role === 'consultant';
 
     // Validate email
     if (!email) {
@@ -1046,31 +844,61 @@ class SettingsPage {
     sendBtn.innerHTML = '<span class="icon icon-refresh icon--sm"></span> Sending...';
 
     try {
-      // Step 1: Create invitation in database (web context) or local storage (extension)
       let invitationData;
       let orgName = null;
+      let autoConnected = false;
 
       if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
         // Get organization name for the email
         const { data: org } = await RevGuideDB.getOrganizationWithConnection();
         orgName = org?.name;
 
-        const { data, error } = await RevGuideDB.createInvitation(email, role);
-        if (error) {
-          throw new Error(error.message);
+        if (isConsultant) {
+          // Use consultant invitation flow (with auto-connect check)
+          const { data, error } = await RevGuideDB.createConsultantInvitation(email);
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          if (data.autoConnected) {
+            // Consultant was auto-connected, no email needed
+            autoConnected = true;
+            AdminShared.showToast(`${data.consultantName || email} has been added as a consultant`, 'success');
+
+            // Send notification email about auto-connect
+            try {
+              await fetch('https://revguide-api.revguide.workers.dev/api/notify-auto-connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, orgName })
+              });
+            } catch (emailError) {
+              console.warn('Failed to send auto-connect notification:', emailError);
+            }
+          } else {
+            invitationData = data;
+          }
+        } else {
+          // Regular team invitation
+          const { data, error } = await RevGuideDB.createInvitation(email, role);
+          if (error) {
+            throw new Error(error.message);
+          }
+          invitationData = data;
         }
-        invitationData = data;
       }
 
-      // Step 2: Send email via Cloudflare Worker API (Resend)
-      // Include token and org name so the email has an accept link
-      const token = invitationData?.token;
-      await this.sendInviteEmail(email, role, token, orgName);
+      // Send email if not auto-connected
+      if (!autoConnected && invitationData) {
+        const token = invitationData.token;
+        await this.sendInviteEmail(email, role, token, orgName);
+        AdminShared.showToast(`Invitation sent to ${email}`, 'success');
+      }
 
       // Update local state
-      if (invitationData) {
+      if (invitationData && !autoConnected) {
         this.pendingInvitations.push(invitationData);
-      } else {
+      } else if (!invitationData && !autoConnected) {
         // Extension context - store locally
         const user = {
           id: AdminShared.generateId(),
@@ -1095,9 +923,13 @@ class SettingsPage {
 
       // Close modal and refresh table
       this.closeInviteModal();
+
+      // Reload team data if auto-connected (new member added)
+      if (autoConnected) {
+        await this.loadTeamData();
+      }
       this.renderUsersTable();
 
-      AdminShared.showToast(`Invitation sent to ${email}`, 'success');
     } catch (error) {
       console.error('Failed to send invitation:', error);
       AdminShared.showToast(`Failed to send invitation: ${error.message}`, 'error');
@@ -1334,230 +1166,6 @@ class SettingsPage {
     }
   }
 
-  // ================================
-  // Consultant Management Methods
-  // ================================
-
-  openInviteConsultantModal() {
-    const modal = document.getElementById('inviteConsultantModal');
-    const emailInput = document.getElementById('consultantEmail');
-    if (modal) {
-      modal.classList.add('open');
-      if (emailInput) {
-        emailInput.value = '';
-        emailInput.focus();
-      }
-    }
-  }
-
-  closeInviteConsultantModal() {
-    const modal = document.getElementById('inviteConsultantModal');
-    if (modal) {
-      modal.classList.remove('open');
-    }
-  }
-
-  async sendConsultantInvitation() {
-    const emailInput = document.getElementById('consultantEmail');
-    const sendBtn = document.getElementById('sendConsultantInviteBtn');
-
-    const email = emailInput?.value.trim();
-
-    if (!email) {
-      AdminShared.showToast('Please enter an email address', 'error');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      AdminShared.showToast('Please enter a valid email address', 'error');
-      return;
-    }
-
-    // Disable button during send
-    if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.innerHTML = '<span class="icon icon-loader icon--sm spin"></span> Sending...';
-    }
-
-    try {
-      // Use the createConsultantInvitation method which handles auto-connect
-      const { data, error } = await RevGuideDB.createConsultantInvitation(email);
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.autoConnected) {
-        // Consultant was auto-connected (already had an account)
-        AdminShared.showToast(`${data.consultantName || 'Consultant'} has been added to your organization`, 'success');
-
-        // Send notification email to consultant
-        try {
-          await fetch('https://revguide-api.revguide.workers.dev/api/notify-auto-connect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              consultantEmail: email,
-              orgName: AdminShared.currentOrganization?.name
-            })
-          });
-        } catch (emailError) {
-          console.error('[Settings] Failed to send auto-connect notification:', emailError);
-        }
-      } else {
-        // New invitation was created, send email
-        const invitation = data.invitation;
-
-        try {
-          await fetch('https://revguide-api.revguide.workers.dev/api/invite-consultant', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              token: invitation.token,
-              orgName: AdminShared.currentOrganization?.name,
-              invitationType: 'consultant'
-            })
-          });
-          AdminShared.showToast('Consultant invitation sent', 'success');
-        } catch (emailError) {
-          console.error('[Settings] Failed to send consultant invite email:', emailError);
-          AdminShared.showToast('Invitation created but email failed to send', 'warning');
-        }
-      }
-
-      // Close modal and refresh data
-      this.closeInviteConsultantModal();
-      await this.loadTeamData();
-      await this.loadConsultantData();
-      this.renderConsultantSection();
-
-    } catch (error) {
-      console.error('[Settings] Failed to invite consultant:', error);
-      AdminShared.showToast(error.message || 'Failed to invite consultant', 'error');
-    } finally {
-      if (sendBtn) {
-        sendBtn.disabled = false;
-        sendBtn.innerHTML = '<span class="icon icon-send icon--sm"></span> Send Invitation';
-      }
-    }
-  }
-
-  async approveAccessRequest(requestId, email) {
-    try {
-      const { success, error } = await RevGuideDB.approveAccessRequest(requestId);
-
-      if (error || !success) {
-        throw error || new Error('Failed to approve request');
-      }
-
-      AdminShared.showToast('Access request approved', 'success');
-
-      // Send approval notification email
-      try {
-        await fetch('https://revguide-api.revguide.workers.dev/api/notify-request-approved', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            consultantEmail: email,
-            orgName: AdminShared.currentOrganization?.name
-          })
-        });
-      } catch (emailError) {
-        console.error('[Settings] Failed to send approval notification:', emailError);
-      }
-
-      // Refresh data
-      await this.loadTeamData();
-      await this.loadConsultantData();
-      this.renderConsultantSection();
-      this.renderUsersTable();
-
-    } catch (error) {
-      console.error('[Settings] Failed to approve access request:', error);
-      AdminShared.showToast('Failed to approve request', 'error');
-    }
-  }
-
-  async declineAccessRequest(requestId, email) {
-    const confirmed = await AdminShared.showConfirmDialog({
-      title: 'Decline Access Request',
-      message: 'Are you sure you want to decline this access request?',
-      primaryLabel: 'Decline',
-      secondaryLabel: 'Cancel'
-    });
-
-    if (confirmed !== 'primary') return;
-
-    try {
-      const { success, error } = await RevGuideDB.declineAccessRequest(requestId);
-
-      if (error || !success) {
-        throw error || new Error('Failed to decline request');
-      }
-
-      AdminShared.showToast('Access request declined', 'success');
-
-      // Send decline notification email
-      try {
-        await fetch('https://revguide-api.revguide.workers.dev/api/notify-request-declined', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            consultantEmail: email,
-            orgName: AdminShared.currentOrganization?.name
-          })
-        });
-      } catch (emailError) {
-        console.error('[Settings] Failed to send decline notification:', emailError);
-      }
-
-      // Refresh data
-      await this.loadConsultantData();
-      this.renderConsultantSection();
-
-    } catch (error) {
-      console.error('[Settings] Failed to decline access request:', error);
-      AdminShared.showToast('Failed to decline request', 'error');
-    }
-  }
-
-  async removeConsultant(id, type, email) {
-    const confirmed = await AdminShared.showConfirmDialog({
-      title: 'Remove Consultant',
-      message: `Are you sure you want to remove ${email} as a consultant?`,
-      primaryLabel: 'Remove',
-      secondaryLabel: 'Cancel'
-    });
-
-    if (confirmed !== 'primary') return;
-
-    try {
-      if (type === 'invitation') {
-        // Delete the pending invitation
-        const { error } = await RevGuideDB.deleteInvitation(id);
-        if (error) throw error;
-      } else {
-        // Remove from organization members
-        const { error } = await RevGuideDB.leaveOrganization(null, id);
-        if (error) throw error;
-      }
-
-      AdminShared.showToast('Consultant removed', 'success');
-
-      // Refresh data
-      await this.loadTeamData();
-      await this.loadConsultantData();
-      this.renderConsultantSection();
-      this.renderUsersTable();
-
-    } catch (error) {
-      console.error('[Settings] Failed to remove consultant:', error);
-      AdminShared.showToast('Failed to remove consultant', 'error');
-    }
-  }
 }
 
 // Initialize when DOM is ready
