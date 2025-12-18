@@ -12,6 +12,7 @@
     { "source": "/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
     { "source": "/settings", "destination": "/admin/pages/settings.html" },
+    { "source": "/clients", "destination": "/admin/pages/clients.html" },
     { "source": "/invite", "destination": "/admin/pages/invite.html" },
     { "source": "/extension/logged-in", "destination": "/admin/pages/extension-logged-in.html" }
   ],
