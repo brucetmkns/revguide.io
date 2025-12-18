@@ -287,6 +287,12 @@
       background-color: #f0fdf4;
       color: #166534;
     }
+
+    /* Warning badge for access requests */
+    .badge-warning {
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning-dark, #b45309);
+    }
   </style>
 </head>
 <body>
@@ -574,38 +580,30 @@
             </button>
           </div>
 
-          <!-- Pending Access Requests -->
-          <div id="accessRequestsSection">
-            <h4 style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); margin-bottom: var(--space-3); color: var(--color-text-primary);">Pending Access Requests</h4>
-            <div id="accessRequestsList">
-              <!-- Populated by JS -->
-            </div>
-            <div class="empty-state" id="accessRequestsEmptyState">
-              <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">No pending access requests</p>
-            </div>
+          <!-- Unified Consultants Table -->
+          <div class="table-container" id="consultantsTableContainer" style="display: none;">
+            <table class="data-table" id="consultantsTable">
+              <thead>
+                <tr>
+                  <th>Consultant</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th width="120">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="consultantsTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
           </div>
 
-          <!-- Active Consultants List -->
-          <div id="activeConsultantsSection" style="margin-top: var(--space-6);">
-            <h4 style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); margin-bottom: var(--space-3); color: var(--color-text-primary);">Active Consultants</h4>
-            <div class="table-container" id="consultantsTableContainer" style="display: none;">
-              <table class="data-table" id="consultantsTable">
-                <thead>
-                  <tr>
-                    <th>Consultant</th>
-                    <th>Status</th>
-                    <th>Added</th>
-                    <th width="80">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="consultantsTableBody">
-                  <!-- Populated by JS -->
-                </tbody>
-              </table>
+          <!-- Empty State -->
+          <div class="empty-state" id="consultantsEmptyState">
+            <div class="empty-icon">
+              <span class="icon icon-users icon--2xl"></span>
             </div>
-            <div class="empty-state" id="consultantsEmptyState">
-              <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">No consultants have been invited yet</p>
-            </div>
+            <h3>No consultants yet</h3>
+            <p>Invite consultants to help manage your RevGuide content, or they can request access.</p>
           </div>
         </div>
       </section>

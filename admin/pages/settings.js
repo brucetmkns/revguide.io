@@ -223,72 +223,53 @@ class SettingsPage {
     // Show the section for admins
     section.style.display = 'block';
 
-    // Render access requests
-    this.renderAccessRequests();
-
-    // Render active consultants
-    this.renderActiveConsultants();
+    // Render unified consultants table
+    this.renderConsultantsTable();
   }
 
   /**
-   * Render pending access requests
+   * Render unified consultants table (access requests + invitations + active)
    */
-  renderAccessRequests() {
-    const listContainer = document.getElementById('accessRequestsList');
-    const emptyState = document.getElementById('accessRequestsEmptyState');
-
-    if (!listContainer) return;
-
-    if (!this.accessRequests || this.accessRequests.length === 0) {
-      listContainer.innerHTML = '';
-      if (emptyState) emptyState.style.display = 'block';
-      return;
-    }
-
-    if (emptyState) emptyState.style.display = 'none';
-
-    listContainer.innerHTML = this.accessRequests.map(req => `
-      <div class="access-request-item" data-request-id="${req.request_id}">
-        <div class="request-info">
-          <strong>${AdminShared.escapeHtml(req.consultant_name || 'Unknown')}</strong>
-          <span>${AdminShared.escapeHtml(req.consultant_email)}</span>
-          ${req.message ? `<p class="request-message">"${AdminShared.escapeHtml(req.message)}"</p>` : ''}
-        </div>
-        <div class="request-actions">
-          <button class="btn btn-success btn-sm approve-request-btn" data-id="${req.request_id}" data-email="${AdminShared.escapeHtml(req.consultant_email)}">
-            <span class="icon icon-check icon--sm"></span> Approve
-          </button>
-          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${req.request_id}" data-email="${AdminShared.escapeHtml(req.consultant_email)}">
-            Decline
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  /**
-   * Render active consultants table
-   */
-  renderActiveConsultants() {
+  renderConsultantsTable() {
     const tableContainer = document.getElementById('consultantsTableContainer');
     const tbody = document.getElementById('consultantsTableBody');
     const emptyState = document.getElementById('consultantsEmptyState');
 
     if (!tableContainer || !tbody) return;
 
-    // Combine active consultants and pending consultant invitations
-    const allConsultants = [
-      ...this.activeConsultants.map(c => ({ ...c, status: 'active' })),
-      ...(this.pendingConsultantInvitations || []).map(i => ({
-        id: i.id,
-        email: i.email,
+    // Combine all consultant-related entries into one list
+    const allEntries = [
+      // Access requests (consultants requesting to join)
+      ...(this.accessRequests || []).map(req => ({
+        id: req.request_id,
+        email: req.consultant_email,
+        name: req.consultant_name,
+        message: req.message,
+        date: req.requested_at,
+        status: 'request',
+        type: 'request'
+      })),
+      // Pending invitations (admin invited, awaiting acceptance)
+      ...(this.pendingConsultantInvitations || []).map(inv => ({
+        id: inv.id,
+        email: inv.email,
         name: null,
-        created_at: i.created_at,
-        status: 'pending'
+        date: inv.created_at,
+        status: 'invited',
+        type: 'invitation'
+      })),
+      // Active consultants
+      ...(this.activeConsultants || []).map(c => ({
+        id: c.id,
+        email: c.email,
+        name: c.name,
+        date: c.created_at,
+        status: 'active',
+        type: 'member'
       }))
     ];
 
-    if (allConsultants.length === 0) {
+    if (allEntries.length === 0) {
       tableContainer.style.display = 'none';
       if (emptyState) emptyState.style.display = 'block';
       return;
@@ -297,27 +278,56 @@ class SettingsPage {
     tableContainer.style.display = 'block';
     if (emptyState) emptyState.style.display = 'none';
 
-    tbody.innerHTML = allConsultants.map(consultant => `
-      <tr data-id="${consultant.id}" data-type="${consultant.status === 'pending' ? 'invitation' : 'member'}">
-        <td>
-          <strong>${AdminShared.escapeHtml(consultant.name || consultant.email)}</strong>
-          ${consultant.name ? `<br><span class="text-muted">${AdminShared.escapeHtml(consultant.email)}</span>` : ''}
-        </td>
-        <td>
-          <span class="badge ${consultant.status === 'active' ? 'badge-active' : 'badge-pending'}">
-            ${consultant.status === 'active' ? 'Active' : 'Pending'}
-          </span>
-        </td>
-        <td>${this.formatDate(consultant.created_at)}</td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon-sm btn-danger-icon remove-consultant-btn" data-id="${consultant.id}" data-type="${consultant.status === 'pending' ? 'invitation' : 'member'}" data-email="${AdminShared.escapeHtml(consultant.email)}" title="Remove">
-              <span class="icon icon-trash icon--sm"></span>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = allEntries.map(entry => {
+      let statusBadge = '';
+      let actions = '';
+
+      if (entry.status === 'request') {
+        // Access request - show approve/decline
+        statusBadge = '<span class="badge badge-warning">Requesting Access</span>';
+        actions = `
+          <button class="btn btn-success btn-sm approve-request-btn" data-id="${entry.id}" data-email="${AdminShared.escapeHtml(entry.email)}" title="Approve">
+            <span class="icon icon-check icon--sm"></span>
+          </button>
+          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${entry.id}" data-email="${AdminShared.escapeHtml(entry.email)}" title="Decline">
+            <span class="icon icon-x icon--sm"></span>
+          </button>
+        `;
+      } else if (entry.status === 'invited') {
+        // Pending invitation - show cancel
+        statusBadge = '<span class="badge badge-pending">Invited</span>';
+        actions = `
+          <button class="btn-icon-sm btn-danger-icon remove-consultant-btn" data-id="${entry.id}" data-type="invitation" data-email="${AdminShared.escapeHtml(entry.email)}" title="Cancel invitation">
+            <span class="icon icon-trash icon--sm"></span>
+          </button>
+        `;
+      } else {
+        // Active consultant - show remove
+        statusBadge = '<span class="badge badge-active">Active</span>';
+        actions = `
+          <button class="btn-icon-sm btn-danger-icon remove-consultant-btn" data-id="${entry.id}" data-type="member" data-email="${AdminShared.escapeHtml(entry.email)}" title="Remove">
+            <span class="icon icon-trash icon--sm"></span>
+          </button>
+        `;
+      }
+
+      return `
+        <tr data-id="${entry.id}" data-type="${entry.type}">
+          <td>
+            <strong>${AdminShared.escapeHtml(entry.name || entry.email)}</strong>
+            ${entry.name ? `<br><span class="text-muted">${AdminShared.escapeHtml(entry.email)}</span>` : ''}
+            ${entry.message ? `<br><span class="text-muted" style="font-style: italic; font-size: var(--font-size-xs);">"${AdminShared.escapeHtml(entry.message)}"</span>` : ''}
+          </td>
+          <td>${statusBadge}</td>
+          <td>${this.formatDate(entry.date)}</td>
+          <td>
+            <div class="action-buttons">
+              ${actions}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   /**
@@ -555,10 +565,10 @@ class SettingsPage {
       });
     }
 
-    // Access requests action buttons (delegated)
-    const accessRequestsList = document.getElementById('accessRequestsList');
-    if (accessRequestsList) {
-      accessRequestsList.addEventListener('click', (e) => {
+    // Consultants table action buttons (delegated) - handles approve, decline, remove
+    const consultantsTableBody = document.getElementById('consultantsTableBody');
+    if (consultantsTableBody) {
+      consultantsTableBody.addEventListener('click', (e) => {
         const approveBtn = e.target.closest('.approve-request-btn');
         if (approveBtn) {
           const requestId = approveBtn.dataset.id;
@@ -572,14 +582,9 @@ class SettingsPage {
           const requestId = declineBtn.dataset.id;
           const email = declineBtn.dataset.email;
           this.declineAccessRequest(requestId, email);
+          return;
         }
-      });
-    }
 
-    // Consultants table action buttons (delegated)
-    const consultantsTableBody = document.getElementById('consultantsTableBody');
-    if (consultantsTableBody) {
-      consultantsTableBody.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.remove-consultant-btn');
         if (removeBtn) {
           const id = removeBtn.dataset.id;
