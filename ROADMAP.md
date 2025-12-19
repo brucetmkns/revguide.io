@@ -4,12 +4,20 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.5.3 (SaaS Web App + Chrome Extension)
+## Current State: v2.8.0 (Partner Account System)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, and reliable data persistence.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
 
-### Role-Based Access Control (v2.5.3) - NEW
-- **Complete role hierarchy**: Owner > Admin > Editor > Viewer
+### Partner Account System (v2.8.0) - NEW
+- **Partner Account Type**: New `account_type` column (`standard` or `partner`) with dedicated `partner` role
+- **Partner Dashboard**: Dedicated `/partner` page for managing clients, libraries, and access requests
+- **Agency Organization**: Partners have their own `home_organization_id` separate from client portals
+- **Multiple Signup Paths**: Invited by client, convert existing account, or new partner signup
+- **Auto-connect**: Existing partners automatically added when invited to new client orgs
+- **Database Migration**: `021_partner_accounts.sql` with helper functions and constraints
+
+### Role-Based Access Control (v2.5.3)
+- **Complete role hierarchy**: Owner > Admin > Editor > Viewer > Partner (external)
 - **Viewer role**: Can view all content, cannot edit/create/delete
 - **Editor role**: Can create/edit/delete content, cannot manage team
 - **Admin/Owner roles**: Full access including team management
@@ -563,8 +571,14 @@ Extension → Background.js → Supabase API → Postgres
 
 #### Admin Conversion to Partner
 - [x] "Partner Account" section in Settings page for admins
-- [x] "Convert This Account" option creates agency org, updates account_type
-- [x] Alternative: "Create New Partner Account" for separate account
+- [x] "Become a Partner" option creates agency org, updates account_type
+- [x] "Sign Up with a New Account" signs out and redirects to partner signup
+
+#### New Partner Signup (Without Invitation)
+- [x] `/signup?new_partner=true` shows partner-specific UI
+- [x] Creates auth user, agency organization, and partner profile
+- [x] API supports signup with or without invitation token
+- [x] Automatic slug generation for agency organizations
 
 #### Partner Dashboard Features
 - [x] Stats overview: Client count, Library count, Pending requests

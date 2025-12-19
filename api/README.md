@@ -113,6 +113,56 @@ Add your domain if you're calling the API from a web app.
 
 Send an invitation email to a team member.
 
+### POST /api/signup-partner
+
+Create a new partner account. Works with or without an invitation token.
+
+**Request:**
+```json
+{
+  "email": "partner@agency.com",
+  "password": "securepassword",
+  "name": "Partner Name",
+  "agencyName": "Agency Inc",
+  "inviteToken": "optional-invite-token"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | Yes | Partner's email address |
+| `password` | string | Yes | Account password (8+ characters) |
+| `name` | string | Yes | Partner's display name |
+| `agencyName` | string | Yes | Name for the partner's agency organization |
+| `inviteToken` | string | No | Invitation token (if invited by a client) |
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "userId": "auth-user-uuid",
+  "profileId": "user-profile-uuid",
+  "organizationId": "agency-org-uuid"
+}
+```
+
+**Notes:**
+- If `inviteToken` is provided, the partner is also added to the inviting client's organization with `partner` role
+- A unique slug is automatically generated for the agency organization
+- The auth user is created with email already confirmed
+
+---
+
+### POST /api/invite-partner
+
+Send a partner invitation email with auto-connect support. If the invitee is already a partner, they are automatically connected.
+
+### POST /api/notify-partner-auto-connect
+
+Send notification when an existing partner is auto-connected to a client organization.
+
+---
+
 **Request:**
 ```json
 {

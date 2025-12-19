@@ -158,16 +158,26 @@ Chrome's native side panel with auth-aware UI:
 | Table | Purpose |
 |-------|---------|
 | `organizations` | Teams/workspaces |
-| `users` | User profiles linked to auth.users (includes `active_organization_id` for portal switching) |
-| `organization_members` | Many-to-many user↔org with per-org roles (v2.7.0+) |
+| `users` | User profiles linked to auth.users (includes `active_organization_id` for portal switching, `account_type` for partner accounts, `home_organization_id` for partner's agency org) |
+| `organization_members` | Many-to-many user↔org with per-org roles including `partner` (v2.7.0+, v2.8.0+) |
 | `hubspot_connections` | OAuth tokens (encrypted) |
 | `oauth_states` | CSRF protection for OAuth |
-| `invitations` | Pending team invites with tokens |
+| `invitations` | Pending team invites with tokens (supports `partner` invitation type) |
 | `banners` | Banner configurations |
 | `plays` | Play/battle card configurations |
 | `wiki_entries` | Wiki glossary entries |
-| `consultant_libraries` | Reusable content packages for consultants (v2.7.0+) |
+| `consultant_libraries` | Reusable content packages for partners/consultants (v2.7.0+) |
 | `library_installations` | Track which libraries installed in which orgs (v2.7.0+) |
+
+**Partner Account Functions (v2.8.0+):**
+| Function | Purpose |
+|----------|---------|
+| `user_is_partner(auth_uid)` | Check if user has partner account type |
+| `get_partner_home_org(auth_uid)` | Get partner's agency organization |
+| `get_partner_clients(auth_uid)` | Get client portals where user is partner |
+| `get_partner_stats(auth_uid)` | Get stats for partner dashboard |
+| `auto_connect_partner(user_id, org_id)` | Add partner to client org |
+| `convert_to_partner_account(auth_uid, agency_name)` | Convert standard to partner account |
 
 **Edge Functions:**
 - `hubspot-oauth` - Handles OAuth flow: `/authorize`, `/callback`, `/connection`, `/disconnect`, `/proxy`
@@ -498,6 +508,6 @@ git push origin main
 
 ## Version History
 
-Current: **v2.7.2** (December 2024) - Import/Export Fix & Mode Selection
+Current: **v2.8.0** (December 2024) - Partner Account System
 
 See `CHANGELOG.md` for full history.

@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v2.6.7 (Search & Object Filters for Plays and Banners)
+**Current Version:** v2.8.0 (Partner Account System)
 
 ## Beta Program
 
@@ -84,6 +84,18 @@ RevGuide is currently in public beta! We're looking for feedback from sales team
 - **Show Admin Edit Links** toggle to hide edit links for end users
 - Export/Import data for backup and restore
 - "Open Admin Panel" button for full configuration
+
+### Partner Accounts (v2.8.0+)
+For agencies and freelancers managing multiple client HubSpot portals:
+- **Partner Account Type**: Separate account type with dedicated `partner` role in client organizations
+- **Partner Dashboard**: Dedicated `/partner` page for managing clients, libraries, and access requests
+- **Agency Organization**: Partners have their own "home" organization separate from client portals
+- **Multiple Signup Paths**:
+  - **Invited by client**: Accept invitation, create partner account with agency org
+  - **Convert existing account**: Admin can convert their account to Partner in Settings
+  - **New partner signup**: Create fresh partner account via `/signup?new_partner=true`
+- **Auto-connect**: Existing partners are automatically added when invited to new client orgs
+- **Client Management**: View all client portals, switch between them, track access requests
 
 ### Design
 - Modern UI with **Manrope font** and **#b2ef63 accent color** (lime green)

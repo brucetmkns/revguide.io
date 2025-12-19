@@ -180,7 +180,13 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `isConsultant()` - Check consultant privileges (includes partners)
 - `isPartner()` - Check if user is a partner (v2.8.0+)
 - `getPartnerClients()` - Get client portals for partner (v2.8.0+)
+- `getPartnerStats()` - Get dashboard stats for partner (v2.8.0+)
 - `convertToPartner(agencyName)` - Convert admin to partner (v2.8.0+)
+
+**Partner Signup Paths:**
+1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org
+2. **Convert existing**: Settings → "Become a Partner" → Creates agency org, updates account_type
+3. **New signup**: Settings → "Sign Up with a New Account" → Signs out → `/signup?new_partner=true` → Fresh partner account
 
 **Role helpers (AdminShared) - v2.7.3+:**
 - `getEffectiveRole()` - Returns org-specific role from `organization_members`, falls back to `currentUser.role`

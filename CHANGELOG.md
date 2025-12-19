@@ -32,9 +32,15 @@ All notable changes to RevGuide will be documented in this file.
 
 - **Convert to Partner**: Existing admins can become partners
   - "Partner Account" section in Settings page
-  - "Convert This Account" option with agency name input
+  - "Become a Partner" option with agency name input
   - Creates agency organization, updates `account_type` to `partner`
-  - Alternative: "Create New Partner Account" for separate account
+  - "Sign Up with a New Account" option signs out and redirects to partner signup
+
+- **New Partner Signup Flow**: Create partner accounts without invitation
+  - `/signup?new_partner=true` shows partner-specific signup UI
+  - Creates auth user, agency organization, and partner profile
+  - Works both from Settings page and direct URL access
+  - API endpoint supports signup with or without invitation token
 
 - **Partner Status Display**: Partners see their status in Settings
   - Partner badge and home organization name
@@ -66,10 +72,11 @@ All notable changes to RevGuide will be documented in this file.
   - Migration of existing consultants to partner account type
 
 - **API Endpoints** (invite-worker.js):
-  - `POST /api/signup-partner` - Partner-specific signup
+  - `POST /api/signup-partner` - Partner-specific signup (works with or without invitation token)
   - `POST /api/invite-partner` - Partner invitation with auto-connect
   - `POST /api/notify-partner-auto-connect` - Notification for auto-connected partners
   - Partner email templates: invitation and auto-connect notifications
+  - Automatic slug generation for agency organizations
 
 - **Database Methods** (supabase.js):
   - `isPartner()` - Check if current user is a partner
