@@ -8,6 +8,39 @@ class HomePage {
     this.init();
   }
 
+  /**
+   * Update SVG progress ring stroke-dashoffset
+   * @param {HTMLElement} element - The SVG circle element
+   * @param {number} percentage - Progress percentage (0-100)
+   */
+  updateProgressRing(element, percentage) {
+    if (!element) return;
+    // Circle has r=36, so circumference = 2 * PI * 36 = ~226
+    const circumference = 226;
+    const offset = circumference - (circumference * percentage / 100);
+    element.style.strokeDashoffset = offset;
+  }
+
+  /**
+   * Highlight the first incomplete step as active
+   */
+  highlightNextStep() {
+    const steps = ['stepInstall', 'stepApi', 'stepWiki', 'stepRules', 'stepCards', 'stepTeam'];
+    // Remove active class from all steps first
+    steps.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    // Find first non-completed step and mark as active
+    for (const id of steps) {
+      const el = document.getElementById(id);
+      if (el && !el.classList.contains('completed')) {
+        el.classList.add('active');
+        break;
+      }
+    }
+  }
+
   async init() {
     // Check authentication (redirects to login if not authenticated)
     const isAuthenticated = await AdminShared.checkAuth();
@@ -105,7 +138,7 @@ class HomePage {
       document.getElementById('memberStepActivateStatus').classList.add('completed');
     }
     if (memberProgressFill) {
-      memberProgressFill.style.width = '100%';
+      this.updateProgressRing(memberProgressFill, 100);
     }
     if (memberProgressText) {
       memberProgressText.textContent = '2';
@@ -196,10 +229,11 @@ class HomePage {
         document.getElementById('stepTeamStatus').classList.add('completed');
       }
 
-      // Update progress bar (6 steps total now)
+      // Update progress ring (6 steps total now)
       const percentage = Math.round((completed / 6) * 100);
-      document.getElementById('onboardingProgressFill').style.width = `${percentage}%`;
+      this.updateProgressRing(document.getElementById('onboardingProgressFill'), percentage);
       document.getElementById('onboardingProgressText').textContent = completed;
+      this.highlightNextStep();
       return;
     }
 
@@ -238,10 +272,11 @@ class HomePage {
         document.getElementById('stepTeamStatus').classList.add('completed');
       }
 
-      // Update progress bar (6 steps total now)
+      // Update progress ring (6 steps total now)
       const percentage = Math.round((completed / 6) * 100);
-      document.getElementById('onboardingProgressFill').style.width = `${percentage}%`;
+      this.updateProgressRing(document.getElementById('onboardingProgressFill'), percentage);
       document.getElementById('onboardingProgressText').textContent = completed;
+      this.highlightNextStep();
     });
   }
 

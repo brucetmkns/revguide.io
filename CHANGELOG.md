@@ -2,6 +2,38 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.1] - 2025-12-19 - Home Onboarding UI Refresh
+
+### Changed
+- **Home Page Redesign**: Refreshed onboarding UI with improved visual hierarchy
+  - Replaced linear progress bar with circular progress ring showing completion status
+  - Consolidated stats into compact inline mini-stats within progress hero section
+  - Replaced stacked step cards with vertical timeline layout
+  - Added visual "active" state highlighting for the next incomplete step
+  - Completed steps show green checkmarks on timeline dots
+  - More space-efficient design with better information density
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/home.html` - New progress hero and timeline layout
+  - `admin/pages/home.css` - Progress ring, timeline, and mini-stats styles
+  - `admin/pages/home.js` - SVG progress ring updates, active step highlighting
+
+- **CSS Changes**:
+  - Added `.progress-hero` section with SVG progress ring
+  - Added `.mini-stats` compact stat display
+  - Added `.onboarding-timeline` vertical timeline with dots
+  - Added `.timeline-step` with `.completed` and `.active` states
+  - Added `.btn-ghost` button variant
+  - Preserved legacy `.onboarding-steps` styles for member view
+
+- **JS Changes**:
+  - Added `updateProgressRing()` helper for SVG stroke-dashoffset animation
+  - Added `highlightNextStep()` to mark first incomplete step as active
+  - All existing step detection logic unchanged
+
+---
+
 ## [2.8.0] - 2025-12-19 - Partner Account System
 
 ### Added
