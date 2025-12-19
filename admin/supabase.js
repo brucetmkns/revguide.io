@@ -1532,6 +1532,168 @@ const RevGuideDB = {
     });
 
     return { data: data || [], error };
+  },
+
+  // ============================================
+  // Partner Account Methods
+  // ============================================
+
+  /**
+   * Check if current user is a partner (has partner account_type)
+   */
+  async isPartner() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return false;
+
+    const { data } = await client.rpc('user_is_partner', { p_auth_uid: user.id });
+    return data === true;
+  },
+
+  /**
+   * Get partner's home organization details
+   */
+  async getPartnerHomeOrg() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { data: null, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_partner_home_org', { p_auth_uid: user.id });
+    // Returns array with one item or empty
+    return { data: data && data.length > 0 ? data[0] : null, error };
+  },
+
+  /**
+   * Get partner's client organizations (where they have 'partner' role)
+   */
+  async getPartnerClients() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { data: [], error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_partner_clients', { p_auth_uid: user.id });
+    return { data: data || [], error };
+  },
+
+  /**
+   * Get partner dashboard stats
+   */
+  async getPartnerStats() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { data: null, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_partner_stats', { p_auth_uid: user.id });
+    return { data: data && data.length > 0 ? data[0] : null, error };
+  },
+
+  /**
+   * Convert current standard account to partner account
+   * @param {string} agencyName - Name for the partner's agency organization
+   */
+  async convertToPartner(agencyName) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { success: false, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('convert_to_partner_account', {
+      p_auth_uid: user.id,
+      p_agency_name: agencyName
+    });
+
+    if (error) return { success: false, error };
+
+    // Result is an array with one row
+    const result = data && data.length > 0 ? data[0] : null;
+    if (result && result.success) {
+      return { success: true, homeOrgId: result.home_org_id, error: null };
+    } else {
+      return { success: false, error: new Error(result?.error_message || 'Conversion failed') };
+    }
+  },
+
+  /**
+   * Create a partner invitation (for admins inviting partners)
+   * Checks if user already exists and is a partner - if so, auto-connects
+   * @param {string} email - Email of partner to invite
+   * @param {string} organizationId - Optional org ID (defaults to current)
+   */
+  async createPartnerInvitation(email, organizationId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = organizationId || await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    const { data: profile } = await this.getUserProfile();
+    const normalizedEmail = email.toLowerCase();
+
+    // Check if user already exists and is a partner
+    const { data: existingUser } = await client.rpc('get_user_by_email', {
+      p_email: normalizedEmail
+    });
+
+    const userRecord = existingUser && existingUser.length > 0 ? existingUser[0] : null;
+
+    if (userRecord && userRecord.is_partner) {
+      // Auto-connect existing partner
+      const { data: connected, error: connectError } = await client.rpc('auto_connect_partner', {
+        p_user_id: userRecord.user_id,
+        p_organization_id: orgId
+      });
+
+      if (connectError) return { error: connectError };
+
+      if (connected) {
+        return {
+          data: {
+            autoConnected: true,
+            partnerName: userRecord.user_name,
+            partnerEmail: normalizedEmail
+          },
+          error: null
+        };
+      }
+    }
+
+    // Create new partner invitation
+    const token = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+    const { data: invitation, error } = await client
+      .from('invitations')
+      .insert({
+        organization_id: orgId,
+        email: normalizedEmail,
+        role: 'partner',
+        invitation_type: 'partner',
+        invited_by: profile?.id,
+        token: token,
+        expires_at: expiresAt.toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) return { data: null, error };
+
+    return {
+      data: {
+        autoConnected: false,
+        invitation: invitation
+      },
+      error: null
+    };
+  },
+
+  /**
+   * Get all organizations the current user has access to (including home org indicator)
+   */
+  async getAllUserOrganizations() {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { data: [], error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_user_organizations', { p_auth_uid: user.id });
+    return { data: data || [], error };
   }
 };
 

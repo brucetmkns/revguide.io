@@ -543,55 +543,51 @@ Extension → Background.js → Supabase API → Postgres
 
 ---
 
-## Consultant System Improvements (Planned)
+## Partner Account System (v2.8.0) ✅ IMPLEMENTED
 
-**Goal:** Improve the consultant invitation and onboarding flow to handle various user scenarios correctly.
+**Goal:** Improve the consultant invitation and onboarding flow with a dedicated Partner Account system.
 
-### Consultant Signup Flow Fixes
+### What Was Implemented
 
-#### Problem: Invited Consultants Forced Through Wrong Flow
-When a consultant is invited but doesn't have an existing account, they're currently forced through the "new organization member" signup flow where:
-- The organization name field is pre-filled and uneditable
-- They can't create their own admin/partner account
-- They end up as a member of the inviting org instead of having their own consultant account
+#### Partner Account Type
+- [x] New `account_type` column: `'standard'` or `'partner'`
+- [x] `home_organization_id` tracks partner's agency organization
+- [x] Partners have their own agency org plus `partner` role in client organizations
+- [x] Dedicated Partner Dashboard page (`/partner`) for client management
 
-#### Solution: Consultant-Specific Signup
-- [ ] Detect consultant invitation type in signup flow
-- [ ] Consultant signup should create their own organization (agency/partner account)
-- [ ] After signup, auto-accept the consultant invitation (adding them as consultant to client org)
-- [ ] Consultant ends up with: own org as admin + consultant access to inviting org
+#### Partner Signup Flow
+- [x] Detect partner invitation type in signup flow (`role=partner` or `invitation_type=partner`)
+- [x] Partner-specific messaging and editable "Agency Name" field
+- [x] Partner signup creates: auth user + agency org + user profile + client org membership
+- [x] Existing partners auto-connected when invited (skip signup flow)
 
-### Consultants Creating Client Portals
+#### Admin Conversion to Partner
+- [x] "Partner Account" section in Settings page for admins
+- [x] "Convert This Account" option creates agency org, updates account_type
+- [x] Alternative: "Create New Partner Account" for separate account
 
-#### Current State
-Consultants can only be invited to existing organizations or request access to them.
+#### Partner Dashboard Features
+- [x] Stats overview: Client count, Library count, Pending requests
+- [x] My Clients tab: Grid of client portals with "Manage Portal" buttons
+- [x] My Libraries tab: View and manage reusable content libraries
+- [x] Access Requests tab: Track pending access requests
 
-#### Planned Feature
-- [ ] "Create Client Portal" option in Clients page
-- [ ] Consultant enters client org name, creates new organization on their behalf
-- [ ] Consultant automatically added as consultant to the new org
+#### Navigation Updates
+- [x] Partner Dashboard replaces legacy Clients page for partners
+- [x] Non-partners with multiple orgs retain existing behavior
+
+### Future Enhancements (Not Yet Implemented)
+
+#### Partner Creating Client Portals
+- [ ] "Create Client Portal" option in Partner Dashboard
+- [ ] Partner enters client org name, creates new organization
+- [ ] Partner automatically added with `partner` role
 - [ ] Optional: Send invite email to client admin to claim their org
-- [ ] Client can later add their own admin users
 
-### Secure Consultant Access Requests
-
-#### Problem: Organization Search Reveals Private Information
-The current "search organizations by name" feature for consultant access requests reveals private information (org names) that could be exploited.
-
-#### Solution: Email-Based Request Flow
-- [ ] Remove organization search functionality
-- [ ] New flow: "Enter your client's admin email address"
-- [ ] System checks if email belongs to an admin of any organization
-- [ ] If yes: Send access request notification to that admin
-- [ ] If no account exists: Show message "This email is not associated with a RevGuide admin account. Ask your client to sign up first."
-- [ ] Admin receives email: "[Consultant Name] is requesting consultant access to [Org Name]"
-- [ ] Admin can approve/decline from Settings page or email link
-
-#### Security Benefits
-- No organization enumeration possible
-- Consultant must know client's email (existing relationship)
-- Client admin must approve (explicit consent)
-- No private org names exposed to unauthenticated requests
+#### Secure Access Requests
+- [ ] Email-based request flow (enter client admin email)
+- [ ] System validates admin exists before sending request
+- [ ] Admin receives notification and can approve/decline
 
 ---
 

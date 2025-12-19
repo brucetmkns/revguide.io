@@ -34,6 +34,11 @@ const CONFIG = {
 // ===========================================
 
 function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team', inviterName = null) {
+  // Handle partner invitations
+  if (invitationType === 'partner' || role === 'partner') {
+    return buildPartnerInvitationEmailHtml(token, orgName, inviterName);
+  }
+
   // Handle consultant invitations separately
   if (invitationType === 'consultant' || role === 'consultant') {
     return buildConsultantInvitationEmailHtml(token, orgName, inviterName);
@@ -120,6 +125,11 @@ function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team',
 }
 
 function buildInvitationEmailText(role, token, orgName, invitationType = 'team', inviterName = null) {
+  // Handle partner invitations
+  if (invitationType === 'partner' || role === 'partner') {
+    return buildPartnerInvitationEmailText(token, orgName, inviterName);
+  }
+
   // Handle consultant invitations separately
   if (invitationType === 'consultant' || role === 'consultant') {
     return buildConsultantInvitationEmailText(token, orgName, inviterName);
@@ -477,6 +487,151 @@ RevGuide - Contextual guidance for your revenue team`;
 }
 
 // ===========================================
+// PARTNER EMAIL TEMPLATES
+// ===========================================
+
+function buildPartnerInvitationEmailHtml(token, orgName, inviterName = null) {
+  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=partner`;
+  const orgDisplay = orgName ? `<strong>${orgName}</strong>` : 'a RevGuide organization';
+  const inviterDisplay = inviterName ? `<strong>${inviterName}</strong> has invited you` : "You've been invited";
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Partner Access Invitation</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      ${inviterDisplay} to join ${orgDisplay} as a <strong>Partner</strong> on RevGuide.
+    </p>
+
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <h3 style="margin: 0 0 12px 0; color: #1e40af; font-size: 16px;">Create Your Partner Account</h3>
+      <p style="margin: 0 0 12px 0; color: #1e40af; font-size: 14px;">
+        As a Partner, you'll get your own agency account with access to:
+      </p>
+      <ul style="margin: 0; padding-left: 20px; color: #1e40af;">
+        <li>Your own Partner Dashboard</li>
+        <li>Manage multiple client portals</li>
+        <li>Create and deploy reusable content libraries</li>
+        <li>Switch between clients seamlessly</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${inviteLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        Create Partner Account
+      </a>
+    </div>
+
+    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <p style="margin: 0; font-size: 14px; color: #6b7280;">
+        <strong>Your Role:</strong> Partner<br>
+        You'll have full editing access to help manage this organization's RevGuide content.
+      </p>
+    </div>
+
+    <p style="font-size: 13px; color: #9ca3af; margin-bottom: 0;">
+      This invitation expires in 7 days. Questions? Reply to this email.
+    </p>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+    RevGuide - Contextual guidance for your revenue team
+  </div>
+</body>
+</html>`;
+}
+
+function buildPartnerInvitationEmailText(token, orgName, inviterName = null) {
+  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=partner`;
+  const orgDisplay = orgName || 'a RevGuide organization';
+  const inviterDisplay = inviterName ? `${inviterName} has invited you` : "You've been invited";
+
+  return `Partner Access Invitation
+
+${inviterDisplay} to join ${orgDisplay} as a Partner on RevGuide.
+
+Create Your Partner Account
+
+As a Partner, you'll get your own agency account with access to:
+- Your own Partner Dashboard
+- Manage multiple client portals
+- Create and deploy reusable content libraries
+- Switch between clients seamlessly
+
+Create your partner account here:
+${inviteLink}
+
+Your Role: Partner
+You'll have full editing access to help manage this organization's RevGuide content.
+
+This invitation expires in 7 days. Questions? Reply to this email.
+
+---
+RevGuide - Contextual guidance for your revenue team`;
+}
+
+function buildPartnerAutoConnectEmailHtml(orgName) {
+  const dashboardLink = `${CONFIG.appUrl}/partner`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">New Client Added</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      You've been added as a partner to <strong>${orgName}</strong>.
+    </p>
+
+    <p style="margin-bottom: 25px;">
+      You can now access and manage their RevGuide content from your Partner Dashboard.
+    </p>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${dashboardLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        View Partner Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+    RevGuide - Contextual guidance for your revenue team
+  </div>
+</body>
+</html>`;
+}
+
+function buildPartnerAutoConnectEmailText(orgName) {
+  const dashboardLink = `${CONFIG.appUrl}/partner`;
+
+  return `New Client Added
+
+You've been added as a partner to ${orgName}.
+
+You can now access and manage their RevGuide content from your Partner Dashboard:
+${dashboardLink}
+
+---
+RevGuide - Contextual guidance for your revenue team`;
+}
+
+// ===========================================
 // CORS HANDLING
 // ===========================================
 
@@ -553,6 +708,21 @@ export default {
       return handleSignupInvited(request, env, corsHeaders);
     }
 
+    // Route: POST /api/signup-partner - Create partner account from invitation
+    if (url.pathname === '/api/signup-partner') {
+      return handleSignupPartner(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/invite-partner - Send partner invitation email
+    if (url.pathname === '/api/invite-partner') {
+      return handleInvitePartner(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/notify-partner-auto-connect - Notify partner of auto-connection
+    if (url.pathname === '/api/notify-partner-auto-connect') {
+      return handleNotifyPartnerAutoConnect(request, env, corsHeaders);
+    }
+
     // Health check
     if (url.pathname === '/health' || url.pathname === '/') {
       return new Response(JSON.stringify({ status: 'ok', service: 'revguide-api' }), {
@@ -582,9 +752,9 @@ async function handleInvite(request, env, corsHeaders) {
     }
 
     // Accept valid roles
-    const validRoles = ['viewer', 'editor', 'admin', 'consultant'];
+    const validRoles = ['viewer', 'editor', 'admin', 'consultant', 'partner'];
     if (!role || !validRoles.includes(role)) {
-      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", "admin", or "consultant"' }), {
+      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", "admin", "consultant", or "partner"' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1221,6 +1391,447 @@ async function handleNotifyAutoConnect(request, env, corsHeaders) {
 
   } catch (error) {
     console.error('Notify auto-connect error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// PARTNER ACCOUNT HANDLERS
+// ===========================================
+
+async function handleSignupPartner(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { email, password, fullName, agencyName, inviteToken } = body;
+
+    // Validate input
+    if (!email || !isValidEmail(email)) {
+      return new Response(JSON.stringify({ error: 'Valid email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!fullName || fullName.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Name is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!agencyName || agencyName.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Agency/Company name is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!inviteToken) {
+      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 1. Verify invitation exists and is a partner invitation
+    const inviteResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/invitations?token=eq.${encodeURIComponent(inviteToken)}&accepted_at=is.null&select=*,organizations(id,name)`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!inviteResponse.ok) {
+      console.error('Failed to fetch invitation:', await inviteResponse.text());
+      return new Response(JSON.stringify({ error: 'Failed to verify invitation' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const invitations = await inviteResponse.json();
+    if (!invitations || invitations.length === 0) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired invitation' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const invitation = invitations[0];
+
+    // Verify it's a partner invitation
+    if (invitation.role !== 'partner' && invitation.invitation_type !== 'partner') {
+      return new Response(JSON.stringify({ error: 'This is not a partner invitation' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check if invitation email matches
+    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+      return new Response(JSON.stringify({ error: 'Email does not match invitation' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check if expired
+    if (new Date(invitation.expires_at) < new Date()) {
+      return new Response(JSON.stringify({ error: 'Invitation has expired' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 2. Create auth user with email_confirm = true
+    const createUserResponse = await fetch(
+      `${CONFIG.supabaseUrl}/auth/v1/admin/users`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: fullName
+          }
+        })
+      }
+    );
+
+    if (!createUserResponse.ok) {
+      const errorData = await createUserResponse.json().catch(() => ({}));
+      console.error('Failed to create user:', errorData);
+
+      if (errorData.message?.includes('already been registered') || errorData.msg?.includes('already been registered')) {
+        return new Response(JSON.stringify({
+          error: 'An account with this email already exists',
+          code: 'USER_EXISTS'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({ error: errorData.message || 'Failed to create account' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const authUser = await createUserResponse.json();
+
+    // 3. Create the partner's agency organization
+    const createAgencyOrgResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organizations`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          name: agencyName.trim()
+        })
+      }
+    );
+
+    if (!createAgencyOrgResponse.ok) {
+      const errorData = await createAgencyOrgResponse.json().catch(() => ({}));
+      console.error('Failed to create agency org:', errorData);
+      return new Response(JSON.stringify({
+        error: 'Failed to create agency organization',
+        authUserCreated: true
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const agencyOrgs = await createAgencyOrgResponse.json();
+    const agencyOrg = Array.isArray(agencyOrgs) ? agencyOrgs[0] : agencyOrgs;
+
+    // 4. Create user profile with partner account_type
+    const profilePayload = {
+      auth_user_id: authUser.id,
+      email: email.toLowerCase(),
+      name: fullName,
+      organization_id: agencyOrg.id,           // Primary org is their agency
+      home_organization_id: agencyOrg.id,      // Home org for partner
+      role: 'owner',                           // They own their agency org
+      account_type: 'partner'
+    };
+
+    const createProfileResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/users`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(profilePayload)
+      }
+    );
+
+    if (!createProfileResponse.ok) {
+      const errorData = await createProfileResponse.json().catch(() => ({}));
+      console.error('Failed to create user profile:', JSON.stringify(errorData));
+      return new Response(JSON.stringify({
+        error: 'Failed to create user profile: ' + (errorData.message || errorData.details || JSON.stringify(errorData)),
+        authUserCreated: true
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const userProfiles = await createProfileResponse.json();
+    const userProfile = Array.isArray(userProfiles) ? userProfiles[0] : userProfiles;
+
+    // 5. Add partner as owner of their agency org in organization_members
+    await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userProfile.id,
+          organization_id: agencyOrg.id,
+          role: 'owner'
+        })
+      }
+    );
+
+    // 6. Add partner to the client organization (from invitation) with 'partner' role
+    await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userProfile.id,
+          organization_id: invitation.organization_id,
+          role: 'partner'
+        })
+      }
+    );
+
+    // 7. Mark invitation as accepted
+    await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/invitations?id=eq.${invitation.id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accepted_at: new Date().toISOString()
+        })
+      }
+    );
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Partner account created successfully',
+      user: {
+        id: authUser.id,
+        email: authUser.email
+      },
+      agencyOrganization: {
+        id: agencyOrg.id,
+        name: agencyOrg.name
+      }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Partner signup error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleInvitePartner(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { email, token, orgName, inviterName } = body;
+
+    if (!email || !isValidEmail(email)) {
+      return new Response(JSON.stringify({ error: 'Valid email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('RESEND_API_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Send partner invitation email
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.fromEmail,
+        to: [email],
+        subject: orgName ? `Partner access invitation from ${orgName}` : 'Partner Access Invitation - RevGuide',
+        html: buildPartnerInvitationEmailHtml(token, orgName, inviterName),
+        text: buildPartnerInvitationEmailText(token, orgName, inviterName)
+      })
+    });
+
+    if (!resendResponse.ok) {
+      const errorData = await resendResponse.json().catch(() => ({}));
+      console.error('Resend error:', errorData);
+      return new Response(JSON.stringify({
+        error: errorData.message || 'Failed to send email'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const result = await resendResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Partner invitation sent',
+      id: result.id
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Invite partner error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleNotifyPartnerAutoConnect(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { partnerEmail, orgName } = body;
+
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.fromEmail,
+        to: [partnerEmail],
+        subject: `You've been added as a partner to ${orgName || 'a new organization'}`,
+        html: buildPartnerAutoConnectEmailHtml(orgName),
+        text: buildPartnerAutoConnectEmailText(orgName)
+      })
+    });
+
+    if (!resendResponse.ok) {
+      const errorData = await resendResponse.json().catch(() => ({}));
+      console.error('Resend error:', errorData);
+      return new Response(JSON.stringify({
+        error: errorData.message || 'Failed to send notification'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const result = await resendResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Partner auto-connect notification sent',
+      id: result.id
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Notify partner auto-connect error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

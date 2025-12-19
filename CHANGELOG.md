@@ -2,6 +2,108 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.0] - 2025-12-19 - Partner Account System
+
+### Added
+- **Partner Account Type**: New account type for agencies/freelancers managing multiple client portals
+  - `account_type` column on users table: `'standard'` or `'partner'`
+  - `home_organization_id` tracks partner's agency organization
+  - Partners have their own agency org plus `partner` role in client organizations
+
+- **Partner Dashboard**: New dedicated page for partners (`/partner`)
+  - Stats overview: Client count, Library count, Pending requests
+  - **My Clients** tab: Grid of client portals with "Manage Portal" buttons
+  - **My Libraries** tab: View and manage reusable content libraries
+  - **Access Requests** tab: Track pending access requests to client portals
+  - Quick portal switching from dashboard
+
+- **Partner Invitation Flow**: Admins can invite partners to their organization
+  - New `partner` role in invitation system (distinct from legacy `consultant`)
+  - Partner-specific email templates with appropriate messaging
+  - Auto-connect: Existing partners automatically added when invited (skip signup)
+  - New partners go through dedicated signup flow creating their agency org
+
+- **Partner Signup Flow**: Dedicated signup for partner invitations
+  - Detects `role=partner` or `invitation_type=partner` in invite URL
+  - Partner-specific messaging and benefits display
+  - Editable "Agency Name" field (not locked to inviting org)
+  - Creates: auth user + agency org + user profile + client org membership
+  - Redirects to Partner Dashboard after signup
+
+- **Convert to Partner**: Existing admins can become partners
+  - "Partner Account" section in Settings page
+  - "Convert This Account" option with agency name input
+  - Creates agency organization, updates `account_type` to `partner`
+  - Alternative: "Create New Partner Account" for separate account
+
+- **Partner Status Display**: Partners see their status in Settings
+  - Partner badge and home organization name
+  - Client portal count
+  - Link to Partner Dashboard
+
+### Changed
+- **Navigation**: Partner Dashboard replaces legacy Clients page
+  - Partner Dashboard shown for users with `account_type='partner'`
+  - Clients page hidden for partners (use Partner Dashboard instead)
+  - Non-partners with multiple orgs still see Clients nav
+
+- **Invitation Role Options**: Settings now offers `partner` role instead of `consultant`
+  - "Partner" role description: "External partner with limited access"
+  - Partners can edit content but cannot manage team members
+
+### Removed
+- **Legacy Clients Page**: Deleted `clients.html` and `clients.js`
+  - Functionality replaced by Partner Dashboard
+  - Partners get dedicated dashboard, non-partners don't need portal switching UI
+
+### Technical
+- **Database Migration**: `021_partner_accounts.sql`
+  - `account_type` and `home_organization_id` columns on `users`
+  - `partner` added to role constraints on `organization_members`, `invitations`
+  - Helper functions: `user_is_partner()`, `get_partner_home_org()`, `get_partner_clients()`, `get_partner_stats()`
+  - `auto_connect_partner()` for existing partner auto-acceptance
+  - `convert_to_partner_account()` for admin conversion
+  - Migration of existing consultants to partner account type
+
+- **API Endpoints** (invite-worker.js):
+  - `POST /api/signup-partner` - Partner-specific signup
+  - `POST /api/invite-partner` - Partner invitation with auto-connect
+  - `POST /api/notify-partner-auto-connect` - Notification for auto-connected partners
+  - Partner email templates: invitation and auto-connect notifications
+
+- **Database Methods** (supabase.js):
+  - `isPartner()` - Check if current user is a partner
+  - `getPartnerHomeOrg()` - Get partner's agency organization
+  - `getPartnerClients()` - Get client portals with partner role
+  - `getPartnerStats()` - Get partner dashboard statistics
+  - `convertToPartner(agencyName)` - Convert admin account to partner
+  - `createPartnerInvitation(email, orgId)` - Invite partner with auto-connect
+
+- **Files Added**:
+  - `admin/pages/partner.html` - Partner Dashboard page
+  - `admin/pages/partner.js` - Partner Dashboard logic
+  - `supabase/migrations/021_partner_accounts.sql` - Database migration
+
+- **Files Modified**:
+  - `admin/shared.js` - Partner nav visibility, `partner` role label
+  - `admin/supabase.js` - Partner database methods
+  - `admin/pages/signup.html` - Partner invitation detection and flow
+  - `admin/pages/settings.html` - Partner Account section UI
+  - `admin/pages/settings.js` - Partner conversion and status logic
+  - `api/invite-worker.js` - Partner endpoints and email templates
+  - All HTML pages - Added Partner Dashboard nav item
+
+- **Files Removed**:
+  - `admin/pages/clients.html` - Replaced by Partner Dashboard
+  - `admin/pages/clients.js` - Replaced by Partner Dashboard
+
+### Migration Notes
+- Existing users with `consultant` role in `organization_members` are migrated to `partner` role
+- Existing consultants (users belonging to multiple orgs) are migrated to `account_type='partner'`
+- `user_is_consultant()` function updated to check for both `consultant` and `partner` roles for backward compatibility
+
+---
+
 ## [2.7.5] - 2025-12-18 - Consultant Invitation Flow Fixes
 
 ### Fixed

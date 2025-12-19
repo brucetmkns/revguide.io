@@ -22,6 +22,7 @@ plugin/
 │   │   ├── wiki.html/js/css      # Wiki glossary
 │   │   ├── libraries.html/js/css # Content library browser
 │   │   ├── settings.html/js      # Settings & team management
+│   │   ├── partner.html/js       # Partner Dashboard (v2.8.0+)
 │   │   ├── login.html/js         # Web app login (Supabase)
 │   │   ├── signup.html           # Web app signup
 │   │   ├── invite.html/js        # Invitation acceptance page
@@ -60,7 +61,8 @@ plugin/
 │       ├── 001_add_hubspot_connection.sql
 │       ├── 002_direct_hubspot_oauth.sql
 │       ├── 003_fix_rls_policies.sql
-│       └── 013_multi_portal_support.sql  # v2.7.0 - Multi-portal
+│       ├── 013_multi_portal_support.sql  # v2.7.0 - Multi-portal
+│       └── 021_partner_accounts.sql      # v2.8.0 - Partner accounts
 │
 ├── api/                     # Cloudflare Worker
 │   ├── invite-worker.js     # Email invitation API

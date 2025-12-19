@@ -409,11 +409,15 @@
         return;
       }
 
+      // Track if this is a partner invitation
+      let isPartnerInvitation = false;
+
       // If coming from invite flow, fetch invitation and pre-populate fields
       if (requestPath && requestPath.includes('/invite')) {
         // Extract token from request_path
         const inviteUrl = new URL(requestPath, window.location.origin);
         const inviteToken = inviteUrl.searchParams.get('token');
+        const inviteType = inviteUrl.searchParams.get('type');
 
         if (inviteToken) {
           try {
@@ -423,32 +427,74 @@
             if (invitation && !error) {
               const orgName = invitation.organizations?.name || 'the team';
 
+              // Check if this is a partner invitation
+              isPartnerInvitation = invitation.role === 'partner' ||
+                                   invitation.invitation_type === 'partner' ||
+                                   inviteType === 'partner';
+
               // Pre-fill and lock email
               emailInput.value = invitation.email;
               emailInput.readOnly = true;
               emailInput.style.backgroundColor = 'var(--color-bg-subtle)';
               emailInput.style.cursor = 'not-allowed';
 
-              // Show org name instead of company input (read-only)
-              companyNameInput.value = orgName;
-              companyNameInput.readOnly = true;
-              companyNameInput.style.backgroundColor = 'var(--color-bg-subtle)';
-              companyNameInput.style.cursor = 'not-allowed';
-              const companyLabel = companyNameInput.closest('.form-group').querySelector('label');
-              if (companyLabel) {
-                companyLabel.textContent = 'Joining organization';
+              if (isPartnerInvitation) {
+                // Partner-specific signup flow
+                // Company field is editable - they enter their agency name
+                companyNameInput.value = '';
+                companyNameInput.placeholder = 'Your agency/company name';
+                companyNameInput.readOnly = false;
+                const companyLabel = companyNameInput.closest('.form-group').querySelector('label');
+                if (companyLabel) {
+                  companyLabel.textContent = 'Your Agency/Company Name';
+                }
+
+                // Update header text for partner
+                document.querySelector('.signup-header p').innerHTML =
+                  `You've been invited to join <strong>${orgName}</strong> as a Partner`;
+                document.querySelector('.signup-header .subtitle').textContent =
+                  'Create your Partner Account to get started';
+
+                // Update button text
+                signupBtn.textContent = 'Create Partner Account';
+
+                // Show partner features
+                const featuresList = document.querySelector('.features-list');
+                if (featuresList) {
+                  featuresList.innerHTML = `
+                    <h4 style="margin-bottom: 8px; font-size: 14px; color: var(--color-text-secondary);">Partner benefits:</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--color-text-tertiary);">
+                      <li>Your own Partner Dashboard</li>
+                      <li>Manage multiple client portals</li>
+                      <li>Create reusable content libraries</li>
+                      <li>Switch between clients seamlessly</li>
+                    </ul>
+                  `;
+                  featuresList.style.display = 'block';
+                }
+              } else {
+                // Regular team invitation flow
+                // Show org name instead of company input (read-only)
+                companyNameInput.value = orgName;
+                companyNameInput.readOnly = true;
+                companyNameInput.style.backgroundColor = 'var(--color-bg-subtle)';
+                companyNameInput.style.cursor = 'not-allowed';
+                const companyLabel = companyNameInput.closest('.form-group').querySelector('label');
+                if (companyLabel) {
+                  companyLabel.textContent = 'Joining organization';
+                }
+
+                // Update header text
+                document.querySelector('.signup-header p').textContent = `You've been invited to join ${orgName}`;
+                document.querySelector('.signup-header .subtitle').textContent = 'Create your account to accept';
+
+                // Update button text
+                signupBtn.textContent = 'Create account & join';
+
+                // Hide features list for cleaner invite UX
+                const featuresList = document.querySelector('.features-list');
+                if (featuresList) featuresList.style.display = 'none';
               }
-
-              // Update header text
-              document.querySelector('.signup-header p').textContent = `You've been invited to join ${orgName}`;
-              document.querySelector('.signup-header .subtitle').textContent = 'Create your account to accept';
-
-              // Update button text
-              signupBtn.textContent = 'Create account & join';
-
-              // Hide features list for cleaner invite UX
-              const featuresList = document.querySelector('.features-list');
-              if (featuresList) featuresList.style.display = 'none';
             }
           } catch (err) {
             console.error('Failed to fetch invitation:', err);
@@ -496,20 +542,38 @@
         const inviteToken = requestPath ? new URL(requestPath, window.location.origin).searchParams.get('token') : null;
 
         if (inviteToken) {
-          // Use invite signup endpoint (skips email confirmation, creates user profile)
           try {
-            const response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-invited', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email,
-                password,
-                fullName,
-                inviteToken
-              })
-            });
+            let response;
+            let result;
 
-            const result = await response.json();
+            if (isPartnerInvitation) {
+              // Use partner signup endpoint
+              response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-partner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email,
+                  password,
+                  fullName,
+                  agencyName: companyName,  // Partner enters their agency name
+                  inviteToken
+                })
+              });
+            } else {
+              // Use regular invite signup endpoint
+              response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-invited', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email,
+                  password,
+                  fullName,
+                  inviteToken
+                })
+              });
+            }
+
+            result = await response.json();
 
             if (!response.ok) {
               if (result.code === 'USER_EXISTS') {
@@ -519,12 +583,12 @@
                 showMessage(result.error || 'Failed to create account', 'error');
               }
               signupBtn.disabled = false;
-              signupBtn.textContent = 'Create account & join';
+              signupBtn.textContent = isPartnerInvitation ? 'Create Partner Account' : 'Create account & join';
               return;
             }
 
             // Success! Sign in the user automatically
-            showMessage('Account created! Signing you in...', 'success');
+            showMessage(isPartnerInvitation ? 'Partner account created! Signing you in...' : 'Account created! Signing you in...', 'success');
 
             const { data: signInData, error: signInError } = await RevGuideAuth.signIn(email, password);
 
@@ -535,16 +599,17 @@
                 window.location.href = '/login';
               }, 1500);
             } else {
-              // Signed in successfully - go to home
+              // Signed in successfully - redirect appropriately
               setTimeout(() => {
-                window.location.href = '/home';
+                // Partners go to partner dashboard, others go to home
+                window.location.href = isPartnerInvitation ? '/partner' : '/home';
               }, 500);
             }
           } catch (err) {
             console.error('Invite signup error:', err);
             showMessage('Failed to create account. Please try again.', 'error');
             signupBtn.disabled = false;
-            signupBtn.textContent = 'Create account & join';
+            signupBtn.textContent = isPartnerInvitation ? 'Create Partner Account' : 'Create account & join';
           }
           return;
         }

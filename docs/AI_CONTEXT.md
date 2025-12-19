@@ -35,6 +35,7 @@ plugin/
 │       ├── wiki.js        # Wiki glossary CRUD
 │       ├── libraries.js   # Content library browser
 │       ├── settings.js    # Settings & team management
+│       ├── partner.js     # Partner Dashboard (v2.8.0+)
 │       └── login.js       # Web authentication
 │
 ├── background/
@@ -140,7 +141,11 @@ The codebase uses mixed terminology due to evolution:
 - **Web app** (app.revguide.io): Supabase JWT auth
 - **Extension**: Chrome storage + message passing to background.js
 
-**Roles:** Owner > Admin > Editor > Viewer > Consultant (multi-portal)
+**Account Types (v2.8.0+):**
+- `standard` - Regular users (owner, admin, editor, viewer roles)
+- `partner` - Agency/freelancer accounts with dedicated Partner Dashboard
+
+**Roles:** Owner > Admin > Editor > Viewer > Partner (external access to client orgs)
 
 **HubSpot OAuth:** Direct integration via `admin/hubspot.js` (replaced Nango in v2.1.0, but `nango.js` still referenced in `home.js`)
 
@@ -148,15 +153,21 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 
 ---
 
-## Multi-Portal Support (v2.7.0+)
+## Multi-Portal & Partner Accounts (v2.7.0+, v2.8.0+)
 
 **For agencies/consultants managing multiple HubSpot portals:**
 
 - Users can belong to multiple organizations via `organization_members` table
 - `active_organization_id` tracks which portal is currently active
 - Portal selector dropdown appears in sidebar when user has 2+ portals
-- Consultant role enables library creation and multi-portal management
 - **Import/Export** (v2.7.2+): JSON export from one portal, import to another with Replace All or Merge mode
+
+**Partner Account System (v2.8.0+):**
+- `account_type` column: `'standard'` or `'partner'`
+- `home_organization_id` tracks partner's agency org
+- Partner Dashboard (`/partner`) - dedicated UI for client management
+- Partners have `partner` role in client orgs (distinct from legacy `consultant`)
+- Admins can invite partners or convert their account to partner
 
 **Key tables:**
 - `organization_members` - Many-to-many user↔org with per-org roles
@@ -166,7 +177,10 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 **Key functions (RevGuideDB):**
 - `getUserOrganizations()` - Get all portals user can access
 - `switchOrganization(orgId)` - Switch active portal
-- `isConsultant()` - Check consultant privileges
+- `isConsultant()` - Check consultant privileges (includes partners)
+- `isPartner()` - Check if user is a partner (v2.8.0+)
+- `getPartnerClients()` - Get client portals for partner (v2.8.0+)
+- `convertToPartner(agencyName)` - Convert admin to partner (v2.8.0+)
 
 **Role helpers (AdminShared) - v2.7.3+:**
 - `getEffectiveRole()` - Returns org-specific role from `organization_members`, falls back to `currentUser.role`
@@ -272,4 +286,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024 (v2.7.3)*
+*Last updated: December 2024 (v2.8.0)*

@@ -95,6 +95,9 @@ class SettingsPage {
       await this.loadHubSpotConnectionStatus();
     }
 
+    // Load partner status
+    await this.loadPartnerStatus();
+
     // Bind events
     this.bindEvents();
     console.log('[Settings] init() completed');
@@ -355,13 +358,28 @@ class SettingsPage {
     document.getElementById('cancelInviteBtn').addEventListener('click', () => this.closeInviteModal());
     document.getElementById('sendInviteBtn').addEventListener('click', () => this.sendInvitation());
 
-    // Show/hide consultant note when role changes
+    // Show/hide partner note when role changes
     const inviteRoleSelect = document.getElementById('inviteRole');
-    const consultantNote = document.getElementById('consultantNote');
-    if (inviteRoleSelect && consultantNote) {
+    const partnerNote = document.getElementById('partnerNote');
+    if (inviteRoleSelect && partnerNote) {
       inviteRoleSelect.addEventListener('change', (e) => {
-        consultantNote.style.display = e.target.value === 'consultant' ? 'block' : 'none';
+        partnerNote.style.display = e.target.value === 'partner' ? 'block' : 'none';
       });
+    }
+
+    // Partner Account buttons
+    const convertToPartnerBtn = document.getElementById('convertToPartnerBtn');
+    const cancelConvertBtn = document.getElementById('cancelConvertBtn');
+    const confirmConvertBtn = document.getElementById('confirmConvertBtn');
+
+    if (convertToPartnerBtn) {
+      convertToPartnerBtn.addEventListener('click', () => this.showConvertToPartnerForm());
+    }
+    if (cancelConvertBtn) {
+      cancelConvertBtn.addEventListener('click', () => this.hideConvertToPartnerForm());
+    }
+    if (confirmConvertBtn) {
+      confirmConvertBtn.addEventListener('click', () => this.convertToPartner());
     }
 
     // Close modal on backdrop click
@@ -812,7 +830,8 @@ class SettingsPage {
   async sendInvitation() {
     const email = document.getElementById('inviteEmail').value.trim();
     const role = document.getElementById('inviteRole').value;
-    const isConsultant = role === 'consultant';
+    const isPartner = role === 'partner';
+    const isConsultant = role === 'consultant'; // Legacy support
 
     // Validate email
     if (!email) {
@@ -860,30 +879,53 @@ class SettingsPage {
 
         console.log('[Invite] Org name:', orgName, 'Inviter:', inviterName);
 
-        if (isConsultant) {
-          // Use consultant invitation flow (with auto-connect check)
+        if (isPartner) {
+          // Use partner invitation flow (with auto-connect check)
+          const { data, error } = await RevGuideDB.createPartnerInvitation(email);
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          if (data.autoConnected) {
+            // Partner was auto-connected, no invitation email needed
+            autoConnected = true;
+            AdminShared.showToast(`${data.partnerName || email} has been added as a partner`, 'success');
+
+            // Send notification email about auto-connect
+            try {
+              await fetch('https://revguide-api.revguide.workers.dev/api/notify-partner-auto-connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partnerEmail: email, orgName })
+              });
+            } catch (emailError) {
+              console.warn('Failed to send partner auto-connect notification:', emailError);
+            }
+          } else {
+            // Extract the invitation from the nested structure
+            invitationData = data.invitation;
+          }
+        } else if (isConsultant) {
+          // Legacy consultant invitation flow (for backward compatibility)
           const { data, error } = await RevGuideDB.createConsultantInvitation(email);
           if (error) {
             throw new Error(error.message);
           }
 
           if (data.autoConnected) {
-            // Consultant was auto-connected, no email needed
             autoConnected = true;
             AdminShared.showToast(`${data.consultantName || email} has been added as a consultant`, 'success');
 
-            // Send notification email about auto-connect
             try {
               await fetch('https://revguide-api.revguide.workers.dev/api/notify-auto-connect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, orgName })
+                body: JSON.stringify({ consultantEmail: email, orgName })
               });
             } catch (emailError) {
               console.warn('Failed to send auto-connect notification:', emailError);
             }
           } else {
-            // Extract the invitation from the nested structure
             invitationData = data.invitation;
           }
         } else {
@@ -1172,6 +1214,129 @@ class SettingsPage {
         </svg>
         Connect HubSpot
       `;
+    }
+  }
+
+  // ================================
+  // Partner Account Methods
+  // ================================
+
+  async loadPartnerStatus() {
+    if (typeof RevGuideDB === 'undefined') return;
+
+    const partnerAccountCard = document.getElementById('partnerAccountCard');
+    const partnerStatusCard = document.getElementById('partnerStatusCard');
+
+    try {
+      const isPartner = await RevGuideDB.isPartner();
+
+      if (isPartner) {
+        // Show partner status card, hide upgrade options
+        if (partnerAccountCard) partnerAccountCard.style.display = 'none';
+        if (partnerStatusCard) partnerStatusCard.style.display = 'block';
+
+        // Load partner details
+        const [homeOrgResult, clientsResult] = await Promise.all([
+          RevGuideDB.getPartnerHomeOrg(),
+          RevGuideDB.getPartnerClients()
+        ]);
+
+        const homeOrg = homeOrgResult.data;
+        const clients = clientsResult.data || [];
+
+        document.getElementById('partnerHomeOrgName').textContent =
+          homeOrg?.organization_name || 'Not set';
+        document.getElementById('partnerClientCount').textContent =
+          clients.length + ' client' + (clients.length !== 1 ? 's' : '');
+
+      } else if (this.isAdmin) {
+        // Show upgrade options for admins who aren't partners
+        if (partnerAccountCard) partnerAccountCard.style.display = 'block';
+        if (partnerStatusCard) partnerStatusCard.style.display = 'none';
+      } else {
+        // Hide both cards for non-admin, non-partner users
+        if (partnerAccountCard) partnerAccountCard.style.display = 'none';
+        if (partnerStatusCard) partnerStatusCard.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to load partner status:', error);
+      // Hide both cards on error
+      if (partnerAccountCard) partnerAccountCard.style.display = 'none';
+      if (partnerStatusCard) partnerStatusCard.style.display = 'none';
+    }
+  }
+
+  showConvertToPartnerForm() {
+    const optionsDiv = document.getElementById('partnerUpgradeOptions');
+    const formDiv = document.getElementById('partnerConvertForm');
+    const agencyInput = document.getElementById('partnerAgencyName');
+
+    if (optionsDiv) optionsDiv.style.display = 'none';
+    if (formDiv) formDiv.style.display = 'block';
+    if (agencyInput) agencyInput.focus();
+  }
+
+  hideConvertToPartnerForm() {
+    const optionsDiv = document.getElementById('partnerUpgradeOptions');
+    const formDiv = document.getElementById('partnerConvertForm');
+    const statusDiv = document.getElementById('partnerConvertStatus');
+
+    if (optionsDiv) optionsDiv.style.display = 'block';
+    if (formDiv) formDiv.style.display = 'none';
+    if (statusDiv) {
+      statusDiv.style.display = 'none';
+      statusDiv.textContent = '';
+    }
+  }
+
+  async convertToPartner() {
+    const agencyName = document.getElementById('partnerAgencyName').value.trim();
+    const statusDiv = document.getElementById('partnerConvertStatus');
+    const confirmBtn = document.getElementById('confirmConvertBtn');
+
+    if (!agencyName) {
+      if (statusDiv) {
+        statusDiv.textContent = 'Please enter your agency/company name';
+        statusDiv.className = 'status-message error';
+        statusDiv.style.display = 'block';
+      }
+      return;
+    }
+
+    // Show loading state
+    const originalText = confirmBtn?.textContent;
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Converting...';
+    }
+
+    try {
+      const { success, error } = await RevGuideDB.convertToPartner(agencyName);
+
+      if (!success || error) {
+        throw new Error(error?.message || 'Conversion failed');
+      }
+
+      AdminShared.showToast('Account converted to Partner!', 'success');
+
+      // Reload the page to show updated status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+    } catch (error) {
+      console.error('[Settings] Convert to partner error:', error);
+
+      if (statusDiv) {
+        statusDiv.textContent = error.message || 'Failed to convert account';
+        statusDiv.className = 'status-message error';
+        statusDiv.style.display = 'block';
+      }
+
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = originalText || 'Convert to Partner';
+      }
     }
   }
 

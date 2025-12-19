@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Dashboard - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <style>
+    /* Partner Dashboard Stats */
+    .partner-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .stat-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      line-height: 1;
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-label {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    /* Tab Navigation */
+    .partner-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: var(--space-6);
+      gap: var(--space-1);
+    }
+
+    .partner-tab {
+      padding: var(--space-3) var(--space-5);
+      border: none;
+      background: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .partner-tab:hover {
+      color: var(--color-text-primary);
+    }
+
+    .partner-tab.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Client Cards Grid */
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .client-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .client-card:hover {
+      box-shadow: var(--shadow-sm);
+      border-color: var(--color-border);
+    }
+
+    .client-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .client-color {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .client-card-header h4 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .client-card-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .client-card-actions .btn {
+      flex: 1;
+    }
+
+    .role-badge.partner {
+      background-color: #eff6ff;
+      color: #1e40af;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+    }
+
+    /* Libraries Grid */
+    .libraries-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .library-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      transition: box-shadow 0.15s;
+    }
+
+    .library-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .library-card h4 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .library-card p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .library-stats {
+      display: flex;
+      gap: var(--space-4);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-bottom: var(--space-4);
+    }
+
+    /* Pending Requests */
+    .request-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+    }
+
+    .request-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .request-info {
+      flex: 1;
+    }
+
+    .request-info strong {
+      display: block;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .request-info span {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .badge-pending {
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state h3 {
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    /* Home Org Badge */
+    .home-org-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      background: var(--color-success-bg);
+      color: var(--color-success-dark);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/partner" class="nav-item active" data-section="partner">
+          <span class="nav-icon"><span class="icon icon-briefcase-white"></span></span>
+          Partner Dashboard
+        </a>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="partnerSection">
+        <div class="section-header">
+          <div>
+            <h2>Partner Dashboard</h2>
+            <p class="section-description">Manage your client portals and content libraries</p>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="partnerLoadingState">
+          <span class="icon icon-loader icon--xl spin"></span>
+          <p>Loading partner data...</p>
+        </div>
+
+        <!-- Partner Content (hidden until loaded) -->
+        <div id="partnerContent" style="display: none;">
+          <!-- Stats Overview -->
+          <div class="partner-stats">
+            <div class="stat-card">
+              <div class="stat-value" id="clientCount">0</div>
+              <div class="stat-label">Client Portals</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="libraryCount">0</div>
+              <div class="stat-label">My Libraries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="pendingCount">0</div>
+              <div class="stat-label">Pending Requests</div>
+            </div>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="partner-tabs">
+            <button class="partner-tab active" data-tab="clients">My Clients</button>
+            <button class="partner-tab" data-tab="libraries">My Libraries</button>
+            <button class="partner-tab" data-tab="requests">Access Requests</button>
+          </div>
+
+          <!-- Tab Content: My Clients -->
+          <div class="tab-content active" id="clientsTab">
+            <div class="clients-grid" id="clientsGrid">
+              <!-- Client cards populated by JS -->
+            </div>
+            <div class="empty-state" id="clientsEmptyState" style="display: none;">
+              <h3>No client portals yet</h3>
+              <p>You'll see client portals here when organizations invite you as a partner.</p>
+            </div>
+          </div>
+
+          <!-- Tab Content: My Libraries -->
+          <div class="tab-content" id="librariesTab">
+            <div class="libraries-grid" id="librariesGrid">
+              <!-- Library cards populated by JS -->
+            </div>
+            <div class="empty-state" id="librariesEmptyState" style="display: none;">
+              <h3>No libraries yet</h3>
+              <p>Create reusable content libraries to deploy across your client portals.</p>
+              <a href="/libraries" class="btn btn-primary" style="margin-top: var(--space-4);">
+                Go to Libraries
+              </a>
+            </div>
+          </div>
+
+          <!-- Tab Content: Access Requests -->
+          <div class="tab-content" id="requestsTab">
+            <div id="requestsList">
+              <!-- Pending requests populated by JS -->
+            </div>
+            <div class="empty-state" id="requestsEmptyState" style="display: none;">
+              <h3>No pending requests</h3>
+              <p>Access requests you've submitted will appear here.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Not a Partner State -->
+        <div class="empty-state" id="notPartnerState" style="display: none;">
+          <h3>Partner Account Required</h3>
+          <p>You need a partner account to access this dashboard.</p>
+          <a href="/settings" class="btn btn-primary" style="margin-top: var(--space-4);">
+            Go to Settings
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/lib/purify.min.js"></script>
+  <script src="/admin/supabase.js?v=4"></script>
+  <script src="/admin/hubspot.js?v=4"></script>
+  <script src="/lib/wiki-cache.js"></script>
+  <script src="/admin/shared.js?v=4"></script>
+  <script src="/admin/pages/partner.js?v=1"></script>
+
+  <!-- Help Scout Beacon -->
+  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
+  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
+</body>
+</html>
