@@ -72,42 +72,70 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   console.log('[RevGuide Callback] Auth payload prepared for user:', session.user.email);
 
-  // Try to notify the extension
-  let extensionNotified = false;
-  let messageSent = false;
+  // Try to notify the extension with retry logic
+  // Service workers in Manifest V3 can be dormant and need time to wake up
+
+  async function sendMessageWithRetry(message, maxRetries = 3, delayMs = 500) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[RevGuide Callback] Attempt ${attempt}/${maxRetries} - sending ${message.type}`);
+
+        const response = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(extensionId, message, (resp) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve(resp);
+            }
+          });
+        });
+
+        console.log('[RevGuide Callback] Got response:', response);
+        return { success: true, response };
+      } catch (err) {
+        console.warn(`[RevGuide Callback] Attempt ${attempt} failed:`, err.message);
+
+        if (attempt < maxRetries) {
+          // Wait before retrying - increases with each attempt to give service worker time to wake
+          const waitTime = delayMs * attempt;
+          console.log(`[RevGuide Callback] Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          return { success: false, error: err.message };
+        }
+      }
+    }
+  }
 
   if (extensionId && typeof chrome !== 'undefined' && chrome.runtime) {
     try {
       console.log('[RevGuide Callback] Sending message to extension:', extensionId);
 
-      // Send message to specific extension
-      chrome.runtime.sendMessage(extensionId, {
+      // First, send a PING to wake up the service worker
+      console.log('[RevGuide Callback] Sending PING to wake up service worker...');
+      const pingResult = await sendMessageWithRetry({ type: 'PING' }, 4, 300);
+
+      if (!pingResult.success) {
+        console.warn('[RevGuide Callback] Could not reach extension after retries');
+        showError(pingResult.error);
+        return;
+      }
+
+      console.log('[RevGuide Callback] Extension is awake, sending auth state...');
+
+      // Now send the actual auth message
+      const authResult = await sendMessageWithRetry({
         type: 'AUTH_STATE_CHANGED',
         payload: authPayload
-      }, (response) => {
-        console.log('[RevGuide Callback] Got response from extension:', response);
-        if (chrome.runtime.lastError) {
-          console.warn('[RevGuide Callback] Extension message failed:', chrome.runtime.lastError.message);
-          showError(chrome.runtime.lastError.message);
-        } else {
-          console.log('[RevGuide Callback] Extension notified successfully');
-          extensionNotified = true;
-          showSuccess();
-        }
-      });
+      }, 2, 500);
 
-      messageSent = true;
-      console.log('[RevGuide Callback] Message sent, waiting for response...');
-
-      // Give it a moment to respond
-      setTimeout(() => {
-        if (!extensionNotified && messageSent) {
-          console.log('[RevGuide Callback] No response after timeout, showing success anyway');
-          // The message was sent, extension might have received it
-          // Chrome doesn't always call the callback for external messages
-          showSuccess();
-        }
-      }, 2000);
+      if (authResult.success) {
+        console.log('[RevGuide Callback] Extension notified successfully');
+        showSuccess();
+      } else {
+        console.warn('[RevGuide Callback] Failed to send auth state:', authResult.error);
+        showError(authResult.error);
+      }
 
     } catch (e) {
       console.error('[RevGuide Callback] Error sending message:', e);

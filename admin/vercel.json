@@ -12,7 +12,8 @@
     { "source": "/signup", "destination": "/pages/signup.html" },
     { "source": "/invite", "destination": "/pages/invite.html" },
     { "source": "/reset-password", "destination": "/pages/reset-password.html" },
-    { "source": "/onboarding", "destination": "/pages/onboarding.html" }
+    { "source": "/onboarding", "destination": "/pages/onboarding.html" },
+    { "source": "/extension/logged-in", "destination": "/pages/extension-logged-in.html" }
   ],
   "headers": [
     {
