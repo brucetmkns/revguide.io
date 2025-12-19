@@ -814,6 +814,271 @@ function mapWikiToSupabase(data) {
   return mapped;
 }
 
+// ============================================
+// Unified Cards Field Mapping
+// ============================================
+
+/**
+ * Map card data from Supabase (snake_case) to JavaScript (camelCase)
+ */
+function mapCardFromSupabase(data) {
+  if (!data) return null;
+  return {
+    id: data.id,
+    cardType: data.card_type,
+    name: data.name,
+    title: data.title,
+    subtitle: data.subtitle,
+    content: data.content,
+    link: data.link,
+    sections: data.sections || [],
+    displayModes: data.display_modes || [],
+    priority: data.priority,
+    enabled: data.enabled,
+    // Triggers (tooltip mode)
+    triggerText: data.trigger_text,
+    aliases: data.aliases || [],
+    matchType: data.match_type,
+    frequency: data.frequency,
+    includeAliases: data.include_aliases,
+    pageType: data.page_type,
+    urlPatterns: data.url_patterns,
+    // Categorization
+    category: data.category,
+    objectTypes: data.object_types || [],
+    propertyGroup: data.property_group,
+    // Rules
+    conditions: data.conditions || [],
+    logic: data.logic,
+    displayOnAll: data.display_on_all,
+    // Banner-specific
+    bannerType: data.banner_type,
+    embedUrl: data.embed_url,
+    originalUrl: data.original_url,
+    tabVisibility: data.tab_visibility,
+    // Battlecard-specific
+    battlecardType: data.battlecard_type,
+    // Asset curation
+    assets: data.assets || [],
+    nextSteps: data.next_steps || [],
+    // Relationships
+    relatedCardIds: data.related_card_ids || [],
+    parentId: data.parent_id,
+    // Legacy
+    legacyType: data.legacy_type,
+    legacyId: data.legacy_id,
+    // Metadata
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+/**
+ * Map card data from JavaScript (camelCase) to Supabase (snake_case)
+ */
+function mapCardToSupabase(data) {
+  if (!data) return null;
+  const mapped = {
+    card_type: data.cardType,
+    name: data.name,
+    title: data.title || null,
+    subtitle: data.subtitle || null,
+    content: data.content || null,
+    link: data.link || null,
+    sections: data.sections || [],
+    display_modes: data.displayModes || [],
+    priority: data.priority ?? 50,
+    enabled: data.enabled !== false,
+    // Triggers (tooltip mode)
+    trigger_text: data.triggerText || null,
+    aliases: data.aliases || [],
+    match_type: data.matchType || 'exact',
+    frequency: data.frequency || 'first',
+    include_aliases: data.includeAliases ?? true,
+    page_type: data.pageType || 'record',
+    url_patterns: data.urlPatterns || null,
+    // Categorization
+    category: data.category || 'general',
+    object_types: data.objectTypes || [],
+    property_group: data.propertyGroup || null,
+    // Rules
+    conditions: data.conditions || [],
+    logic: data.logic || 'AND',
+    display_on_all: data.displayOnAll ?? false,
+    // Banner-specific
+    banner_type: data.bannerType || null,
+    embed_url: data.embedUrl || null,
+    original_url: data.originalUrl || null,
+    tab_visibility: data.tabVisibility || 'all',
+    // Battlecard-specific
+    battlecard_type: data.battlecardType || null,
+    // Asset curation
+    assets: data.assets || [],
+    next_steps: data.nextSteps || [],
+    // Relationships
+    related_card_ids: data.relatedCardIds || [],
+    parent_id: data.parentId || null
+  };
+
+  // Remove undefined values
+  Object.keys(mapped).forEach(key => {
+    if (mapped[key] === undefined) delete mapped[key];
+  });
+
+  return mapped;
+}
+
+/**
+ * Convert a legacy wiki entry to a card
+ */
+function wikiToCard(wiki) {
+  return {
+    cardType: 'definition',
+    name: wiki.title || wiki.trigger,
+    title: wiki.title,
+    content: wiki.definition,
+    link: wiki.link,
+    displayModes: ['tooltip'],
+    priority: wiki.priority || 50,
+    enabled: wiki.enabled !== false,
+    triggerText: wiki.trigger,
+    aliases: wiki.aliases || [],
+    matchType: wiki.matchType || 'exact',
+    frequency: wiki.frequency || 'first',
+    includeAliases: wiki.includeAliases ?? true,
+    pageType: wiki.pageType || 'record',
+    urlPatterns: wiki.urlPatterns,
+    category: wiki.category || 'general',
+    objectTypes: wiki.objectType ? [wiki.objectType] : [],
+    propertyGroup: wiki.propertyGroup,
+    parentId: wiki.parentId,
+    legacyType: 'wiki',
+    legacyId: wiki.id
+  };
+}
+
+/**
+ * Convert a legacy banner to a card
+ */
+function bannerToCard(banner) {
+  return {
+    cardType: 'alert',
+    name: banner.name || banner.title || 'Untitled',
+    title: banner.title,
+    content: banner.message,
+    displayModes: ['banner'],
+    priority: banner.priority || 0,
+    enabled: banner.enabled !== false,
+    category: 'general',
+    objectTypes: banner.objectType ? [banner.objectType] : (banner.objectTypes || []),
+    conditions: banner.conditions || [],
+    logic: banner.logic || 'AND',
+    displayOnAll: banner.displayOnAll ?? false,
+    bannerType: banner.type || 'info',
+    embedUrl: banner.embedUrl,
+    originalUrl: banner.url,
+    tabVisibility: banner.tabVisibility || 'all',
+    relatedCardIds: banner.relatedPlayId ? [banner.relatedPlayId] : [],
+    legacyType: 'banner',
+    legacyId: banner.id
+  };
+}
+
+/**
+ * Convert a legacy play to a card
+ */
+function playToCard(play) {
+  return {
+    cardType: 'battlecard',
+    name: play.name || 'Untitled',
+    title: play.name,
+    subtitle: play.subtitle,
+    link: play.link,
+    sections: play.sections || [],
+    displayModes: ['sidepanel'],
+    priority: 50,
+    enabled: true,
+    category: 'sales',
+    objectTypes: play.objectType ? [play.objectType] : [],
+    conditions: play.conditions || [],
+    logic: play.logic || 'AND',
+    displayOnAll: play.displayOnAll ?? false,
+    battlecardType: play.cardType || 'tip',
+    legacyType: 'play',
+    legacyId: play.id
+  };
+}
+
+/**
+ * Convert a card back to legacy wiki format (for backward compatibility)
+ */
+function cardToWiki(card) {
+  if (card.cardType !== 'definition') return null;
+  return {
+    id: card.legacyId || card.id,
+    title: card.title || card.name,
+    trigger: card.triggerText,
+    aliases: card.aliases || [],
+    category: card.category,
+    objectType: card.objectTypes?.[0] || null,
+    propertyGroup: card.propertyGroup,
+    definition: card.content,
+    link: card.link,
+    matchType: card.matchType,
+    frequency: card.frequency,
+    includeAliases: card.includeAliases,
+    priority: card.priority,
+    pageType: card.pageType,
+    urlPatterns: card.urlPatterns,
+    enabled: card.enabled,
+    parentId: card.parentId
+  };
+}
+
+/**
+ * Convert a card back to legacy banner format (for backward compatibility)
+ */
+function cardToBanner(card) {
+  if (card.cardType !== 'alert') return null;
+  return {
+    id: card.legacyId || card.id,
+    name: card.name,
+    title: card.title,
+    message: card.content,
+    type: card.bannerType || 'info',
+    priority: card.priority,
+    objectType: card.objectTypes?.[0] || null,
+    objectTypes: card.objectTypes || [],
+    conditions: card.conditions,
+    logic: card.logic,
+    displayOnAll: card.displayOnAll,
+    tabVisibility: card.tabVisibility,
+    relatedPlayId: card.relatedCardIds?.[0] || null,
+    enabled: card.enabled,
+    url: card.originalUrl,
+    embedUrl: card.embedUrl
+  };
+}
+
+/**
+ * Convert a card back to legacy play format (for backward compatibility)
+ */
+function cardToPlay(card) {
+  if (card.cardType !== 'battlecard') return null;
+  return {
+    id: card.legacyId || card.id,
+    name: card.name,
+    cardType: card.battlecardType || 'tip',
+    subtitle: card.subtitle,
+    link: card.link,
+    objectType: card.objectTypes?.[0] || null,
+    conditions: card.conditions,
+    logic: card.logic,
+    displayOnAll: card.displayOnAll,
+    sections: card.sections
+  };
+}
+
 async function loadStorageData(forceRefresh = false) {
   const defaults = {
     rules: [],
@@ -2051,6 +2316,15 @@ window.AdminShared = {
   mapWikiToSupabase,
   mapBannerToSupabase,
   mapPlayToSupabase,
+  // Unified Cards mapping
+  mapCardFromSupabase,
+  mapCardToSupabase,
+  wikiToCard,
+  bannerToCard,
+  playToCard,
+  cardToWiki,
+  cardToBanner,
+  cardToPlay,
   notifyContentScript,
   fetchProperties,
   initSearchableSelect,

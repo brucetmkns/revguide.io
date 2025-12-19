@@ -35,6 +35,7 @@
       ],
       "js": [
         "lib/rules-engine.js",
+        "content/modules/cards.js",
         "content/modules/banners.js",
         "content/modules/wiki.js",
         "content/modules/sidepanel.js",

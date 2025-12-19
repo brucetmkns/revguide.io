@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/cards.css">
+  <link rel="stylesheet" href="/admin/pages/rules.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <div class="nav-group" data-section="partner" id="partnerNavGroup" style="display: none;">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-group-menu">
+            <a href="/partner-home" class="nav-item" data-section="partner-home">Home</a>
+            <a href="/managed-accounts" class="nav-item" data-section="managed-accounts">Managed Accounts</a>
+          </div>
+        </div>
+        <a href="/cards" class="nav-item active" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Cards
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mailto:support@revguide.io" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Migration Banner (shown if needed) -->
+      <div class="migration-banner" id="migrationBanner" style="display: none;">
+        <div class="migration-banner-content">
+          <span class="icon icon-info"></span>
+          <div class="migration-banner-text">
+            <strong>Content Migration Available</strong>
+            <p>Your wiki entries, banners, and plays can be migrated to the new unified cards system.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="runMigrationBtn">Migrate Now</button>
+          <button class="btn btn-secondary btn-sm" id="dismissMigrationBtn">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Cards List Section -->
+      <section class="content-section active" id="cardsSection">
+        <div class="section-header">
+          <div>
+            <h2>Cards</h2>
+            <p class="section-description">Manage all your contextual content - definitions, alerts, battlecards, and assets</p>
+          </div>
+          <div class="section-header-actions">
+            <button class="btn btn-primary" id="addCardBtn">
+              <span class="icon icon-plus"></span> Add Card
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="cardsSearch" placeholder="Search cards...">
+            <button type="button" class="search-clear-btn" id="cardsSearchClear" title="Clear search">
+              <span class="icon icon-x icon--sm"></span>
+            </button>
+          </div>
+          <select class="filter-select" id="cardsTypeFilter">
+            <option value="all">All Types</option>
+            <option value="definition">Definitions</option>
+            <option value="alert">Alerts</option>
+            <option value="battlecard">Battlecards</option>
+            <option value="asset">Assets</option>
+          </select>
+          <select class="filter-select" id="cardsDisplayFilter">
+            <option value="all">All Display Modes</option>
+            <option value="tooltip">Tooltip</option>
+            <option value="banner">Banner</option>
+            <option value="sidepanel">Side Panel</option>
+          </select>
+          <select class="filter-select" id="cardsObjectFilter">
+            <option value="all">All Objects</option>
+            <option value="contacts">Contacts</option>
+            <option value="companies">Companies</option>
+            <option value="deals">Deals</option>
+            <option value="tickets">Tickets</option>
+          </select>
+          <button type="button" class="filter-clear-btn" id="cardsFiltersClear" title="Clear filters">
+            <span class="icon icon-x icon--sm"></span>
+          </button>
+          <button class="btn btn-icon btn-sm" id="refreshCardsBtn" title="Refresh">
+            <span class="icon icon-refresh"></span>
+          </button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="cards-stats-bar" id="cardsStatsBar">
+          <span class="cards-stat">
+            <strong id="cardsTotalCount">0</strong> total
+          </span>
+          <span class="cards-stat">
+            <strong id="cardsEnabledCount">0</strong> enabled
+          </span>
+          <span class="cards-stat-divider"></span>
+          <span class="cards-stat cards-stat-type">
+            <span class="type-dot type-dot-definition"></span>
+            <strong id="cardsDefinitionCount">0</strong> definitions
+          </span>
+          <span class="cards-stat cards-stat-type">
+            <span class="type-dot type-dot-alert"></span>
+            <strong id="cardsAlertCount">0</strong> alerts
+          </span>
+          <span class="cards-stat cards-stat-type">
+            <span class="type-dot type-dot-battlecard"></span>
+            <strong id="cardsBattlecardCount">0</strong> battlecards
+          </span>
+          <span class="cards-stat cards-stat-type">
+            <span class="type-dot type-dot-asset"></span>
+            <strong id="cardsAssetCount">0</strong> assets
+          </span>
+        </div>
+
+        <div class="compact-card-list" id="cardsCardList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="cardsEmptyState" style="display: none;">
+          <div class="empty-icon"><span class="icon icon-layers icon--3xl"></span></div>
+          <h3>No cards yet</h3>
+          <p>Create your first card to get started with contextual content</p>
+          <button class="btn btn-primary" id="createCardEmptyBtn">Create Card</button>
+        </div>
+      </section>
+
+      <!-- Card Editor Section -->
+      <section class="content-section" id="cardEditorSection">
+        <div class="section-header">
+          <div class="breadcrumb">
+            <a href="#" id="backToCards" class="back-link">
+              <span class="icon icon-arrow-left icon--sm"></span> Back to Cards
+            </a>
+            <h2 id="cardEditorTitle">Add Card</h2>
+          </div>
+        </div>
+
+        <div class="card-editor-layout">
+          <div class="card-editor-card">
+            <!-- Card Type Selector (shown for new cards) -->
+            <div class="card-type-selector" id="cardTypeSelector">
+              <label>Card Type</label>
+              <div class="card-type-options">
+                <button type="button" class="card-type-option" data-type="definition">
+                  <span class="icon icon-book"></span>
+                  <span class="type-label">Definition</span>
+                  <span class="type-desc">Tooltip with term definition</span>
+                </button>
+                <button type="button" class="card-type-option" data-type="alert">
+                  <span class="icon icon-clipboard-list"></span>
+                  <span class="type-label">Alert</span>
+                  <span class="type-desc">Banner notification on records</span>
+                </button>
+                <button type="button" class="card-type-option" data-type="battlecard">
+                  <span class="icon icon-layers"></span>
+                  <span class="type-label">Battlecard</span>
+                  <span class="type-desc">Reference guide in side panel</span>
+                </button>
+                <button type="button" class="card-type-option" data-type="asset">
+                  <span class="icon icon-link"></span>
+                  <span class="type-label">Asset</span>
+                  <span class="type-desc">Shareable content link</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <nav class="card-card-tabs" role="tablist" id="cardCardTabs">
+              <button role="tab" aria-selected="true" data-tab="content" class="card-tab active">Content</button>
+              <button role="tab" aria-selected="false" data-tab="rules" class="card-tab">Rules</button>
+              <button role="tab" aria-selected="false" data-tab="assets" class="card-tab">Assets</button>
+              <button role="tab" aria-selected="false" data-tab="usage" class="card-tab">Usage</button>
+            </nav>
+
+            <!-- Tab Panels -->
+            <div class="card-card-body">
+              <!-- Content Tab -->
+              <section id="card-tab-content" role="tabpanel" class="card-tab-panel">
+                <div class="card-content-form">
+                  <!-- Common Fields -->
+                  <div class="form-row">
+                    <div class="form-group flex-2">
+                      <label>Name <span class="required">*</span></label>
+                      <input type="text" id="cardName" placeholder="Internal name for this card">
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>Priority</label>
+                      <input type="number" id="cardPriority" value="50" min="0" max="100">
+                      <span class="form-hint">Higher priority shows first</span>
+                    </div>
+                  </div>
+
+                  <!-- Definition-specific fields -->
+                  <div class="card-type-fields" id="definitionFields">
+                    <div class="form-row">
+                      <div class="form-group flex-1">
+                        <label>Trigger Text <span class="required">*</span></label>
+                        <input type="text" id="cardTriggerText" placeholder="Text to match in HubSpot">
+                        <span class="form-hint">The term that will show the tooltip icon</span>
+                      </div>
+                      <div class="form-group flex-1">
+                        <label>Category</label>
+                        <select id="cardCategory">
+                          <option value="general">General</option>
+                          <option value="sales">Sales</option>
+                          <option value="marketing">Marketing</option>
+                          <option value="product">Product</option>
+                          <option value="process">Process</option>
+                          <option value="field">HubSpot Field</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Aliases</label>
+                      <input type="text" id="cardAliases" placeholder="Comma-separated alternative terms">
+                      <span class="form-hint">Additional terms that trigger this definition</span>
+                    </div>
+                  </div>
+
+                  <!-- Alert-specific fields -->
+                  <div class="card-type-fields" id="alertFields" style="display: none;">
+                    <div class="form-row">
+                      <div class="form-group flex-1">
+                        <label>Title</label>
+                        <input type="text" id="cardTitle" placeholder="Banner title (optional)">
+                      </div>
+                      <div class="form-group flex-1">
+                        <label>Alert Type</label>
+                        <select id="cardBannerType">
+                          <option value="info">Info (Blue)</option>
+                          <option value="success">Success (Green)</option>
+                          <option value="warning">Warning (Orange)</option>
+                          <option value="error">Error (Red)</option>
+                          <option value="embed">Embed (Media)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group" id="cardEmbedUrlGroup" style="display: none;">
+                      <label>Embed URL <span class="required">*</span></label>
+                      <input type="url" id="cardEmbedUrl" placeholder="https://docs.google.com/presentation/d/... or video URL">
+                      <span class="form-hint">Supports Google Slides, YouTube, Loom, Vimeo</span>
+                    </div>
+                  </div>
+
+                  <!-- Battlecard-specific fields -->
+                  <div class="card-type-fields" id="battlecardFields" style="display: none;">
+                    <div class="form-row">
+                      <div class="form-group flex-1">
+                        <label>Subtitle</label>
+                        <input type="text" id="cardSubtitle" placeholder="Brief description">
+                      </div>
+                      <div class="form-group flex-1">
+                        <label>Battlecard Type</label>
+                        <select id="cardBattlecardType">
+                          <option value="competitor">Competitor</option>
+                          <option value="objection">Objection Handler</option>
+                          <option value="tip">Tip / Best Practice</option>
+                          <option value="process">Process Guide</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Documentation Link</label>
+                      <input type="url" id="cardLink" placeholder="Link to full documentation">
+                      <span class="form-hint">External link for detailed information</span>
+                    </div>
+                  </div>
+
+                  <!-- Asset-specific fields -->
+                  <div class="card-type-fields" id="assetFields" style="display: none;">
+                    <div class="form-group">
+                      <label>Asset URL <span class="required">*</span></label>
+                      <input type="url" id="cardAssetUrl" placeholder="Link to the asset">
+                    </div>
+                    <div class="form-group">
+                      <label>Asset Type</label>
+                      <select id="cardAssetType">
+                        <option value="document">Document</option>
+                        <option value="video">Video</option>
+                        <option value="presentation">Presentation</option>
+                        <option value="case-study">Case Study</option>
+                        <option value="link">External Link</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Content/Definition field (shown for all types) -->
+                  <div class="form-group">
+                    <label id="cardContentLabel">Definition</label>
+                    <div class="rich-text-editor">
+                      <div class="rich-text-toolbar" id="cardContentToolbar">
+                        <button type="button" data-command="bold" title="Bold">
+                          <span class="icon icon-bold icon--sm"></span>
+                        </button>
+                        <button type="button" data-command="italic" title="Italic">
+                          <span class="icon icon-italic icon--sm"></span>
+                        </button>
+                        <button type="button" data-command="underline" title="Underline">
+                          <span class="icon icon-underline icon--sm"></span>
+                        </button>
+                        <span class="toolbar-divider"></span>
+                        <button type="button" data-command="insertUnorderedList" title="Bullet List">
+                          <span class="icon icon-list icon--sm"></span>
+                        </button>
+                        <button type="button" data-command="insertOrderedList" title="Numbered List">
+                          <span class="icon icon-list-ordered icon--sm"></span>
+                        </button>
+                        <span class="toolbar-divider"></span>
+                        <button type="button" data-command="createLink" title="Insert Link">
+                          <span class="icon icon-link icon--sm"></span>
+                        </button>
+                      </div>
+                      <div id="cardContent" class="rich-text-content" contenteditable="true"></div>
+                    </div>
+                  </div>
+
+                  <!-- Sections (for battlecards) -->
+                  <div class="form-group" id="cardSectionsGroup" style="display: none;">
+                    <label>Sections</label>
+                    <div class="sections-builder" id="cardSections">
+                      <!-- Sections added by JS -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addSectionBtn">
+                      <span class="icon icon-plus icon--sm"></span> Add Section
+                    </button>
+                  </div>
+
+                  <!-- Display Modes -->
+                  <div class="form-group">
+                    <label>Display Modes</label>
+                    <div class="display-modes-options">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="displayModeTooltip" value="tooltip">
+                        <span>Tooltip</span>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="displayModeBanner" value="banner">
+                        <span>Banner</span>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="displayModeSidepanel" value="sidepanel">
+                        <span>Side Panel</span>
+                      </label>
+                    </div>
+                    <span class="form-hint">Where this card should appear</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Rules Tab -->
+              <section id="card-tab-rules" role="tabpanel" class="card-tab-panel" hidden>
+                <div class="card-rules-form">
+                  <div class="form-group">
+                    <label>Object Types</label>
+                    <div class="object-types-options">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="objectTypeContacts" value="contacts">
+                        <span>Contacts</span>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="objectTypeCompanies" value="companies">
+                        <span>Companies</span>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="objectTypeDeals" value="deals">
+                        <span>Deals</span>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="objectTypeTickets" value="tickets">
+                        <span>Tickets</span>
+                      </label>
+                    </div>
+                    <span class="form-hint">Which HubSpot objects this card applies to</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="cardDisplayOnAll">
+                      <span>Display on all records</span>
+                    </label>
+                    <span class="form-hint">When enabled, this card shows on all records of the selected object types</span>
+                  </div>
+
+                  <div id="cardConditionsWrapper">
+                    <div class="form-group">
+                      <div class="label-row">
+                        <label>Conditions</label>
+                        <span id="cardConditionStatus" class="status-text"></span>
+                      </div>
+                      <span class="form-hint">Define when this card should appear based on record properties</span>
+                      <div class="logic-toggle" id="cardLogicToggle">
+                        <span class="logic-label">Match:</span>
+                        <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
+                        <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+                      </div>
+                      <div class="conditions-builder" id="cardConditions">
+                        <!-- Conditions added by JS -->
+                      </div>
+                      <button class="btn btn-secondary btn-sm" id="addCardConditionBtn">
+                        <span class="icon icon-plus icon--sm"></span> Add Condition
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Definition-specific rules -->
+                  <div id="definitionRulesSection">
+                    <div class="form-row">
+                      <div class="form-group flex-1">
+                        <label>Match Type</label>
+                        <select id="cardMatchType">
+                          <option value="exact">Exact match</option>
+                          <option value="starts_with">Starts with</option>
+                          <option value="contains">Contains</option>
+                        </select>
+                      </div>
+                      <div class="form-group flex-1">
+                        <label>Frequency</label>
+                        <select id="cardFrequency">
+                          <option value="first">First instance per section</option>
+                          <option value="all">All instances</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Alert-specific rules -->
+                  <div id="alertRulesSection" style="display: none;">
+                    <div class="form-group">
+                      <label>Show on Tab Position</label>
+                      <input type="number" id="cardTabVisibility" min="1" max="10" placeholder="Leave empty for all tabs">
+                      <span class="form-hint">Enter the tab number (1, 2, 3, etc.) or leave empty to show on all tabs</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Assets Tab (New) -->
+              <section id="card-tab-assets" role="tabpanel" class="card-tab-panel" hidden>
+                <div class="card-assets-form">
+                  <!-- Related Assets -->
+                  <div class="form-group">
+                    <label>Related Assets</label>
+                    <span class="form-hint">Add links to documents, videos, or other resources to share with prospects</span>
+                    <div class="assets-list" id="cardAssetsList">
+                      <!-- Assets added by JS -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addAssetBtn">
+                      <span class="icon icon-plus icon--sm"></span> Add Asset
+                    </button>
+                  </div>
+
+                  <!-- Next Steps -->
+                  <div class="form-group">
+                    <label>Suggested Next Steps</label>
+                    <span class="form-hint">Recommend actions for the rep to take</span>
+                    <div class="next-steps-list" id="cardNextStepsList">
+                      <!-- Next steps added by JS -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addNextStepBtn">
+                      <span class="icon icon-plus icon--sm"></span> Add Next Step
+                    </button>
+                  </div>
+
+                  <!-- Related Cards -->
+                  <div class="form-group">
+                    <label>Related Cards</label>
+                    <span class="form-hint">Link to other cards that may be relevant</span>
+                    <div class="related-cards-select" id="cardRelatedCards">
+                      <!-- Related cards selector -->
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Usage Tab -->
+              <section id="card-tab-usage" role="tabpanel" class="card-tab-panel" hidden>
+                <div class="card-usage-coming-soon">
+                  <span class="icon icon-chart icon--2xl"></span>
+                  <h3>Usage Analytics Coming Soon</h3>
+                  <p>Track how often this card is displayed to your team</p>
+                </div>
+              </section>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="card-card-footer">
+              <div class="footer-left">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="cardEnabled" checked>
+                  <span>Enabled</span>
+                </label>
+              </div>
+              <div class="footer-right">
+                <button class="btn btn-secondary" id="cancelCardBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveCardBtn">Save Card</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/supabase.js"></script>
+  <script src="/lib/wiki-cache.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script type="module" src="/admin/lib/tiptap-editor.js"></script>
+  <script src="/admin/pages/cards.js"></script>
+
+  <!-- Help Scout Beacon -->
+  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
+  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
+</body>
+</html>
