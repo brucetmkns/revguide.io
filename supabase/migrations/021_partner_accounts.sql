@@ -165,6 +165,7 @@ RETURNS TABLE (
 DECLARE
   v_user_id UUID;
   v_new_org_id UUID;
+  v_slug TEXT;
 BEGIN
   -- Get user id
   SELECT id INTO v_user_id FROM users WHERE auth_user_id = p_auth_uid LIMIT 1;
@@ -180,9 +181,15 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Generate slug from agency name
+  v_slug := lower(regexp_replace(p_agency_name, '[^a-zA-Z0-9]+', '-', 'g'));
+  v_slug := trim(both '-' from v_slug);
+  -- Add random suffix to ensure uniqueness
+  v_slug := v_slug || '-' || substr(gen_random_uuid()::text, 1, 8);
+
   -- Create new organization for the partner's agency
-  INSERT INTO organizations (name)
-  VALUES (p_agency_name)
+  INSERT INTO organizations (name, slug)
+  VALUES (p_agency_name, v_slug)
   RETURNING id INTO v_new_org_id;
 
   -- Update user to partner account type and set home org
@@ -202,6 +209,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Check if user exists by email and return partner status
+-- Drop existing function first (return type may have changed)
+DROP FUNCTION IF EXISTS get_user_by_email(TEXT);
 CREATE OR REPLACE FUNCTION get_user_by_email(p_email TEXT)
 RETURNS TABLE (
   user_id UUID,
@@ -293,6 +302,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- Update get_user_organizations to include partner role info
+-- Drop existing function first (return type may have changed)
+DROP FUNCTION IF EXISTS get_user_organizations(UUID);
 CREATE OR REPLACE FUNCTION get_user_organizations(p_auth_uid UUID)
 RETURNS TABLE (
   organization_id UUID,
