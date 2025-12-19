@@ -169,8 +169,9 @@ async function checkAuth() {
     // Update sidebar immediately with cached data
     renderSidebar();
 
-    // Still load organizations for portal switching (lightweight call)
-    loadUserOrganizations();
+    // Load organizations for portal switching AND role detection
+    // Must await to ensure org-specific roles are available before page setup
+    await loadUserOrganizations();
 
     // Background check: verify user still exists in database
     // This catches cases where a user was deleted but session is still active
@@ -241,8 +242,9 @@ async function checkAuth() {
           currentOrganization = profile.organizations;
           saveUserToCache();
 
-          // Load user's organizations for portal switching (multi-portal feature)
-          loadUserOrganizations();
+          // Load user's organizations for portal switching AND role detection
+          // Must await to ensure org-specific roles are available before page setup
+          await loadUserOrganizations();
         } else {
           // No profile found and couldn't create one - user was deleted
           // Force logout
