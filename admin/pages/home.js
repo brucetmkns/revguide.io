@@ -77,7 +77,8 @@ class HomePage {
   }
 
   setupRoleBasedUI() {
-    const isAdmin = AdminShared.isAdmin();
+    // Admins, editors, and consultants see full onboarding; viewers/members see simplified
+    const canEdit = AdminShared.canEditContent();
 
     // Show/hide appropriate onboarding sections
     const adminOnboardingProgress = document.getElementById('adminOnboardingProgress');
@@ -85,22 +86,22 @@ class HomePage {
     const adminOnboardingSteps = document.getElementById('adminOnboardingSteps');
     const memberOnboardingSteps = document.getElementById('memberOnboardingSteps');
 
-    if (isAdmin) {
-      // Show admin onboarding
-      if (adminOnboardingProgress) adminOnboardingProgress.style.display = 'block';
+    if (canEdit) {
+      // Show admin onboarding for admins, editors, consultants
+      if (adminOnboardingProgress) adminOnboardingProgress.style.display = 'flex';
       if (memberOnboardingProgress) memberOnboardingProgress.style.display = 'none';
       if (adminOnboardingSteps) adminOnboardingSteps.style.display = 'block';
       if (memberOnboardingSteps) memberOnboardingSteps.style.display = 'none';
     } else {
-      // Show member onboarding
+      // Show member onboarding for viewers
       if (adminOnboardingProgress) adminOnboardingProgress.style.display = 'none';
-      if (memberOnboardingProgress) memberOnboardingProgress.style.display = 'block';
+      if (memberOnboardingProgress) memberOnboardingProgress.style.display = 'flex';
       if (adminOnboardingSteps) adminOnboardingSteps.style.display = 'none';
       if (memberOnboardingSteps) memberOnboardingSteps.style.display = 'block';
     }
 
     // Update welcome message for members
-    if (!isAdmin) {
+    if (!canEdit) {
       const sectionHeader = document.querySelector('.section-header');
       if (sectionHeader) {
         const description = sectionHeader.querySelector('.section-description');
