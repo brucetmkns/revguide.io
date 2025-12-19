@@ -1436,12 +1436,7 @@ async function handleSignupPartner(request, env, corsHeaders) {
       });
     }
 
-    if (!inviteToken) {
-      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // inviteToken is optional - if not provided, this is a new partner signup (not from invitation)
 
     const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
@@ -1452,58 +1447,62 @@ async function handleSignupPartner(request, env, corsHeaders) {
       });
     }
 
-    // 1. Verify invitation exists and is a partner invitation
-    const inviteResponse = await fetch(
-      `${CONFIG.supabaseUrl}/rest/v1/invitations?token=eq.${encodeURIComponent(inviteToken)}&accepted_at=is.null&select=*,organizations(id,name)`,
-      {
-        headers: {
-          'apikey': serviceRoleKey,
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json'
+    let invitation = null;
+
+    // 1. If invite token provided, verify invitation exists and is a partner invitation
+    if (inviteToken) {
+      const inviteResponse = await fetch(
+        `${CONFIG.supabaseUrl}/rest/v1/invitations?token=eq.${encodeURIComponent(inviteToken)}&accepted_at=is.null&select=*,organizations(id,name)`,
+        {
+          headers: {
+            'apikey': serviceRoleKey,
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+
+      if (!inviteResponse.ok) {
+        console.error('Failed to fetch invitation:', await inviteResponse.text());
+        return new Response(JSON.stringify({ error: 'Failed to verify invitation' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
-    );
 
-    if (!inviteResponse.ok) {
-      console.error('Failed to fetch invitation:', await inviteResponse.text());
-      return new Response(JSON.stringify({ error: 'Failed to verify invitation' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+      const invitations = await inviteResponse.json();
+      if (!invitations || invitations.length === 0) {
+        return new Response(JSON.stringify({ error: 'Invalid or expired invitation' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
-    const invitations = await inviteResponse.json();
-    if (!invitations || invitations.length === 0) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired invitation' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+      invitation = invitations[0];
 
-    const invitation = invitations[0];
+      // Verify it's a partner invitation
+      if (invitation.role !== 'partner' && invitation.invitation_type !== 'partner') {
+        return new Response(JSON.stringify({ error: 'This is not a partner invitation' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
-    // Verify it's a partner invitation
-    if (invitation.role !== 'partner' && invitation.invitation_type !== 'partner') {
-      return new Response(JSON.stringify({ error: 'This is not a partner invitation' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+      // Check if invitation email matches
+      if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+        return new Response(JSON.stringify({ error: 'Email does not match invitation' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
-    // Check if invitation email matches
-    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
-      return new Response(JSON.stringify({ error: 'Email does not match invitation' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Check if expired
-    if (new Date(invitation.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: 'Invitation has expired' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      // Check if expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        return new Response(JSON.stringify({ error: 'Invitation has expired' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // 2. Create auth user with email_confirm = true
@@ -1550,6 +1549,13 @@ async function handleSignupPartner(request, env, corsHeaders) {
     const authUser = await createUserResponse.json();
 
     // 3. Create the partner's agency organization
+    // Generate slug from agency name
+    const agencySlug = agencyName.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      + '-' + crypto.randomUUID().substring(0, 8);
+
     const createAgencyOrgResponse = await fetch(
       `${CONFIG.supabaseUrl}/rest/v1/organizations`,
       {
@@ -1561,7 +1567,8 @@ async function handleSignupPartner(request, env, corsHeaders) {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
-          name: agencyName.trim()
+          name: agencyName.trim(),
+          slug: agencySlug
         })
       }
     );
@@ -1639,39 +1646,41 @@ async function handleSignupPartner(request, env, corsHeaders) {
       }
     );
 
-    // 6. Add partner to the client organization (from invitation) with 'partner' role
-    await fetch(
-      `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': serviceRoleKey,
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          user_id: userProfile.id,
-          organization_id: invitation.organization_id,
-          role: 'partner'
-        })
-      }
-    );
+    // 6. If there's an invitation, add partner to the client organization with 'partner' role
+    if (invitation) {
+      await fetch(
+        `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': serviceRoleKey,
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: userProfile.id,
+            organization_id: invitation.organization_id,
+            role: 'partner'
+          })
+        }
+      );
 
-    // 7. Mark invitation as accepted
-    await fetch(
-      `${CONFIG.supabaseUrl}/rest/v1/invitations?id=eq.${invitation.id}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'apikey': serviceRoleKey,
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          accepted_at: new Date().toISOString()
-        })
-      }
-    );
+      // 7. Mark invitation as accepted
+      await fetch(
+        `${CONFIG.supabaseUrl}/rest/v1/invitations?id=eq.${invitation.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': serviceRoleKey,
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            accepted_at: new Date().toISOString()
+          })
+        }
+      );
+    }
 
     return new Response(JSON.stringify({
       success: true,

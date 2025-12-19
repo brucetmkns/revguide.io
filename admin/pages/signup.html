@@ -402,15 +402,20 @@
       // Get request_path for redirecting after signup (e.g., from invite flow)
       const requestPath = queryParams.get('request_path');
 
-      // Check if already logged in
-      const { data: { session } } = await RevGuideAuth.getSession();
-      if (session) {
-        window.location.href = requestPath || '/home';
-        return;
+      // Check if this is a new partner signup (from settings page)
+      const isNewPartnerSignup = queryParams.get('new_partner') === 'true';
+
+      // Check if already logged in (skip for new partner signup - they just signed out)
+      if (!isNewPartnerSignup) {
+        const { data: { session } } = await RevGuideAuth.getSession();
+        if (session) {
+          window.location.href = requestPath || '/home';
+          return;
+        }
       }
 
-      // Track if this is a partner invitation
-      let isPartnerInvitation = false;
+      // Track if this is a partner invitation or new partner signup
+      let isPartnerInvitation = isNewPartnerSignup;
 
       // If coming from invite flow, fetch invitation and pre-populate fields
       if (requestPath && requestPath.includes('/invite')) {
@@ -508,6 +513,40 @@
             document.querySelector('.signup-header p').textContent = 'Create your account to accept the invitation';
             document.querySelector('.signup-header .subtitle').style.display = 'none';
           }
+        }
+      }
+
+      // Handle new partner signup (from settings page, no invitation)
+      if (isNewPartnerSignup && !requestPath) {
+        // Update header for partner signup
+        document.querySelector('.signup-header p').innerHTML = 'Create a Partner Account';
+        document.querySelector('.signup-header .subtitle').textContent =
+          'Manage multiple client portals from your Partner Dashboard';
+
+        // Company field is their agency name
+        companyNameInput.value = '';
+        companyNameInput.placeholder = 'Your agency/company name';
+        const companyLabel = companyNameInput.closest('.form-group').querySelector('label');
+        if (companyLabel) {
+          companyLabel.textContent = 'Your Agency/Company Name';
+        }
+
+        // Update button text
+        signupBtn.textContent = 'Create Partner Account';
+
+        // Show partner features
+        const featuresList = document.querySelector('.features-list');
+        if (featuresList) {
+          featuresList.innerHTML = `
+            <h4 style="margin-bottom: 8px; font-size: 14px; color: var(--color-text-secondary);">Partner features:</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--color-text-tertiary);">
+              <li>Your own agency organization</li>
+              <li>Partner Dashboard to manage clients</li>
+              <li>Create reusable content libraries</li>
+              <li>Switch between client portals seamlessly</li>
+            </ul>
+          `;
+          featuresList.style.display = 'block';
         }
       }
 
@@ -614,7 +653,60 @@
           return;
         }
 
-        // Regular signup flow (not invite)
+        // New partner signup flow (from settings page, no invite)
+        if (isNewPartnerSignup) {
+          try {
+            // Use partner signup endpoint without invite token
+            const response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-partner', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                password,
+                fullName,
+                agencyName: companyName,
+                inviteToken: null  // No invitation, just new partner signup
+              })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              if (result.code === 'USER_EXISTS') {
+                showMessage('An account with this email already exists. <a href="/login">Sign in instead</a>', 'error');
+              } else {
+                showMessage(result.error || 'Failed to create account', 'error');
+              }
+              signupBtn.disabled = false;
+              signupBtn.textContent = 'Create Partner Account';
+              return;
+            }
+
+            // Success! Sign in the user automatically
+            showMessage('Partner account created! Signing you in...', 'success');
+
+            const { data: signInData, error: signInError } = await RevGuideAuth.signIn(email, password);
+
+            if (signInError) {
+              showMessage('Account created! Please sign in.', 'success');
+              setTimeout(() => {
+                window.location.href = '/login';
+              }, 1500);
+            } else {
+              setTimeout(() => {
+                window.location.href = '/partner';
+              }, 500);
+            }
+          } catch (err) {
+            console.error('Partner signup error:', err);
+            showMessage('Failed to create account. Please try again.', 'error');
+            signupBtn.disabled = false;
+            signupBtn.textContent = 'Create Partner Account';
+          }
+          return;
+        }
+
+        // Regular signup flow (not invite, not partner)
         try {
           const { data, error } = await RevGuideAuth.signUp(email, password, {
             fullName,

@@ -382,6 +382,12 @@ class SettingsPage {
       confirmConvertBtn.addEventListener('click', () => this.convertToPartner());
     }
 
+    // Create new partner account button
+    const createNewPartnerAccountBtn = document.getElementById('createNewPartnerAccountBtn');
+    if (createNewPartnerAccountBtn) {
+      createNewPartnerAccountBtn.addEventListener('click', () => this.createNewPartnerAccount());
+    }
+
     // Close modal on backdrop click
     document.getElementById('inviteModal').addEventListener('click', (e) => {
       if (e.target.id === 'inviteModal') {
@@ -1337,6 +1343,30 @@ class SettingsPage {
         confirmBtn.disabled = false;
         confirmBtn.textContent = originalText || 'Convert to Partner';
       }
+    }
+  }
+
+  async createNewPartnerAccount() {
+    // Show confirmation dialog
+    const confirmed = await AdminShared.showConfirmDialog({
+      title: 'Create New Partner Account',
+      message: 'You will be signed out of your current account and redirected to create a new Partner account. Your current account will remain unchanged.',
+      primaryLabel: 'Continue',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (confirmed !== 'primary') return;
+
+    try {
+      // Sign out the current user
+      await RevGuideAuth.signOut();
+
+      // Redirect to signup with partner flag
+      window.location.href = '/signup?new_partner=true';
+    } catch (error) {
+      console.error('[Settings] Error signing out:', error);
+      AdminShared.showToast('Failed to sign out. Please try again.', 'error');
     }
   }
 
