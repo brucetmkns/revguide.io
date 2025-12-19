@@ -641,7 +641,7 @@
               // Signed in successfully - redirect appropriately
               setTimeout(() => {
                 // Partners go to partner dashboard, others go to home
-                window.location.href = isPartnerInvitation ? '/partner' : '/home';
+                window.location.href = isPartnerInvitation ? '/partner-home' : '/home';
               }, 500);
             }
           } catch (err) {
@@ -694,7 +694,7 @@
               }, 1500);
             } else {
               setTimeout(() => {
-                window.location.href = '/partner';
+                window.location.href = '/partner-home';
               }, 500);
             }
           } catch (err) {

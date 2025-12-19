@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - RevGuide Partner</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/partner-home.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <div class="nav-group open active" data-section="partner" id="partnerNavGroup">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-group-menu">
+            <a href="/partner-home" class="nav-item active" data-section="partner-home">Home</a>
+            <a href="/managed-accounts" class="nav-item" data-section="managed-accounts">Managed Accounts</a>
+          </div>
+        </div>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mailto:support@revguide.io" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar" id="sidebarUserAvatar">...</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+            <span class="user-org" id="sidebarUserOrg"></span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active" id="partnerHomeSection">
+        <div class="section-header">
+          <div>
+            <h2>Welcome to RevGuide</h2>
+            <p class="section-description">Complete setup to start deploying content to clients</p>
+          </div>
+        </div>
+
+        <!-- Progress Hero -->
+        <div class="progress-hero" id="partnerProgressHero">
+          <div class="progress-ring">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <circle class="progress-ring-bg" cx="44" cy="44" r="36"/>
+              <circle class="progress-ring-fill" id="partnerProgressFill" cx="44" cy="44" r="36"
+                      stroke-dasharray="226" stroke-dashoffset="226"/>
+            </svg>
+            <div class="progress-ring-text">
+              <span class="progress-ring-value"><span id="partnerProgressText">0</span>/3</span>
+              <span class="progress-ring-label">Done</span>
+            </div>
+          </div>
+          <div class="progress-info">
+            <h3>Partner Setup</h3>
+            <p class="progress-info-desc" id="partnerProgressDesc">Connect to a client portal to continue</p>
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <div class="mini-stat-icon clients">
+                  <span class="icon icon-users icon--sm"></span>
+                </div>
+                <span class="mini-stat-value" id="partnerClientCount">0</span>
+                <span class="mini-stat-label">Clients</span>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon libraries">
+                  <span class="icon icon-download icon--sm"></span>
+                </div>
+                <span class="mini-stat-value" id="partnerLibraryCount">0</span>
+                <span class="mini-stat-label">Libraries</span>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon deployments">
+                  <span class="icon icon-layers icon--sm"></span>
+                </div>
+                <span class="mini-stat-value" id="partnerDeploymentCount">0</span>
+                <span class="mini-stat-label">Deployments</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- All Set Message (shown when onboarding complete) -->
+        <div class="all-set-message" id="partnerAllSetMessage" style="display: none;">
+          <div class="all-set-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3>You're all set!</h3>
+          <p>You're connected to client portals and ready to deploy content.</p>
+          <div class="all-set-actions">
+            <a href="/managed-accounts" class="btn btn-primary">View Clients</a>
+            <a href="/libraries" class="btn btn-secondary">Browse Libraries</a>
+          </div>
+        </div>
+
+        <!-- 3-Step Onboarding Timeline -->
+        <div class="onboarding-timeline" id="partnerOnboardingSteps">
+          <!-- Step 1: Install Extension -->
+          <div class="timeline-step completed" data-step="install" id="partnerStepInstall">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-puzzle"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Install Extension</h4>
+                <p>Chrome extension installed and ready</p>
+              </div>
+              <span class="step-status completed" id="partnerStepInstallStatus">Complete</span>
+            </div>
+          </div>
+
+          <!-- Step 2: Connect to Client -->
+          <div class="timeline-step" data-step="client" id="partnerStepClient">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-users"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Connect to a Client</h4>
+                <p>Get invited to a client portal or request access</p>
+              </div>
+              <span class="step-status" id="partnerStepClientStatus">Not started</span>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="partnerViewClientsBtn">View Clients</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Deploy Content -->
+          <div class="timeline-step" data-step="deploy" id="partnerStepDeploy">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-download"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Deploy Content</h4>
+                <p>Push libraries and content to client workspaces</p>
+              </div>
+              <span class="step-status" id="partnerStepDeployStatus">Not started</span>
+              <button class="btn btn-ghost btn-sm" id="partnerBrowseLibrariesBtn" disabled>Browse Libraries</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column: Clients + Resources -->
+        <div class="two-column-layout">
+          <!-- Client Quick Access -->
+          <div class="dashboard-section">
+            <div class="dashboard-header">
+              <h3>Your Clients</h3>
+              <a href="/managed-accounts" class="btn btn-ghost btn-sm">View All</a>
+            </div>
+            <div class="client-quick-list" id="partnerClientList">
+              <!-- Populated by JS -->
+            </div>
+            <div class="empty-state" id="partnerClientsEmptyState" style="display: none;">
+              <p>No client portals yet. You'll see clients here when organizations invite you as a partner.</p>
+            </div>
+          </div>
+
+          <!-- Partner Resources -->
+          <div class="resources-card">
+            <h4>
+              <span class="icon icon-book icon--sm"></span>
+              Partner Resources
+            </h4>
+            <div class="resource-links">
+              <a href="/libraries" class="resource-link">
+                <span class="icon icon-download icon--sm"></span>
+                <span>Browse Libraries</span>
+              </a>
+              <a href="https://help.supered.io" target="_blank" class="resource-link">
+                <span class="icon icon-book icon--sm"></span>
+                <span>Partner Guide</span>
+              </a>
+              <a href="https://help.supered.io" target="_blank" class="resource-link">
+                <span class="icon icon-help-circle icon--sm"></span>
+                <span>Help Center</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin/lib/purify.min.js"></script>
+  <script src="/admin/supabase.js"></script>
+  <script src="/lib/wiki-cache.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/partner-home.js"></script>
+
+  <!-- Help Scout Beacon -->
+  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
+  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
+</body>
+</html>

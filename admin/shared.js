@@ -376,30 +376,47 @@ function renderSidebar(activePage) {
     }
   }
 
-  // Show/hide Partner Dashboard nav item for partners, consultants, or users with multiple orgs
-  const partnerLink = sidebar.querySelector('[data-section="partner"]');
-  if (partnerLink) {
+  // Show/hide Partner nav group for partners, consultants, or users with multiple orgs
+  const partnerNavGroup = sidebar.querySelector('#partnerNavGroup');
+  if (partnerNavGroup) {
     // Show for consultants, partners, or users with multiple orgs
     const showPartnerDashboard = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
 
     if (showPartnerDashboard) {
-      partnerLink.style.display = 'flex';
+      partnerNavGroup.style.display = 'block';
     } else if (typeof RevGuideDB !== 'undefined') {
       // Also check isPartner() for users who converted but aren't consultants
       RevGuideDB.isPartner().then(isPartner => {
-        partnerLink.style.display = isPartner ? 'flex' : 'none';
+        partnerNavGroup.style.display = isPartner ? 'block' : 'none';
       }).catch(() => {
-        partnerLink.style.display = 'none';
+        partnerNavGroup.style.display = 'none';
       });
     } else {
-      partnerLink.style.display = 'none';
+      partnerNavGroup.style.display = 'none';
     }
-  }
 
-  // Hide Clients nav item - page was removed, replaced by Partner Dashboard
-  const clientsLink = sidebar.querySelector('[data-section="clients"]');
-  if (clientsLink) {
-    clientsLink.style.display = 'none';
+    // Setup nav group toggle handler
+    setupNavGroupToggle(partnerNavGroup);
+  }
+}
+
+/**
+ * Setup click handler for nav group toggle
+ */
+function setupNavGroupToggle(navGroup) {
+  const toggle = navGroup.querySelector('.nav-group-toggle');
+  if (!toggle) return;
+
+  // Remove existing listener to prevent duplicates
+  toggle.removeEventListener('click', handleNavGroupToggle);
+  toggle.addEventListener('click', handleNavGroupToggle);
+}
+
+function handleNavGroupToggle(event) {
+  event.preventDefault();
+  const navGroup = event.currentTarget.closest('.nav-group');
+  if (navGroup) {
+    navGroup.classList.toggle('open');
   }
 }
 

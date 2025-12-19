@@ -2,6 +2,44 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.2] - 2025-12-19 - Partner Home Page
+
+### Added
+- **Partner Home Page** (`/partner-home`): New dedicated home page for partner accounts
+  - 3-step onboarding timeline (Install Extension → Connect to Client → Deploy Content)
+  - Progress ring showing completion status
+  - Mini-stats for clients, libraries, and deployments
+  - Client quick-access list with color-coded portal indicators
+  - Partner resources section with quick links
+
+- **Sidebar Partner Dropdown Navigation**: Partner nav item now expands to show sub-items
+  - "Home" links to `/partner-home`
+  - "Managed Accounts" links to `/managed-accounts` (renamed from `/partner`)
+  - Dropdown toggle with arrow indicator
+  - Auto-expands when on partner pages
+
+### Changed
+- **Route Rename**: `/partner` → `/managed-accounts`
+  - Partner dashboard page now accessible at `/managed-accounts`
+  - All internal links updated to use new route
+  - Partner signup redirects to `/partner-home` instead of `/partner`
+
+### Technical
+- **Files Added**:
+  - `admin/pages/partner-home.html` - Partner home page structure
+  - `admin/pages/partner-home.css` - Partner home styles
+  - `admin/pages/partner-home.js` - Partner home logic
+
+- **Files Modified**:
+  - `vercel.json` - Added `/partner-home` route, renamed `/partner` to `/managed-accounts`
+  - `styles/components.css` - Added `.nav-group` dropdown styles
+  - `admin/shared.js` - Added nav-group toggle handlers, updated partner nav visibility
+  - `admin/pages/signup.html` - Partner redirect now goes to `/partner-home`
+  - `admin/pages/settings.html` - Updated partner dashboard link to `/managed-accounts`
+  - All sidebar HTML files - Updated with new nav-group dropdown structure
+
+---
+
 ## [2.8.1] - 2025-12-19 - Home Onboarding UI Refresh
 
 ### Changed

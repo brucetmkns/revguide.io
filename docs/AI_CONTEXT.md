@@ -35,7 +35,8 @@ plugin/
 │       ├── wiki.js        # Wiki glossary CRUD
 │       ├── libraries.js   # Content library browser
 │       ├── settings.js    # Settings & team management
-│       ├── partner.js     # Partner Dashboard (v2.8.0+)
+│       ├── partner.js     # Managed Accounts page (v2.8.0+)
+│       ├── partner-home.js # Partner Home page (v2.8.2+)
 │       └── login.js       # Web authentication
 │
 ├── background/
@@ -162,10 +163,12 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - Portal selector dropdown appears in sidebar when user has 2+ portals
 - **Import/Export** (v2.7.2+): JSON export from one portal, import to another with Replace All or Merge mode
 
-**Partner Account System (v2.8.0+):**
+**Partner Account System (v2.8.0+, v2.8.2+):**
 - `account_type` column: `'standard'` or `'partner'`
 - `home_organization_id` tracks partner's agency org
-- Partner Dashboard (`/partner`) - dedicated UI for client management
+- Partner Home (`/partner-home`) - 3-step onboarding for partners (v2.8.2+)
+- Managed Accounts (`/managed-accounts`) - dedicated UI for client management (renamed from `/partner`)
+- Sidebar dropdown: Partner → Home, Managed Accounts
 - Partners have `partner` role in client orgs (distinct from legacy `consultant`)
 - Admins can invite partners or convert their account to partner
 
@@ -184,9 +187,9 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `convertToPartner(agencyName)` - Convert admin to partner (v2.8.0+)
 
 **Partner Signup Paths:**
-1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org
+1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org → Redirects to `/partner-home`
 2. **Convert existing**: Settings → "Become a Partner" → Creates agency org, updates account_type
-3. **New signup**: Settings → "Sign Up with a New Account" → Signs out → `/signup?new_partner=true` → Fresh partner account
+3. **New signup**: Settings → "Sign Up with a New Account" → Signs out → `/signup?new_partner=true` → Fresh partner account → Redirects to `/partner-home`
 
 **Role helpers (AdminShared) - v2.7.3+:**
 - `getEffectiveRole()` - Returns org-specific role from `organization_members`, falls back to `currentUser.role`
@@ -292,4 +295,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024 (v2.8.0)*
+*Last updated: December 2024 (v2.8.2)*

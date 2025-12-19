@@ -263,10 +263,19 @@
           <span class="nav-icon"><span class="icon icon-home-white"></span></span>
           Home
         </a>
-        <a href="/partner" class="nav-item active" data-section="partner">
-          <span class="nav-icon"><span class="icon icon-users-white"></span></span>
-          Partner Dashboard
-        </a>
+        <div class="nav-group open active" data-section="partner" id="partnerNavGroup">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-group-menu">
+            <a href="/partner-home" class="nav-item" data-section="partner-home">Home</a>
+            <a href="/managed-accounts" class="nav-item active" data-section="managed-accounts">Managed Accounts</a>
+          </div>
+        </div>
         <a href="/banners" class="nav-item" data-section="banners">
           <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
           Banners
@@ -289,7 +298,7 @@
         </a>
       </nav>
       <div class="sidebar-footer">
-        <a href="https://github.com/revguide/revguide/issues" target="_blank" class="sidebar-feedback-link">
+        <a href="mailto:support@revguide.io" class="sidebar-feedback-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
