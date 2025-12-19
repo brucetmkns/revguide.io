@@ -18,7 +18,7 @@ class HomePage {
     // Circle has r=36, so circumference = 2 * PI * 36 = ~226
     const circumference = 226;
     const offset = circumference - (circumference * percentage / 100);
-    element.style.strokeDashoffset = offset;
+    element.setAttribute('stroke-dashoffset', offset);
   }
 
   /**
