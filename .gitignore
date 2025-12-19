@@ -6,7 +6,6 @@ backups/
 dist/
 node_modules/
 *.zip
-package-lock.json
 
 # OS files
 .DS_Store
