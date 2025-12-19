@@ -374,41 +374,30 @@ function renderSidebar(activePage) {
     }
   }
 
-  // Show/hide Partner Dashboard nav item for partners
+  // Show/hide Partner Dashboard nav item for partners, consultants, or users with multiple orgs
   const partnerLink = sidebar.querySelector('[data-section="partner"]');
-  if (partnerLink && typeof RevGuideDB !== 'undefined') {
-    // Check if user is a partner (async check, update visibility after)
-    RevGuideDB.isPartner().then(isPartner => {
-      partnerLink.style.display = isPartner ? 'flex' : 'none';
-    }).catch(() => {
-      partnerLink.style.display = 'none';
-    });
-  }
+  if (partnerLink) {
+    // Show for consultants, partners, or users with multiple orgs
+    const showPartnerDashboard = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
 
-  // Show/hide Clients nav item - hide for partners (they use Partner Dashboard instead)
-  const clientsLink = sidebar.querySelector('[data-section="clients"]');
-  if (clientsLink) {
-    // Check if user is a partner to determine if Clients should be hidden
-    if (typeof RevGuideDB !== 'undefined') {
+    if (showPartnerDashboard) {
+      partnerLink.style.display = 'flex';
+    } else if (typeof RevGuideDB !== 'undefined') {
+      // Also check isPartner() for users who converted but aren't consultants
       RevGuideDB.isPartner().then(isPartner => {
-        if (isPartner) {
-          // Partners use Partner Dashboard, not Clients
-          clientsLink.style.display = 'none';
-        } else {
-          // Show Clients link for consultants (users with multiple orgs or consultant role)
-          const showClients = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
-          clientsLink.style.display = showClients ? 'flex' : 'none';
-        }
+        partnerLink.style.display = isPartner ? 'flex' : 'none';
       }).catch(() => {
-        // On error, fallback to old behavior
-        const showClients = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
-        clientsLink.style.display = showClients ? 'flex' : 'none';
+        partnerLink.style.display = 'none';
       });
     } else {
-      // No RevGuideDB, fallback to old behavior
-      const showClients = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
-      clientsLink.style.display = showClients ? 'flex' : 'none';
+      partnerLink.style.display = 'none';
     }
+  }
+
+  // Hide Clients nav item - page was removed, replaced by Partner Dashboard
+  const clientsLink = sidebar.querySelector('[data-section="clients"]');
+  if (clientsLink) {
+    clientsLink.style.display = 'none';
   }
 }
 
