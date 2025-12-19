@@ -94,7 +94,7 @@ const CONFIG = {
   allowedOrigins: [
     'chrome-extension://*',
     'https://app.revguide.io',
-    'https://supered.io',
+    'https://revguide.io',
   ]
 };
 ```

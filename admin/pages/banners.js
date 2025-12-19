@@ -12,6 +12,7 @@ class BannersPage {
     this.originalData = null; // For tracking unsaved changes
     this.activeTab = 'content';
     this.isViewOnly = false; // View-only mode for members
+    this.messageEditor = null; // Tiptap editor instance
     this.init();
   }
 
@@ -146,15 +147,40 @@ class BannersPage {
 
     // Preview updates
     document.getElementById('ruleTitle').addEventListener('input', () => this.updatePreview());
-    document.getElementById('ruleMessage').addEventListener('input', () => this.updatePreview());
     document.getElementById('ruleType').addEventListener('change', () => {
       this.toggleEmbedFields();
       this.updatePreview();
     });
     document.getElementById('ruleEmbedUrl').addEventListener('input', () => this.updatePreview());
 
-    // Rich text editor
-    AdminShared.initRichTextEditor('#ruleMessageToolbar', 'ruleMessage', () => this.updatePreview());
+    // Initialize Tiptap editor
+    this.initMessageEditor();
+  }
+
+  async initMessageEditor() {
+    // Wait for TiptapEditor to be available (loaded as module)
+    const waitForTiptap = () => {
+      return new Promise((resolve) => {
+        if (window.TiptapEditor) {
+          resolve();
+        } else {
+          const check = setInterval(() => {
+            if (window.TiptapEditor) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 50);
+        }
+      });
+    };
+
+    await waitForTiptap();
+
+    this.messageEditor = await TiptapEditor.create('#ruleMessageEditor', {
+      placeholder: 'Message to display in the banner...',
+      minimal: true, // No headings/tables for banners
+      onChange: () => this.updatePreview()
+    });
   }
 
   toggleEmbedFields() {
@@ -525,7 +551,9 @@ class BannersPage {
     // Reset form
     document.getElementById('ruleName').value = rule?.name || '';
     document.getElementById('ruleTitle').value = rule?.title || '';
-    document.getElementById('ruleMessage').innerHTML = rule?.message || '';
+    if (this.messageEditor) {
+      this.messageEditor.setContent(rule?.message || '');
+    }
     document.getElementById('ruleType').value = rule?.type || 'info';
     document.getElementById('rulePriority').value = rule?.priority || 10;
     document.getElementById('ruleEmbedUrl').value = rule?.embedUrl || rule?.url || '';
@@ -585,7 +613,7 @@ class BannersPage {
     return JSON.stringify({
       name: document.getElementById('ruleName').value,
       title: document.getElementById('ruleTitle').value,
-      message: document.getElementById('ruleMessage').innerHTML,
+      message: this.messageEditor ? this.messageEditor.getHTML() : '',
       type: document.getElementById('ruleType').value,
       priority: document.getElementById('rulePriority').value,
       objectType: document.getElementById('ruleObjectType').value,
@@ -640,7 +668,7 @@ class BannersPage {
 
   updatePreview() {
     const title = document.getElementById('ruleTitle').value || 'Banner Title';
-    const message = document.getElementById('ruleMessage').innerHTML || 'Your message will appear here';
+    const message = (this.messageEditor ? this.messageEditor.getHTML() : '') || 'Your message will appear here';
     const type = document.getElementById('ruleType').value;
     const embedUrl = document.getElementById('ruleEmbedUrl').value.trim();
 
@@ -735,7 +763,7 @@ class BannersPage {
   async saveRule() {
     const name = document.getElementById('ruleName').value.trim();
     const title = document.getElementById('ruleTitle').value.trim();
-    const message = document.getElementById('ruleMessage').innerHTML.trim();
+    const message = this.messageEditor ? this.messageEditor.getHTML().trim() : '';
     const type = document.getElementById('ruleType').value;
     const priority = parseInt(document.getElementById('rulePriority').value) || 10;
     const objectTypeValue = document.getElementById('ruleObjectType').value;

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Home - Option A: Client-Centric Dashboard</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/home.css">
+  <style>
+    /* Partner Stats Row */
+    .partner-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .stat-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-sm);
+      border-color: var(--color-border);
+    }
+
+    .stat-card.clickable {
+      cursor: pointer;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      line-height: 1;
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-label {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .stat-card.highlight {
+      background: linear-gradient(135deg, rgba(178, 239, 99, 0.08) 0%, rgba(178, 239, 99, 0.03) 100%);
+      border-color: rgba(178, 239, 99, 0.3);
+    }
+
+    .stat-card.warning .stat-value {
+      color: var(--color-warning);
+    }
+
+    /* Section Headers */
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+
+    .section-title h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .section-title a {
+      font-size: var(--font-size-sm);
+      color: var(--color-primary-dark);
+      text-decoration: none;
+    }
+
+    .section-title a:hover {
+      text-decoration: underline;
+    }
+
+    /* Client Cards Grid */
+    .clients-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .client-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      transition: box-shadow 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+
+    .client-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-border);
+    }
+
+    .client-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .client-color {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .client-card-header h4 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-card-stats {
+      display: flex;
+      gap: var(--space-4);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .client-card-stats span {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .add-client-card {
+      background: var(--color-bg-muted);
+      border: 2px dashed var(--color-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100px;
+      color: var(--color-text-muted);
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .add-client-card:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary-dark);
+    }
+
+    .add-client-card .icon {
+      margin-bottom: var(--space-2);
+    }
+
+    /* Partner Onboarding - Simplified 3 Steps */
+    .partner-onboarding {
+      background: linear-gradient(135deg, rgba(178, 239, 99, 0.08) 0%, rgba(178, 239, 99, 0.03) 100%);
+      border: 1px solid rgba(178, 239, 99, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .partner-onboarding-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .partner-onboarding-header h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-semibold);
+      margin: 0;
+    }
+
+    .partner-onboarding-header p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-tertiary);
+      margin: var(--space-1) 0 0;
+    }
+
+    .onboarding-progress-mini {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-left: auto;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-border);
+    }
+
+    .progress-dot.completed {
+      background: var(--color-success);
+    }
+
+    .progress-dot.active {
+      background: var(--color-primary);
+    }
+
+    .partner-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-4);
+    }
+
+    .partner-step {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .partner-step.completed {
+      border-color: var(--color-success);
+      background: var(--color-success-bg);
+    }
+
+    .partner-step.active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(178, 239, 99, 0.15);
+    }
+
+    .partner-step-icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto var(--space-3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-muted);
+      border-radius: var(--radius-md);
+    }
+
+    .partner-step.completed .partner-step-icon {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--color-success);
+    }
+
+    .partner-step h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      margin: 0 0 var(--space-1);
+    }
+
+    .partner-step p {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .partner-step .btn {
+      width: 100%;
+    }
+
+    .step-check {
+      color: var(--color-success);
+    }
+
+    /* Two Column Layout */
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    .column-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+
+    .column-card h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Recent Activity */
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-muted);
+      border-radius: var(--radius-md);
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-content strong {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+    }
+
+    .activity-content p {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin: 2px 0 0;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .quick-action {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-bg-muted);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--color-text-primary);
+      transition: background 0.15s;
+    }
+
+    .quick-action:hover {
+      background: var(--color-bg);
+    }
+
+    .quick-action .icon {
+      color: var(--color-text-muted);
+    }
+
+    .quick-action span {
+      flex: 1;
+      font-size: var(--font-size-sm);
+    }
+
+    .quick-action svg {
+      color: var(--color-text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .partner-steps {
+        grid-template-columns: 1fr;
+      }
+
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+
+      .clients-preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item active" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/clients" class="nav-item" data-section="clients">
+          <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+          Clients
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mailto:support@revguide.io" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar">JD</div>
+          <div class="user-details">
+            <span class="user-name">Jane Doe</span>
+            <span class="user-org">Partner Account</span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active">
+        <div class="section-header">
+          <div>
+            <h2>Welcome back, Jane</h2>
+            <p class="section-description">Manage your client portals and content libraries</p>
+          </div>
+        </div>
+
+        <!-- Partner Stats Overview -->
+        <div class="partner-stats-row">
+          <div class="stat-card highlight clickable">
+            <div class="stat-value">8</div>
+            <div class="stat-label">Active Clients</div>
+          </div>
+          <div class="stat-card clickable">
+            <div class="stat-value">12</div>
+            <div class="stat-label">My Libraries</div>
+          </div>
+          <div class="stat-card warning clickable">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Pending Requests</div>
+          </div>
+          <div class="stat-card clickable">
+            <div class="stat-value">24</div>
+            <div class="stat-label">Deployments</div>
+          </div>
+        </div>
+
+        <!-- Partner Onboarding (shows when not complete) -->
+        <div class="partner-onboarding">
+          <div class="partner-onboarding-header">
+            <div>
+              <h3>Get Started</h3>
+              <p>Complete these steps to start deploying content to clients</p>
+            </div>
+            <div class="onboarding-progress-mini">
+              <div class="progress-dots">
+                <span class="progress-dot completed"></span>
+                <span class="progress-dot active"></span>
+                <span class="progress-dot"></span>
+              </div>
+              <span>1/3 Done</span>
+            </div>
+          </div>
+          <div class="partner-steps">
+            <div class="partner-step completed">
+              <div class="partner-step-icon">
+                <svg class="step-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h4>Install Extension</h4>
+              <p>Chrome extension installed</p>
+              <button class="btn btn-ghost btn-sm" disabled>Complete</button>
+            </div>
+            <div class="partner-step active">
+              <div class="partner-step-icon">
+                <span class="icon icon-users icon--md"></span>
+              </div>
+              <h4>Connect a Client</h4>
+              <p>Get invited to a client portal</p>
+              <button class="btn btn-primary btn-sm">View Clients</button>
+            </div>
+            <div class="partner-step">
+              <div class="partner-step-icon">
+                <span class="icon icon-download icon--md"></span>
+              </div>
+              <h4>Deploy Content</h4>
+              <p>Push libraries to clients</p>
+              <button class="btn btn-ghost btn-sm" disabled>Coming Next</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Cards Preview -->
+        <div class="section-title">
+          <h3>Your Clients</h3>
+          <a href="/clients">View All</a>
+        </div>
+        <div class="clients-preview-grid">
+          <div class="client-card">
+            <div class="client-card-header">
+              <span class="client-color" style="background: #3b82f6;"></span>
+              <h4>Acme Corporation</h4>
+            </div>
+            <div class="client-card-stats">
+              <span><span class="icon icon-book icon--xs"></span> 45 Wiki</span>
+              <span><span class="icon icon-clipboard-list icon--xs"></span> 12 Banners</span>
+              <span><span class="icon icon-layers icon--xs"></span> 8 Plays</span>
+            </div>
+          </div>
+          <div class="client-card">
+            <div class="client-card-header">
+              <span class="client-color" style="background: #10b981;"></span>
+              <h4>TechStart Inc</h4>
+            </div>
+            <div class="client-card-stats">
+              <span><span class="icon icon-book icon--xs"></span> 32 Wiki</span>
+              <span><span class="icon icon-clipboard-list icon--xs"></span> 8 Banners</span>
+              <span><span class="icon icon-layers icon--xs"></span> 15 Plays</span>
+            </div>
+          </div>
+          <div class="client-card">
+            <div class="client-card-header">
+              <span class="client-color" style="background: #f59e0b;"></span>
+              <h4>Global Services Ltd</h4>
+            </div>
+            <div class="client-card-stats">
+              <span><span class="icon icon-book icon--xs"></span> 28 Wiki</span>
+              <span><span class="icon icon-clipboard-list icon--xs"></span> 5 Banners</span>
+              <span><span class="icon icon-layers icon--xs"></span> 10 Plays</span>
+            </div>
+          </div>
+          <div class="client-card add-client-card">
+            <span class="icon icon-plus icon--lg"></span>
+            <span style="font-size: var(--font-size-sm);">Add Client</span>
+          </div>
+        </div>
+
+        <!-- Two Column: Activity + Quick Actions -->
+        <div class="two-column">
+          <div class="column-card">
+            <h4>
+              <span class="icon icon-clock icon--sm"></span>
+              Recent Activity
+            </h4>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <span class="icon icon-download icon--sm"></span>
+              </div>
+              <div class="activity-content">
+                <strong>Library deployed to Acme Corp</strong>
+                <p>HubSpot Sales Playbook - 2 hours ago</p>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <span class="icon icon-users icon--sm"></span>
+              </div>
+              <div class="activity-content">
+                <strong>New client access granted</strong>
+                <p>TechStart Inc added you as partner - Yesterday</p>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <span class="icon icon-book icon--sm"></span>
+              </div>
+              <div class="activity-content">
+                <strong>Wiki updated</strong>
+                <p>15 entries synced to Global Services - 3 days ago</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="column-card">
+            <h4>
+              <span class="icon icon-zap icon--sm"></span>
+              Quick Actions
+            </h4>
+            <div class="quick-actions">
+              <a href="/libraries" class="quick-action">
+                <span class="icon icon-download icon--sm"></span>
+                <span>Browse Content Libraries</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+              <a href="/clients" class="quick-action">
+                <span class="icon icon-users icon--sm"></span>
+                <span>Manage Client Portals</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+              <a href="#" class="quick-action">
+                <span class="icon icon-mail icon--sm"></span>
+                <span>Request Client Access</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+              <a href="/settings" class="quick-action">
+                <span class="icon icon-settings icon--sm"></span>
+                <span>Partner Settings</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+</body>
+</html>

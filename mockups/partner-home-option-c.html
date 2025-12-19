@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Home - Option C: Simplified Onboarding</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/home.css">
+  <style>
+    /* Progress Hero - Same style as client home */
+    .progress-hero {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      background: linear-gradient(135deg, rgba(178, 239, 99, 0.08) 0%, rgba(178, 239, 99, 0.03) 100%);
+      border: 1px solid rgba(178, 239, 99, 0.2);
+      border-radius: var(--radius-xl);
+    }
+
+    /* Progress Ring */
+    .progress-ring {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+    }
+
+    .progress-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring-bg {
+      fill: none;
+      stroke: var(--color-border);
+      stroke-width: 6;
+    }
+
+    .progress-ring-fill {
+      fill: none;
+      stroke: var(--color-primary);
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .progress-ring-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .progress-ring-value {
+      display: block;
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      line-height: 1;
+    }
+
+    .progress-ring-label {
+      display: block;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-top: 2px;
+    }
+
+    /* Progress Info */
+    .progress-info {
+      flex: 1;
+    }
+
+    .progress-info h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-1) 0;
+    }
+
+    .progress-info-desc {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-tertiary);
+      margin: 0 0 var(--space-4) 0;
+    }
+
+    /* Mini Stats */
+    .mini-stats {
+      display: flex;
+      gap: var(--space-5);
+    }
+
+    .mini-stat {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .mini-stat-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+    }
+
+    .mini-stat-icon.clients {
+      background-color: #dbeafe;
+      color: #2563eb;
+    }
+
+    .mini-stat-icon.libraries {
+      background-color: #dcfce7;
+      color: #16a34a;
+    }
+
+    .mini-stat-icon.deployments {
+      background-color: #f3e8ff;
+      color: #9333ea;
+    }
+
+    .mini-stat-value {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+    }
+
+    .mini-stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* Timeline - Simplified 3 Steps */
+    .onboarding-timeline {
+      position: relative;
+      padding-left: 36px;
+      margin-bottom: var(--space-8);
+    }
+
+    .onboarding-timeline::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 20px;
+      bottom: 20px;
+      width: 2px;
+      background: var(--color-border);
+    }
+
+    .timeline-step {
+      position: relative;
+      margin-bottom: var(--space-3);
+    }
+
+    .timeline-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -36px;
+      top: 14px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-surface);
+      border: 2px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .timeline-dot .check-icon {
+      display: none;
+      color: white;
+    }
+
+    .timeline-step.completed .timeline-dot {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+
+    .timeline-step.completed .timeline-dot .check-icon {
+      display: block;
+    }
+
+    .timeline-step.active .timeline-dot {
+      border-color: var(--color-primary);
+      background: var(--color-primary-subtle);
+    }
+
+    .timeline-step.active .timeline-dot::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    .timeline-step-content {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-fast);
+    }
+
+    .timeline-step-content:hover {
+      border-color: var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-step.completed .timeline-step-content {
+      background: var(--color-success-bg);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .timeline-step.active .timeline-step-content {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(178, 239, 99, 0.15);
+    }
+
+    .timeline-step-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      flex-shrink: 0;
+    }
+
+    .timeline-step.completed .timeline-step-icon {
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    .timeline-step-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .timeline-step-info h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 2px 0;
+    }
+
+    .timeline-step-info p {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin: 0;
+    }
+
+    .step-status {
+      font-size: var(--font-size-xs);
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-muted);
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+
+    .step-status.completed {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    .step-actions {
+      display: flex;
+      gap: var(--space-2);
+      flex-shrink: 0;
+    }
+
+    /* Dashboard Section (shows after onboarding) */
+    .dashboard-section {
+      margin-bottom: var(--space-6);
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+
+    .dashboard-header h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-semibold);
+      margin: 0;
+    }
+
+    /* Client Quick List */
+    .client-quick-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .client-quick-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.15s;
+    }
+
+    .client-quick-item:hover {
+      border-color: var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .client-color {
+      width: 10px;
+      height: 10px;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .client-quick-item h4 {
+      flex: 1;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      margin: 0;
+    }
+
+    .client-quick-stats {
+      display: flex;
+      gap: var(--space-4);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .client-quick-item .arrow {
+      color: var(--color-text-muted);
+    }
+
+    /* All Set Message */
+    .all-set-message {
+      text-align: center;
+      padding: var(--space-8) var(--space-6);
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid #bbf7d0;
+      margin-bottom: var(--space-6);
+    }
+
+    .all-set-message .icon-wrapper {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto var(--space-4);
+      background: white;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #22c55e;
+    }
+
+    .all-set-message h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--font-size-xl);
+      color: #166534;
+    }
+
+    .all-set-message p {
+      margin: 0 0 var(--space-4);
+      color: #15803d;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .all-set-actions {
+      display: flex;
+      gap: var(--space-3);
+      justify-content: center;
+    }
+
+    /* Two Column Layout */
+    .two-column {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--space-6);
+    }
+
+    .column-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+
+    .column-card h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Resources */
+    .resource-links {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .resource-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-bg-muted);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--color-text-primary);
+      font-size: var(--font-size-sm);
+      transition: background 0.15s;
+    }
+
+    .resource-link:hover {
+      background: var(--color-bg);
+    }
+
+    .resource-link .icon {
+      color: var(--color-text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .progress-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+      }
+
+      .mini-stats {
+        justify-content: center;
+      }
+
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+
+      .onboarding-timeline {
+        padding-left: 28px;
+      }
+
+      .onboarding-timeline::before {
+        left: 9px;
+      }
+
+      .timeline-dot {
+        left: -28px;
+        width: 20px;
+        height: 20px;
+      }
+
+      .timeline-step-content {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .step-actions {
+        width: 100%;
+        margin-top: var(--space-2);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar - Simplified for partners -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item active" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <a href="/clients" class="nav-item" data-section="clients">
+          <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+          Clients
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mailto:support@revguide.io" class="sidebar-feedback-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Send Feedback</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar">JD</div>
+          <div class="user-details">
+            <span class="user-name">Jane Doe</span>
+            <span class="user-org">Partner Account</span>
+          </div>
+          <button class="btn-icon logout-btn" title="Sign out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <section class="content-section active">
+        <div class="section-header">
+          <div>
+            <h2>Welcome to RevGuide</h2>
+            <p class="section-description">Complete setup to start deploying content to clients</p>
+          </div>
+        </div>
+
+        <!-- Progress Hero - Same style as client onboarding -->
+        <div class="progress-hero">
+          <div class="progress-ring">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <circle class="progress-ring-bg" cx="44" cy="44" r="36"/>
+              <circle class="progress-ring-fill" cx="44" cy="44" r="36"
+                      stroke-dasharray="226" stroke-dashoffset="151"/>
+            </svg>
+            <div class="progress-ring-text">
+              <span class="progress-ring-value">1/3</span>
+              <span class="progress-ring-label">Done</span>
+            </div>
+          </div>
+          <div class="progress-info">
+            <h3>Partner Setup</h3>
+            <p class="progress-info-desc">Connect to a client portal to continue</p>
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <div class="mini-stat-icon clients">
+                  <span class="icon icon-users icon--sm"></span>
+                </div>
+                <span class="mini-stat-value">8</span>
+                <span class="mini-stat-label">Clients</span>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon libraries">
+                  <span class="icon icon-download icon--sm"></span>
+                </div>
+                <span class="mini-stat-value">12</span>
+                <span class="mini-stat-label">Libraries</span>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon deployments">
+                  <span class="icon icon-layers icon--sm"></span>
+                </div>
+                <span class="mini-stat-value">24</span>
+                <span class="mini-stat-label">Deployments</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simplified 3-Step Onboarding Timeline -->
+        <div class="onboarding-timeline">
+          <!-- Step 1: Install Extension -->
+          <div class="timeline-step completed">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-puzzle"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Install Extension</h4>
+                <p>Chrome extension installed and ready</p>
+              </div>
+              <span class="step-status completed">Complete</span>
+            </div>
+          </div>
+
+          <!-- Step 2: Connect to Client -->
+          <div class="timeline-step active">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-users"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Connect to a Client</h4>
+                <p>Get invited to a client portal or request access</p>
+              </div>
+              <span class="step-status">Waiting</span>
+              <div class="step-actions">
+                <button class="btn btn-ghost btn-sm">Request Access</button>
+                <button class="btn btn-primary btn-sm">View Clients</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Deploy Content -->
+          <div class="timeline-step">
+            <div class="timeline-dot">
+              <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="timeline-step-content">
+              <div class="timeline-step-icon">
+                <span class="icon icon-download"></span>
+              </div>
+              <div class="timeline-step-info">
+                <h4>Deploy Content</h4>
+                <p>Push libraries and content to client workspaces</p>
+              </div>
+              <span class="step-status">Not started</span>
+              <button class="btn btn-ghost btn-sm" disabled>Browse Libraries</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Layout: Clients + Resources -->
+        <div class="two-column">
+          <!-- Client Quick Access -->
+          <div class="dashboard-section">
+            <div class="dashboard-header">
+              <h3>Your Clients</h3>
+              <a href="/clients" class="btn btn-ghost btn-sm">View All</a>
+            </div>
+            <div class="client-quick-list">
+              <a href="#" class="client-quick-item">
+                <span class="client-color" style="background: #3b82f6;"></span>
+                <h4>Acme Corporation</h4>
+                <div class="client-quick-stats">
+                  <span>45 wiki</span>
+                  <span>12 banners</span>
+                  <span>8 plays</span>
+                </div>
+                <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+              <a href="#" class="client-quick-item">
+                <span class="client-color" style="background: #10b981;"></span>
+                <h4>TechStart Inc</h4>
+                <div class="client-quick-stats">
+                  <span>32 wiki</span>
+                  <span>8 banners</span>
+                  <span>15 plays</span>
+                </div>
+                <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+              <a href="#" class="client-quick-item">
+                <span class="client-color" style="background: #f59e0b;"></span>
+                <h4>Global Services Ltd</h4>
+                <div class="client-quick-stats">
+                  <span>28 wiki</span>
+                  <span>5 banners</span>
+                  <span>10 plays</span>
+                </div>
+                <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Partner Resources -->
+          <div class="column-card">
+            <h4>
+              <span class="icon icon-book icon--sm"></span>
+              Partner Resources
+            </h4>
+            <div class="resource-links">
+              <a href="#" class="resource-link">
+                <span class="icon icon-download icon--sm"></span>
+                <span>Browse Libraries</span>
+              </a>
+              <a href="#" class="resource-link">
+                <span class="icon icon-book icon--sm"></span>
+                <span>Partner Guide</span>
+              </a>
+              <a href="#" class="resource-link">
+                <span class="icon icon-mail icon--sm"></span>
+                <span>Request Client Access</span>
+              </a>
+              <a href="#" class="resource-link">
+                <span class="icon icon-help-circle icon--sm"></span>
+                <span>Help Center</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternative: All Set State (show when onboarding complete) -->
+        <!--
+        <div class="all-set-message">
+          <div class="icon-wrapper">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3>You're all set!</h3>
+          <p>You're connected to 8 client portals and ready to deploy content. Access your clients or browse libraries to get started.</p>
+          <div class="all-set-actions">
+            <a href="/clients" class="btn btn-primary">View Clients</a>
+            <a href="/libraries" class="btn btn-secondary">Browse Libraries</a>
+          </div>
+        </div>
+        -->
+
+      </section>
+    </main>
+  </div>
+</body>
+</html>

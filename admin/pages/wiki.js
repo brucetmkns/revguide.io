@@ -18,6 +18,7 @@ class WikiPage {
     this.isSelectMode = false;
     this.selectedEntryIds = new Set();
     this.isViewOnly = false; // View-only mode for members
+    this.definitionEditor = null; // Tiptap editor instance
     this.init();
   }
 
@@ -200,11 +201,6 @@ class WikiPage {
       this.markUnsavedChanges();
       this.updatePreview();
     });
-    document.getElementById('wikiDefinition').addEventListener('input', () => {
-      this.markUnsavedChanges();
-      this.updatePreview();
-    });
-
     // Other form inputs - mark unsaved changes
     ['wikiAliases', 'wikiLink', 'wikiObjectType', 'wikiPropertyGroup',
      'wikiMatchType', 'wikiFrequency', 'wikiIncludeAliases', 'wikiPriority',
@@ -216,11 +212,8 @@ class WikiPage {
       }
     });
 
-    // Rich text editor
-    AdminShared.initRichTextEditor('#wikiDefinitionToolbar', 'wikiDefinition', () => {
-      this.markUnsavedChanges();
-      this.updatePreview();
-    });
+    // Initialize Tiptap editor
+    this.initDefinitionEditor();
 
     // Object type change - load property groups
     document.getElementById('wikiObjectType').addEventListener('change', (e) => {
@@ -240,6 +233,35 @@ class WikiPage {
     document.getElementById('wikiSelectAll').addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
     document.getElementById('wikiDeleteSelectedBtn').addEventListener('click', () => this.deleteSelectedEntries());
     document.getElementById('wikiCancelSelectBtn').addEventListener('click', () => this.exitSelectMode());
+  }
+
+  async initDefinitionEditor() {
+    // Wait for TiptapEditor to be available (loaded as module)
+    const waitForTiptap = () => {
+      return new Promise((resolve) => {
+        if (window.TiptapEditor) {
+          resolve();
+        } else {
+          const check = setInterval(() => {
+            if (window.TiptapEditor) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 50);
+        }
+      });
+    };
+
+    await waitForTiptap();
+
+    this.definitionEditor = await TiptapEditor.create('#wikiDefinitionEditor', {
+      placeholder: 'Enter the definition or explanation...',
+      minimal: false, // Full toolbar with headings, tables, etc.
+      onChange: () => {
+        this.markUnsavedChanges();
+        this.updatePreview();
+      }
+    });
   }
 
   // ============ RENDERING ============
@@ -676,7 +698,9 @@ class WikiPage {
     document.getElementById('wikiTitle').value = entry?.title || '';
     document.getElementById('wikiTrigger').value = entry?.trigger || '';
     document.getElementById('wikiAliases').value = entry?.aliases?.join(', ') || '';
-    document.getElementById('wikiDefinition').innerHTML = entry?.definition || '';
+    if (this.definitionEditor) {
+      this.definitionEditor.setContent(entry?.definition || '');
+    }
     document.getElementById('wikiLink').value = entry?.link || '';
 
     // Rules tab fields
@@ -785,7 +809,7 @@ class WikiPage {
     const title = document.getElementById('wikiTitle').value || 'Title';
     const trigger = document.getElementById('wikiTrigger').value;
     const category = document.getElementById('wikiCategory').value || 'general';
-    const definition = document.getElementById('wikiDefinition').innerHTML || '<p>Your definition will appear here</p>';
+    const definition = (this.definitionEditor ? this.definitionEditor.getHTML() : '') || '<p>Your definition will appear here</p>';
     const categoryLabel = AdminShared.WIKI_CATEGORY_LABELS[category] || category;
 
     const preview = document.getElementById('wikiPreview');
@@ -977,7 +1001,7 @@ class WikiPage {
     const title = document.getElementById('wikiTitle').value.trim();
     const trigger = document.getElementById('wikiTrigger').value.trim();
     const aliasesStr = document.getElementById('wikiAliases').value.trim();
-    const definition = document.getElementById('wikiDefinition').innerHTML.trim();
+    const definition = this.definitionEditor ? this.definitionEditor.getHTML().trim() : '';
     let link = document.getElementById('wikiLink').value.trim();
 
     // Gather data from Rules tab
@@ -1002,7 +1026,9 @@ class WikiPage {
     if (!definition) {
       alert('Please enter a definition');
       this.switchTab('content');
-      document.getElementById('wikiDefinition').focus();
+      if (this.definitionEditor) {
+        this.definitionEditor.focus();
+      }
       return;
     }
 

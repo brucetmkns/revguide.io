@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Onboarding - UI Mockup Recommendations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #a3e635;
+      --color-primary-dark: #84cc16;
+      --color-text-primary: #1f2937;
+      --color-text-secondary: #6b7280;
+      --color-text-muted: #9ca3af;
+      --color-surface: #ffffff;
+      --color-bg: #f9fafb;
+      --color-border: #e5e7eb;
+      --color-success: #22c55e;
+      --color-info: #3b82f6;
+      --color-warning: #f59e0b;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .mockup-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .mockup-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .mockup-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .mockup-header p {
+      color: #a1a1aa;
+      font-size: 16px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 80px;
+    }
+
+    .comparison-card {
+      background: #252542;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .comparison-label {
+      padding: 16px 24px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-label.current {
+      background: #ef4444;
+      color: white;
+    }
+
+    .comparison-label.proposed {
+      background: #22c55e;
+      color: white;
+    }
+
+    .mockup-frame {
+      background: var(--color-bg);
+      padding: 32px;
+      min-height: 500px;
+    }
+
+    /* ============================================
+       CURRENT DESIGN (Recreation)
+       ============================================ */
+    .current-design .section-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .current-design .section-description {
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .current-design .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .current-design .stat-card {
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .current-design .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .current-design .stat-icon.blue { background: #dbeafe; }
+    .current-design .stat-icon.green { background: #dcfce7; }
+    .current-design .stat-icon.purple { background: #f3e8ff; }
+
+    .current-design .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .current-design .stat-label {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    .current-design .progress-bar-container {
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .current-design .progress-track {
+      flex: 1;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .current-design .progress-fill {
+      width: 33%;
+      height: 100%;
+      background: var(--color-primary-dark);
+      border-radius: 100px;
+    }
+
+    .current-design .progress-text {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+    }
+
+    .current-design .step-card {
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .current-design .step-number {
+      width: 32px;
+      height: 32px;
+      background: #e5e7eb;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+    }
+
+    .current-design .step-number.completed {
+      background: var(--color-success);
+      color: white;
+    }
+
+    .current-design .step-content {
+      flex: 1;
+    }
+
+    .current-design .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .current-design .step-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .current-design .step-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #e5e7eb;
+      color: var(--color-text-muted);
+    }
+
+    .current-design .step-status.completed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .current-design .step-desc {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .current-design .step-btn {
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .current-design .step-btn.primary {
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+
+    .current-design .step-btn.secondary {
+      background: white;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+    }
+
+    .current-design .step-icon {
+      width: 48px;
+      height: 48px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================
+       PROPOSED DESIGN
+       ============================================ */
+    .proposed-design .welcome-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .proposed-design .welcome-header h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+
+    .proposed-design .welcome-header p {
+      color: var(--color-text-secondary);
+      font-size: 15px;
+    }
+
+    /* Progress Ring */
+    .proposed-design .progress-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .proposed-design .progress-ring {
+      position: relative;
+      width: 120px;
+      height: 120px;
+    }
+
+    .proposed-design .progress-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .proposed-design .progress-ring-bg {
+      fill: none;
+      stroke: #e5e7eb;
+      stroke-width: 10;
+    }
+
+    .proposed-design .progress-ring-fill {
+      fill: none;
+      stroke: var(--color-success);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 189; /* 33% complete */
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .proposed-design .progress-ring-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .proposed-design .progress-ring-text .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      display: block;
+      line-height: 1;
+    }
+
+    .proposed-design .progress-ring-text .label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .proposed-design .progress-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .proposed-design .mini-stat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .proposed-design .mini-stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .proposed-design .mini-stat-icon.blue { background: #dbeafe; }
+    .proposed-design .mini-stat-icon.orange { background: #ffedd5; }
+    .proposed-design .mini-stat-icon.purple { background: #f3e8ff; }
+
+    .proposed-design .mini-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .proposed-design .mini-stat-label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* Checklist Steps */
+    .proposed-design .steps-container {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .proposed-design .steps-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .proposed-design .steps-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .proposed-design .steps-count {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .proposed-design .checklist-step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .proposed-design .checklist-step:hover {
+      background: #f9fafb;
+    }
+
+    .proposed-design .checklist-step.completed {
+      background: #f0fdf4;
+    }
+
+    .proposed-design .checklist-step.active {
+      background: #fffbeb;
+      border: 2px solid #fbbf24;
+    }
+
+    .proposed-design .check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      color: transparent;
+      transition: all 0.2s ease;
+    }
+
+    .proposed-design .checklist-step.completed .check-circle {
+      background: var(--color-success);
+      border-color: var(--color-success);
+      color: white;
+    }
+
+    .proposed-design .checklist-step.active .check-circle {
+      border-color: #fbbf24;
+      background: #fef3c7;
+    }
+
+    .proposed-design .step-info {
+      flex: 1;
+    }
+
+    .proposed-design .step-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 2px;
+    }
+
+    .proposed-design .step-info p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    .proposed-design .step-action-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .proposed-design .step-action-btn.primary {
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+
+    .proposed-design .step-action-btn.primary:hover {
+      background: var(--color-primary-dark);
+    }
+
+    .proposed-design .step-action-btn.ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+    }
+
+    .proposed-design .step-time {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ============================================
+       ALTERNATIVE DESIGNS
+       ============================================ */
+    .alternatives-section {
+      margin-top: 60px;
+    }
+
+    .alternatives-section h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .alt-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .alt-card {
+      background: #252542;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .alt-label {
+      padding: 12px 20px;
+      background: #3b82f6;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .alt-frame {
+      background: var(--color-bg);
+      padding: 24px;
+      min-height: 400px;
+    }
+
+    /* Alternative A: Card-based Steps */
+    .alt-a .step-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .alt-a .step-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .alt-a .step-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .alt-a .step-card.completed {
+      border-color: var(--color-success);
+    }
+
+    .alt-a .step-card.completed::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--color-success);
+    }
+
+    .alt-a .step-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .alt-a .step-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .alt-a .step-card-icon.orange { background: #ffedd5; }
+    .alt-a .step-card-icon.blue { background: #dbeafe; }
+    .alt-a .step-card-icon.green { background: #dcfce7; }
+    .alt-a .step-card-icon.purple { background: #f3e8ff; }
+
+    .alt-a .step-card h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 6px;
+    }
+
+    .alt-a .step-card p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .alt-a .step-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .alt-a .step-card-status {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .alt-a .step-card.completed .step-card-status {
+      color: var(--color-success);
+    }
+
+    /* Alternative B: Timeline/Journey */
+    .alt-b .journey-container {
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .alt-b .journey-line {
+      position: absolute;
+      left: 15px;
+      top: 20px;
+      bottom: 20px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-success) 33%, #e5e7eb 33%);
+    }
+
+    .alt-b .journey-step {
+      position: relative;
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--color-border);
+    }
+
+    .alt-b .journey-step::before {
+      content: '';
+      position: absolute;
+      left: -33px;
+      top: 24px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #e5e7eb;
+    }
+
+    .alt-b .journey-step.completed::before {
+      background: var(--color-success);
+      box-shadow: 0 0 0 2px var(--color-success);
+    }
+
+    .alt-b .journey-step.active::before {
+      background: #fbbf24;
+      box-shadow: 0 0 0 2px #fbbf24;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .alt-b .journey-step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .alt-b .journey-step h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .alt-b .journey-step p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    .alt-b .journey-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-weight: 500;
+    }
+
+    .alt-b .journey-badge.done {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .alt-b .journey-badge.next {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* Notes Section */
+    .notes-section {
+      margin-top: 80px;
+      background: #252542;
+      border-radius: 16px;
+      padding: 40px;
+    }
+
+    .notes-section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .note-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .note-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--color-primary);
+    }
+
+    .note-card ul {
+      list-style: none;
+    }
+
+    .note-card li {
+      font-size: 14px;
+      color: #a1a1aa;
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .note-card li::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-weight: bold;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      .alt-grid {
+        grid-template-columns: 1fr;
+      }
+      .notes-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-container">
+    <!-- Header -->
+    <header class="mockup-header">
+      <h1>Home / Onboarding UI Recommendations</h1>
+      <p>Visual mockups comparing current design with proposed improvements</p>
+    </header>
+
+    <!-- Main Comparison -->
+    <section class="section-title">Main Comparison</section>
+    <div class="comparison-grid">
+      <!-- Current Design -->
+      <div class="comparison-card">
+        <div class="comparison-label current">Current Design</div>
+        <div class="mockup-frame current-design">
+          <div class="section-header">
+            <h2>Welcome to RevGuide</h2>
+            <p class="section-description">Get started by completing these setup steps</p>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-icon blue">📚</div>
+              <div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Wiki Entries</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">📋</div>
+              <div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Banner Rules</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">📑</div>
+              <div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Plays</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-bar-container">
+            <div class="progress-track">
+              <div class="progress-fill"></div>
+            </div>
+            <span class="progress-text">2 of 6 steps completed</span>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number completed">1</div>
+            <div class="step-content">
+              <div class="step-header">
+                <span class="step-title">Install Plugin</span>
+                <span class="step-status completed">Completed</span>
+              </div>
+              <p class="step-desc">Install the RevGuide Chrome extension to enable contextual guidance.</p>
+              <button class="step-btn secondary">Invite Team Members</button>
+            </div>
+            <div class="step-icon">🧩</div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-header">
+                <span class="step-title">Connect HubSpot API</span>
+                <span class="step-status">Not started</span>
+              </div>
+              <p class="step-desc">Connect your HubSpot private app to enable property fetching.</p>
+              <button class="step-btn primary">Configure API</button>
+            </div>
+            <div class="step-icon">🔗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proposed Design -->
+      <div class="comparison-card">
+        <div class="comparison-label proposed">Proposed Design</div>
+        <div class="mockup-frame proposed-design">
+          <div class="welcome-header">
+            <h2>Welcome to RevGuide</h2>
+            <p>Let's get your team set up with contextual guidance</p>
+          </div>
+
+          <div class="progress-hero">
+            <div class="progress-ring">
+              <svg width="120" height="120">
+                <circle class="progress-ring-bg" cx="60" cy="60" r="45"/>
+                <circle class="progress-ring-fill" cx="60" cy="60" r="45"/>
+              </svg>
+              <div class="progress-ring-text">
+                <span class="value">2/6</span>
+                <span class="label">Complete</span>
+              </div>
+            </div>
+            <div class="progress-stats">
+              <div class="mini-stat">
+                <div class="mini-stat-icon blue">📚</div>
+                <div>
+                  <div class="mini-stat-value">0</div>
+                  <div class="mini-stat-label">Wiki Entries</div>
+                </div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon orange">📋</div>
+                <div>
+                  <div class="mini-stat-value">0</div>
+                  <div class="mini-stat-label">Banners</div>
+                </div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-icon purple">📑</div>
+                <div>
+                  <div class="mini-stat-value">0</div>
+                  <div class="mini-stat-label">Plays</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="steps-container">
+            <div class="steps-header">
+              <span class="steps-title">Setup Checklist</span>
+              <span class="steps-count">2 of 6 complete</span>
+            </div>
+
+            <div class="checklist-step completed">
+              <div class="check-circle">✓</div>
+              <div class="step-info">
+                <h4>Install Plugin</h4>
+                <p>Chrome extension installed</p>
+              </div>
+              <span class="step-time">✓ Done</span>
+            </div>
+
+            <div class="checklist-step completed">
+              <div class="check-circle">✓</div>
+              <div class="step-info">
+                <h4>Create Account</h4>
+                <p>Signed up and verified</p>
+              </div>
+              <span class="step-time">✓ Done</span>
+            </div>
+
+            <div class="checklist-step active">
+              <div class="check-circle">3</div>
+              <div class="step-info">
+                <h4>Connect HubSpot</h4>
+                <p>Link your HubSpot portal for property sync</p>
+              </div>
+              <button class="step-action-btn primary">Connect</button>
+            </div>
+
+            <div class="checklist-step">
+              <div class="check-circle">4</div>
+              <div class="step-info">
+                <h4>Build Your Wiki</h4>
+                <p>Import fields or add custom entries</p>
+              </div>
+              <button class="step-action-btn ghost">Start</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alternative Designs -->
+    <section class="alternatives-section">
+      <h2>Alternative Layout Options</h2>
+      <div class="alt-grid">
+        <!-- Alternative A: Card Grid -->
+        <div class="alt-card">
+          <div class="alt-label">Option A: Card Grid Layout</div>
+          <div class="alt-frame alt-a">
+            <div class="step-cards-grid">
+              <div class="step-card completed">
+                <div class="step-card-header">
+                  <div class="step-card-icon green">🧩</div>
+                </div>
+                <h4>Install Plugin</h4>
+                <p>Chrome extension installed and ready to use</p>
+                <div class="step-card-footer">
+                  <span class="step-card-status">✓ Completed</span>
+                </div>
+              </div>
+
+              <div class="step-card completed">
+                <div class="step-card-header">
+                  <div class="step-card-icon blue">👤</div>
+                </div>
+                <h4>Create Account</h4>
+                <p>Your account is set up and verified</p>
+                <div class="step-card-footer">
+                  <span class="step-card-status">✓ Completed</span>
+                </div>
+              </div>
+
+              <div class="step-card">
+                <div class="step-card-header">
+                  <div class="step-card-icon orange">🔗</div>
+                </div>
+                <h4>Connect HubSpot</h4>
+                <p>Link your portal for property sync</p>
+                <div class="step-card-footer">
+                  <span class="step-card-status">Up Next</span>
+                  <button class="step-action-btn primary" style="padding: 6px 12px; font-size: 12px;">Connect</button>
+                </div>
+              </div>
+
+              <div class="step-card">
+                <div class="step-card-header">
+                  <div class="step-card-icon purple">📚</div>
+                </div>
+                <h4>Build Wiki</h4>
+                <p>Import fields or create entries</p>
+                <div class="step-card-footer">
+                  <span class="step-card-status">Pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternative B: Timeline Journey -->
+        <div class="alt-card">
+          <div class="alt-label">Option B: Timeline Journey</div>
+          <div class="alt-frame alt-b">
+            <div class="journey-container">
+              <div class="journey-line"></div>
+
+              <div class="journey-step completed">
+                <div class="journey-step-header">
+                  <h4>🧩 Install Plugin</h4>
+                  <span class="journey-badge done">Done</span>
+                </div>
+                <p>Chrome extension installed</p>
+              </div>
+
+              <div class="journey-step completed">
+                <div class="journey-step-header">
+                  <h4>👤 Create Account</h4>
+                  <span class="journey-badge done">Done</span>
+                </div>
+                <p>Account verified</p>
+              </div>
+
+              <div class="journey-step active">
+                <div class="journey-step-header">
+                  <h4>🔗 Connect HubSpot</h4>
+                  <span class="journey-badge next">Next Step</span>
+                </div>
+                <p>Link your HubSpot portal to enable property sync and field import</p>
+              </div>
+
+              <div class="journey-step">
+                <div class="journey-step-header">
+                  <h4>📚 Build Your Wiki</h4>
+                </div>
+                <p>Import HubSpot fields or add custom entries</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Design Notes -->
+    <section class="notes-section">
+      <h2>Key Improvements</h2>
+      <div class="notes-grid">
+        <div class="note-card">
+          <h3>Visual Hierarchy</h3>
+          <ul>
+            <li>Circular progress indicator is more engaging than linear bar</li>
+            <li>Stats integrated into progress hero creates focal point</li>
+            <li>Clearer visual distinction between completed/active/pending</li>
+            <li>Reduced visual noise with cleaner step cards</li>
+          </ul>
+        </div>
+        <div class="note-card">
+          <h3>User Experience</h3>
+          <ul>
+            <li>Highlight "next step" with accent color draws attention</li>
+            <li>Checkmarks provide satisfaction/accomplishment feeling</li>
+            <li>Single CTA per step reduces decision fatigue</li>
+            <li>Compact stats don't compete with onboarding focus</li>
+          </ul>
+        </div>
+        <div class="note-card">
+          <h3>Implementation Notes</h3>
+          <ul>
+            <li>Uses existing CSS variables from design system</li>
+            <li>Progress ring SVG is lightweight and animatable</li>
+            <li>Responsive-friendly with grid layouts</li>
+            <li>Minimal JS changes - mostly CSS/HTML updates</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

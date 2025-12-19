@@ -12,6 +12,8 @@ class PlaysPage {
     this.originalData = null; // For tracking unsaved changes
     this.fieldSectionProperties = []; // Properties available for field sections
     this.isViewOnly = false; // View-only mode for members
+    this.sectionEditors = new Map(); // Map of section element -> Tiptap editor
+    this.tiptapReady = false;
     this.init();
   }
 
@@ -57,6 +59,48 @@ class PlaysPage {
     if (!this.isViewOnly) {
       this.bindEvents();
     }
+
+    // Initialize Tiptap
+    this.initTiptap();
+  }
+
+  async initTiptap() {
+    // Wait for TiptapEditor to be available (loaded as module)
+    const waitForTiptap = () => {
+      return new Promise((resolve) => {
+        if (window.TiptapEditor) {
+          resolve();
+        } else {
+          const check = setInterval(() => {
+            if (window.TiptapEditor) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 50);
+        }
+      });
+    };
+
+    await waitForTiptap();
+    this.tiptapReady = true;
+  }
+
+  async createSectionEditor(containerEl, content = '') {
+    if (!this.tiptapReady) {
+      await this.initTiptap();
+    }
+
+    const editor = await TiptapEditor.create(containerEl, {
+      placeholder: 'Section content...',
+      minimal: true, // Compact toolbar for sections
+      content: content,
+      onChange: () => {} // No special handler needed
+    });
+
+    // Add compact class
+    containerEl.querySelector('.tiptap-wrapper')?.classList.add('tiptap-compact');
+
+    return editor;
   }
 
   setupViewOnlyMode() {
@@ -394,10 +438,11 @@ class PlaysPage {
           </div>
         `;
       } else {
+        // Content may be HTML from Tiptap editor - render it directly (sanitized on save)
         return `
           <div class="view-details-section">
             <div class="view-details-section-label">${AdminShared.escapeHtml(section.title || 'Content')}</div>
-            <div class="view-details-content-box">${AdminShared.escapeHtml(section.content || '-')}</div>
+            <div class="view-details-content-box">${section.content || '-'}</div>
           </div>
         `;
       }
@@ -564,6 +609,11 @@ class PlaysPage {
   closePlayEditor() {
     this.editingPlayId = null;
     this.originalData = null;
+
+    // Clean up all section editors
+    this.sectionEditors.forEach(editor => editor.destroy());
+    this.sectionEditors.clear();
+
     document.getElementById('playEditorSection').classList.remove('active');
     document.getElementById('playsSection').classList.add('active');
     this.renderPlays();
@@ -649,7 +699,7 @@ class PlaysPage {
     div.dataset.type = sectionType;
 
     const textContentHtml = `
-      <textarea class="section-content" rows="4" placeholder="Section content (use - for bullet points)">${AdminShared.escapeHtml(section?.content || '')}</textarea>
+      <div class="section-editor-container"></div>
     `;
 
     const mediaContentHtml = `
@@ -706,9 +756,15 @@ class PlaysPage {
 
     // Type toggle handler
     div.querySelectorAll('.section-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const newType = btn.dataset.type;
         if (newType === div.dataset.type) return;
+
+        // Destroy existing editor if switching from text
+        if (div.dataset.type === 'text' && this.sectionEditors.has(div)) {
+          this.sectionEditors.get(div).destroy();
+          this.sectionEditors.delete(div);
+        }
 
         div.dataset.type = newType;
         div.querySelectorAll('.section-type-btn').forEach(b => b.classList.remove('active'));
@@ -729,9 +785,11 @@ class PlaysPage {
           bodyContainer.innerHTML = this.renderFieldsSectionBody([]);
           this.initFieldsSectionEvents(bodyContainer);
         } else {
-          bodyContainer.innerHTML = `
-            <textarea class="section-content" rows="4" placeholder="Section content (use - for bullet points)"></textarea>
-          `;
+          // Switch to text - create Tiptap editor
+          bodyContainer.innerHTML = `<div class="section-editor-container"></div>`;
+          const editorContainer = bodyContainer.querySelector('.section-editor-container');
+          const editor = await this.createSectionEditor(editorContainer, '');
+          this.sectionEditors.set(div, editor);
         }
       });
     });
@@ -739,6 +797,14 @@ class PlaysPage {
     // Initialize fields section events if it's a fields type
     if (sectionType === 'fields') {
       this.initFieldsSectionEvents(div.querySelector('.section-body'));
+    }
+
+    // Initialize Tiptap editor for text sections
+    if (sectionType === 'text') {
+      const editorContainer = div.querySelector('.section-editor-container');
+      this.createSectionEditor(editorContainer, section?.content || '').then(editor => {
+        this.sectionEditors.set(div, editor);
+      });
     }
 
     // Insert button after this section
@@ -757,6 +823,11 @@ class PlaysPage {
     // Remove button handler
     const removeBtn = div.querySelector('.remove-section-btn');
     removeBtn.addEventListener('click', () => {
+      // Clean up editor if exists
+      if (this.sectionEditors.has(div)) {
+        this.sectionEditors.get(div).destroy();
+        this.sectionEditors.delete(div);
+      }
       wrapper.remove();
       this.updateInsertButtons();
     });
@@ -1136,7 +1207,9 @@ class PlaysPage {
           sections.push({ type, title, fields });
         }
       } else {
-        const content = item.querySelector('.section-content')?.value.trim() || '';
+        // Get content from Tiptap editor
+        const editor = this.sectionEditors.get(item);
+        const content = editor ? editor.getHTML().trim() : '';
         if (title || content) {
           sections.push({ type, title, content });
         }

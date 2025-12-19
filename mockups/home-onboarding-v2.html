@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Onboarding - UI Mockup V2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       RevGuide Design Tokens
+       ============================================ */
+    :root {
+      /* Primary Brand Color */
+      --color-primary: #b2ef63;
+      --color-primary-dark: #9ed655;
+      --color-primary-light: #c5f58a;
+      --color-primary-subtle: rgba(178, 239, 99, 0.12);
+
+      /* Semantic Colors */
+      --color-info: #3b82f6;
+      --color-info-bg: #eff6ff;
+      --color-success: #22c55e;
+      --color-success-bg: #f0fdf4;
+      --color-warning: #f59e0b;
+      --color-warning-bg: #fffbeb;
+      --color-danger: #ef4444;
+      --color-danger-bg: #fef2f2;
+
+      /* Neutral Colors */
+      --color-bg: #f7f8fa;
+      --color-surface: #ffffff;
+      --color-border: #e1e3e8;
+      --color-border-subtle: #f0f1f3;
+
+      /* Text Colors */
+      --color-text-primary: #111827;
+      --color-text-secondary: #374151;
+      --color-text-tertiary: #6b7280;
+      --color-text-muted: #9ca3af;
+
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+
+      /* Border Radius */
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      line-height: 1.5;
+      padding: 40px 20px;
+      font-size: 14px;
+    }
+
+    .mockup-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .mockup-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .mockup-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .mockup-header p {
+      color: #a1a1aa;
+      font-size: 15px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    /* Mockup Frame */
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .mockup-card {
+      background: #252542;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .mockup-label {
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mockup-label.option-a { background: #3b82f6; color: white; }
+    .mockup-label.option-b { background: #8b5cf6; color: white; }
+    .mockup-label.option-c { background: #10b981; color: white; }
+
+    .mockup-frame {
+      background: var(--color-bg);
+      padding: 24px;
+      min-height: 580px;
+    }
+
+    /* Shared Styles */
+    .welcome-header {
+      margin-bottom: 24px;
+    }
+
+    .welcome-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .welcome-header p {
+      color: var(--color-text-tertiary);
+      font-size: 13px;
+    }
+
+    /* Icon System */
+    .icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      flex-shrink: 0;
+    }
+
+    .icon--sm { width: 16px; height: 16px; }
+    .icon--lg { width: 24px; height: 24px; }
+
+    /* Icon definitions */
+    .icon-puzzle {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z'/%3e%3c/svg%3e");
+    }
+
+    .icon-link {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3e%3cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3e%3c/svg%3e");
+    }
+
+    .icon-book {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20'/%3e%3c/svg%3e");
+    }
+
+    .icon-clipboard-list {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3e%3cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3e%3cpath d='M12 11h4'/%3e%3cpath d='M12 16h4'/%3e%3cpath d='M8 11h.01'/%3e%3cpath d='M8 16h.01'/%3e%3c/svg%3e");
+    }
+
+    .icon-layers {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolygon points='12 2 2 7 12 12 22 7 12 2'/%3e%3cpolyline points='2 17 12 22 22 17'/%3e%3cpolyline points='2 12 12 17 22 12'/%3e%3c/svg%3e");
+    }
+
+    .icon-users {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3e%3ccircle cx='9' cy='7' r='4'/%3e%3cpath d='M22 21v-2a4 4 0 0 0-3-3.87'/%3e%3cpath d='M16 3.13a4 4 0 0 1 0 7.75'/%3e%3c/svg%3e");
+    }
+
+    .icon-check {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='20 6 9 17 4 12'/%3e%3c/svg%3e");
+    }
+
+    .icon-chevron-right {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m9 18 6-6-6-6'/%3e%3c/svg%3e");
+    }
+
+    .icon-download {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3e%3cpolyline points='7 10 12 15 17 10'/%3e%3cline x1='12' x2='12' y1='15' y2='3'/%3e%3c/svg%3e");
+    }
+
+    /* ============================================
+       OPTION A: Progress Ring + Timeline Hybrid
+       ============================================ */
+    .option-a-content .progress-hero {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: linear-gradient(135deg, rgba(178, 239, 99, 0.08) 0%, rgba(178, 239, 99, 0.04) 100%);
+      border: 1px solid rgba(178, 239, 99, 0.2);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .option-a-content .progress-ring {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      flex-shrink: 0;
+    }
+
+    .option-a-content .progress-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .option-a-content .progress-ring-bg {
+      fill: none;
+      stroke: var(--color-border);
+      stroke-width: 6;
+    }
+
+    .option-a-content .progress-ring-fill {
+      fill: none;
+      stroke: var(--color-primary);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 201;
+      stroke-dashoffset: 134;
+    }
+
+    .option-a-content .progress-ring-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .option-a-content .progress-ring-text .value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      display: block;
+      line-height: 1;
+    }
+
+    .option-a-content .progress-ring-text .label {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .option-a-content .progress-info {
+      flex: 1;
+    }
+
+    .option-a-content .progress-info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .option-a-content .progress-info p {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 12px;
+    }
+
+    .option-a-content .mini-stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .option-a-content .mini-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .option-a-content .mini-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .option-a-content .mini-stat-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    /* Timeline Steps */
+    .option-a-content .timeline {
+      position: relative;
+      padding-left: 32px;
+    }
+
+    .option-a-content .timeline::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 16px;
+      bottom: 16px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-success) 33%, var(--color-border) 33%);
+    }
+
+    .option-a-content .timeline-step {
+      position: relative;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .option-a-content .timeline-step:hover {
+      border-color: var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .option-a-content .timeline-step.completed {
+      background: var(--color-success-bg);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .option-a-content .timeline-step.active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(178, 239, 99, 0.15);
+    }
+
+    .option-a-content .timeline-dot {
+      position: absolute;
+      left: -32px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-surface);
+      border: 2px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-a-content .timeline-step.completed .timeline-dot {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+
+    .option-a-content .timeline-step.active .timeline-dot {
+      border-color: var(--color-primary);
+      background: var(--color-primary-subtle);
+    }
+
+    .option-a-content .timeline-step.active .timeline-dot::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    .option-a-content .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .option-a-content .timeline-step.completed .step-icon {
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    .option-a-content .step-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .option-a-content .step-info h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 2px;
+    }
+
+    .option-a-content .step-info p {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .option-a-content .step-action {
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .option-a-content .step-action.primary {
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+
+    .option-a-content .step-action.primary:hover {
+      background: var(--color-primary-dark);
+    }
+
+    .option-a-content .step-action.done {
+      background: transparent;
+      color: var(--color-success);
+      font-size: 11px;
+    }
+
+    /* ============================================
+       OPTION B: Kanban-style Progress Board
+       ============================================ */
+    .option-b-content .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .option-b-content .progress-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .option-b-content .progress-header span {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .option-b-content .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .option-b-content .kanban-column {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .option-b-content .kanban-column-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .option-b-content .kanban-column-header .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .option-b-content .kanban-column-header .dot.done { background: var(--color-success); }
+    .option-b-content .kanban-column-header .dot.current { background: var(--color-primary); }
+    .option-b-content .kanban-column-header .dot.todo { background: var(--color-border); }
+
+    .option-b-content .kanban-column-header span {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-tertiary);
+    }
+
+    .option-b-content .kanban-column-header .count {
+      margin-left: auto;
+      font-size: 10px;
+      background: var(--color-bg);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+    }
+
+    .option-b-content .kanban-card {
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .option-b-content .kanban-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .option-b-content .kanban-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .option-b-content .kanban-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .option-b-content .kanban-card-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-b-content .kanban-card-icon.green { background: var(--color-success-bg); }
+    .option-b-content .kanban-card-icon.blue { background: var(--color-info-bg); }
+    .option-b-content .kanban-card-icon.orange { background: var(--color-warning-bg); }
+    .option-b-content .kanban-card-icon.purple { background: #f3e8ff; }
+
+    .option-b-content .kanban-card h5 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .option-b-content .kanban-card p {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      line-height: 1.4;
+    }
+
+    .option-b-content .kanban-card .action-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-primary-dark);
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .option-b-content .kanban-card .action-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Stats row below kanban */
+    .option-b-content .stats-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .option-b-content .stat-box {
+      flex: 1;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .option-b-content .stat-box-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-b-content .stat-box-icon.blue { background: var(--color-info-bg); }
+    .option-b-content .stat-box-icon.orange { background: var(--color-warning-bg); }
+    .option-b-content .stat-box-icon.purple { background: #f3e8ff; }
+
+    .option-b-content .stat-box-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .option-b-content .stat-box-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================
+       OPTION C: Compact Checklist with Expandable Sections
+       ============================================ */
+    .option-c-content .compact-progress {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .option-c-content .compact-progress-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(178, 239, 99, 0.1) 0%, transparent 100%);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .option-c-content .compact-progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--color-border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .option-c-content .compact-progress-fill {
+      width: 33%;
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: var(--radius-full);
+    }
+
+    .option-c-content .compact-progress-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+    }
+
+    .option-c-content .checklist-group {
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .option-c-content .checklist-group:last-child {
+      border-bottom: none;
+    }
+
+    .option-c-content .checklist-group-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .option-c-content .checklist-group-header:hover {
+      background: var(--color-bg);
+    }
+
+    .option-c-content .group-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .option-c-content .group-check.done {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+
+    .option-c-content .group-check.partial {
+      border-color: var(--color-primary);
+    }
+
+    .option-c-content .group-check.partial::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    .option-c-content .group-info {
+      flex: 1;
+    }
+
+    .option-c-content .group-info h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .option-c-content .group-info p {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+    }
+
+    .option-c-content .group-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+    }
+
+    .option-c-content .group-badge.complete {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    .option-c-content .group-badge.next {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+    }
+
+    .option-c-content .checklist-items {
+      padding: 0 20px 12px 52px;
+    }
+
+    .option-c-content .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--color-border-subtle);
+    }
+
+    .option-c-content .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .option-c-content .item-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid var(--color-border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-c-content .item-check.done {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+
+    .option-c-content .checklist-item span {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      flex: 1;
+    }
+
+    .option-c-content .checklist-item.done span {
+      color: var(--color-text-muted);
+      text-decoration: line-through;
+    }
+
+    .option-c-content .item-action {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-primary-dark);
+      cursor: pointer;
+    }
+
+    .option-c-content .item-action:hover {
+      text-decoration: underline;
+    }
+
+    /* Quick Stats */
+    .option-c-content .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .option-c-content .quick-stat {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .option-c-content .quick-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .option-c-content .quick-stat-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================
+       Notes Section
+       ============================================ */
+    .notes-section {
+      margin-top: 40px;
+      background: #252542;
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .notes-section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .note-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .note-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--color-primary);
+    }
+
+    .note-card ul {
+      list-style: none;
+    }
+
+    .note-card li {
+      font-size: 13px;
+      color: #a1a1aa;
+      margin-bottom: 6px;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .note-card li::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-weight: bold;
+      font-size: 11px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .mockup-grid {
+        grid-template-columns: 1fr;
+      }
+      .notes-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-container">
+    <!-- Header -->
+    <header class="mockup-header">
+      <h1>Home / Onboarding UI - V2 Alternatives</h1>
+      <p>Using RevGuide branding, icons, and design tokens</p>
+    </header>
+
+    <div class="section-label">Three New Layout Options</div>
+
+    <div class="mockup-grid">
+      <!-- ============================================
+           OPTION A: Progress Ring + Timeline Hybrid
+           ============================================ -->
+      <div class="mockup-card">
+        <div class="mockup-label option-a">Option A: Progress Ring + Timeline</div>
+        <div class="mockup-frame option-a-content">
+          <div class="welcome-header">
+            <h2>Welcome to RevGuide</h2>
+            <p>Complete setup to enable contextual guidance</p>
+          </div>
+
+          <!-- Progress Hero -->
+          <div class="progress-hero">
+            <div class="progress-ring">
+              <svg width="80" height="80">
+                <circle class="progress-ring-bg" cx="40" cy="40" r="32"/>
+                <circle class="progress-ring-fill" cx="40" cy="40" r="32"/>
+              </svg>
+              <div class="progress-ring-text">
+                <span class="value">2/6</span>
+                <span class="label">Done</span>
+              </div>
+            </div>
+            <div class="progress-info">
+              <h3>Setup Progress</h3>
+              <p>Connect HubSpot to continue building your workspace</p>
+              <div class="mini-stats">
+                <div class="mini-stat">
+                  <span class="mini-stat-value">0</span>
+                  <span class="mini-stat-label">Wiki</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-stat-value">0</span>
+                  <span class="mini-stat-label">Banners</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-stat-value">0</span>
+                  <span class="mini-stat-label">Plays</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline Steps -->
+          <div class="timeline">
+            <div class="timeline-step completed">
+              <div class="timeline-dot">
+                <span class="icon icon-check icon--sm"></span>
+              </div>
+              <div class="step-icon">
+                <span class="icon icon-puzzle icon--sm"></span>
+              </div>
+              <div class="step-info">
+                <h4>Install Plugin</h4>
+                <p>Chrome extension installed</p>
+              </div>
+              <span class="step-action done">Complete</span>
+            </div>
+
+            <div class="timeline-step completed">
+              <div class="timeline-dot">
+                <span class="icon icon-check icon--sm"></span>
+              </div>
+              <div class="step-icon">
+                <span class="icon icon-users icon--sm"></span>
+              </div>
+              <div class="step-info">
+                <h4>Create Account</h4>
+                <p>Signed up and verified</p>
+              </div>
+              <span class="step-action done">Complete</span>
+            </div>
+
+            <div class="timeline-step active">
+              <div class="timeline-dot"></div>
+              <div class="step-icon">
+                <span class="icon icon-link icon--sm"></span>
+              </div>
+              <div class="step-info">
+                <h4>Connect HubSpot</h4>
+                <p>Link portal for property sync</p>
+              </div>
+              <button class="step-action primary">Connect</button>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-dot"></div>
+              <div class="step-icon">
+                <span class="icon icon-book icon--sm"></span>
+              </div>
+              <div class="step-info">
+                <h4>Build Wiki</h4>
+                <p>Import fields or add entries</p>
+              </div>
+              <span class="icon icon-chevron-right icon--sm"></span>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-dot"></div>
+              <div class="step-icon">
+                <span class="icon icon-clipboard-list icon--sm"></span>
+              </div>
+              <div class="step-info">
+                <h4>Create Banners</h4>
+                <p>Set up contextual alerts</p>
+              </div>
+              <span class="icon icon-chevron-right icon--sm"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           OPTION B: Kanban-style Progress Board
+           ============================================ -->
+      <div class="mockup-card">
+        <div class="mockup-label option-b">Option B: Kanban Progress Board</div>
+        <div class="mockup-frame option-b-content">
+          <div class="welcome-header">
+            <h2>Welcome to RevGuide</h2>
+            <p>Track your setup progress below</p>
+          </div>
+
+          <div class="progress-header">
+            <h3>Setup Tasks</h3>
+            <span>2 of 6 complete</span>
+          </div>
+
+          <div class="kanban-board">
+            <!-- Done Column -->
+            <div class="kanban-column">
+              <div class="kanban-column-header">
+                <span class="dot done"></span>
+                <span>Done</span>
+                <span class="count">2</span>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon green">
+                    <span class="icon icon-puzzle icon--sm"></span>
+                  </div>
+                  <h5>Install Plugin</h5>
+                </div>
+                <p>Extension ready</p>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon blue">
+                    <span class="icon icon-users icon--sm"></span>
+                  </div>
+                  <h5>Create Account</h5>
+                </div>
+                <p>Verified</p>
+              </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="kanban-column">
+              <div class="kanban-column-header">
+                <span class="dot current"></span>
+                <span>Current</span>
+                <span class="count">1</span>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon orange">
+                    <span class="icon icon-link icon--sm"></span>
+                  </div>
+                  <h5>Connect HubSpot</h5>
+                </div>
+                <p>Link your portal</p>
+                <span class="action-link">Connect Now</span>
+              </div>
+            </div>
+
+            <!-- To Do Column -->
+            <div class="kanban-column">
+              <div class="kanban-column-header">
+                <span class="dot todo"></span>
+                <span>To Do</span>
+                <span class="count">3</span>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon blue">
+                    <span class="icon icon-book icon--sm"></span>
+                  </div>
+                  <h5>Build Wiki</h5>
+                </div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon orange">
+                    <span class="icon icon-clipboard-list icon--sm"></span>
+                  </div>
+                  <h5>Create Banners</h5>
+                </div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-header">
+                  <div class="kanban-card-icon purple">
+                    <span class="icon icon-layers icon--sm"></span>
+                  </div>
+                  <h5>Add Plays</h5>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-box-icon blue">
+                <span class="icon icon-book icon--sm"></span>
+              </div>
+              <div>
+                <div class="stat-box-value">0</div>
+                <div class="stat-box-label">Wiki Entries</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-icon orange">
+                <span class="icon icon-clipboard-list icon--sm"></span>
+              </div>
+              <div>
+                <div class="stat-box-value">0</div>
+                <div class="stat-box-label">Banners</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-icon purple">
+                <span class="icon icon-layers icon--sm"></span>
+              </div>
+              <div>
+                <div class="stat-box-value">0</div>
+                <div class="stat-box-label">Plays</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           OPTION C: Compact Checklist with Groups
+           ============================================ -->
+      <div class="mockup-card">
+        <div class="mockup-label option-c">Option C: Grouped Checklist</div>
+        <div class="mockup-frame option-c-content">
+          <div class="welcome-header">
+            <h2>Welcome to RevGuide</h2>
+            <p>Complete these steps to get started</p>
+          </div>
+
+          <div class="compact-progress">
+            <div class="compact-progress-header">
+              <div class="compact-progress-bar">
+                <div class="compact-progress-fill"></div>
+              </div>
+              <span class="compact-progress-text">2 of 6 complete</span>
+            </div>
+
+            <!-- Group 1: Getting Started (Complete) -->
+            <div class="checklist-group">
+              <div class="checklist-group-header">
+                <div class="group-check done">
+                  <span class="icon icon-check icon--sm"></span>
+                </div>
+                <div class="group-info">
+                  <h4>Getting Started</h4>
+                  <p>Account setup complete</p>
+                </div>
+                <span class="group-badge complete">Complete</span>
+              </div>
+              <div class="checklist-items">
+                <div class="checklist-item done">
+                  <div class="item-check done">
+                    <span class="icon icon-check icon--sm"></span>
+                  </div>
+                  <span>Install Chrome extension</span>
+                </div>
+                <div class="checklist-item done">
+                  <div class="item-check done">
+                    <span class="icon icon-check icon--sm"></span>
+                  </div>
+                  <span>Create and verify account</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group 2: Connect & Configure (In Progress) -->
+            <div class="checklist-group">
+              <div class="checklist-group-header">
+                <div class="group-check partial"></div>
+                <div class="group-info">
+                  <h4>Connect & Configure</h4>
+                  <p>Link your HubSpot portal</p>
+                </div>
+                <span class="group-badge next">Next Step</span>
+              </div>
+              <div class="checklist-items">
+                <div class="checklist-item">
+                  <div class="item-check"></div>
+                  <span>Connect HubSpot portal</span>
+                  <span class="item-action">Connect</span>
+                </div>
+                <div class="checklist-item">
+                  <div class="item-check"></div>
+                  <span>Import HubSpot properties</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group 3: Build Content (Pending) -->
+            <div class="checklist-group">
+              <div class="checklist-group-header">
+                <div class="group-check"></div>
+                <div class="group-info">
+                  <h4>Build Content</h4>
+                  <p>Create wiki, banners, and plays</p>
+                </div>
+                <span class="group-badge">0 of 3</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="quick-stats">
+            <div class="quick-stat">
+              <div class="quick-stat-value">0</div>
+              <div class="quick-stat-label">Wiki Entries</div>
+            </div>
+            <div class="quick-stat">
+              <div class="quick-stat-value">0</div>
+              <div class="quick-stat-label">Banners</div>
+            </div>
+            <div class="quick-stat">
+              <div class="quick-stat-value">0</div>
+              <div class="quick-stat-label">Plays</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes Section -->
+    <section class="notes-section">
+      <h2>Design Comparison</h2>
+      <div class="notes-grid">
+        <div class="note-card">
+          <h3>Option A: Timeline</h3>
+          <ul>
+            <li>Best for linear step-by-step flows</li>
+            <li>Progress ring provides at-a-glance status</li>
+            <li>Timeline shows clear path forward</li>
+            <li>Compact stats in hero section</li>
+            <li>Most similar to current, improved visual hierarchy</li>
+          </ul>
+        </div>
+        <div class="note-card">
+          <h3>Option B: Kanban</h3>
+          <ul>
+            <li>Best for users familiar with project boards</li>
+            <li>Shows all tasks in context at once</li>
+            <li>Clear done/current/todo separation</li>
+            <li>May feel busy for simple onboarding</li>
+            <li>Good for power users</li>
+          </ul>
+        </div>
+        <div class="note-card">
+          <h3>Option C: Grouped</h3>
+          <ul>
+            <li>Best for longer onboarding flows</li>
+            <li>Groups related tasks together</li>
+            <li>Collapsible sections reduce overwhelm</li>
+            <li>Progress bar is simple and clear</li>
+            <li>Expandable for more detail when needed</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

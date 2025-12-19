@@ -6,7 +6,7 @@
  * clickable icons that show definition tooltips.
  *
  * Features:
- * - Single-pass TreeWalker scanning (Supered-style, fast & consistent)
+ * - Single-pass TreeWalker scanning (fast & consistent)
  * - Shows first instance of each term per section (sidebar, middle pane, etc.)
  * - Sorts triggers by length (longest first) to avoid partial matches
  * - Zero-width character normalization for reliable matching
@@ -59,7 +59,7 @@ class WikiModule {
   // ============ TEXT NORMALIZATION ============
 
   /**
-   * Normalize text for matching (Supered-style)
+   * Normalize text for matching
    * Strips zero-width characters, trims, and lowercases
    * @param {string} text - Text to normalize
    * @returns {string} Normalized text

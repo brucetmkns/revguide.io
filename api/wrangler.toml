@@ -7,5 +7,5 @@ compatibility_date = "2024-01-01"
 
 # Custom domain (optional - configure in Cloudflare dashboard)
 # routes = [
-#   { pattern = "api.supered.io/*", zone_name = "supered.io" }
+#   { pattern = "api.revguide.io/*", zone_name = "revguide.io" }
 # ]
