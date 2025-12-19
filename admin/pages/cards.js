@@ -104,39 +104,11 @@ class CardsPage {
   }
 
   async checkMigrationAndLoadData() {
-    // Check if we should auto-migrate
-    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-      try {
-        const { data: status } = await RevGuideDB.checkCardsMigrationStatus();
-        if (status && !status.is_complete && (status.legacy_wiki > 0 || status.legacy_banners > 0 || status.legacy_plays > 0)) {
-          // Auto-migrate on first load
-          const legacyCount = (status.legacy_wiki || 0) + (status.legacy_banners || 0) + (status.legacy_plays || 0);
-          console.log('Auto-migrating', legacyCount, 'legacy items to unified cards...');
-          await this.runAutoMigration();
-        }
-      } catch (e) {
-        console.log('Migration check skipped:', e.message);
-      }
-    }
+    // Migration disabled - start fresh with unified cards
+    // Legacy data remains in wiki_entries, banners, plays tables but won't be auto-migrated
 
     // Load cards data
     await this.loadCards();
-  }
-
-  async runAutoMigration() {
-    try {
-      const { data, error } = await RevGuideDB.migrateToCards();
-      if (error) throw error;
-
-      const total = (data.wiki || 0) + (data.banners || 0) + (data.plays || 0);
-      if (total > 0) {
-        AdminShared.showToast(`Migrated ${total} items to unified cards`, 'success');
-      }
-    } catch (e) {
-      console.error('Auto-migration failed:', e);
-      // Show banner as fallback if auto-migration fails
-      this.showMigrationBanner({ legacy_wiki: 1, legacy_banners: 1, legacy_plays: 1 });
-    }
   }
 
   async loadCards() {

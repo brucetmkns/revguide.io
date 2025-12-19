@@ -43,12 +43,20 @@ BEGIN
     COALESCE(w.priority, 50),
     COALESCE(w.enabled, TRUE),
     w.trigger,
-    COALESCE(w.aliases, '[]')::TEXT[],
+    CASE
+      WHEN w.aliases IS NULL THEN '{}'::TEXT[]
+      WHEN w.aliases::TEXT = '[]' THEN '{}'::TEXT[]
+      ELSE (SELECT ARRAY_AGG(elem::TEXT) FROM jsonb_array_elements_text(w.aliases::JSONB) AS elem)
+    END,
     COALESCE(w.match_type, 'exact'),
     COALESCE(w.frequency, 'first'),
     COALESCE(w.include_aliases, TRUE),
     COALESCE(w.page_type, 'record'),
-    w.url_patterns,
+    CASE
+      WHEN w.url_patterns IS NULL THEN NULL
+      WHEN pg_typeof(w.url_patterns)::TEXT = 'text[]' THEN to_jsonb(w.url_patterns)
+      ELSE w.url_patterns::JSONB
+    END,
     COALESCE(w.category, 'general'),
     CASE WHEN w.object_type IS NOT NULL THEN ARRAY[w.object_type] ELSE '{}' END,
     w.property_group,
@@ -112,13 +120,18 @@ BEGIN
     'general',
     CASE
       WHEN b.object_type IS NOT NULL THEN ARRAY[b.object_type]
+      WHEN b.object_types IS NOT NULL AND pg_typeof(b.object_types)::TEXT = 'text[]' THEN b.object_types::TEXT[]
       WHEN b.object_types IS NOT NULL THEN (
         SELECT ARRAY_AGG(elem::TEXT)
-        FROM jsonb_array_elements_text(b.object_types) AS elem
+        FROM jsonb_array_elements_text(b.object_types::JSONB) AS elem
       )
       ELSE '{}'
     END,
-    COALESCE(b.conditions, '[]'),
+    CASE
+      WHEN b.conditions IS NULL THEN '[]'::JSONB
+      WHEN pg_typeof(b.conditions)::TEXT = 'text[]' THEN to_jsonb(b.conditions)
+      ELSE b.conditions::JSONB
+    END,
     COALESCE(b.logic, 'AND'),
     COALESCE(b.display_on_all, FALSE),
     COALESCE(b.type, 'info'),
@@ -182,13 +195,21 @@ BEGIN
     p.name,
     p.subtitle,
     p.link,
-    COALESCE(p.sections, '[]'),
+    CASE
+      WHEN p.sections IS NULL THEN '[]'::JSONB
+      WHEN pg_typeof(p.sections)::TEXT = 'text[]' THEN to_jsonb(p.sections)
+      ELSE p.sections::JSONB
+    END,
     ARRAY['sidepanel'],
     50,
     TRUE,
     'sales',
     CASE WHEN p.object_type IS NOT NULL THEN ARRAY[p.object_type] ELSE '{}' END,
-    COALESCE(p.conditions, '[]'),
+    CASE
+      WHEN p.conditions IS NULL THEN '[]'::JSONB
+      WHEN pg_typeof(p.conditions)::TEXT = 'text[]' THEN to_jsonb(p.conditions)
+      ELSE p.conditions::JSONB
+    END,
     COALESCE(p.logic, 'AND'),
     COALESCE(p.display_on_all, FALSE),
     COALESCE(p.card_type, 'tip'),
