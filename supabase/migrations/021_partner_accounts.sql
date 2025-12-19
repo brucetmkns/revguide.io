@@ -103,7 +103,7 @@ RETURNS TABLE (
   JOIN users u ON u.id = om.user_id
   JOIN organizations o ON o.id = om.organization_id
   WHERE u.auth_user_id = p_auth_uid
-  AND om.role = 'partner'
+  AND om.role IN ('partner', 'consultant')  -- Include consultant for backward compatibility
   ORDER BY o.name;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
@@ -119,7 +119,7 @@ RETURNS TABLE (
       SELECT COUNT(*) FROM organization_members om
       JOIN users u ON u.id = om.user_id
       WHERE u.auth_user_id = p_auth_uid
-      AND om.role = 'partner'
+      AND om.role IN ('partner', 'consultant')  -- Include consultant for backward compatibility
     ) as client_count,
     (
       SELECT COUNT(*) FROM consultant_libraries cl
