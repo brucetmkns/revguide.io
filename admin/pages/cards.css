@@ -85,7 +85,38 @@
 .compact-card-type.card-type-battlecard { background: #fef3c7; color: #d97706; }
 .compact-card-type.card-type-asset { background: #d1fae5; color: #059669; }
 
-/* Card Type Icons */
+/* Card Type Icons in Tree */
+.card-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.card-type-icon.card-type-definition {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.card-type-icon.card-type-alert {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.card-type-icon.card-type-battlecard {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.card-type-icon.card-type-asset {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Card Type Icons - larger format */
 .compact-card-icon.card-type-definition { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); color: #7c3aed; }
 .compact-card-icon.card-type-alert { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0284c7; }
 .compact-card-icon.card-type-battlecard { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; }

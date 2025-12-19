@@ -2,6 +2,21 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [3.0.1] - 2025-12-19 - Extension Login Fix
+
+### Fixed
+- **Extension Login Connection Issue**: Fixed "Could not establish connection. Receiving end does not exist" error when signing in from the extension sidepanel
+  - Added retry logic with PING to wake up dormant Manifest V3 service workers
+  - Callback page now retries up to 4 times with increasing delays before failing
+  - Resolves timing issues when service worker is terminated during the login flow
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/extension-logged-in.js` - Added `sendMessageWithRetry()` function with PING-first strategy
+  - `admin/vercel.json` - Added `/extension/logged-in` route (was missing from admin config)
+
+---
+
 ## [3.0.0] - 2025-12-19 - Unified Cards System
 
 ### Added

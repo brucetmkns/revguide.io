@@ -387,7 +387,7 @@ class CardsPage {
     const tree = this.buildTreeData();
     let html = '';
 
-    // Render tree
+    // Render tree using wiki-node structure for proper styling
     Object.entries(tree).forEach(([objType, objData]) => {
       const groups = Object.entries(objData.groups);
       if (groups.length === 0) return;
@@ -400,15 +400,15 @@ class CardsPage {
       const isObjExpanded = this.expandedGroups.has(objKey);
 
       html += `
-        <li class="wiki-tree-item wiki-tree-object">
-          <button class="wiki-tree-toggle ${isObjExpanded ? 'expanded' : ''}" data-key="${objKey}">
-            <svg class="wiki-tree-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-            <span class="wiki-tree-label">${objData.label}</span>
-            <span class="wiki-tree-count">${totalCards}</span>
-          </button>
-          <ul class="wiki-tree-children" style="display: ${isObjExpanded ? 'block' : 'none'}">
+        <li class="wiki-node wiki-node-object ${isObjExpanded ? '' : 'is-collapsed'}" data-object="${objType}">
+          <div class="wiki-node-header">
+            <button class="wiki-node-toggle" aria-expanded="${isObjExpanded}" data-key="${objKey}">
+              <span class="icon icon-chevron-right"></span>
+            </button>
+            <span class="wiki-node-label">${objData.label}</span>
+            <span class="wiki-node-count">${totalCards}</span>
+          </div>
+          <ul class="wiki-node-children">
       `;
 
       groups.forEach(([groupKey, groupData]) => {
@@ -418,15 +418,15 @@ class CardsPage {
         const isGrpExpanded = this.expandedGroups.has(grpKey);
 
         html += `
-          <li class="wiki-tree-item wiki-tree-group">
-            <button class="wiki-tree-toggle ${isGrpExpanded ? 'expanded' : ''}" data-key="${grpKey}">
-              <svg class="wiki-tree-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-              <span class="wiki-tree-label">${groupData.label}</span>
-              <span class="wiki-tree-count">${groupData.cards.length}</span>
-            </button>
-            <ul class="wiki-tree-children" style="display: ${isGrpExpanded ? 'block' : 'none'}">
+          <li class="wiki-node wiki-node-group ${isGrpExpanded ? '' : 'is-collapsed'}" data-group="${groupKey}">
+            <div class="wiki-node-header">
+              <button class="wiki-node-toggle" aria-expanded="${isGrpExpanded}" data-key="${grpKey}">
+                <span class="icon icon-chevron-right"></span>
+              </button>
+              <span class="wiki-node-label">${AdminShared.escapeHtml(groupData.label)}</span>
+              <span class="wiki-node-count">${groupData.cards.length}</span>
+            </div>
+            <ul class="wiki-node-children">
         `;
 
         // Sort cards by name
@@ -436,16 +436,16 @@ class CardsPage {
           const config = CARD_TYPE_CONFIG[card.cardType] || CARD_TYPE_CONFIG.definition;
           const isSelected = this.selectedCardId === card.id;
           const isDisabled = card.enabled === false;
+          const statusClass = isDisabled ? 'status-disabled' : 'status-active';
 
           html += `
-            <li class="wiki-tree-item wiki-tree-entry ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}">
-              <button class="wiki-tree-entry-btn" data-id="${card.id}">
-                <span class="wiki-tree-entry-icon card-type-${card.cardType}">
-                  <span class="icon ${config.icon} icon--sm"></span>
-                </span>
-                <span class="wiki-tree-entry-label">${AdminShared.escapeHtml(card.name || card.triggerText || 'Untitled')}</span>
-                ${isDisabled ? '<span class="wiki-tree-entry-status">Disabled</span>' : ''}
-              </button>
+            <li class="wiki-node-term ${isSelected ? 'is-selected' : ''}" data-id="${card.id}">
+              <span class="card-type-icon card-type-${card.cardType}">
+                <span class="icon ${config.icon} icon--sm"></span>
+              </span>
+              <span class="status-dot ${statusClass}"></span>
+              <span class="wiki-term-text">${AdminShared.escapeHtml(card.name || card.triggerText || 'Untitled')}</span>
+              ${isDisabled ? '<span class="wiki-term-badge">Disabled</span>' : ''}
             </li>
           `;
         });
@@ -458,13 +458,32 @@ class CardsPage {
 
     container.innerHTML = html;
 
-    // Bind tree events
-    container.querySelectorAll('.wiki-tree-toggle').forEach(btn => {
-      btn.addEventListener('click', () => this.toggleTreeNode(btn.dataset.key));
+    // Bind tree events - toggle expand/collapse
+    container.querySelectorAll('.wiki-node-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleTreeNode(btn.dataset.key);
+      });
     });
 
-    container.querySelectorAll('.wiki-tree-entry-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.selectCard(btn.dataset.id));
+    // Click on node header to expand/collapse (for object and group nodes)
+    container.querySelectorAll('.wiki-node-object > .wiki-node-header, .wiki-node-group > .wiki-node-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const toggle = header.querySelector('.wiki-node-toggle');
+        if (toggle) {
+          toggle.click();
+        }
+      });
+    });
+
+    // Click on term to select
+    container.querySelectorAll('.wiki-node-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const cardId = term.dataset.id;
+        if (cardId) {
+          this.selectCard(cardId);
+        }
+      });
     });
   }
 
@@ -478,6 +497,7 @@ class CardsPage {
   }
 
   expandAll() {
+    // Add all possible keys to expanded set
     const tree = this.buildTreeData();
     Object.keys(tree).forEach(objType => {
       this.expandedGroups.add(`obj-${objType}`);
