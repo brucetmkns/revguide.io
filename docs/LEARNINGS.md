@@ -2045,4 +2045,119 @@ AND LOWER(invitations.email) = LOWER(auth.jwt() ->> 'email')
 
 ---
 
-*Last updated: December 2024*
+---
+
+## Unified Cards Architecture (v3.0.0)
+
+### Consolidating Multiple Content Types
+**Lesson**: When content types share similar attributes (conditions, display rules, metadata), unify them into a single data model with type discrimination.
+
+**Problem**: Three separate content types (Wiki Entries, Banners, Plays) each had their own:
+- Database tables with overlapping schemas
+- Admin pages with duplicate UI code
+- Content modules with similar rendering logic
+- Field mapping functions for Supabase
+
+This caused maintenance overhead and made cross-type features (like linking a banner to a play) awkward.
+
+**Solution**: Unified Cards system with:
+1. **Card Types**: `definition`, `alert`, `battlecard`, `asset` (discriminator field)
+2. **Display Modes**: `tooltip`, `banner`, `sidepanel` (array - cards can appear in multiple)
+3. **Single Database Table**: `cards` with all columns, type-specific ones nullable
+4. **Orchestrator Module**: `CardsModule` routes cards to display modules by mode
+
+**Implementation Pattern**:
+```javascript
+// CardsModule loads unified cards
+async loadCards() {
+  const cards = await this.fetchCards();
+  this.tooltipCards = cards.filter(c => c.displayModes.includes('tooltip'));
+  this.bannerCards = cards.filter(c => c.displayModes.includes('banner'));
+  this.sidepanelCards = cards.filter(c => c.displayModes.includes('sidepanel'));
+}
+
+// Existing modules receive filtered cards
+render() {
+  this.wikiModule.setEntries(this.getTooltipEntriesForWiki());
+  this.bannersModule.setRules(this.getBannerRulesForBanners());
+  this.sidepanelModule.setBattleCards(this.getBattleCardsForSidepanel());
+}
+```
+
+### Auto-Migration for Schema Changes
+**Lesson**: When consolidating data models, auto-migrate on first load rather than requiring manual action.
+
+**Pattern**:
+```javascript
+async checkMigrationAndLoadData() {
+  const status = await RevGuideDB.checkCardsMigrationStatus();
+
+  if (status && !status.is_complete && status.has_legacy_data) {
+    // Auto-migrate silently
+    await this.runAutoMigration();
+  }
+
+  await this.loadCards();
+}
+```
+
+**Benefits**:
+- Users don't need to take action
+- Seamless transition
+- Legacy data preserved via `legacy_type` and `legacy_id` fields
+
+### Backward Compatibility with Dual Storage
+**Lesson**: During transition, support both old and new data formats in content scripts.
+
+**Problem**: Extension users may have legacy data in Chrome storage while web users have migrated to unified cards in Supabase.
+
+**Solution**: Check for both formats and convert on-the-fly:
+```javascript
+loadCards() {
+  const { cards, wikiEntries, rules, battleCards } = await storage.get([...]);
+
+  if (cards && cards.length > 0) {
+    // New unified format
+    return cards;
+  }
+
+  // Convert legacy format to unified
+  return [
+    ...this.convertWikiToCards(wikiEntries),
+    ...this.convertRulesToCards(rules),
+    ...this.convertBattleCardsToCards(battleCards)
+  ];
+}
+```
+
+### Field Mapping for Unified Schema
+**Lesson**: Unified schemas need comprehensive field mapping that handles type-specific fields gracefully.
+
+**Pattern**:
+```javascript
+function mapCardFromSupabase(data) {
+  return {
+    // Common fields
+    id: data.id,
+    cardType: data.card_type,
+    name: data.name,
+    displayModes: data.display_modes || [],
+    conditions: data.conditions || [],
+
+    // Type-specific fields (may be null)
+    triggerText: data.trigger_text,        // definition cards
+    bannerType: data.banner_type,          // alert cards
+    sections: data.sections || [],         // battlecard cards
+
+    // Timestamps
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+```
+
+**Key**: Include all possible fields, default to safe values for nulls.
+
+---
+
+*Last updated: December 2024 (v3.0.0)*

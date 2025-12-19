@@ -4,11 +4,38 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.8.0 (Partner Account System)
+## Current State: v3.0.0 (Unified Cards System)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring a **unified Cards system** that consolidates Wiki Entries, Banners, and Plays into a single data model with flexible display modes. Includes direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
 
-### Partner Account System (v2.8.0) - NEW
+### Unified Cards System (v3.0.0) - NEW
+
+**Major architectural change:** Consolidated three separate content types into one unified "Cards" system.
+
+- **Card Types**: 4 types replace the old wiki/banner/play split
+  - `definition` - Terminology, field glossary (was: Wiki Entries)
+  - `alert` - Contextual banners with rules (was: Banners)
+  - `battlecard` - Sales plays, objection handlers (was: Plays)
+  - `asset` - Links, documents, resources (new type)
+
+- **Display Modes**: Cards can appear in multiple locations
+  - `tooltip` - Wiki-style tooltip on hover/click
+  - `banner` - Inline banner on HubSpot pages
+  - `sidepanel` - In the Chrome Side Panel
+
+- **Key Features**:
+  - Single admin page replaces 3 separate pages (Banner Rules, Plays, Wiki)
+  - Cards can have multiple display modes simultaneously
+  - Unified conditions/rules builder across all card types
+  - Content curation: assets, next steps, related cards
+  - Auto-migration from legacy data on first load
+
+- **Database**: `cards` table with unified schema (migration 022)
+- **Migration Functions**: `migrate_all_to_cards()` RPC (migration 023)
+- **API**: New RevGuideDB methods for card CRUD
+- **Content Script**: CardsModule orchestrates rendering to display modules
+
+### Partner Account System (v2.8.0)
 - **Partner Account Type**: New `account_type` column (`standard` or `partner`) with dedicated `partner` role
 - **Partner Dashboard**: Dedicated `/partner` page for managing clients, libraries, and access requests
 - **Agency Organization**: Partners have their own `home_organization_id` separate from client portals
@@ -824,7 +851,116 @@ Would you like me to suggest values?"
 
 ---
 
-## Phase 5: Advanced Features (Future)
+## Phase 5: Partner Whitelabeling
+
+**Goal:** Enable partners/agencies to customize RevGuide branding for their clients with custom colors, logos, and optionally custom domains.
+
+### Stage 1: Custom Colors & Icons (Medium Effort)
+
+**Database Changes:**
+- [ ] Add `brand_settings` JSONB column to `organizations` table
+- [ ] Schema: `{ primary_color, logo_url, logo_light_url, favicon_url, company_name, hide_revguide_branding }`
+- [ ] Migration script with default values
+- [ ] Validation for color formats (hex), URL formats
+
+**Settings UI:**
+- [ ] Add "Branding" section to Settings page (visible to admins/owners)
+- [ ] Color picker for primary brand color (default: #b2ef63)
+- [ ] Logo upload (store in Supabase Storage)
+  - [ ] Main logo (dark backgrounds)
+  - [ ] Light logo variant (light backgrounds)
+  - [ ] Favicon
+- [ ] Company name override field
+- [ ] "Hide RevGuide branding" toggle (for premium/partner accounts)
+- [ ] Live preview panel showing changes
+
+**Runtime CSS Injection:**
+- [ ] Modify `admin/shared.js` to load brand settings after auth
+- [ ] Create `applyPartnerBranding(settings)` function
+- [ ] Inject CSS custom properties dynamically:
+  ```javascript
+  document.documentElement.style.setProperty('--color-primary', settings.primary_color);
+  ```
+- [ ] Replace logo images via data URLs or CSS background-image
+- [ ] Cache branding settings in sessionStorage for performance
+- [ ] Apply to all admin pages (home, banners, plays, wiki, settings, partner)
+
+**Chrome Extension Branding:**
+- [ ] Sync brand settings to Chrome extension storage
+- [ ] Apply branding to sidebar, tooltips, banners in HubSpot
+- [ ] Test across all HubSpot page types
+
+**Files to Modify:**
+- `styles/base.css` - Ensure all colors use CSS variables
+- `admin/shared.js` - Add branding injection logic
+- `admin/pages/settings.html` - Add branding UI section
+- `admin/pages/settings.js` - Add branding save/load logic
+- `admin/supabase.js` - Add brand settings queries
+
+### Stage 2: Email Whitelabeling (Medium-High Effort)
+
+**Email Template Updates:**
+- [ ] Modify `api/invite-worker.js` templates to accept branding parameters
+- [ ] Replace hardcoded RevGuide branding with dynamic values:
+  - [ ] Logo URL
+  - [ ] Primary color for buttons/accents
+  - [ ] Company name in headers/footers
+  - [ ] Optional "Powered by RevGuide" footer (based on hide_revguide_branding)
+- [ ] Pass branding through invitation payload from admin panel
+- [ ] Test email rendering across major clients (Gmail, Outlook, Apple Mail)
+
+**Custom From Email (Advanced):**
+- [ ] Add `from_email` field to brand_settings
+- [ ] DNS verification flow for custom sending domains
+  - [ ] Generate SPF/DKIM records
+  - [ ] Verification UI in Settings
+  - [ ] Store verification status in database
+- [ ] Use verified custom domain in Resend API calls
+- [ ] Fallback to `notifications@email.revguide.io` if not verified
+
+### Stage 3: Custom Domains (High Effort)
+
+**Option A: Subdomains (Easier)**
+- [ ] Allow partners to request subdomains: `agency.revguide.io`
+- [ ] Configure in Vercel domains via API or manual
+- [ ] Route based on subdomain to apply branding
+- [ ] No DNS changes required from partner
+
+**Option B: Full Custom Domains (Complex)**
+- [ ] Add `custom_domain` field to brand_settings
+- [ ] Domain verification flow:
+  - [ ] Partner adds CNAME record pointing to Vercel
+  - [ ] System verifies DNS propagation
+  - [ ] Vercel API to add domain (or manual process)
+  - [ ] SSL certificate provisioning (automatic via Vercel)
+- [ ] Domain verification UI in Settings
+- [ ] Apply branding based on request hostname
+- [ ] Update email links to use custom domain
+
+**Technical Requirements:**
+- [ ] Middleware to detect domain and load org branding
+- [ ] Handle domain → organization mapping
+- [ ] Fallback for unmapped domains
+- [ ] Consider Vercel Enterprise for wildcard domains (or manual per-domain)
+
+### Implementation Priority
+
+| Stage | Effort | Value | Priority |
+|-------|--------|-------|----------|
+| Stage 1: Colors & Icons | 1-2 days | High | P1 - Do first |
+| Stage 2: Email Whitelabeling | 3-5 days | Medium | P2 - After Stage 1 |
+| Stage 3: Custom Domains | 1-2 weeks | Medium | P3 - Premium feature |
+
+### Key Considerations
+
+- **Partner-only feature?** Consider limiting to partner accounts or premium tier
+- **Storage costs:** Logo uploads will use Supabase Storage (free tier: 1GB)
+- **Email sending limits:** Custom domains require verified sender (Resend setup)
+- **Vercel limits:** Custom domains may require paid Vercel plan for many domains
+
+---
+
+## Phase 6: Advanced Features (Future)
 
 ### Analytics & Insights
 - [ ] Banner impression tracking
@@ -971,6 +1107,21 @@ Would you like me to suggest values?"
 ---
 
 ## Completed Features
+
+### v3.0.0
+- [x] **Unified Cards System**
+  - Consolidated Wiki Entries, Banners, and Plays into single "Cards" data model
+  - 4 card types: `definition`, `alert`, `battlecard`, `asset`
+  - 3 display modes: `tooltip`, `banner`, `sidepanel` (cards can have multiple)
+  - Single admin page replaces 3 separate pages
+  - Auto-migration from legacy data on first load
+  - Database: `cards` table with unified schema (migration 022)
+  - Migration functions: `migrate_all_to_cards()` RPC (migration 023)
+  - New CardsModule in content scripts for unified rendering
+  - Backward compatibility: legacy storage format converted on-the-fly
+  - Updated navigation: consolidated to 4 items (Home, Cards, Media, Settings)
+  - Updated home stats: shows Cards, Definitions, Battlecards counts
+  - Updated onboarding: 3-step flow for unified experience
 
 ### v1.9.5
 - [x] **HubSpot Import Tree View with Property Groups**

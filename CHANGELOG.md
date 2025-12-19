@@ -2,6 +2,72 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [3.0.0] - 2025-12-19 - Unified Cards System
+
+### Added
+- **Unified Cards Architecture**: Consolidated Wiki, Banners, and Plays into a single content system
+  - **Card Types**: definition (tooltips), alert (banners), battlecard (sidepanel), asset (shareable links)
+  - **Display Modes**: Cards can appear in multiple locations simultaneously (tooltip, banner, sidepanel)
+  - **Content Curation**: New assets, next steps, and related cards features for richer content
+
+- **New Cards Admin Page** (`/cards`)
+  - Unified content management replacing separate Wiki, Banners, and Plays pages
+  - Card type selector with visual icons and descriptions
+  - Tabbed editor: Content, Rules, Assets, Usage
+  - Stats bar showing counts by card type
+  - Filters by type, display mode, and object type
+
+- **CardsModule Content Orchestrator**
+  - New `content/modules/cards.js` orchestrates display of unified cards
+  - Routes cards to appropriate display modules based on displayModes
+  - Backward compatible - converts legacy data formats on-the-fly
+  - Provides data in format expected by WikiModule, BannersModule, SidePanelModule
+
+- **Auto-Migration**
+  - Existing wiki entries, banners, and plays automatically migrate to unified cards
+  - Migration runs on first Cards page load
+  - Legacy data preserved with `legacy_type` and `legacy_id` references
+  - Extension context converts Chrome storage format on-the-fly
+
+### Changed
+- **Navigation**: Sidebar now shows "Cards" instead of separate Wiki/Banners/Plays links
+- **Home Page Stats**: Updated to show total cards, definitions, battlecards, and media counts
+- **Onboarding Steps**: Updated for unified cards workflow (Create Cards, Add Definitions, Add Battlecards)
+- **Background Script**: Now fetches from unified `cards` table in addition to legacy tables
+
+### Technical
+- **Database Migrations**:
+  - `022_unified_cards_table.sql` - Creates `cards` table with all card types and display modes
+  - `023_migrate_to_cards.sql` - Migration functions for legacy data conversion
+
+- **New Files**:
+  - `admin/pages/cards.html` - Cards admin page structure
+  - `admin/pages/cards.js` - CardsPage class with CRUD operations
+  - `admin/pages/cards.css` - Cards-specific styles
+  - `content/modules/cards.js` - CardsModule orchestrator
+
+- **Modified Files**:
+  - `admin/admin.html` - Updated navigation and onboarding
+  - `admin/admin.js` - Updated home stats and onboarding progress
+  - `admin/shared.js` - Added card field mapping functions
+  - `admin/supabase.js` - Added Card CRUD methods to RevGuideDB
+  - `background/background.js` - Fetch and map unified cards
+  - `content/content.js` - Initialize CardsModule
+  - `manifest.json` - Added cards.js to content scripts
+
+- **Field Mapping Functions** (in `admin/shared.js`):
+  - `mapCardFromSupabase()` / `mapCardToSupabase()` - snake_case/camelCase conversion
+  - `wikiToCard()` / `bannerToCard()` / `playToCard()` - Legacy to card conversion
+  - `cardToWiki()` / `cardToBanner()` / `cardToPlay()` - Card to legacy (backward compat)
+
+### Migration Notes
+- Run migrations 022 and 023 in Supabase before using
+- Extension users: Reload extension to get new CardsModule
+- Web users: Auto-migration runs on first Cards page visit
+- Legacy pages (Wiki, Banners, Plays) still work but data syncs to unified cards
+
+---
+
 ## [2.8.2] - 2025-12-19 - Partner Home Page
 
 ### Added

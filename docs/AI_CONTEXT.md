@@ -6,7 +6,7 @@ Quick reference for AI assistants working on this codebase. For detailed documen
 
 ## Project Overview
 
-**RevGuide** is a Chrome extension + SaaS web app that displays contextual guidance (banners, plays/battle cards, wiki tooltips) on HubSpot CRM pages based on property-based rules.
+**RevGuide** is a Chrome extension + SaaS web app that displays contextual guidance on HubSpot CRM pages. Features a **unified Cards system** (v3.0.0) that consolidates content into one data model with flexible display modes (tooltip, banner, sidepanel).
 
 - **Extension**: Chrome Manifest V3
 - **Web App**: app.revguide.io (admin panel)
@@ -30,9 +30,10 @@ plugin/
 │   ├── nango.js           # Legacy OAuth (still used in home.js)
 │   └── pages/             # Multi-page admin UI
 │       ├── home.js        # Dashboard
-│       ├── banners.js     # Banner CRUD
-│       ├── plays.js       # Battle cards CRUD
-│       ├── wiki.js        # Wiki glossary CRUD
+│       ├── cards.js       # Unified Cards CRUD (v3.0.0+, replaces banners/plays/wiki)
+│       ├── banners.js     # Legacy Banner CRUD (deprecated)
+│       ├── plays.js       # Legacy Battle cards CRUD (deprecated)
+│       ├── wiki.js        # Legacy Wiki glossary CRUD (deprecated)
 │       ├── libraries.js   # Content library browser
 │       ├── settings.js    # Settings & team management
 │       ├── partner.js     # Managed Accounts page (v2.8.0+)
@@ -46,9 +47,10 @@ plugin/
 │   ├── content.js         # Main orchestrator
 │   ├── content.css        # Injection styles
 │   └── modules/
-│       ├── banners.js     # Banner rendering
-│       ├── wiki.js        # Wiki tooltips
-│       ├── sidepanel.js   # FAB button & sidepanel
+│       ├── cards.js       # CardsModule - unified card orchestrator (v3.0.0+)
+│       ├── banners.js     # Banner rendering (receives cards from CardsModule)
+│       ├── wiki.js        # Wiki tooltips (receives cards from CardsModule)
+│       ├── sidepanel.js   # FAB button & sidepanel (receives cards from CardsModule)
 │       └── presentations.js # Media embeds (Google Slides, etc.)
 │
 ├── sidepanel/
@@ -125,7 +127,18 @@ Modules render matching content:
 
 ## Terminology Mapping
 
-The codebase uses mixed terminology due to evolution:
+The codebase uses mixed terminology due to evolution. **v3.0.0 introduces a unified Cards system.**
+
+### New Unified Model (v3.0.0+)
+
+| Card Type | Display Modes | Was |
+|-----------|---------------|-----|
+| `definition` | tooltip, sidepanel | Wiki Entries |
+| `alert` | banner, sidepanel | Banners |
+| `battlecard` | sidepanel, banner | Plays |
+| `asset` | sidepanel | (new) |
+
+### Legacy Mapping (still in codebase for compatibility)
 
 | UI Label | Code Variable | Database Table | Notes |
 |----------|---------------|----------------|-------|
@@ -133,6 +146,7 @@ The codebase uses mixed terminology due to evolution:
 | Banners | `rules`, `banners` | `banners` | Conditional banners |
 | Wiki | `wikiEntries` | `wiki_entries` | Field glossary |
 | Media Embeds | `presentations` | (via banners) | Part of banner system |
+| Cards | `cards` | `cards` | **Unified model (v3.0.0+)** |
 
 ---
 
@@ -224,9 +238,10 @@ Build script: `scripts/build.js`
 - `organizations` - Multi-tenant orgs
 - `users` - Team members (role-based, with `active_organization_id` for portal switching)
 - `organization_members` - Many-to-many user↔org with per-org roles (v2.7.0+)
-- `banners` - Banner rules
-- `plays` - Battle cards
-- `wiki_entries` - Wiki glossary
+- `cards` - **Unified cards table (v3.0.0+)** - all content types
+- `banners` - Legacy banner rules
+- `plays` - Legacy battle cards
+- `wiki_entries` - Legacy wiki glossary
 - `hubspot_connections` - OAuth tokens (encrypted)
 - `consultant_libraries` - Reusable content packages (v2.7.0+)
 - `library_installations` - Track installed libraries per org (v2.7.0+)
@@ -295,4 +310,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024 (v2.8.2)*
+*Last updated: December 2024 (v3.0.0)*
