@@ -2045,4 +2045,160 @@ AND LOWER(invitations.email) = LOWER(auth.jwt() ->> 'email')
 
 ---
 
+## RPC Field Naming Conventions (v2.8.6)
+
+### RPC Returns Different Field Names Than Table Columns
+**Lesson**: Supabase RPC functions often alias columns to different names (e.g., `id` → `request_id`). Always check the RPC definition for actual return field names.
+
+**Problem**: JavaScript code used `request.id` but the RPC function returned `request_id`:
+```sql
+-- RPC definition returns request_id, NOT id
+CREATE OR REPLACE FUNCTION get_consultant_access_requests(p_auth_uid UUID)
+RETURNS TABLE (
+  request_id UUID,  -- Aliased from car.id
+  organization_id UUID,
+  ...
+) AS $$
+  SELECT
+    car.id as request_id,  -- Alias here!
+    ...
+```
+
+**Symptom**: Buttons with `data-id="${request.id}"` had `data-id="undefined"`, causing "invalid input syntax for type uuid" errors.
+
+**Solution**: Check RPC definition and use correct field name:
+```javascript
+// WRONG - uses table column name
+data-id="${request.id}"
+
+// CORRECT - uses RPC return field name
+data-id="${request.request_id}"
+```
+
+**Pattern**: When consuming RPC responses, always:
+1. Check the RPC's `RETURNS TABLE (...)` definition
+2. Note any column aliases (e.g., `car.id as request_id`)
+3. Use the aliased names in JavaScript
+
+---
+
+## User Enumeration Prevention (v2.8.6)
+
+### Password-Reset-Style Neutral Responses
+**Lesson**: For security-sensitive email lookups, always return neutral success messages regardless of whether the email exists.
+
+**Problem**: Revealing "email not found" or "not an admin" allows attackers to enumerate valid admin emails.
+
+**Pattern** (similar to password reset flows):
+```javascript
+// Frontend - always show neutral message
+this.showSuccessMessage();
+// Message: "If this email is linked to an Admin account, they will receive an access request email."
+
+// Backend - validate silently
+if (!adminUser || adminUser.length === 0) {
+  console.log('No user found'); // Log for debugging
+  return successResponse();     // Same response as success
+}
+```
+
+**Key insight**: Move validation logic to the backend (Cloudflare Worker) so the frontend can't distinguish between valid/invalid emails.
+
+---
+
+## Worker REST API Empty Response Handling (v2.8.6)
+
+### Supabase PATCH Returns Empty on Success
+**Lesson**: Supabase REST API returns empty body (204 No Content) for PATCH requests unless you request the result back.
+
+**Problem**: `response.json()` on empty response throws `SyntaxError: Unexpected end of JSON input`.
+
+**Solution**: Add `Prefer: return=representation` header OR handle empty responses:
+```javascript
+async function supabaseFetch(path, method = 'GET', body = null) {
+  const options = {
+    headers: {
+      'Prefer': 'return=representation'  // Request updated record back
+    }
+  };
+
+  const response = await fetch(url, options);
+
+  // Handle empty responses
+  const text = await response.text();
+  if (!text) {
+    return [];  // Success but no data
+  }
+  return JSON.parse(text);
+}
+```
+
+---
+
+## Querying Multiple User Sources (v2.8.6)
+
+### Team Members from Multiple Tables
+**Lesson**: Users can belong to an organization via different mechanisms that need to be queried separately.
+
+**Problem**: `getTeamMembers()` only queried `users.organization_id` but partners are stored in `organization_members` table.
+
+**Solution**: Query both sources and merge results:
+```javascript
+async getTeamMembers() {
+  // 1. Get regular members (users with organization_id set)
+  const { data: regularMembers } = await client
+    .from('users')
+    .select('*')
+    .eq('organization_id', orgId);
+
+  // 2. Get partners from organization_members
+  const { data: partnerMembers } = await client
+    .from('organization_members')
+    .select('user_id, role, joined_at, users(id, name, email, ...)')
+    .eq('organization_id', orgId)
+    .in('role', ['consultant', 'partner']);
+
+  // 3. Transform partners to match regular member format
+  const transformedPartners = partnerMembers.map(pm => ({
+    ...pm.users,
+    role: 'partner',
+    is_partner: true  // Flag for different handling
+  }));
+
+  // 4. Merge and deduplicate
+  return [...regularMembers, ...uniquePartners];
+}
+```
+
+**Key insight**: Add an `is_partner` flag so downstream code (delete handlers, UI rendering) can handle partners differently.
+
+---
+
+## Worker Endpoint Field Name Consistency (v2.8.6)
+
+### Match Field Names Between Frontend and Worker
+**Lesson**: When calling worker endpoints, field names in the request body must exactly match what the worker expects.
+
+**Problem**: Frontend sent `partnerEmail` but worker expected `consultantEmail`:
+```javascript
+// Frontend sent:
+body: { partnerEmail: email }
+
+// Worker expected:
+const { consultantEmail } = await request.json();
+// consultantEmail was undefined!
+```
+
+**Solution**: Always check the worker endpoint code for expected field names:
+```javascript
+// Match exactly what worker expects
+body: JSON.stringify({
+  consultantEmail: request.consultant_email,  // Not partnerEmail
+  consultantName: request.consultant_name,
+  orgName: org?.name
+})
+```
+
+---
+
 *Last updated: December 2024*

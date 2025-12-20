@@ -6,11 +6,18 @@ All notable changes to RevGuide will be documented in this file.
 
 ### Added
 - **Partner Access Requests**: Partners can now request access to client organizations by entering a client admin's email address
-  - Email-based request flow with user enumeration prevention (always shows success message)
+  - Email-based request flow with user enumeration prevention (always shows neutral success message)
   - Partners can submit requests from the Partner Dashboard > Access Requests tab
   - Client admins receive email notification and can approve/decline from Settings > Partner Access Requests section
   - Partners receive email notification when requests are approved or declined
   - Re-requesting after decline updates the existing request instead of creating a duplicate
+  - Approved partners now appear in Team Members table with "partner" role badge
+  - Admins can revoke partner access via the remove button in Team Members
+
+### Fixed
+- RPC field naming: Use `request_id` instead of `id` to match database RPC return values
+- Email notification field names: Use `consultantEmail` to match worker endpoint expectations
+- Empty response handling in worker: Properly handle 204 No Content responses from Supabase PATCH
 
 ### Technical
 - **Files Modified**:
@@ -19,6 +26,7 @@ All notable changes to RevGuide will be documented in this file.
   - `admin/pages/partner.js` - Added form handling and submission logic
   - `admin/pages/settings.html` - Added Partner Access Requests section for admins
   - `admin/pages/settings.js` - Added access request loading, rendering, approve/decline methods
+  - `admin/supabase.js` - Updated `getTeamMembers()` to include partners from `organization_members` table
 
 ---
 
