@@ -2,6 +2,20 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.4] - 2025-12-20 - Fix Edit Links for Web App
+
+### Fixed
+- **Edit Links Now Open Web App**: When logged in, clicking "Edit" on wiki tooltips, banners, and plays now correctly opens the web admin panel at app.revguide.io instead of the local extension pages
+
+### Technical
+- **Files Modified**:
+  - `content/content.js` - Pass `isAuthenticated` to settings for modules
+  - `content/modules/wiki.js` - Use web app URL when authenticated
+  - `content/modules/banners.js` - Use web app URL when authenticated
+  - `sidepanel/sidepanel.js` - Use web app URL when authenticated
+
+---
+
 ## [2.8.3] - 2025-12-20 - TipTap Image Insert
 
 ### Added
