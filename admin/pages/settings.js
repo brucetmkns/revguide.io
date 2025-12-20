@@ -787,8 +787,9 @@ class SettingsPage {
     // Render active team members first
     for (const member of this.teamMembers) {
       const isCurrentUser = member.auth_user_id === AdminShared.currentUser?.auth_user_id;
+      const memberType = member.is_partner ? 'partner' : 'member';
       rows += `
-        <tr data-id="${member.id}" data-type="member">
+        <tr data-id="${member.id}" data-type="${memberType}">
           <td>
             <strong>${AdminShared.escapeHtml(member.name || member.email)}</strong>
             ${member.name ? `<br><span class="text-muted">${AdminShared.escapeHtml(member.email)}</span>` : ''}
@@ -796,11 +797,11 @@ class SettingsPage {
           </td>
           <td><span class="role-badge ${member.role}">${member.role}</span></td>
           <td><span class="badge badge-active">Active</span></td>
-          <td>${this.formatDate(member.created_at)}</td>
+          <td>${this.formatDate(member.is_partner ? member.joined_at : member.created_at)}</td>
           <td>
             <div class="action-buttons">
               ${!isCurrentUser ? `
-                <button class="btn-icon-sm btn-danger-icon delete-user-btn" data-id="${member.id}" data-type="member" data-email="${AdminShared.escapeHtml(member.email)}" title="Remove user">
+                <button class="btn-icon-sm btn-danger-icon delete-user-btn" data-id="${member.id}" data-type="${memberType}" data-email="${AdminShared.escapeHtml(member.email)}" title="Remove user">
                   <span class="icon icon-trash icon--sm"></span>
                 </button>
               ` : ''}
@@ -1094,15 +1095,16 @@ class SettingsPage {
 
   async deleteUser(userId, type, email) {
     const isMember = type === 'member';
-    const title = isMember ? 'Remove Team Member' : 'Cancel Invitation';
-    const message = isMember
+    const isPartner = type === 'partner';
+    const title = isMember || isPartner ? 'Remove Team Member' : 'Cancel Invitation';
+    const message = isMember || isPartner
       ? `Are you sure you want to remove ${email} from your team? They will lose access to shared content.`
       : `Are you sure you want to cancel the invitation to ${email}?`;
 
     const confirmed = await AdminShared.showConfirmDialog({
       title,
       message,
-      primaryLabel: isMember ? 'Remove' : 'Cancel Invitation',
+      primaryLabel: isMember || isPartner ? 'Remove' : 'Cancel Invitation',
       secondaryLabel: 'Keep',
       showCancel: false
     });
@@ -1114,7 +1116,19 @@ class SettingsPage {
         // Web context - delete from database
         const client = await RevGuideAuth.waitForClient();
 
-        if (isMember) {
+        if (isPartner) {
+          // Remove partner from organization_members table
+          const orgId = await RevGuideDB.getOrganizationId();
+          const { error } = await client
+            .from('organization_members')
+            .delete()
+            .eq('user_id', userId)
+            .eq('organization_id', orgId);
+
+          if (error) throw new Error(error.message);
+
+          this.teamMembers = this.teamMembers.filter(m => m.id !== userId);
+        } else if (isMember) {
           // Remove user from organization (set organization_id to null)
           const { error } = await client
             .from('users')

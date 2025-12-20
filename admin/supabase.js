@@ -11,21 +11,23 @@ const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
-// Import Supabase client - use local bundle for extension, CDN for web
+// Import Supabase client
+// In extension context: use local bundle
+// In web context: Supabase must be loaded separately (e.g., via build process or separate script)
 const supabaseScript = document.createElement('script');
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-  // Chrome extension context - use local bundle (CSP requirement)
+  // Chrome extension context - use local bundle (Manifest V3 requirement)
   supabaseScript.src = chrome.runtime.getURL('admin/lib/supabase.min.js');
-} else {
-  // Web context - use CDN
-  supabaseScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+  document.head.appendChild(supabaseScript);
+} else if (typeof window.supabase === 'undefined') {
+  // Web context - Supabase should be loaded by the hosting page
+  console.warn('RevGuide: Supabase client not found. Please ensure Supabase is loaded before this script.');
 }
-document.head.appendChild(supabaseScript);
 
 // Wait for Supabase to load
 let supabaseClient = null;
 
-supabaseScript.onload = () => {
+function initSupabaseClient() {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken: true,
@@ -38,7 +40,15 @@ supabaseScript.onload = () => {
 
   // Dispatch event when ready
   window.dispatchEvent(new CustomEvent('supabase-ready'));
-};
+}
+
+// Initialize when script loads (extension) or immediately if already available (web)
+if (supabaseScript.src) {
+  supabaseScript.onload = initSupabaseClient;
+} else if (typeof window.supabase !== 'undefined') {
+  // Supabase already loaded in web context
+  initSupabaseClient();
+}
 
 /**
  * RevGuide Authentication API
@@ -452,11 +462,44 @@ const RevGuideDB = {
     const orgId = await this.getOrganizationId();
     if (!orgId) return { data: [], error: new Error('No organization') };
 
-    return client
+    // Get regular team members (users with organization_id set)
+    const { data: regularMembers, error: regularError } = await client
       .from('users')
       .select('*')
       .eq('organization_id', orgId)
       .order('created_at');
+
+    if (regularError) {
+      return { data: [], error: regularError };
+    }
+
+    // Get partners from organization_members table
+    const { data: partnerMembers, error: partnerError } = await client
+      .from('organization_members')
+      .select('user_id, role, joined_at, users(id, name, email, auth_user_id, created_at)')
+      .eq('organization_id', orgId)
+      .in('role', ['consultant', 'partner']);
+
+    if (partnerError) {
+      console.warn('[getTeamMembers] Error fetching partners:', partnerError);
+      // Still return regular members even if partner query fails
+      return { data: regularMembers || [], error: null };
+    }
+
+    // Transform partner data to match regular member format
+    const transformedPartners = (partnerMembers || []).map(pm => ({
+      ...pm.users,
+      role: 'partner', // Normalize consultant to partner
+      joined_at: pm.joined_at,
+      is_partner: true // Flag to identify partners
+    }));
+
+    // Filter out duplicates (in case someone is both a regular member and partner)
+    const regularIds = new Set((regularMembers || []).map(m => m.id));
+    const uniquePartners = transformedPartners.filter(p => !regularIds.has(p.id));
+
+    // Combine and return
+    return { data: [...(regularMembers || []), ...uniquePartners], error: null };
   },
 
   async getInvitations() {
