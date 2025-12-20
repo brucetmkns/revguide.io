@@ -1865,7 +1865,8 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
       headers: {
         'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
         'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation' // Request the updated/created record back
       }
     };
     if (body) {
@@ -1877,7 +1878,17 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
       console.error(`Supabase error (${path}):`, errorText);
       return null;
     }
-    return response.json();
+    // Handle empty responses (204 No Content)
+    const text = await response.text();
+    if (!text) {
+      return []; // Return empty array for successful but empty responses
+    }
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error(`Supabase JSON parse error (${path}):`, text);
+      return null;
+    }
   }
 
   // Always return success for enumeration prevention
