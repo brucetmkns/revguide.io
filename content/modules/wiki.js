@@ -649,7 +649,7 @@ class WikiModule {
         const entryId = editLink.dataset.entryId;
         // Use web app if authenticated, otherwise local extension
         const adminUrl = this.helper.settings.isAuthenticated
-          ? `https://app.revguide.io/admin/pages/wiki.html?edit=${entryId}`
+          ? `https://app.revguide.io/wiki?edit=${entryId}`
           : chrome.runtime.getURL(`admin/pages/wiki.html?edit=${entryId}`);
         window.open(adminUrl, '_blank');
       });

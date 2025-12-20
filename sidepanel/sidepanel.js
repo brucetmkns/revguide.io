@@ -437,7 +437,7 @@ class SidePanel {
         const cardId = link.dataset.cardId;
         // Use web app if authenticated, otherwise local extension
         const adminUrl = this.authState.isAuthenticated
-          ? `${WEB_APP_URL}/admin/pages/plays.html?edit=${cardId}`
+          ? `${WEB_APP_URL}/plays?edit=${cardId}`
           : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
         chrome.tabs.create({ url: adminUrl });
       });
@@ -532,7 +532,7 @@ class SidePanel {
             const cardId = editLink.dataset.cardId;
             // Use web app if authenticated, otherwise local extension
             const adminUrl = this.authState.isAuthenticated
-              ? `${WEB_APP_URL}/admin/pages/plays.html?edit=${cardId}`
+              ? `${WEB_APP_URL}/plays?edit=${cardId}`
               : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
             chrome.tabs.create({ url: adminUrl });
           });

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevGuide - Turn HubSpot into a Revenue Enablement Engine</title>
+  <meta name="description" content="Stop losing deals to inconsistency. RevGuide puts battlecards, alerts, and field definitions right where your team works—inside HubSpot.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-v3.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+          <circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2"/>
+          <circle cx="16" cy="16" r="3" fill="currentColor"/>
+        </svg>
+        <span>RevGuide</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#problem">Why RevGuide</a>
+        <a href="#solution">How It Works</a>
+        <a href="#consultants">For Consultants</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+
+      <div class="nav-cta">
+        <a href="https://app.revguide.io/login" class="link-subtle">Log In</a>
+        <a href="#install" class="btn btn-primary">Get Started Free</a>
+      </div>
+
+      <button class="mobile-menu-btn" aria-label="Menu">
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero: The Problem-Solution Statement -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-content">
+        <p class="hero-eyebrow">For Revenue Leaders Who Demand Consistency</p>
+        <h1>
+          Your reps are winging it.
+          <span class="hero-highlight">RevGuide fixes that.</span>
+        </h1>
+        <p class="hero-sub">
+          Battlecards. Alerts. Field definitions. Delivered inside HubSpot,
+          exactly when your team needs them. No tab switching. No forgotten playbooks.
+        </p>
+        <div class="hero-ctas">
+          <a href="#install" class="btn btn-primary btn-large">
+            Install Free Extension
+            <svg class="btn-arrow" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#demo" class="btn btn-ghost btn-large">See It In Action</a>
+        </div>
+      </div>
+
+      <div class="hero-proof">
+        <div class="proof-item">
+          <span class="proof-number">73%</span>
+          <span class="proof-label">of reps forget to use playbooks<sup>*</sup></span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-item">
+          <span class="proof-number">0</span>
+          <span class="proof-label">extra tabs with RevGuide</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="visual-window">
+        <div class="window-bar">
+          <span class="window-dot"></span>
+          <span class="window-dot"></span>
+          <span class="window-dot"></span>
+          <span class="window-url">app.hubspot.com</span>
+        </div>
+        <div class="window-content">
+          <div class="demo-alert">
+            <div class="alert-stripe"></div>
+            <div class="alert-body">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <div class="alert-text">
+                <strong>High-value renewal at risk</strong>
+                <span>Contract expires in 12 days. Open the Renewal Playbook.</span>
+              </div>
+              <button class="alert-btn">View Play</button>
+            </div>
+          </div>
+
+          <div class="demo-sidebar">
+            <div class="sidebar-header">
+              <span>Plays for this deal</span>
+              <span class="sidebar-badge">2</span>
+            </div>
+            <div class="sidebar-card">
+              <span class="card-tag tag-competitor">Competitor</span>
+              <h4>Beating Salesforce</h4>
+              <p>Key differentiators and objection handlers</p>
+            </div>
+            <div class="sidebar-card">
+              <span class="card-tag tag-process">Process</span>
+              <h4>Enterprise Close Checklist</h4>
+              <p>7 steps to close</p>
+            </div>
+          </div>
+
+          <div class="demo-tooltip">
+            <span class="tooltip-trigger">
+              ARR
+              <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6"/></svg>
+            </span>
+            <div class="tooltip-card">
+              <span class="tooltip-type">Definition</span>
+              <h5>Annual Recurring Revenue</h5>
+              <p>The value of recurring revenue normalized to a single year. Calculate as MRR x 12.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-scroll-hint">
+      <span>Scroll to explore</span>
+      <svg viewBox="0 0 16 24" fill="none">
+        <rect x="1" y="1" width="14" height="22" rx="7" stroke="currentColor" stroke-width="2"/>
+        <circle class="scroll-dot" cx="8" cy="8" r="2" fill="currentColor"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <div class="problem-header">
+        <span class="section-tag">The Problem</span>
+        <h2>Great playbooks don't work if nobody uses them.</h2>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-number">01</div>
+          <h3>Reps can't find what they need</h3>
+          <p>Playbooks live in Notion. Battle cards in Google Docs. Training decks in Slides. By the time a rep finds the right doc, the moment is gone.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-number">02</div>
+          <h3>Inconsistent execution</h3>
+          <p>Without contextual prompts, every rep handles objections differently. Your best practices stay locked in your top performers' heads.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-number">03</div>
+          <h3>Dirty data, missed signals</h3>
+          <p>Fields get filled wrong because no one remembers what "Stage 3" means. Critical alerts get missed because they're buried in dashboards.</p>
+        </div>
+      </div>
+
+      <div class="problem-quote">
+        <blockquote>
+          "We built 47 battle cards. Six months later, utilization was under 10%."
+        </blockquote>
+        <cite>— VP of Sales Enablement, Series C SaaS</cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution Section -->
+  <section class="solution" id="solution">
+    <div class="container">
+      <div class="solution-header">
+        <span class="section-tag">The Solution</span>
+        <h2>Put guidance where the work happens.</h2>
+        <p>RevGuide embeds your playbooks, definitions, and alerts directly into HubSpot. The right context surfaces automatically, based on the record they're viewing.</p>
+      </div>
+
+      <div class="solution-features">
+        <div class="feature-row">
+          <div class="feature-visual">
+            <div class="feature-mockup mockup-alerts">
+              <div class="mockup-content">
+                <div class="mock-alert mock-alert-warning">
+                  <span class="mock-icon">!</span>
+                  <span>Contract expires in 14 days</span>
+                </div>
+                <div class="mock-alert mock-alert-info">
+                  <span class="mock-icon">i</span>
+                  <span>Competitor mentioned: Salesforce</span>
+                </div>
+                <div class="mock-alert mock-alert-success">
+                  <span class="mock-icon">+</span>
+                  <span>Champion identified</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="feature-content">
+            <span class="feature-tag">Contextual Alerts</span>
+            <h3>Surface critical info automatically</h3>
+            <p>Set rules based on any HubSpot property. When a deal hits "Negotiation" and amount > $50K, the enterprise close checklist appears. When a competitor is mentioned, the battle card shows up.</p>
+            <ul class="feature-list">
+              <li>Property-based trigger rules</li>
+              <li>AND/OR condition logic</li>
+              <li>4 alert types: Info, Warning, Success, Embed</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature-row feature-row-reverse">
+          <div class="feature-visual">
+            <div class="feature-mockup mockup-plays">
+              <div class="mockup-content">
+                <div class="mock-play">
+                  <div class="play-header">
+                    <span class="play-type">Competitor</span>
+                    <span class="play-title">vs. Salesforce</span>
+                  </div>
+                  <div class="play-sections">
+                    <div class="play-section">
+                      <span class="section-marker"></span>
+                      <span>Why We Win</span>
+                    </div>
+                    <div class="play-section">
+                      <span class="section-marker"></span>
+                      <span>Common Objections</span>
+                    </div>
+                    <div class="play-section">
+                      <span class="section-marker"></span>
+                      <span>Proof Points</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="feature-content">
+            <span class="feature-tag">Battle Cards & Plays</span>
+            <h3>One click from record to playbook</h3>
+            <p>Reps access structured plays from Chrome's side panel without leaving the deal. Competitor intel, objection handlers, process checklists—all organized and always available.</p>
+            <ul class="feature-list">
+              <li>Multi-section playbook structure</li>
+              <li>Rich text with embedded videos</li>
+              <li>Contextual filtering by deal properties</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature-row">
+          <div class="feature-visual">
+            <div class="feature-mockup mockup-definitions">
+              <div class="mockup-content">
+                <div class="mock-field">
+                  <span class="field-label">
+                    Lead Score
+                    <span class="field-icon"></span>
+                  </span>
+                  <div class="field-tooltip">
+                    <strong>Lead Score</strong>
+                    <p>0-100 based on engagement and fit. Scores > 70 are sales-ready.</p>
+                  </div>
+                </div>
+                <div class="mock-field">
+                  <span class="field-label">
+                    MQL Date
+                    <span class="field-icon"></span>
+                  </span>
+                </div>
+                <div class="mock-field">
+                  <span class="field-label">
+                    ICP Tier
+                    <span class="field-icon"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="feature-content">
+            <span class="feature-tag">Field Definitions</span>
+            <h3>End "what does this field mean?" forever</h3>
+            <p>Inline tooltips appear next to HubSpot property labels. New hires onboard faster. Data quality improves. Everyone speaks the same language.</p>
+            <ul class="feature-list">
+              <li>Import fields directly from HubSpot</li>
+              <li>Organize by object and property group</li>
+              <li>Include dropdown value definitions</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI Section -->
+  <section class="roi">
+    <div class="container">
+      <div class="roi-content">
+        <span class="section-tag section-tag-light">The Outcome</span>
+        <h2>Revenue teams that execute with precision.</h2>
+        <div class="roi-grid">
+          <div class="roi-item">
+            <div class="roi-metric">
+              <span class="metric-arrow">+</span>
+              <span class="metric-value">40%</span>
+            </div>
+            <span class="roi-label">Faster new rep ramp time</span>
+          </div>
+          <div class="roi-item">
+            <div class="roi-metric">
+              <span class="metric-arrow">+</span>
+              <span class="metric-value">3x</span>
+            </div>
+            <span class="roi-label">Playbook utilization rate</span>
+          </div>
+          <div class="roi-item">
+            <div class="roi-metric">
+              <span class="metric-arrow">-</span>
+              <span class="metric-value">60%</span>
+            </div>
+            <span class="roi-label">Reduction in data entry errors</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Consultant Section -->
+  <section class="consultants" id="consultants">
+    <div class="container">
+      <div class="consultant-grid">
+        <div class="consultant-content">
+          <span class="section-tag">For HubSpot Consultants</span>
+          <h2>Turn enablement into a recurring revenue stream.</h2>
+          <p class="consultant-lead">
+            You've built the CRM. Now monetize the expertise that makes it work. RevGuide's Partner Program lets you package and deploy your best practices across every client portal.
+          </p>
+
+          <div class="consultant-features">
+            <div class="consultant-feature">
+              <div class="cf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+              </div>
+              <div class="cf-text">
+                <h4>Multi-Portal Management</h4>
+                <p>Switch between client portals instantly. One dashboard for all your accounts.</p>
+              </div>
+            </div>
+            <div class="consultant-feature">
+              <div class="cf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+              </div>
+              <div class="cf-text">
+                <h4>Content Libraries</h4>
+                <p>Build reusable playbook templates. Deploy to new clients in minutes.</p>
+              </div>
+            </div>
+            <div class="consultant-feature">
+              <div class="cf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+              </div>
+              <div class="cf-text">
+                <h4>Visible Value Delivery</h4>
+                <p>Clients see your expertise every day. Every tooltip, every play—your value on display.</p>
+              </div>
+            </div>
+          </div>
+
+          <a href="https://app.revguide.io/signup?new_partner=true" class="btn btn-primary btn-large">
+            Apply for Partner Program
+            <svg class="btn-arrow" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+
+        <div class="consultant-visual">
+          <div class="partner-preview">
+            <div class="partner-header">
+              <span class="partner-title">Partner Dashboard</span>
+              <span class="partner-badge">Agency</span>
+            </div>
+            <div class="partner-stats">
+              <div class="ps-item">
+                <span class="ps-value">8</span>
+                <span class="ps-label">Active Clients</span>
+              </div>
+              <div class="ps-item">
+                <span class="ps-value">12</span>
+                <span class="ps-label">Libraries</span>
+              </div>
+              <div class="ps-item">
+                <span class="ps-value">340</span>
+                <span class="ps-label">Cards Deployed</span>
+              </div>
+            </div>
+            <div class="partner-clients">
+              <div class="pc-row">
+                <span class="pc-dot" style="--c: #22c55e"></span>
+                <span class="pc-name">Acme Corp</span>
+                <span class="pc-cards">47 cards</span>
+              </div>
+              <div class="pc-row">
+                <span class="pc-dot" style="--c: #3b82f6"></span>
+                <span class="pc-name">TechStart Inc</span>
+                <span class="pc-cards">62 cards</span>
+              </div>
+              <div class="pc-row">
+                <span class="pc-dot" style="--c: #f59e0b"></span>
+                <span class="pc-name">Growth Co</span>
+                <span class="pc-cards">38 cards</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works (Simple) -->
+  <section class="how">
+    <div class="container">
+      <div class="how-header">
+        <span class="section-tag">Setup</span>
+        <h2>Live in under 10 minutes.</h2>
+      </div>
+
+      <div class="how-steps">
+        <div class="how-step">
+          <span class="step-num">1</span>
+          <h4>Install the Chrome extension</h4>
+          <p>One click from the Chrome Web Store. Works on any HubSpot portal immediately.</p>
+        </div>
+        <div class="how-connector"></div>
+        <div class="how-step">
+          <span class="step-num">2</span>
+          <h4>Build your first cards</h4>
+          <p>Create alerts, plays, or definitions using the visual editor. No code required.</p>
+        </div>
+        <div class="how-connector"></div>
+        <div class="how-step">
+          <span class="step-num">3</span>
+          <h4>Watch your team execute</h4>
+          <p>Cards appear automatically based on your rules. Reps never miss a beat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="pricing-header">
+        <span class="section-tag">Pricing</span>
+        <h2>Start free. Scale when ready.</h2>
+        <p>No credit card required. Upgrade when you need team sync.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-top">
+            <h3>Starter</h3>
+            <div class="price-amount">
+              <span class="price-currency">$</span>
+              <span class="price-number">0</span>
+            </div>
+            <span class="price-period">Free forever</span>
+          </div>
+          <p class="price-desc">For individuals testing the waters</p>
+          <ul class="price-features">
+            <li>Unlimited cards</li>
+            <li>All card types & display modes</li>
+            <li>Chrome side panel</li>
+            <li>HubSpot field import</li>
+            <li>Local storage only</li>
+          </ul>
+          <a href="#install" class="btn btn-outline btn-block">Get Started</a>
+        </div>
+
+        <div class="price-card price-card-featured">
+          <div class="price-badge">Most Popular</div>
+          <div class="price-top">
+            <h3>Team</h3>
+            <div class="price-amount">
+              <span class="price-currency">$</span>
+              <span class="price-number">29</span>
+            </div>
+            <span class="price-period">per month</span>
+          </div>
+          <p class="price-desc">For teams that need shared context</p>
+          <ul class="price-features">
+            <li>Everything in Starter</li>
+            <li>Cloud sync across team</li>
+            <li>Unlimited team members</li>
+            <li>Role-based permissions</li>
+            <li>Web dashboard</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="https://app.revguide.io/signup" class="btn btn-primary btn-block">Start Free Trial</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-top">
+            <h3>Agency</h3>
+            <div class="price-amount">
+              <span class="price-currency">$</span>
+              <span class="price-number">99</span>
+            </div>
+            <span class="price-period">per month</span>
+          </div>
+          <p class="price-desc">For consultants with multiple clients</p>
+          <ul class="price-features">
+            <li>Everything in Team</li>
+            <li>Unlimited HubSpot portals</li>
+            <li>Content libraries</li>
+            <li>Template deployment</li>
+            <li>Partner dashboard</li>
+            <li>Dedicated onboarding</li>
+          </ul>
+          <a href="mailto:hello@revguide.io" class="btn btn-outline btn-block">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta" id="install">
+    <div class="container">
+      <div class="cta-inner">
+        <h2>Stop leaving revenue on the table.</h2>
+        <p>Install RevGuide and give your team the context they need to close.</p>
+        <a href="https://chrome.google.com/webstore" class="btn btn-primary btn-xl" target="_blank" rel="noopener">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Add to Chrome — It's Free
+        </a>
+        <span class="cta-note">Works with any HubSpot portal. Setup takes 5 minutes.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+              <circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2"/>
+              <circle cx="16" cy="16" r="3" fill="currentColor"/>
+            </svg>
+            <span>RevGuide</span>
+          </a>
+          <p>Contextual guidance for HubSpot teams. The right info, right where you need it.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="#problem">Why RevGuide</a>
+            <a href="#solution">Features</a>
+            <a href="#consultants">For Consultants</a>
+            <a href="#pricing">Pricing</a>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="https://app.revguide.io">Dashboard</a>
+            <a href="#">Documentation</a>
+            <a href="#">Changelog</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="mailto:hello@revguide.io">Contact</a>
+            <a href="/privacy.html">Privacy</a>
+            <a href="#">Terms</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2025 RevGuide. Not affiliated with HubSpot, Inc.</span>
+        <span class="footer-note">* Based on industry research on sales enablement content utilization.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script-v3.js"></script>
+</body>
+</html>

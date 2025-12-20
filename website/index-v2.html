@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevGuide - Contextual Intelligence for HubSpot Teams</title>
+  <meta name="description" content="Unified Cards, Battlecards, and Field Definitions delivered right where your team works in HubSpot. Empower reps with contextual guidance that drives consistency.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-v2.css">
+</head>
+<body>
+  <!-- Geometric Background Pattern -->
+  <div class="bg-pattern" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation">
+    <div class="nav-container">
+      <a href="/" class="nav-logo" aria-label="RevGuide Home">
+        <div class="logo-mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+            <circle cx="20" cy="20" r="11" stroke="currentColor" stroke-width="2"/>
+            <circle cx="20" cy="20" r="4" fill="currentColor"/>
+          </svg>
+        </div>
+        <span class="logo-text">RevGuide</span>
+        <span class="version-badge">v3.0</span>
+      </a>
+
+      <div class="nav-center">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#cards" class="nav-link">Unified Cards</a>
+        <a href="#partners" class="nav-link">For Partners</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="https://app.revguide.io/login" class="nav-link nav-link-login">Log In</a>
+        <a href="https://app.revguide.io/signup" class="btn btn-outline">Sign Up</a>
+        <a href="#install" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v10m0 0l-4-4m4 4l4-4M3 17h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Install Free
+        </a>
+      </div>
+
+      <button class="nav-mobile-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu-content">
+      <a href="#features" class="mobile-menu-link">Features</a>
+      <a href="#cards" class="mobile-menu-link">Unified Cards</a>
+      <a href="#partners" class="mobile-menu-link">For Partners</a>
+      <a href="#pricing" class="mobile-menu-link">Pricing</a>
+      <div class="mobile-menu-divider"></div>
+      <a href="https://app.revguide.io/login" class="mobile-menu-link">Log In</a>
+      <a href="https://app.revguide.io/signup" class="btn btn-primary btn-block">Get Started Free</a>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="hero-overline">
+          <span class="overline-icon">
+            <svg viewBox="0 0 16 16" fill="none">
+              <path d="M8 1l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 11.8 3.8 14l.8-4.7L1.2 6l4.7-.7L8 1z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span>Now with Unified Cards System</span>
+        </div>
+
+        <h1 class="hero-title">
+          <span class="title-line">Contextual</span>
+          <span class="title-line title-accent">Intelligence</span>
+          <span class="title-line">for HubSpot</span>
+        </h1>
+
+        <p class="hero-description">
+          One system for all your in-app guidance. Cards appear as tooltips, banners,
+          or side panels—right where your team needs them in HubSpot.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="#install" class="btn btn-primary btn-lg">
+            <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3v10m0 0l-4-4m4 4l4-4M3 17h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Install Chrome Extension
+          </a>
+          <a href="#demo" class="btn btn-ghost btn-lg">
+            <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+              <polygon points="5,3 19,10 5,17" fill="currentColor"/>
+            </svg>
+            Watch Demo
+          </a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="stat-value">4</span>
+            <span class="stat-label">Card Types</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="hero-stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">Display Modes</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="hero-stat">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Unified System</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="visual-glow"></div>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+            </div>
+            <div class="browser-address">
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="none">
+                <rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span>app.hubspot.com/contacts/deal/123</span>
+            </div>
+          </div>
+
+          <div class="browser-body">
+            <!-- Alert Banner Card -->
+            <div class="preview-card preview-alert" data-animate="slide-down">
+              <div class="alert-icon">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2L2 18h16L10 2z" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M10 8v4M10 14h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="alert-content">
+                <strong>Contract expires in 14 days</strong>
+                <p>Renewal call needed. Check the Renewal battlecard for talking points.</p>
+              </div>
+              <button class="alert-action">View Play</button>
+            </div>
+
+            <!-- Tooltip Definition -->
+            <div class="preview-tooltip-wrapper" data-animate="fade-in">
+              <span class="tooltip-trigger">
+                Lead Score
+                <span class="tooltip-icon-inline">
+                  <svg viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 7v4M8 5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              </span>
+              <div class="tooltip-popup">
+                <div class="tooltip-header">
+                  <span class="tooltip-category">Definition</span>
+                  <span class="tooltip-term">Lead Score</span>
+                </div>
+                <p>A 0-100 score based on engagement, fit, and behavior signals. Scores above 70 are sales-ready.</p>
+                <a href="#" class="tooltip-link">Learn more</a>
+              </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="preview-sidepanel" data-animate="slide-left">
+              <div class="sidepanel-header">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M7 3v14" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>Battlecards</span>
+                <span class="sidepanel-count">2</span>
+              </div>
+              <div class="sidepanel-card">
+                <div class="card-type-badge badge-competitor">Competitor</div>
+                <h4>vs. Salesforce</h4>
+                <div class="card-sections">
+                  <div class="section-item">
+                    <span class="section-bullet"></span>
+                    Key Differentiators
+                  </div>
+                  <div class="section-item">
+                    <span class="section-bullet"></span>
+                    Objection Handlers
+                  </div>
+                </div>
+              </div>
+              <div class="sidepanel-card">
+                <div class="card-type-badge badge-process">Process</div>
+                <h4>Enterprise Onboarding</h4>
+                <div class="card-meta">12 steps</div>
+              </div>
+            </div>
+
+            <!-- FAB Button -->
+            <div class="preview-fab" data-animate="pop">
+              <span class="fab-count">2</span>
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Elements -->
+        <div class="floating-badge floating-badge-1" data-animate="float">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Definition</span>
+        </div>
+        <div class="floating-badge floating-badge-2" data-animate="float">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Battlecard</span>
+        </div>
+        <div class="floating-badge floating-badge-3" data-animate="float">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M3 3l10 5-10 5V3z" fill="currentColor"/>
+          </svg>
+          <span>Alert</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-gradient-blur"></div>
+  </section>
+
+  <!-- Logo Cloud -->
+  <section class="logo-cloud">
+    <div class="container">
+      <p class="logo-cloud-text">Trusted by revenue teams at</p>
+      <div class="logo-cloud-grid">
+        <div class="logo-placeholder">Sales Teams</div>
+        <div class="logo-placeholder">Support Teams</div>
+        <div class="logo-placeholder">RevOps</div>
+        <div class="logo-placeholder">Agencies</div>
+        <div class="logo-placeholder">Consultants</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Unified Cards Section -->
+  <section class="cards-section" id="cards">
+    <div class="container">
+      <div class="section-header section-header-left">
+        <span class="section-label">New in v3.0</span>
+        <h2 class="section-title">One System.<br/>Four Card Types.<br/><span class="text-accent">Infinite Flexibility.</span></h2>
+        <p class="section-description">
+          The Unified Cards architecture consolidates all your content into a single,
+          powerful system. Create once, display anywhere.
+        </p>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Definition Card -->
+        <div class="card-type-showcase" data-type="definition">
+          <div class="showcase-visual">
+            <div class="showcase-icon">
+              <svg viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 12v6M16 20h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="showcase-content">
+            <h3>Definition Cards</h3>
+            <p>Field glossary entries that appear as inline tooltips next to HubSpot property labels. Reduce confusion and improve data quality.</p>
+            <div class="showcase-modes">
+              <span class="mode-tag mode-active">Tooltip</span>
+              <span class="mode-tag">Banner</span>
+              <span class="mode-tag">Side Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Card -->
+        <div class="card-type-showcase" data-type="alert">
+          <div class="showcase-visual">
+            <div class="showcase-icon showcase-icon-alert">
+              <svg viewBox="0 0 32 32" fill="none">
+                <path d="M16 4L4 28h24L16 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M16 14v6M16 22h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="showcase-content">
+            <h3>Alert Cards</h3>
+            <p>Contextual banners that appear at the top of record pages based on property conditions. Trigger warnings, tips, and action prompts.</p>
+            <div class="showcase-modes">
+              <span class="mode-tag">Tooltip</span>
+              <span class="mode-tag mode-active">Banner</span>
+              <span class="mode-tag">Side Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battlecard Card -->
+        <div class="card-type-showcase" data-type="battlecard">
+          <div class="showcase-visual">
+            <div class="showcase-icon showcase-icon-battlecard">
+              <svg viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="6" width="24" height="20" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M4 12h24M10 6v6" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="showcase-content">
+            <h3>Battlecard Cards</h3>
+            <p>Multi-section playbooks for competitors, objections, and processes. Always accessible via the Chrome side panel with contextual filtering.</p>
+            <div class="showcase-modes">
+              <span class="mode-tag">Tooltip</span>
+              <span class="mode-tag">Banner</span>
+              <span class="mode-tag mode-active">Side Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Asset Card -->
+        <div class="card-type-showcase" data-type="asset">
+          <div class="showcase-visual">
+            <div class="showcase-icon showcase-icon-asset">
+              <svg viewBox="0 0 32 32" fill="none">
+                <path d="M10 4h12l6 6v18H4V4h6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M22 4v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M9 16h14M9 20h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="showcase-content">
+            <h3>Asset Cards</h3>
+            <p>Shareable content links for documents, videos, and presentations. Embed media directly or link to external resources.</p>
+            <div class="showcase-modes">
+              <span class="mode-tag">Tooltip</span>
+              <span class="mode-tag mode-active">Banner</span>
+              <span class="mode-tag mode-active">Side Panel</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Display Modes Explainer -->
+      <div class="display-modes">
+        <h3 class="modes-title">Display Modes</h3>
+        <p class="modes-subtitle">Each card can appear in multiple locations simultaneously</p>
+        <div class="modes-grid">
+          <div class="mode-item">
+            <div class="mode-visual">
+              <svg viewBox="0 0 48 48" fill="none">
+                <rect x="8" y="16" width="32" height="20" rx="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 24h16M16 28h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="24" cy="10" r="3" fill="currentColor"/>
+                <path d="M24 13v3" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <h4>Tooltip</h4>
+            <p>Inline icon with popup definition</p>
+          </div>
+          <div class="mode-item">
+            <div class="mode-visual">
+              <svg viewBox="0 0 48 48" fill="none">
+                <rect x="4" y="12" width="40" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 16h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="4" y="24" width="40" height="16" rx="2" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>
+              </svg>
+            </div>
+            <h4>Banner</h4>
+            <p>Alert bar at top of record page</p>
+          </div>
+          <div class="mode-item">
+            <div class="mode-visual">
+              <svg viewBox="0 0 48 48" fill="none">
+                <rect x="4" y="8" width="26" height="32" rx="2" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>
+                <rect x="32" y="8" width="12" height="32" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M35 14h6M35 18h4M35 24h6M35 28h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h4>Side Panel</h4>
+            <p>FAB button opens expanded view</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Capabilities</span>
+        <h2 class="section-title">Everything you need to enable your team</h2>
+      </div>
+
+      <div class="features-bento">
+        <!-- Large Feature -->
+        <div class="bento-item bento-large">
+          <div class="bento-icon">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M16 4v24M4 16h24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h3>Property-Based Rules Engine</h3>
+          <p>Display cards conditionally based on any HubSpot property. Combine multiple conditions with AND/OR logic. Target specific objects, deal stages, or custom fields.</p>
+          <div class="bento-visual">
+            <div class="rule-preview">
+              <div class="rule-row">
+                <span class="rule-property">Deal Stage</span>
+                <span class="rule-operator">equals</span>
+                <span class="rule-value">Negotiation</span>
+              </div>
+              <span class="rule-logic">AND</span>
+              <div class="rule-row">
+                <span class="rule-property">Amount</span>
+                <span class="rule-operator">greater than</span>
+                <span class="rule-value">$50,000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medium Features -->
+        <div class="bento-item bento-medium">
+          <div class="bento-icon">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect x="4" y="4" width="24" height="24" rx="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M10 16h12M16 10v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Rich Content Editor</h3>
+          <p>WYSIWYG editing with formatting, lists, links, and embedded media. Support for videos from YouTube, Loom, and Vimeo.</p>
+        </div>
+
+        <div class="bento-item bento-medium">
+          <div class="bento-icon">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M8 12a8 8 0 1116 0v8a8 8 0 01-16 0v-8z" stroke="currentColor" stroke-width="2"/>
+              <path d="M16 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>HubSpot Field Import</h3>
+          <p>Import properties directly from HubSpot API. Auto-generate definitions with property groups, descriptions, and dropdown values.</p>
+        </div>
+
+        <!-- Small Features -->
+        <div class="bento-item bento-small">
+          <div class="bento-icon-small">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h4>Auto-Migration</h4>
+          <p>Legacy data auto-converts</p>
+        </div>
+
+        <div class="bento-item bento-small">
+          <div class="bento-icon-small">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h4>Chrome Side Panel</h4>
+          <p>Persistent access anywhere</p>
+        </div>
+
+        <div class="bento-item bento-small">
+          <div class="bento-icon-small">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>Import/Export</h4>
+          <p>JSON backup & restore</p>
+        </div>
+
+        <div class="bento-item bento-small">
+          <div class="bento-icon-small">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h4>Privacy First</h4>
+          <p>Direct HubSpot API calls</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partner Section -->
+  <section class="partner-section" id="partners">
+    <div class="container">
+      <div class="partner-grid">
+        <div class="partner-content">
+          <span class="section-label">New in v2.8</span>
+          <h2 class="section-title">Built for HubSpot Partners & Agencies</h2>
+          <p class="section-description">
+            Manage multiple client portals from a single partner dashboard.
+            Build reusable content libraries and deploy standardized playbooks across all your clients.
+          </p>
+
+          <ul class="partner-features">
+            <li>
+              <span class="feature-check">
+                <svg viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Multi-Portal Management</strong> - Switch between client portals instantly</span>
+            </li>
+            <li>
+              <span class="feature-check">
+                <svg viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Content Libraries</strong> - Create reusable templates and playbooks</span>
+            </li>
+            <li>
+              <span class="feature-check">
+                <svg viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Partner Dashboard</strong> - Dedicated home with client overview</span>
+            </li>
+            <li>
+              <span class="feature-check">
+                <svg viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Auto-Connect Invites</strong> - Streamlined client onboarding</span>
+            </li>
+          </ul>
+
+          <a href="https://app.revguide.io/signup?new_partner=true" class="btn btn-primary btn-lg">
+            Become a Partner
+            <svg class="btn-icon-after" viewBox="0 0 20 20" fill="none">
+              <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+
+        <div class="partner-visual">
+          <div class="partner-dashboard-preview">
+            <div class="dashboard-header">
+              <span class="dashboard-title">Partner Dashboard</span>
+              <span class="dashboard-badge">Agency Mode</span>
+            </div>
+            <div class="dashboard-stats">
+              <div class="dashboard-stat">
+                <span class="stat-number">12</span>
+                <span class="stat-name">Clients</span>
+              </div>
+              <div class="dashboard-stat">
+                <span class="stat-number">5</span>
+                <span class="stat-name">Libraries</span>
+              </div>
+              <div class="dashboard-stat">
+                <span class="stat-number">3</span>
+                <span class="stat-name">Pending</span>
+              </div>
+            </div>
+            <div class="dashboard-clients">
+              <div class="client-row">
+                <span class="client-indicator" style="--hue: 120;"></span>
+                <span class="client-name">Acme Corp</span>
+                <span class="client-role">Partner</span>
+              </div>
+              <div class="client-row">
+                <span class="client-indicator" style="--hue: 200;"></span>
+                <span class="client-name">TechStart Inc</span>
+                <span class="client-role">Partner</span>
+              </div>
+              <div class="client-row">
+                <span class="client-indicator" style="--hue: 280;"></span>
+                <span class="client-name">Global Sales Co</span>
+                <span class="client-role">Partner</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Getting Started</span>
+        <h2 class="section-title">Up and running in minutes</h2>
+      </div>
+
+      <div class="steps-timeline">
+        <div class="step-item" data-step="1">
+          <div class="step-marker">
+            <span class="step-number">1</span>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Install the Extension</h3>
+            <p>Add RevGuide to Chrome from the Web Store. Works immediately on any HubSpot portal with no configuration required.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="2">
+          <div class="step-marker">
+            <span class="step-number">2</span>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Connect Your Team</h3>
+            <p>Sign up for cloud sync to share content across your team. Invite members with role-based permissions (Admin, Editor, Viewer).</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="3">
+          <div class="step-marker">
+            <span class="step-number">3</span>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Build Your Cards</h3>
+            <p>Create definitions, alerts, and battlecards using the intuitive admin panel. Set display modes and targeting rules.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="4">
+          <div class="step-marker">
+            <span class="step-number">4</span>
+          </div>
+          <div class="step-content">
+            <h3>Watch Your Team Execute</h3>
+            <p>Cards appear automatically in HubSpot based on your rules. Track usage and iterate on your content.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Pricing</span>
+        <h2 class="section-title">Simple pricing for every team size</h2>
+        <p class="section-description">Start free, upgrade when you need team collaboration</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Free Tier -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-name">Starter</h3>
+            <div class="pricing-amount">
+              <span class="amount">$0</span>
+              <span class="period">forever</span>
+            </div>
+            <p class="pricing-desc">For individuals exploring RevGuide</p>
+          </div>
+          <ul class="pricing-features">
+            <li><span class="check-icon"></span>Unlimited cards (all types)</li>
+            <li><span class="check-icon"></span>All display modes</li>
+            <li><span class="check-icon"></span>Chrome side panel</li>
+            <li><span class="check-icon"></span>HubSpot field import</li>
+            <li><span class="check-icon"></span>JSON import/export</li>
+            <li class="feature-muted"><span class="x-icon"></span>Local storage only</li>
+          </ul>
+          <a href="#install" class="btn btn-outline btn-block">Get Started Free</a>
+        </div>
+
+        <!-- Team Tier -->
+        <div class="pricing-card pricing-featured">
+          <span class="pricing-badge">Most Popular</span>
+          <div class="pricing-header">
+            <h3 class="pricing-name">Team</h3>
+            <div class="pricing-amount">
+              <span class="amount">$29</span>
+              <span class="period">/month</span>
+            </div>
+            <p class="pricing-desc">For teams who need shared context</p>
+          </div>
+          <ul class="pricing-features">
+            <li><span class="check-icon"></span>Everything in Starter</li>
+            <li><span class="check-icon"></span>Cloud sync across team</li>
+            <li><span class="check-icon"></span>Unlimited team members</li>
+            <li><span class="check-icon"></span>Web dashboard</li>
+            <li><span class="check-icon"></span>Role-based permissions</li>
+            <li><span class="check-icon"></span>Priority support</li>
+          </ul>
+          <a href="https://app.revguide.io/signup" class="btn btn-primary btn-block">Start 14-Day Free Trial</a>
+        </div>
+
+        <!-- Agency Tier -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-name">Agency</h3>
+            <div class="pricing-amount">
+              <span class="amount">$99</span>
+              <span class="period">/month</span>
+            </div>
+            <p class="pricing-desc">For partners managing multiple portals</p>
+          </div>
+          <ul class="pricing-features">
+            <li><span class="check-icon"></span>Everything in Team</li>
+            <li><span class="check-icon"></span>Unlimited HubSpot portals</li>
+            <li><span class="check-icon"></span>Reusable content libraries</li>
+            <li><span class="check-icon"></span>Deploy templates to clients</li>
+            <li><span class="check-icon"></span>Partner dashboard</li>
+            <li><span class="check-icon"></span>Dedicated onboarding</li>
+          </ul>
+          <a href="mailto:hello@revguide.io" class="btn btn-outline btn-block">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section" id="install">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Ready to enable your team?</h2>
+        <p>Install RevGuide and start building contextual guidance in under 5 minutes.</p>
+        <div class="cta-buttons">
+          <a href="https://chrome.google.com/webstore" class="btn btn-primary btn-xl" target="_blank" rel="noopener">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Add to Chrome - Free
+          </a>
+        </div>
+        <p class="cta-note">Works with any HubSpot portal. No credit card required.</p>
+      </div>
+    </div>
+    <div class="cta-bg-pattern"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="footer-logo">
+            <div class="logo-mark">
+              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+                <circle cx="20" cy="20" r="11" stroke="currentColor" stroke-width="2"/>
+                <circle cx="20" cy="20" r="4" fill="currentColor"/>
+              </svg>
+            </div>
+            <span>RevGuide</span>
+          </a>
+          <p>Contextual intelligence for HubSpot teams. The right context, at the right moment.</p>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="#features">Features</a>
+            <a href="#cards">Unified Cards</a>
+            <a href="#partners">For Partners</a>
+            <a href="#pricing">Pricing</a>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="https://app.revguide.io">Web Dashboard</a>
+            <a href="#">Documentation</a>
+            <a href="#">Changelog</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="mailto:hello@revguide.io">Contact</a>
+            <a href="/privacy.html">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 RevGuide. Not affiliated with HubSpot, Inc.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Twitter">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script-v2.js"></script>
+</body>
+</html>
