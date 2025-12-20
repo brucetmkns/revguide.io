@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v3.0.0 (Unified Cards System)
+**Current Version:** v2.8.0 (Partner Account System)
 
 ## Beta Program
 
@@ -15,15 +15,6 @@ RevGuide is currently in public beta! We're looking for feedback from sales team
 - **Privacy Policy:** [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md)
 
 ## Features
-
-### Unified Cards System (v3.0.0)
-RevGuide now uses a **unified Cards system** that consolidates all content types into one flexible data model:
-
-- **Card Types**: `definition` (wiki), `alert` (banner), `battlecard` (play), `asset` (new)
-- **Display Modes**: Cards can appear as tooltips, banners, and/or in the sidepanel
-- **Single Admin Page**: Manage all content from one unified Cards page
-- **Auto-Migration**: Existing wiki/banner/play data migrates automatically on first load
-- **Content Curation**: Add assets, next steps, and related cards to any card type
 
 ### Banners
 - Display contextual banners (info, success, warning, error, embed) on HubSpot records
@@ -245,7 +236,6 @@ plugin/
 │   ├── content.js             # Main orchestrator - page detection, data loading, coordination
 │   ├── content.css            # Styles for banners, plays, media (HubSpot-native styling)
 │   └── modules/               # Feature modules (v1.6.0+)
-│       ├── cards.js           # CardsModule - unified card orchestrator (v3.0.0+)
 │       ├── banners.js         # Banner rendering and rule-based alerts
 │       ├── wiki.js            # Wiki tooltips and term highlighting
 │       ├── sidepanel.js       # FAB button and side panel trigger
@@ -263,10 +253,9 @@ plugin/
 │   ├── pages/                 # Individual admin pages (ACTIVE - v1.7.0+)
 │   │   ├── index.html         # Redirects to home.html
 │   │   ├── home.html/js/css   # Dashboard - onboarding, stats, quick actions
-│   │   ├── cards.html/js/css  # Unified Cards - create/edit/manage all content (v3.0.0+)
-│   │   ├── banners.html/js/css # Legacy Banners (deprecated, use Cards)
-│   │   ├── plays.html/js/css  # Legacy Plays (deprecated, use Cards)
-│   │   ├── wiki.html/js/css   # Legacy Wiki (deprecated, use Cards)
+│   │   ├── banners.html/js/css # Banners - create/edit/manage banners (includes embeds)
+│   │   ├── plays.html/js/css  # Plays - battle cards, objection handlers
+│   │   ├── wiki.html/js/css   # Wiki - two-pane layout with tree navigation
 │   │   └── settings.html/js   # Settings - API token, display toggles, import/export
 │   │
 │   ├── admin.html             # LEGACY: Single-page admin (deprecated)
@@ -390,7 +379,6 @@ The content script uses a modular architecture where each feature is isolated:
 
 ```
 content.js (Main Orchestrator)
-    ├── modules/cards.js        - CardsModule class (v3.0.0+ orchestrator)
     ├── modules/banners.js      - BannersModule class
     ├── modules/wiki.js         - WikiModule class
     ├── modules/sidepanel.js    - SidePanelModule class
@@ -425,11 +413,10 @@ All data is stored in Chrome's `chrome.storage.local`:
 
 ```javascript
 {
-  cards: [],           // Unified cards (v3.0.0+) - all content types
-  rules: [],           // Legacy banner rules with conditions
-  battleCards: [],     // Legacy plays/battle cards
+  rules: [],           // Banner rules with conditions
+  battleCards: [],     // Plays/battle cards
   presentations: [],   // Embedded media items
-  wikiEntries: [],     // Legacy wiki entries (see structure below)
+  wikiEntries: [],     // Wiki entries (see structure below)
   wikiTermMapCache: {},   // Pre-built trigger → entryId map (performance optimization)
   wikiEntriesById: {},    // entryId → entry lookup table
   wikiCacheVersion: 0,    // Cache version timestamp

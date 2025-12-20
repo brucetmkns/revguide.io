@@ -140,22 +140,9 @@ async function loadData() {
   showLoading();
 
   try {
-    // Load existing cards (for duplicate detection)
-    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-      const { data } = await RevGuideDB.getCards();
-      // Convert cards to wiki-like format for duplicate detection
-      existingWikiEntries = (data || []).map(card => ({
-        id: card.id,
-        trigger: card.trigger_text,
-        title: card.name || card.title,
-        category: card.category,
-        objectType: card.object_types?.[0],
-        propertyGroup: card.property_group
-      }));
-    } else {
-      const storageData = await AdminShared.loadStorageData();
-      existingWikiEntries = storageData.wikiEntries || [];
-    }
+    // Load local data
+    const storageData = await AdminShared.loadStorageData();
+    existingWikiEntries = storageData.wikiEntries || [];
 
     // Load installed libraries from storage
     installedLibraries = await AdminShared.getInstalledLibraries();
@@ -693,26 +680,25 @@ async function performInstall() {
     const createdEntryIds = []; // Track actual IDs from Supabase
 
     if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
-      // Web context - insert entries directly to Supabase cards table
+      // Web context - insert entries directly to Supabase
       for (const entry of selectedEntries) {
         const { _status, _existingId, _existingTitle, _selected, ...cleanEntry } = entry;
 
         // If duplicate, delete existing first
         if (_status === 'duplicate' && _existingId) {
-          await RevGuideDB.deleteCard(_existingId);
+          await RevGuideDB.deleteWikiEntry(_existingId);
         }
 
-        // Convert wiki entry format to card format, then map to Supabase
-        const cardData = AdminShared.wikiToCard(cleanEntry);
-        const mappedEntry = AdminShared.mapCardToSupabase(cardData);
-        console.log('[Library Install] Mapped card entry:', mappedEntry);
+        // Map camelCase to snake_case for Supabase
+        const mappedEntry = AdminShared.mapWikiToSupabase(cleanEntry);
+        console.log('[Library Install] Mapped entry:', mappedEntry);
 
-        const { data, error } = await RevGuideDB.createCard(mappedEntry);
+        const { data, error } = await RevGuideDB.createWikiEntry(mappedEntry);
         if (error) {
-          console.error('[Library Install] Failed to create card:', error);
+          console.error('[Library Install] Failed to create wiki entry:', error);
           errorCount++;
         } else {
-          console.log('[Library Install] Created card:', data);
+          console.log('[Library Install] Created entry:', data);
           successCount++;
           // Store the actual Supabase ID
           if (data?.id) {
@@ -777,7 +763,7 @@ function openUninstallModal(libraryId) {
   const installInfo = installedLibraries[libraryId];
   const entryCount = installInfo?.entryIds?.length || 0;
 
-  elements.uninstallMessage.textContent = `Are you sure you want to uninstall "${currentLibrary.name}"? This will remove ${entryCount} cards.`;
+  elements.uninstallMessage.textContent = `Are you sure you want to uninstall "${currentLibrary.name}"? This will remove ${entryCount} wiki entries.`;
   elements.uninstallWarning.style.display = 'none'; // TODO: Check for modifications
 
   elements.uninstallModal.classList.add('open');
@@ -815,10 +801,10 @@ async function performUninstall() {
     if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
       for (const entryId of entryIdsToRemove) {
         try {
-          const { error } = await RevGuideDB.deleteCard(entryId);
-          if (error) console.error(`[Library Uninstall] Failed to delete card ${entryId}:`, error);
+          const { error } = await RevGuideDB.deleteWikiEntry(entryId);
+          if (error) console.error(`[Library Uninstall] Failed to delete ${entryId}:`, error);
         } catch (e) {
-          console.error(`[Library Uninstall] Failed to delete card ${entryId}:`, e);
+          console.error(`[Library Uninstall] Failed to delete ${entryId}:`, e);
         }
       }
       AdminShared.clearStorageCache();

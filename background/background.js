@@ -331,47 +331,7 @@ function mapWikiFromSupabase(data) {
 }
 
 /**
- * Map unified card from Supabase snake_case to camelCase
- */
-function mapCardFromSupabase(data) {
-  if (!data) return null;
-  return {
-    id: data.id,
-    cardType: data.card_type,
-    name: data.name,
-    title: data.title,
-    subtitle: data.subtitle,
-    content: data.content,
-    link: data.link,
-    sections: data.sections || [],
-    displayModes: data.display_modes || [],
-    priority: data.priority || 50,
-    enabled: data.enabled !== false,
-    triggerText: data.trigger_text,
-    aliases: data.aliases || [],
-    matchType: data.match_type || 'exact',
-    category: data.category || 'general',
-    objectTypes: data.object_types || [],
-    propertyGroup: data.property_group,
-    conditions: data.conditions || [],
-    logic: data.logic || 'AND',
-    displayOnAll: data.display_on_all || false,
-    bannerType: data.banner_type,
-    embedUrl: data.embed_url,
-    tabVisibility: data.tab_visibility || 'all',
-    battlecardType: data.battlecard_type,
-    assets: data.assets || [],
-    nextSteps: data.next_steps || [],
-    relatedCardIds: data.related_card_ids || [],
-    legacyType: data.legacy_type,
-    legacyId: data.legacy_id,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at
-  };
-}
-
-/**
- * Fetch all content (banners, plays, wiki, cards) for the user's organization
+ * Fetch all content (banners, plays, wiki) for the user's organization
  */
 async function fetchCloudContent() {
   const authState = await getAuthState();
@@ -385,8 +345,8 @@ async function fetchCloudContent() {
   console.log('[RevGuide] Fetching cloud content for org:', orgId);
 
   try {
-    // Fetch all content types in parallel (including unified cards table)
-    const [banners, plays, wikiEntries, cards] = await Promise.all([
+    // Fetch all content types in parallel
+    const [banners, plays, wikiEntries] = await Promise.all([
       supabaseFetch('banners', {
         filter: { 'organization_id': `eq.${orgId}` },
         order: 'priority.desc'
@@ -396,19 +356,13 @@ async function fetchCloudContent() {
       }),
       supabaseFetch('wiki_entries', {
         filter: { 'organization_id': `eq.${orgId}` }
-      }),
-      // Unified cards table (new)
-      supabaseFetch('cards', {
-        filter: { 'organization_id': `eq.${orgId}` },
-        order: 'priority.desc'
-      }).catch(() => []) // Cards table may not exist yet, fail gracefully
+      })
     ]);
 
     console.log('[RevGuide] Cloud content fetched:', {
       banners: banners?.length || 0,
       plays: plays?.length || 0,
-      wikiEntries: wikiEntries?.length || 0,
-      cards: cards?.length || 0
+      wikiEntries: wikiEntries?.length || 0
     });
 
     // Log raw banner data for debugging
@@ -425,9 +379,7 @@ async function fetchCloudContent() {
     const content = {
       rules: (banners || []).map(mapBannerFromSupabase),
       battleCards: (plays || []).map(mapPlayFromSupabase),
-      wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase),
-      // Unified cards (new system) - map from snake_case
-      cards: (cards || []).map(mapCardFromSupabase)
+      wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase)
     };
 
     // Log transformed banner for debugging
@@ -481,8 +433,8 @@ async function getContent(options = {}) {
     }
   }
 
-  // Fall back to local content (includes unified cards for migration support)
-  const local = await chrome.storage.local.get(['rules', 'battleCards', 'wikiEntries', 'cards']);
+  // Fall back to local content
+  const local = await chrome.storage.local.get(['rules', 'battleCards', 'wikiEntries']);
   return { source: 'local', content: local };
 }
 

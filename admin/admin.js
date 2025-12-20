@@ -160,19 +160,19 @@ class AdminPanel {
       }
     });
     document.getElementById('stepApiBtn').addEventListener('click', () => this.switchSection('settings'));
-    document.getElementById('stepCardsBtn').addEventListener('click', () => {
-      this.switchSection('cards');
-      this.openCardEditor();
-    });
-    document.getElementById('stepImportFieldsBtn')?.addEventListener('click', () => {
+    document.getElementById('stepWikiImportBtn').addEventListener('click', () => {
       this.switchSection('wiki');
       this.openImportFieldsModal();
     });
-    document.getElementById('stepAddDefinitionBtn')?.addEventListener('click', () => {
+    document.getElementById('stepWikiAddBtn').addEventListener('click', () => {
       this.switchSection('wiki');
       this.openWikiEditor();
     });
-    document.getElementById('stepAddBattlecardBtn')?.addEventListener('click', () => {
+    document.getElementById('stepRulesBtn').addEventListener('click', () => {
+      this.switchSection('rules');
+      this.openRuleEditor();
+    });
+    document.getElementById('stepCardsBtn').addEventListener('click', () => {
       this.switchSection('cards');
       this.openCardEditor();
     });
@@ -382,20 +382,15 @@ class AdminPanel {
   // ============ HOME / ONBOARDING ============
 
   updateHomeStats() {
-    // Count cards by type (unified cards system)
-    const allCards = [...this.wikiEntries, ...this.rules, ...this.battleCards];
-    const definitions = this.wikiEntries.length;
-    const battlecards = this.battleCards.length;
-
-    document.getElementById('homeCardsCount').textContent = allCards.length;
-    document.getElementById('homeDefinitionsCount').textContent = definitions;
-    document.getElementById('homeBattlecardsCount').textContent = battlecards;
+    document.getElementById('homeWikiCount').textContent = this.wikiEntries.length;
+    document.getElementById('homeRulesCount').textContent = this.rules.length;
+    document.getElementById('homeCardsCount').textContent = this.battleCards.length;
     document.getElementById('homePresentationsCount').textContent = this.presentations.length;
   }
 
   updateOnboardingProgress() {
     let completed = 1; // Install step is always completed
-    const totalSteps = 5; // Install, API, Cards, Definitions, Battlecards (Team is coming soon)
+    const totalSteps = 5; // Install, API, Wiki, Rules, Cards (Team is coming soon)
 
     // Install step is always completed (they're viewing the admin panel)
     this.updateStepStatus('stepInstall', 'stepInstallStatus', true);
@@ -405,21 +400,20 @@ class AdminPanel {
     this.updateStepStatus('stepApi', 'stepApiStatus', hasApi);
     if (hasApi) completed++;
 
-    // Check for any cards (combined count)
-    const allCards = [...this.wikiEntries, ...this.rules, ...this.battleCards];
-    const hasCards = allCards.length > 0;
+    // Check Wiki entries
+    const hasWiki = this.wikiEntries.length > 0;
+    this.updateStepStatus('stepWiki', 'stepWikiStatus', hasWiki);
+    if (hasWiki) completed++;
+
+    // Check Rules
+    const hasRules = this.rules.length > 0;
+    this.updateStepStatus('stepRules', 'stepRulesStatus', hasRules);
+    if (hasRules) completed++;
+
+    // Check Plays
+    const hasCards = this.battleCards.length > 0;
     this.updateStepStatus('stepCards', 'stepCardsStatus', hasCards);
     if (hasCards) completed++;
-
-    // Check Definitions
-    const hasDefinitions = this.wikiEntries.length > 0;
-    this.updateStepStatus('stepDefinitions', 'stepDefinitionsStatus', hasDefinitions);
-    if (hasDefinitions) completed++;
-
-    // Check Battlecards
-    const hasBattlecards = this.battleCards.length > 0;
-    this.updateStepStatus('stepBattlecards', 'stepBattlecardsStatus', hasBattlecards);
-    if (hasBattlecards) completed++;
 
     // Update progress bar
     const percentage = (completed / totalSteps) * 100;

@@ -8,32 +8,6 @@ Project-specific instructions for Claude Code sessions.
 - `docs/LEARNINGS.md` - Lessons learned, patterns, debugging tips
 - `CHANGELOG.md` - Version history and changes
 
-## Content Architecture (v2.0)
-
-RevGuide uses a **unified Cards system** for all content types:
-
-### Card Types
-- **definition** - Tooltip with term definition (replaces Wiki)
-- **alert** - Banner notification on records (replaces Banners/Rules)
-- **battlecard** - Reference guide in side panel (replaces Plays)
-- **asset** - Shareable content link (new)
-
-### Display Modes
-Cards can appear in multiple places simultaneously:
-- **tooltip** - Inline icon with popup definition
-- **banner** - Alert bar at top of record page
-- **sidepanel** - FAB button opens side panel with card details
-
-### Key Files
-- `/admin/pages/cards.js` - CardsPage admin UI
-- `/content/modules/cards.js` - CardsModule display orchestrator
-- `/supabase/migrations/022_unified_cards_table.sql` - Database schema
-- `/supabase/migrations/023_migrate_to_cards.sql` - Migration functions
-
-### Legacy Compatibility
-The system auto-migrates legacy data (wiki_entries, banners, plays) to unified cards.
-Extension context converts legacy Chrome storage format on-the-fly via `AdminShared.wikiToCard()`, etc.
-
 ## Deployment
 
 - **DO NOT** run `npx vercel` or `vercel` CLI commands for deployments

@@ -72,7 +72,6 @@
       this.settings = {};
 
       // Feature modules (initialized after page load)
-      this.cardsModule = null;
       this.bannersModule = null;
       this.wikiModule = null;
       this.sidePanelModule = null;
@@ -158,10 +157,6 @@
      */
     initModules() {
       // Check if modules are available (loaded via manifest.json)
-      // CardsModule is the unified orchestrator (optional, for future unified cards)
-      if (typeof CardsModule !== 'undefined') {
-        this.cardsModule = new CardsModule(this);
-      }
       if (typeof BannersModule !== 'undefined') {
         this.bannersModule = new BannersModule(this);
       }
@@ -176,7 +171,6 @@
       }
 
       log('Modules initialized:', {
-        cards: !!this.cardsModule,
         banners: !!this.bannersModule,
         wiki: !!this.wikiModule,
         sidePanel: !!this.sidePanelModule,

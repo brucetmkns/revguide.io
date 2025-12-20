@@ -7,7 +7,6 @@
     { "source": "/onboarding", "destination": "/admin/pages/onboarding.html" },
     { "source": "/reset-password", "destination": "/admin/pages/reset-password.html" },
     { "source": "/home", "destination": "/admin/pages/home.html" },
-    { "source": "/cards", "destination": "/admin/pages/cards.html" },
     { "source": "/wiki", "destination": "/admin/pages/wiki.html" },
     { "source": "/banners", "destination": "/admin/pages/banners.html" },
     { "source": "/plays", "destination": "/admin/pages/plays.html" },

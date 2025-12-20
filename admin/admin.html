@@ -19,13 +19,21 @@
           <span class="nav-icon"><span class="icon icon-home-white"></span></span>
           Home
         </a>
+        <a href="#" class="nav-item" data-section="rules">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banner Rules
+        </a>
         <a href="#" class="nav-item" data-section="cards">
           <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
-          Cards
+          Plays
         </a>
         <a href="#" class="nav-item" data-section="presentations">
           <span class="nav-icon"><span class="icon icon-presentation-white"></span></span>
           Media
+        </a>
+        <a href="#" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
         </a>
         <a href="#" class="nav-item" data-section="settings">
           <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
@@ -55,29 +63,29 @@
         <div class="home-stats">
           <div class="home-stat-card">
             <div class="stat-icon wiki-icon-field">
-              <span class="icon icon-layers"></span>
+              <span class="icon icon-book"></span>
             </div>
             <div class="stat-content">
-              <span class="stat-value" id="homeCardsCount">0</span>
-              <span class="stat-label">Cards</span>
+              <span class="stat-value" id="homeWikiCount">0</span>
+              <span class="stat-label">Wiki Entries</span>
             </div>
           </div>
           <div class="home-stat-card">
             <div class="stat-icon wiki-icon-general">
-              <span class="icon icon-book"></span>
+              <span class="icon icon-clipboard-list"></span>
             </div>
             <div class="stat-content">
-              <span class="stat-value" id="homeDefinitionsCount">0</span>
-              <span class="stat-label">Definitions</span>
+              <span class="stat-value" id="homeRulesCount">0</span>
+              <span class="stat-label">Banner Rules</span>
             </div>
           </div>
           <div class="home-stat-card">
             <div class="stat-icon wiki-icon-sales">
-              <span class="icon icon-zap"></span>
+              <span class="icon icon-layers"></span>
             </div>
             <div class="stat-content">
-              <span class="stat-value" id="homeBattlecardsCount">0</span>
-              <span class="stat-label">Battlecards</span>
+              <span class="stat-value" id="homeCardsCount">0</span>
+              <span class="stat-label">Plays</span>
             </div>
           </div>
           <div class="home-stat-card">
@@ -137,36 +145,18 @@
             </div>
           </div>
 
-          <!-- Step 3: Create Cards -->
-          <div class="onboarding-step" data-step="cards" id="stepCards">
+          <!-- Step 3: Build Your Wiki -->
+          <div class="onboarding-step" data-step="wiki" id="stepWiki">
             <div class="step-number">3</div>
             <div class="step-content">
               <div class="step-header">
-                <h3>Create Cards</h3>
-                <span class="step-status" id="stepCardsStatus">Not started</span>
+                <h3>Build Your Wiki</h3>
+                <span class="step-status" id="stepWikiStatus">Not started</span>
               </div>
-              <p>Create definitions, alerts, battlecards, and assets to guide your team in HubSpot.</p>
+              <p>Import HubSpot fields or add custom terms to create contextual tooltips for your team.</p>
               <div class="step-actions">
-                <button class="btn btn-primary btn-sm" id="stepCardsBtn">Create Card</button>
-              </div>
-            </div>
-            <div class="step-icon">
-              <span class="icon icon-layers icon--lg"></span>
-            </div>
-          </div>
-
-          <!-- Step 4: Add Definitions -->
-          <div class="onboarding-step" data-step="definitions" id="stepDefinitions">
-            <div class="step-number">4</div>
-            <div class="step-content">
-              <div class="step-header">
-                <h3>Add Definitions</h3>
-                <span class="step-status" id="stepDefinitionsStatus">Not started</span>
-              </div>
-              <p>Import HubSpot fields or add custom terms to create contextual tooltips.</p>
-              <div class="step-actions">
-                <button class="btn btn-secondary btn-sm" id="stepImportFieldsBtn">Import Fields</button>
-                <button class="btn btn-primary btn-sm" id="stepAddDefinitionBtn">Add Definition</button>
+                <button class="btn btn-secondary btn-sm" id="stepWikiImportBtn">Import Fields</button>
+                <button class="btn btn-primary btn-sm" id="stepWikiAddBtn">Add Entry</button>
               </div>
             </div>
             <div class="step-icon">
@@ -174,21 +164,39 @@
             </div>
           </div>
 
-          <!-- Step 5: Add Battlecards -->
-          <div class="onboarding-step" data-step="battlecards" id="stepBattlecards">
-            <div class="step-number">5</div>
+          <!-- Step 4: Create Banner Rules -->
+          <div class="onboarding-step" data-step="rules" id="stepRules">
+            <div class="step-number">4</div>
             <div class="step-content">
               <div class="step-header">
-                <h3>Add Battlecards</h3>
-                <span class="step-status" id="stepBattlecardsStatus">Not started</span>
+                <h3>Create Banner Rules</h3>
+                <span class="step-status" id="stepRulesStatus">Not started</span>
               </div>
-              <p>Create battlecards for competitors, objections, and best practices.</p>
+              <p>Display contextual banners on HubSpot records based on property conditions.</p>
               <div class="step-actions">
-                <button class="btn btn-primary btn-sm" id="stepAddBattlecardBtn">Add Battlecard</button>
+                <button class="btn btn-primary btn-sm" id="stepRulesBtn">Create Rule</button>
               </div>
             </div>
             <div class="step-icon">
-              <span class="icon icon-zap icon--lg"></span>
+              <span class="icon icon-clipboard-list icon--lg"></span>
+            </div>
+          </div>
+
+          <!-- Step 5: Add Plays -->
+          <div class="onboarding-step" data-step="cards" id="stepCards">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Add Plays</h3>
+                <span class="step-status" id="stepCardsStatus">Not started</span>
+              </div>
+              <p>Create plays for competitors, objections, processes, and best practices.</p>
+              <div class="step-actions">
+                <button class="btn btn-primary btn-sm" id="stepCardsBtn">Create Play</button>
+              </div>
+            </div>
+            <div class="step-icon">
+              <span class="icon icon-layers icon--lg"></span>
             </div>
           </div>
 
