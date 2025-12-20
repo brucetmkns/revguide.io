@@ -201,6 +201,162 @@ class PartnerDashboard {
         await this.cancelRequest(requestId);
       }
     });
+
+    // Request access form toggle
+    document.getElementById('toggleRequestFormBtn')?.addEventListener('click', () => {
+      this.toggleRequestForm();
+    });
+
+    // Cancel button in form
+    document.getElementById('cancelRequestBtn')?.addEventListener('click', () => {
+      this.hideRequestForm();
+    });
+
+    // Submit request button
+    document.getElementById('submitRequestBtn')?.addEventListener('click', async () => {
+      await this.submitAccessRequest();
+    });
+
+    // Dismiss success message
+    document.getElementById('dismissSuccessBtn')?.addEventListener('click', () => {
+      this.hideSuccessMessage();
+    });
+
+    // Submit on Enter in email field
+    document.getElementById('targetAdminEmail')?.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await this.submitAccessRequest();
+      }
+    });
+  }
+
+  toggleRequestForm() {
+    const form = document.getElementById('requestAccessForm');
+    const toggleBtn = document.getElementById('toggleRequestFormBtn');
+    const successMessage = document.getElementById('requestSuccessMessage');
+
+    // Hide success message if visible
+    successMessage.style.display = 'none';
+
+    const isVisible = form.style.display !== 'none';
+
+    if (isVisible) {
+      this.hideRequestForm();
+    } else {
+      form.style.display = 'block';
+      toggleBtn.textContent = 'Cancel';
+      toggleBtn.setAttribute('aria-expanded', 'true');
+      document.getElementById('targetAdminEmail')?.focus();
+    }
+  }
+
+  hideRequestForm() {
+    const form = document.getElementById('requestAccessForm');
+    const toggleBtn = document.getElementById('toggleRequestFormBtn');
+
+    form.style.display = 'none';
+    toggleBtn.textContent = 'Request Access';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+
+    // Clear form fields
+    document.getElementById('targetAdminEmail').value = '';
+    document.getElementById('requestMessage').value = '';
+  }
+
+  showSuccessMessage() {
+    const form = document.getElementById('requestAccessForm');
+    const successMessage = document.getElementById('requestSuccessMessage');
+    const toggleBtn = document.getElementById('toggleRequestFormBtn');
+
+    form.style.display = 'none';
+    successMessage.style.display = 'flex';
+    toggleBtn.textContent = 'Request Another';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+
+    // Clear form fields
+    document.getElementById('targetAdminEmail').value = '';
+    document.getElementById('requestMessage').value = '';
+  }
+
+  hideSuccessMessage() {
+    const successMessage = document.getElementById('requestSuccessMessage');
+    const toggleBtn = document.getElementById('toggleRequestFormBtn');
+
+    successMessage.style.display = 'none';
+    toggleBtn.textContent = 'Request Access';
+  }
+
+  async submitAccessRequest() {
+    const emailInput = document.getElementById('targetAdminEmail');
+    const messageInput = document.getElementById('requestMessage');
+    const submitBtn = document.getElementById('submitRequestBtn');
+
+    const targetAdminEmail = emailInput.value.trim();
+    const message = messageInput.value.trim();
+
+    // Basic email validation
+    if (!targetAdminEmail) {
+      AdminShared.showToast('Please enter an email address', 'error');
+      emailInput.focus();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(targetAdminEmail)) {
+      AdminShared.showToast('Please enter a valid email address', 'error');
+      emailInput.focus();
+      return;
+    }
+
+    // Get current user profile
+    const { data: profile, error: profileError } = await RevGuideDB.getUserProfile();
+    if (profileError || !profile) {
+      AdminShared.showToast('Failed to get user profile', 'error');
+      return;
+    }
+
+    // Disable button during request
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    try {
+      // Call the worker endpoint
+      const response = await fetch('https://revguide-api.revguide.workers.dev/api/request-partner-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          partnerUserId: profile.id,
+          partnerEmail: profile.email,
+          partnerName: profile.name,
+          targetAdminEmail: targetAdminEmail,
+          message: message || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Request failed');
+      }
+
+      // Always show success (enumeration prevention)
+      this.showSuccessMessage();
+
+      // Refresh the requests list in case a new one was created
+      const { data: requests } = await RevGuideDB.getMyAccessRequests();
+      this.pendingRequests = (requests || []).filter(r => r.status === 'pending');
+      this.renderRequests();
+      this.renderStats();
+
+    } catch (error) {
+      console.error('[PartnerDashboard] Submit request error:', error);
+      // Still show success for enumeration prevention
+      this.showSuccessMessage();
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Request';
+    }
   }
 
   switchTab(tabId) {

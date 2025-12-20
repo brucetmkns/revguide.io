@@ -248,6 +248,111 @@
       font-size: var(--font-size-xs);
       font-weight: var(--font-weight-medium);
     }
+
+    /* Request Access Section */
+    .request-access-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .request-access-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .request-access-header h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .request-access-form {
+      margin-top: var(--space-5);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .request-access-form .form-group {
+      margin-bottom: var(--space-4);
+    }
+
+    .request-access-form label {
+      display: block;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+      font-size: var(--font-size-sm);
+    }
+
+    .request-access-form .form-control {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .request-access-form .form-hint {
+      display: block;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-1);
+    }
+
+    .request-access-form .form-actions {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+
+    /* Success Message */
+    .request-success-message {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+      padding: var(--space-4);
+      background: var(--color-success-bg);
+      border: 1px solid var(--color-success);
+      border-radius: var(--radius-md);
+    }
+
+    .request-success-message .success-icon {
+      flex-shrink: 0;
+      color: var(--color-success-dark);
+    }
+
+    .request-success-message .success-text {
+      flex: 1;
+    }
+
+    .request-success-message .success-text strong {
+      display: block;
+      color: var(--color-success-dark);
+      margin-bottom: var(--space-1);
+    }
+
+    .request-success-message .success-text p {
+      margin: 0;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .request-success-message .success-text .hint {
+      margin-top: var(--space-2);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    /* Pending Requests Section */
+    .pending-requests-section h4 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-4);
+    }
   </style>
 </head>
 <body>
@@ -389,12 +494,69 @@
 
           <!-- Tab Content: Access Requests -->
           <div class="tab-content" id="requestsTab">
-            <div id="requestsList">
-              <!-- Pending requests populated by JS -->
+            <!-- Request Access Form -->
+            <div class="request-access-section" id="requestAccessSection">
+              <div class="request-access-header">
+                <h3>Request Access to a Client</h3>
+                <button class="btn btn-secondary btn-sm" id="toggleRequestFormBtn" aria-expanded="false">
+                  Request Access
+                </button>
+              </div>
+
+              <div class="request-access-form" id="requestAccessForm" style="display: none;">
+                <div class="form-group">
+                  <label for="targetAdminEmail">Client Admin Email</label>
+                  <input
+                    type="email"
+                    id="targetAdminEmail"
+                    class="form-control"
+                    placeholder="admin@clientcompany.com"
+                    autocomplete="email"
+                  >
+                  <span class="form-hint">Enter the email address of an admin at the client organization.</span>
+                </div>
+                <div class="form-group">
+                  <label for="requestMessage">Message (optional)</label>
+                  <textarea
+                    id="requestMessage"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Explain why you're requesting access..."
+                  ></textarea>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-secondary" id="cancelRequestBtn">Cancel</button>
+                  <button class="btn btn-primary" id="submitRequestBtn">Send Request</button>
+                </div>
+              </div>
+
+              <!-- Success Message -->
+              <div class="request-success-message" id="requestSuccessMessage" style="display: none;">
+                <div class="success-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                </div>
+                <div class="success-text">
+                  <strong>Request Submitted</strong>
+                  <p>If this email address is linked to an Admin RevGuide account, they will receive an access request email.</p>
+                  <p class="hint">If the email is incorrect, belongs to an Editor or Viewer account, or has no existing RevGuide account, no email will be sent.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="dismissSuccessBtn">Dismiss</button>
+              </div>
             </div>
-            <div class="empty-state" id="requestsEmptyState" style="display: none;">
-              <h3>No pending requests</h3>
-              <p>Access requests you've submitted will appear here.</p>
+
+            <!-- Pending Requests List -->
+            <div class="pending-requests-section">
+              <h4>Your Pending Requests</h4>
+              <div id="requestsList">
+                <!-- Pending requests populated by JS -->
+              </div>
+              <div class="empty-state" id="requestsEmptyState" style="display: none;">
+                <h3>No pending requests</h3>
+                <p>Access requests you've submitted will appear here.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -417,9 +579,5 @@
   <script src="/lib/wiki-cache.js"></script>
   <script src="/admin/shared.js?v=4"></script>
   <script src="/admin/pages/partner.js?v=1"></script>
-
-  <!-- Help Scout Beacon -->
-  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
-  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
 </body>
 </html>

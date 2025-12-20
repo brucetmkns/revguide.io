@@ -2,6 +2,26 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.6] - 2025-12-20 - Partner Access Requests
+
+### Added
+- **Partner Access Requests**: Partners can now request access to client organizations by entering a client admin's email address
+  - Email-based request flow with user enumeration prevention (always shows success message)
+  - Partners can submit requests from the Partner Dashboard > Access Requests tab
+  - Client admins receive email notification and can approve/decline from Settings > Partner Access Requests section
+  - Partners receive email notification when requests are approved or declined
+  - Re-requesting after decline updates the existing request instead of creating a duplicate
+
+### Technical
+- **Files Modified**:
+  - `api/invite-worker.js` - Added `/api/request-partner-access` endpoint with server-side validation
+  - `admin/pages/partner.html` - Added request access form UI
+  - `admin/pages/partner.js` - Added form handling and submission logic
+  - `admin/pages/settings.html` - Added Partner Access Requests section for admins
+  - `admin/pages/settings.js` - Added access request loading, rendering, approve/decline methods
+
+---
+
 ## [2.0.0] - 2025-12-20 - Chrome Web Store Compliance
 
 ### Changed

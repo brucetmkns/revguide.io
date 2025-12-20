@@ -723,6 +723,11 @@ export default {
       return handleNotifyPartnerAutoConnect(request, env, corsHeaders);
     }
 
+    // Route: POST /api/request-partner-access - Partner requests access to a client org
+    if (url.pathname === '/api/request-partner-access') {
+      return handleRequestPartnerAccess(request, env, corsHeaders);
+    }
+
     // Health check
     if (url.pathname === '/health' || url.pathname === '/') {
       return new Response(JSON.stringify({ status: 'ok', service: 'revguide-api' }), {
@@ -1843,6 +1848,217 @@ async function handleNotifyPartnerAutoConnect(request, env, corsHeaders) {
     console.error('Notify partner auto-connect error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// PARTNER ACCESS REQUEST HANDLER
+// ===========================================
+
+async function handleRequestPartnerAccess(request, env, corsHeaders) {
+  // Helper to make Supabase REST API calls with service role
+  async function supabaseFetch(path, method = 'GET', body = null) {
+    const options = {
+      method,
+      headers: {
+        'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+    const response = await fetch(`${CONFIG.supabaseUrl}${path}`, options);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Supabase error (${path}):`, errorText);
+      return null;
+    }
+    return response.json();
+  }
+
+  // Always return success for enumeration prevention
+  function successResponse() {
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Request processed'
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { partnerUserId, partnerEmail, partnerName, targetAdminEmail, message } = body;
+
+    // Basic validation - but always return success
+    if (!targetAdminEmail || !isValidEmail(targetAdminEmail)) {
+      return successResponse();
+    }
+
+    if (!partnerUserId) {
+      return successResponse();
+    }
+
+    // Check for service role key
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return successResponse();
+    }
+
+    // 1. Look up target user by email
+    const targetUsers = await supabaseFetch(
+      `/rest/v1/users?email=ilike.${encodeURIComponent(targetAdminEmail)}&select=id,email,name`
+    );
+    if (!targetUsers || targetUsers.length === 0) {
+      // No user found - return success anyway (enumeration prevention)
+      console.log('[RequestPartnerAccess] No user found with email:', targetAdminEmail);
+      return successResponse();
+    }
+
+    const targetUser = targetUsers[0];
+
+    // 2. Check if target user is an admin/owner of any organization
+    const memberships = await supabaseFetch(
+      `/rest/v1/organization_members?user_id=eq.${targetUser.id}&role=in.(owner,admin)&select=organization_id,role,organizations(id,name)`
+    );
+    if (!memberships || memberships.length === 0) {
+      // Not an admin - return success anyway
+      console.log('[RequestPartnerAccess] User is not an admin:', targetAdminEmail);
+      return successResponse();
+    }
+
+    const org = memberships[0].organizations;
+    const orgId = org.id;
+    const orgName = org.name;
+
+    // 3. Check if partner is already a member of this organization
+    const existingMembership = await supabaseFetch(
+      `/rest/v1/organization_members?user_id=eq.${partnerUserId}&organization_id=eq.${orgId}&select=id`
+    );
+    if (existingMembership && existingMembership.length > 0) {
+      // Already a member - skip silently
+      console.log('[RequestPartnerAccess] Partner already a member of org:', orgId);
+      return successResponse();
+    }
+
+    // 4. Check for existing access request
+    const existingRequests = await supabaseFetch(
+      `/rest/v1/consultant_access_requests?consultant_user_id=eq.${partnerUserId}&organization_id=eq.${orgId}&select=id,status`
+    );
+
+    if (existingRequests && existingRequests.length > 0) {
+      const existingRequest = existingRequests[0];
+
+      if (existingRequest.status === 'pending') {
+        // Already has pending request - skip silently
+        console.log('[RequestPartnerAccess] Partner already has pending request for org:', orgId);
+        return successResponse();
+      }
+
+      // Existing declined/cancelled request - update to pending
+      const updateResult = await supabaseFetch(
+        `/rest/v1/consultant_access_requests?id=eq.${existingRequest.id}`,
+        'PATCH',
+        {
+          status: 'pending',
+          message: message || null,
+          requested_at: new Date().toISOString(),
+          reviewed_by: null,
+          reviewed_at: null,
+          review_notes: null
+        }
+      );
+
+      if (!updateResult) {
+        console.error('[RequestPartnerAccess] Failed to update existing request');
+        return successResponse();
+      }
+    } else {
+      // 5. Create new access request
+      const createResult = await supabaseFetch(
+        '/rest/v1/consultant_access_requests',
+        'POST',
+        {
+          consultant_user_id: partnerUserId,
+          organization_id: orgId,
+          message: message || null,
+          status: 'pending'
+        }
+      );
+
+      if (!createResult) {
+        console.error('[RequestPartnerAccess] Failed to create access request');
+        return successResponse();
+      }
+    }
+
+    // 6. Get all admin emails for the organization
+    const adminsResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/rpc/get_org_admin_emails`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_org_id: orgId })
+      }
+    );
+
+    const admins = await adminsResponse.json();
+    const adminEmails = admins ? admins.map(a => a.email) : [];
+
+    if (adminEmails.length === 0) {
+      console.log('[RequestPartnerAccess] No admin emails found for org:', orgId);
+      return successResponse();
+    }
+
+    // 7. Send notification email to admins
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('[RequestPartnerAccess] RESEND_API_KEY not configured');
+      return successResponse();
+    }
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.fromEmail,
+        to: adminEmails,
+        subject: `New partner access request for ${orgName}`,
+        html: buildAccessRequestNotificationEmailHtml(partnerName, partnerEmail, orgName, message),
+        text: buildAccessRequestNotificationEmailText(partnerName, partnerEmail, orgName, message)
+      })
+    });
+
+    if (!resendResponse.ok) {
+      const errorData = await resendResponse.json().catch(() => ({}));
+      console.error('[RequestPartnerAccess] Resend error:', errorData);
+      // Still return success - request was created
+    } else {
+      console.log('[RequestPartnerAccess] Notification sent to:', adminEmails.join(', '));
+    }
+
+    return successResponse();
+
+  } catch (error) {
+    console.error('[RequestPartnerAccess] Error:', error);
+    // Always return success for enumeration prevention
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Request processed'
+    }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

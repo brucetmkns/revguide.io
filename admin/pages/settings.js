@@ -10,6 +10,7 @@ class SettingsPage {
     this.settings = {};
     this.teamMembers = [];
     this.pendingInvitations = [];
+    this.accessRequests = []; // Partner access requests
     this.isViewOnly = false; // View-only mode for members
     this.init();
   }
@@ -84,6 +85,9 @@ class SettingsPage {
     if (this.isAdmin) {
       await this.loadTeamData();
       this.renderUsersTable();
+
+      // Load partner access requests (admin only)
+      await this.loadAccessRequests();
     }
 
     // Load account settings (user email, company name)
@@ -414,6 +418,25 @@ class SettingsPage {
         this.resendInvitation(inviteId, email, role);
       }
     });
+
+    // Access request action buttons (delegated)
+    const accessRequestsList = document.getElementById('accessRequestsList');
+    if (accessRequestsList) {
+      accessRequestsList.addEventListener('click', async (e) => {
+        const approveBtn = e.target.closest('.approve-request-btn');
+        if (approveBtn) {
+          const requestId = approveBtn.dataset.id;
+          await this.approveAccessRequest(requestId);
+          return;
+        }
+
+        const declineBtn = e.target.closest('.decline-request-btn');
+        if (declineBtn) {
+          const requestId = declineBtn.dataset.id;
+          await this.declineAccessRequest(requestId);
+        }
+      });
+    }
 
   }
 
@@ -1367,6 +1390,210 @@ class SettingsPage {
     } catch (error) {
       console.error('[Settings] Error signing out:', error);
       AdminShared.showToast('Failed to sign out. Please try again.', 'error');
+    }
+  }
+
+  // ================================
+  // Access Request Methods
+  // ================================
+
+  async loadAccessRequests() {
+    if (typeof RevGuideDB === 'undefined') return;
+
+    const section = document.getElementById('accessRequestsSection');
+    const list = document.getElementById('accessRequestsList');
+    const emptyState = document.getElementById('accessRequestsEmptyState');
+    const badge = document.getElementById('accessRequestsBadge');
+
+    try {
+      const { data, error } = await RevGuideDB.getAccessRequests();
+
+      if (error) {
+        console.error('[Settings] Error loading access requests:', error);
+        return;
+      }
+
+      // Filter for pending requests only
+      this.accessRequests = (data || []).filter(r => r.status === 'pending');
+
+      // Show/hide section based on whether there are any requests
+      if (this.accessRequests.length > 0) {
+        section.style.display = 'block';
+        this.renderAccessRequests();
+
+        // Update badge
+        if (badge) {
+          badge.textContent = `${this.accessRequests.length} pending`;
+          badge.style.display = 'inline-block';
+        }
+      } else {
+        // Still show section if admin, just with empty state
+        section.style.display = 'block';
+        list.innerHTML = '';
+        emptyState.style.display = 'block';
+        if (badge) badge.style.display = 'none';
+      }
+
+    } catch (error) {
+      console.error('[Settings] Failed to load access requests:', error);
+    }
+  }
+
+  renderAccessRequests() {
+    const list = document.getElementById('accessRequestsList');
+    const emptyState = document.getElementById('accessRequestsEmptyState');
+
+    if (!this.accessRequests.length) {
+      list.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    list.innerHTML = this.accessRequests.map(request => `
+      <div class="access-request-item" data-request-id="${request.id}">
+        <div class="request-info">
+          <strong>${AdminShared.escapeHtml(request.consultant_name || request.consultant_email || 'Unknown Partner')}</strong>
+          <span>${AdminShared.escapeHtml(request.consultant_email || '')}</span>
+          ${request.message ? `
+            <div class="request-message">"${AdminShared.escapeHtml(request.message)}"</div>
+          ` : ''}
+          <span style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">
+            Requested ${this.formatDate(request.requested_at)}
+          </span>
+        </div>
+        <div class="request-actions">
+          <button class="btn btn-success btn-sm approve-request-btn" data-id="${request.id}">
+            Approve
+          </button>
+          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${request.id}">
+            Decline
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async approveAccessRequest(requestId) {
+    const request = this.accessRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    const confirmed = await AdminShared.showConfirmDialog({
+      title: 'Approve Partner Access',
+      message: `Approve ${request.consultant_name || request.consultant_email}'s request to access your organization as a partner?`,
+      primaryLabel: 'Approve',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (confirmed !== 'primary') return;
+
+    try {
+      const { error } = await RevGuideDB.approveAccessRequest(requestId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Send notification email to partner
+      try {
+        const { data: org } = await RevGuideDB.getOrganizationWithConnection();
+        await fetch('https://revguide-api.revguide.workers.dev/api/notify-request-approved', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            partnerEmail: request.consultant_email,
+            partnerName: request.consultant_name,
+            orgName: org?.name
+          })
+        });
+      } catch (emailError) {
+        console.warn('[Settings] Failed to send approval notification:', emailError);
+      }
+
+      AdminShared.showToast(`${request.consultant_name || 'Partner'} has been added to your organization`, 'success');
+
+      // Remove from local list and re-render
+      this.accessRequests = this.accessRequests.filter(r => r.id !== requestId);
+      this.renderAccessRequests();
+
+      // Reload team members to show new partner
+      await this.loadTeamData();
+      this.renderUsersTable();
+
+      // Update badge
+      const badge = document.getElementById('accessRequestsBadge');
+      if (badge) {
+        if (this.accessRequests.length > 0) {
+          badge.textContent = `${this.accessRequests.length} pending`;
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+    } catch (error) {
+      console.error('[Settings] Approve request error:', error);
+      AdminShared.showToast(error.message || 'Failed to approve request', 'error');
+    }
+  }
+
+  async declineAccessRequest(requestId) {
+    const request = this.accessRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    const confirmed = await AdminShared.showConfirmDialog({
+      title: 'Decline Partner Access',
+      message: `Decline ${request.consultant_name || request.consultant_email}'s request to access your organization?`,
+      primaryLabel: 'Decline',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (confirmed !== 'primary') return;
+
+    try {
+      const { error } = await RevGuideDB.declineAccessRequest(requestId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Send notification email to partner
+      try {
+        const { data: org } = await RevGuideDB.getOrganizationWithConnection();
+        await fetch('https://revguide-api.revguide.workers.dev/api/notify-request-declined', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            partnerEmail: request.consultant_email,
+            partnerName: request.consultant_name,
+            orgName: org?.name
+          })
+        });
+      } catch (emailError) {
+        console.warn('[Settings] Failed to send decline notification:', emailError);
+      }
+
+      AdminShared.showToast('Request declined', 'success');
+
+      // Remove from local list and re-render
+      this.accessRequests = this.accessRequests.filter(r => r.id !== requestId);
+      this.renderAccessRequests();
+
+      // Update badge
+      const badge = document.getElementById('accessRequestsBadge');
+      if (badge) {
+        if (this.accessRequests.length > 0) {
+          badge.textContent = `${this.accessRequests.length} pending`;
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+    } catch (error) {
+      console.error('[Settings] Decline request error:', error);
+      AdminShared.showToast(error.message || 'Failed to decline request', 'error');
     }
   }
 

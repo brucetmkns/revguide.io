@@ -598,10 +598,12 @@ Extension → Background.js → Supabase API → Postgres
 - [ ] Partner automatically added with `partner` role
 - [ ] Optional: Send invite email to client admin to claim their org
 
-#### Secure Access Requests
-- [ ] Email-based request flow (enter client admin email)
-- [ ] System validates admin exists before sending request
-- [ ] Admin receives notification and can approve/decline
+#### Secure Access Requests (v2.8.6) - COMPLETE
+- [x] Email-based request flow (enter client admin email)
+- [x] System validates admin exists before sending request
+- [x] Admin receives notification and can approve/decline
+- [x] User enumeration prevention (always shows neutral success message)
+- [x] Re-request after decline updates existing row
 
 ---
 

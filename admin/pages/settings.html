@@ -647,6 +647,31 @@
           </div>
         </div>
 
+        <!-- Access Requests Section (for admins) -->
+        <div class="team-members-section" id="accessRequestsSection" style="display: none;">
+          <div class="team-members-header">
+            <div>
+              <h3>Partner Access Requests</h3>
+              <p>Review and approve access requests from partners</p>
+            </div>
+            <span class="badge badge-warning" id="accessRequestsBadge" style="display: none;">0 pending</span>
+          </div>
+
+          <!-- Access Requests List -->
+          <div id="accessRequestsList">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="accessRequestsEmptyState" style="display: none;">
+            <div class="empty-icon">
+              <span class="icon icon-users icon--2xl"></span>
+            </div>
+            <h3>No pending requests</h3>
+            <p>Partner access requests will appear here when submitted.</p>
+          </div>
+        </div>
+
       </section>
     </main>
   </div>
@@ -740,9 +765,5 @@
   <script src="/admin/shared.js?v=4"></script>
   <script src="/admin/pages/settings.js?v=6"></script>
   <script>console.log('[Settings HTML] All scripts loaded');</script>
-
-  <!-- Help Scout Beacon -->
-  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
-  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
 </body>
 </html>
