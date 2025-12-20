@@ -2,6 +2,31 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.0] - 2025-12-20 - Chrome Web Store Compliance
+
+### Changed
+- **Extension renamed**: Changed from "RevGuide (Beta)" to "RevGuide"
+
+### Fixed
+- **Manifest V3 Compliance**: Removed remotely hosted code to comply with Chrome Web Store requirements
+  - Removed CDN fallback URL from `admin/supabase.js` - extension now uses only the local Supabase bundle
+  - Removed HelpScout Beacon from 8 admin pages (was dynamically loading remote scripts)
+
+### Technical
+- **Files Modified**:
+  - `manifest.json` - Updated extension name
+  - `admin/supabase.js` - Removed jsdelivr CDN URL, refactored to use local bundle only
+  - `admin/pages/banners.html` - Removed HelpScout Beacon
+  - `admin/pages/home.html` - Removed HelpScout Beacon
+  - `admin/pages/libraries.html` - Removed HelpScout Beacon
+  - `admin/pages/partner-home.html` - Removed HelpScout Beacon
+  - `admin/pages/partner.html` - Removed HelpScout Beacon
+  - `admin/pages/plays.html` - Removed HelpScout Beacon
+  - `admin/pages/settings.html` - Removed HelpScout Beacon
+  - `admin/pages/wiki.html` - Removed HelpScout Beacon
+
+---
+
 ## [2.8.5] - 2025-12-20 - Wiki Nav Auto-Scroll
 
 ### Added
@@ -17,6 +42,7 @@ All notable changes to RevGuide will be documented in this file.
 
 ### Fixed
 - **Edit Links Now Open Web App**: When logged in, clicking "Edit" on wiki tooltips, banners, and plays now correctly opens the web admin panel at app.revguide.io instead of the local extension pages
+- **Clean URL Routes**: Edit links now use clean routes (`/wiki?edit=...`) instead of full paths (`/admin/pages/wiki.html?edit=...`)
 
 ### Technical
 - **Files Modified**:
