@@ -1959,3 +1959,190 @@
   width: 14px;
   height: 14px;
 }
+
+/* Tiptap Image Modal */
+.tiptap-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.tiptap-modal {
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+.tiptap-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tiptap-modal-header h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+}
+
+.tiptap-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.tiptap-modal-close:hover {
+  color: var(--color-text);
+}
+
+.tiptap-modal-body {
+  padding: var(--space-4);
+}
+
+.tiptap-modal-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.tiptap-modal-tab {
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  transition: all 0.15s ease;
+}
+
+.tiptap-modal-tab:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+.tiptap-modal-tab.active {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tiptap-upload-zone {
+  position: relative;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tiptap-upload-zone:hover,
+.tiptap-upload-zone.dragover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.tiptap-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.tiptap-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.tiptap-upload-placeholder svg {
+  opacity: 0.5;
+}
+
+.tiptap-upload-preview {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+.tiptap-url-input,
+.tiptap-alt-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.tiptap-url-input:focus,
+.tiptap-alt-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.tiptap-alt-input {
+  margin-top: var(--space-3);
+}
+
+.tiptap-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.tiptap-modal-btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tiptap-modal-btn.cancel {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.tiptap-modal-btn.cancel:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+.tiptap-modal-btn.primary {
+  background: var(--color-primary);
+  border: none;
+  color: var(--color-text-on-primary);
+}
+
+.tiptap-modal-btn.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.tiptap-modal-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

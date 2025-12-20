@@ -2,6 +2,23 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.3] - 2025-12-20 - TipTap Image Insert
+
+### Added
+- **Image Insert Button**: New toolbar button in TipTap editor for inserting images
+  - Upload tab with drag-and-drop or click-to-browse file picker
+  - URL tab for pasting external image URLs
+  - Alt text input for accessibility
+  - Preview of uploaded images before inserting
+  - Images uploaded via file picker are embedded as base64
+
+### Technical
+- **Files Modified**:
+  - `admin/lib/tiptap-editor.js` - Added image button, action handler, and modal dialog
+  - `admin/shared.css` - Added modal overlay and upload zone styles
+
+---
+
 ## [2.8.2] - 2025-12-19 - Partner Home Page
 
 ### Added
