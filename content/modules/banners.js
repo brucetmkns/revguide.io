@@ -300,7 +300,10 @@ class BannersModule {
    * @param {string} assetId - ID of the asset to edit
    */
   openAdminEditor(assetType, assetId) {
-    const adminUrl = chrome.runtime.getURL(`admin/pages/${assetType}.html?edit=${assetId}`);
+    // Use web app if authenticated, otherwise local extension
+    const adminUrl = this.helper.settings.isAuthenticated
+      ? `https://app.revguide.io/admin/pages/${assetType}.html?edit=${assetId}`
+      : chrome.runtime.getURL(`admin/pages/${assetType}.html?edit=${assetId}`);
     window.open(adminUrl, '_blank');
   }
 

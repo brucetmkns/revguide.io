@@ -258,6 +258,7 @@
       const role = authState.profile?.role;
       const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
       this.settings.canEditContent = canEditContent;
+      this.settings.isAuthenticated = authState.isAuthenticated;
 
       // Store pre-built wiki cache for faster tooltip loading
       this.wikiTermMapCache = localData.wikiTermMapCache;

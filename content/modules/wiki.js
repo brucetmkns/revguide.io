@@ -647,7 +647,10 @@ class WikiModule {
         e.preventDefault();
         e.stopPropagation();
         const entryId = editLink.dataset.entryId;
-        const adminUrl = chrome.runtime.getURL(`admin/pages/wiki.html?edit=${entryId}`);
+        // Use web app if authenticated, otherwise local extension
+        const adminUrl = this.helper.settings.isAuthenticated
+          ? `https://app.revguide.io/admin/pages/wiki.html?edit=${entryId}`
+          : chrome.runtime.getURL(`admin/pages/wiki.html?edit=${entryId}`);
         window.open(adminUrl, '_blank');
       });
     }
