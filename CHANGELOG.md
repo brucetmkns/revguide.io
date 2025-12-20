@@ -2,6 +2,17 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.5] - 2025-12-20 - Wiki Nav Auto-Scroll
+
+### Added
+- **Auto-scroll to entry in nav tree**: When navigating via URL with `?edit=<id>` parameter, the wiki nav pane now automatically expands parent nodes and scrolls to show the selected entry
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/wiki.js` - Added `shouldScrollToEntry` flag and `scrollToSelectedEntry()` method
+
+---
+
 ## [2.8.4] - 2025-12-20 - Fix Edit Links for Web App
 
 ### Fixed

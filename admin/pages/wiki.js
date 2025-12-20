@@ -19,6 +19,7 @@ class WikiPage {
     this.selectedEntryIds = new Set();
     this.isViewOnly = false; // View-only mode for members
     this.definitionEditor = null; // Tiptap editor instance
+    this.shouldScrollToEntry = false; // Flag to scroll to entry after render
     this.init();
   }
 
@@ -65,6 +66,7 @@ class WikiPage {
       const entry = this.wikiEntries.find(e => e.id === entryId);
       if (entry) {
         this.selectedEntryId = entryId;
+        this.shouldScrollToEntry = true; // Scroll to entry in nav tree
       } else {
         AdminShared.showToast('Wiki entry not found', 'error');
       }
@@ -502,6 +504,37 @@ class WikiPage {
 
     // Bind tree events
     this.bindTreeEvents();
+
+    // Scroll to selected entry if navigating via URL
+    if (this.shouldScrollToEntry && this.selectedEntryId) {
+      this.scrollToSelectedEntry();
+      this.shouldScrollToEntry = false;
+    }
+  }
+
+  scrollToSelectedEntry() {
+    const navTree = document.getElementById('wikiNavTree');
+    // Find the selected element by data-id
+    const selectedEl = navTree.querySelector(`[data-id="${this.selectedEntryId}"].is-selected`) ||
+                       navTree.querySelector(`.wiki-node-entry[data-id="${this.selectedEntryId}"] .is-selected`);
+
+    if (!selectedEl) return;
+
+    // Expand all ancestor nodes so the element is visible
+    let parent = selectedEl.closest('.wiki-node');
+    while (parent) {
+      parent.classList.remove('is-collapsed');
+      const toggle = parent.querySelector(':scope > .wiki-node-header .wiki-node-toggle');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+      parent = parent.parentElement?.closest('.wiki-node');
+    }
+
+    // Scroll the element into view with smooth behavior
+    setTimeout(() => {
+      selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   bindTreeEvents() {
