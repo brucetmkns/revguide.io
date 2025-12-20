@@ -1517,8 +1517,8 @@ class SettingsPage {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            partnerEmail: request.consultant_email,
-            partnerName: request.consultant_name,
+            consultantEmail: request.consultant_email,
+            consultantName: request.consultant_name,
             orgName: org?.name
           })
         });
@@ -1580,8 +1580,8 @@ class SettingsPage {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            partnerEmail: request.consultant_email,
-            partnerName: request.consultant_name,
+            consultantEmail: request.consultant_email,
+            consultantName: request.consultant_name,
             orgName: org?.name
           })
         });
