@@ -1452,7 +1452,7 @@ class SettingsPage {
     emptyState.style.display = 'none';
 
     list.innerHTML = this.accessRequests.map(request => `
-      <div class="access-request-item" data-request-id="${request.id}">
+      <div class="access-request-item" data-request-id="${request.request_id}">
         <div class="request-info">
           <strong>${AdminShared.escapeHtml(request.consultant_name || request.consultant_email || 'Unknown Partner')}</strong>
           <span>${AdminShared.escapeHtml(request.consultant_email || '')}</span>
@@ -1464,10 +1464,10 @@ class SettingsPage {
           </span>
         </div>
         <div class="request-actions">
-          <button class="btn btn-success btn-sm approve-request-btn" data-id="${request.id}">
+          <button class="btn btn-success btn-sm approve-request-btn" data-id="${request.request_id}">
             Approve
           </button>
-          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${request.id}">
+          <button class="btn btn-secondary btn-sm decline-request-btn" data-id="${request.request_id}">
             Decline
           </button>
         </div>
@@ -1476,7 +1476,7 @@ class SettingsPage {
   }
 
   async approveAccessRequest(requestId) {
-    const request = this.accessRequests.find(r => r.id === requestId);
+    const request = this.accessRequests.find(r => r.request_id === requestId);
     if (!request) return;
 
     const confirmed = await AdminShared.showConfirmDialog({
@@ -1515,7 +1515,7 @@ class SettingsPage {
       AdminShared.showToast(`${request.consultant_name || 'Partner'} has been added to your organization`, 'success');
 
       // Remove from local list and re-render
-      this.accessRequests = this.accessRequests.filter(r => r.id !== requestId);
+      this.accessRequests = this.accessRequests.filter(r => r.request_id !== requestId);
       this.renderAccessRequests();
 
       // Reload team members to show new partner
@@ -1539,7 +1539,7 @@ class SettingsPage {
   }
 
   async declineAccessRequest(requestId) {
-    const request = this.accessRequests.find(r => r.id === requestId);
+    const request = this.accessRequests.find(r => r.request_id === requestId);
     if (!request) return;
 
     const confirmed = await AdminShared.showConfirmDialog({
@@ -1578,7 +1578,7 @@ class SettingsPage {
       AdminShared.showToast('Request declined', 'success');
 
       // Remove from local list and re-render
-      this.accessRequests = this.accessRequests.filter(r => r.id !== requestId);
+      this.accessRequests = this.accessRequests.filter(r => r.request_id !== requestId);
       this.renderAccessRequests();
 
       // Update badge
