@@ -1998,6 +1998,7 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
     }
 
     // 6. Get all admin emails for the organization
+    console.log('[RequestPartnerAccess] Fetching admin emails for org:', orgId);
     const adminsResponse = await fetch(
       `${CONFIG.supabaseUrl}/rest/v1/rpc/get_org_admin_emails`,
       {
@@ -2011,13 +2012,22 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
       }
     );
 
+    if (!adminsResponse.ok) {
+      const errorText = await adminsResponse.text();
+      console.error('[RequestPartnerAccess] Failed to get admin emails:', adminsResponse.status, errorText);
+      return successResponse();
+    }
+
     const admins = await adminsResponse.json();
-    const adminEmails = admins ? admins.map(a => a.email) : [];
+    console.log('[RequestPartnerAccess] Admin emails response:', JSON.stringify(admins));
+    const adminEmails = Array.isArray(admins) ? admins.map(a => a.email).filter(Boolean) : [];
 
     if (adminEmails.length === 0) {
       console.log('[RequestPartnerAccess] No admin emails found for org:', orgId);
       return successResponse();
     }
+
+    console.log('[RequestPartnerAccess] Sending email to admins:', adminEmails.join(', '));
 
     // 7. Send notification email to admins
     const apiKey = env.RESEND_API_KEY;
@@ -2041,12 +2051,12 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
       })
     });
 
+    const resendResult = await resendResponse.json().catch(() => ({}));
     if (!resendResponse.ok) {
-      const errorData = await resendResponse.json().catch(() => ({}));
-      console.error('[RequestPartnerAccess] Resend error:', errorData);
+      console.error('[RequestPartnerAccess] Resend error:', resendResponse.status, JSON.stringify(resendResult));
       // Still return success - request was created
     } else {
-      console.log('[RequestPartnerAccess] Notification sent to:', adminEmails.join(', '));
+      console.log('[RequestPartnerAccess] Notification sent successfully, id:', resendResult.id);
     }
 
     return successResponse();

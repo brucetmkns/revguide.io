@@ -165,13 +165,13 @@ class PartnerDashboard {
     emptyState.style.display = 'none';
 
     list.innerHTML = this.pendingRequests.map(request => `
-      <div class="request-item" data-request-id="${request.id}">
+      <div class="request-item" data-request-id="${request.request_id}">
         <div class="request-info">
           <strong>${AdminShared.escapeHtml(request.organization_name || 'Unknown Organization')}</strong>
           <span>Requested ${this.formatDate(request.requested_at)}</span>
         </div>
         <span class="badge-pending">Pending</span>
-        <button class="btn btn-secondary btn-sm cancel-request-btn" data-request-id="${request.id}">
+        <button class="btn btn-secondary btn-sm cancel-request-btn" data-request-id="${request.request_id}">
           Cancel
         </button>
       </div>
@@ -415,7 +415,7 @@ class PartnerDashboard {
       AdminShared.showToast('Request cancelled', 'success');
 
       // Remove from local list and re-render
-      this.pendingRequests = this.pendingRequests.filter(r => r.id !== requestId);
+      this.pendingRequests = this.pendingRequests.filter(r => r.request_id !== requestId);
       this.renderRequests();
       this.renderStats();
 
