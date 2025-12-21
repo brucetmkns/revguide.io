@@ -2,6 +2,17 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.2.1] - 2025-12-21 - TipTap Editor Image URL-Only
+
+### Changed
+- **TipTap Image Insert**: Removed file upload, now URL-only
+  - Prevents base64-encoded images from bloating database records
+  - Users provide external image URLs instead of uploading files
+  - Simplified modal dialog with just URL and alt text inputs
+  - Auto-focuses URL input for better UX
+
+---
+
 ## [2.2.0] - 2025-12-21 - Consultant to Partner Terminology Rename
 
 ### Changed

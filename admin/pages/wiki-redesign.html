@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki - RevGuide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       CSS Variables & Reset
+       ============================================ */
+    :root {
+      --color-primary: #b2ef63;
+      --color-primary-dark: #9ad94f;
+      --color-primary-light: #d4f7a8;
+      --color-primary-subtle: rgba(178, 239, 99, 0.12);
+
+      --color-bg-dark: #0f1117;
+      --color-bg-sidebar: #161821;
+      --color-bg-card: #1e2028;
+      --color-bg-hover: #262831;
+
+      --color-bg-main: #f8f9fb;
+      --color-bg-white: #ffffff;
+      --color-bg-subtle: #f1f3f5;
+      --color-bg-muted: #e9ecef;
+
+      --color-border: #dfe3e8;
+      --color-border-light: #eef0f2;
+      --color-border-dark: #2d3039;
+
+      --color-text-primary: #1a1d24;
+      --color-text-secondary: #5c6370;
+      --color-text-muted: #8b919d;
+      --color-text-inverse: #ffffff;
+      --color-text-inverse-muted: rgba(255, 255, 255, 0.6);
+
+      --color-success: #22c55e;
+      --color-success-subtle: rgba(34, 197, 94, 0.12);
+      --color-warning: #f59e0b;
+      --color-warning-subtle: rgba(245, 158, 11, 0.12);
+      --color-danger: #ef4444;
+      --color-danger-subtle: rgba(239, 68, 68, 0.12);
+      --color-info: #3b82f6;
+      --color-info-subtle: rgba(59, 130, 246, 0.12);
+
+      --color-contacts: #3b82f6;
+      --color-companies: #8b5cf6;
+      --color-deals: #22c55e;
+      --color-tickets: #f59e0b;
+      --color-custom: #6b7280;
+
+      --font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --shadow-glow: 0 0 20px rgba(178, 239, 99, 0.3);
+
+      --transition-fast: 0.12s ease;
+      --transition-base: 0.2s ease;
+      --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      --nav-width: 320px;
+      --nav-collapsed-width: 0px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--color-bg-main);
+      color: var(--color-text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ============================================
+       App Layout
+       ============================================ */
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ============================================
+       Sidebar (Main Nav)
+       ============================================ */
+    .sidebar {
+      width: 220px;
+      background: var(--color-bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--color-border-dark);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--color-border-dark);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg {
+      width: 18px;
+      height: 18px;
+      color: var(--color-bg-dark);
+    }
+
+    .sidebar-header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text-inverse);
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      color: var(--color-text-inverse-muted);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: var(--color-bg-hover);
+      color: var(--color-text-inverse);
+    }
+
+    .nav-item.active {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary);
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .nav-item.active svg {
+      opacity: 1;
+    }
+
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--color-border-dark);
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .user-info:hover {
+      background: var(--color-bg-hover);
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, #7dd956 100%);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-bg-dark);
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-inverse);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-org {
+      display: block;
+      font-size: 10px;
+      color: var(--color-text-inverse-muted);
+    }
+
+    /* ============================================
+       Main Content
+       ============================================ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* ============================================
+       Page Header
+       ============================================ */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--color-bg-white);
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .page-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-header-left h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .page-header-left p {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .page-header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .btn-secondary {
+      background: var(--color-bg-white);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-bg-subtle);
+      border-color: var(--color-text-muted);
+    }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: var(--color-bg-dark);
+    }
+
+    .btn-primary:hover {
+      background: var(--color-primary-dark);
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* ============================================
+       Wiki Layout - Two Pane
+       ============================================ */
+    .wiki-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ============================================
+       Entry List Panel (Collapsible)
+       ============================================ */
+    .entry-list-panel {
+      width: var(--nav-width);
+      background: var(--color-bg-white);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width var(--transition-slow), opacity var(--transition-base);
+      flex-shrink: 0;
+    }
+
+    .entry-list-panel.collapsed {
+      width: var(--nav-collapsed-width);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .entry-list-header {
+      padding: 12px;
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 10px 9px 34px;
+      font-family: inherit;
+      font-size: 13px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-subtle);
+      transition: all var(--transition-fast);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      background: var(--color-bg-white);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .search-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .filter-select {
+      flex: 1;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 11px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-white);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    /* Entry Tree */
+    .entry-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    /* Tree Node Base */
+    .tree-node {
+      user-select: none;
+    }
+
+    .tree-node-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .tree-node-header:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    .tree-toggle {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+      transition: transform var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .tree-toggle svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .tree-node.collapsed .tree-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .tree-node-children {
+      margin-left: 12px;
+      padding-left: 10px;
+      border-left: 1px solid var(--color-border-light);
+    }
+
+    .tree-node.collapsed > .tree-node-children {
+      display: none;
+    }
+
+    /* Level 1: Object Type */
+    .tree-node--object > .tree-node-header {
+      padding: 8px 10px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 4px;
+    }
+
+    .tree-node--object > .tree-node-header:hover {
+      background: var(--color-bg-muted);
+    }
+
+    .tree-object-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tree-object-icon svg {
+      width: 11px;
+      height: 11px;
+      color: white;
+    }
+
+    .tree-object-icon.contacts { background: var(--color-contacts); }
+    .tree-object-icon.companies { background: var(--color-companies); }
+    .tree-object-icon.deals { background: var(--color-deals); }
+    .tree-object-icon.tickets { background: var(--color-tickets); }
+    .tree-object-icon.custom { background: var(--color-custom); }
+
+    .tree-node-label {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-node--object .tree-node-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-text-secondary);
+    }
+
+    .tree-node-count {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      background: var(--color-bg-white);
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+    }
+
+    /* Level 2: Property Group */
+    .tree-node--group {
+      margin-top: 2px;
+    }
+
+    .tree-node--group > .tree-node-header {
+      padding: 5px 8px;
+    }
+
+    .tree-node--group .tree-node-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+
+    /* Level 3: Property/Entry */
+    .tree-node--entry {
+      margin-top: 1px;
+    }
+
+    .tree-node--entry > .tree-node-header {
+      padding: 6px 8px;
+      position: relative;
+    }
+
+    .tree-node--entry > .tree-node-header.selected {
+      background: var(--color-primary-subtle);
+    }
+
+    .tree-node--entry > .tree-node-header.selected::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 4px;
+      width: 3px;
+      background: var(--color-primary);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .entry-status {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .entry-status.enabled {
+      background: var(--color-success);
+      box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+    }
+
+    .entry-status.disabled {
+      background: var(--color-text-muted);
+    }
+
+    .tree-node--entry .tree-node-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .tree-node--entry > .tree-node-header.selected .tree-node-label {
+      font-weight: 600;
+    }
+
+    .entry-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 5px;
+      border-radius: var(--radius-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .entry-badge.has-trigger {
+      background: var(--color-info-subtle);
+      color: var(--color-info);
+    }
+
+    .entry-badge.no-trigger {
+      background: var(--color-bg-muted);
+      color: var(--color-text-muted);
+    }
+
+    /* Level 4: Property Values */
+    .tree-node--value {
+      margin-top: 1px;
+    }
+
+    .tree-node--value > .tree-node-header {
+      padding: 4px 8px;
+    }
+
+    .tree-node--value .tree-node-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    .tree-node--value > .tree-node-header.selected .tree-node-label {
+      color: var(--color-text-primary);
+      font-weight: 600;
+    }
+
+    .value-indicator {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .tree-node--value > .tree-node-header.selected .value-indicator {
+      background: var(--color-primary);
+    }
+
+    /* Entry List Stats */
+    .entry-list-stats {
+      display: flex;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--color-bg-subtle);
+      border-top: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+
+    .stat-item strong {
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    /* ============================================
+       Panel Collapse Toggle
+       ============================================ */
+    .panel-collapse-btn {
+      position: absolute;
+      left: calc(var(--nav-width) + 220px - 14px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      transition: all var(--transition-slow);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-collapse-btn:hover {
+      background: var(--color-bg-subtle);
+      border-color: var(--color-text-muted);
+    }
+
+    .panel-collapse-btn svg {
+      width: 14px;
+      height: 14px;
+      color: var(--color-text-secondary);
+      transition: transform var(--transition-base);
+    }
+
+    .panel-collapse-btn.collapsed {
+      left: 220px;
+    }
+
+    .panel-collapse-btn.collapsed svg {
+      transform: rotate(180deg);
+    }
+
+    /* ============================================
+       Editor Panel
+       ============================================ */
+    .editor-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--color-bg-main);
+      position: relative;
+    }
+
+    /* Empty State */
+    .editor-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      text-align: center;
+    }
+
+    .editor-empty-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .editor-empty-icon svg {
+      width: 32px;
+      height: 32px;
+      color: var(--color-text-muted);
+    }
+
+    .editor-empty h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 6px;
+    }
+
+    .editor-empty p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      max-width: 260px;
+    }
+
+    /* Editor Content */
+    .editor-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .editor-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* Editor Header */
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .editor-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-white);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-toggle:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    .status-toggle.enabled {
+      background: var(--color-success-subtle);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: var(--color-success);
+    }
+
+    .status-toggle.disabled {
+      color: var(--color-text-muted);
+    }
+
+    .status-toggle-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-white);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-icon:hover {
+      background: var(--color-bg-subtle);
+      color: var(--color-text-primary);
+    }
+
+    .btn-icon.danger:hover {
+      background: var(--color-danger-subtle);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--color-danger);
+    }
+
+    .btn-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ============================================
+       Accordion Sections
+       ============================================ */
+    .accordion-section {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      user-select: none;
+    }
+
+    .accordion-header:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    .accordion-icon {
+      width: 26px;
+      height: 26px;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .accordion-icon svg {
+      width: 13px;
+      height: 13px;
+      color: var(--color-primary-dark);
+    }
+
+    .accordion-title {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .accordion-toggle {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+      transition: transform var(--transition-fast);
+    }
+
+    .accordion-toggle svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .accordion-section.collapsed .accordion-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .accordion-body {
+      padding: 0 16px 16px;
+    }
+
+    .accordion-section.collapsed .accordion-body {
+      display: none;
+    }
+
+    /* ============================================
+       Form Elements
+       ============================================ */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 6px;
+    }
+
+    .form-label .required {
+      color: var(--color-danger);
+    }
+
+    .form-label .optional {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-white);
+      transition: all var(--transition-fast);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-white);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235c6370' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 36px;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-white);
+      resize: vertical;
+      min-height: 80px;
+      transition: all var(--transition-fast);
+    }
+
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .form-checkbox input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    .form-checkbox span {
+      font-size: 13px;
+      color: var(--color-text-primary);
+    }
+
+    /* Rich Text Editor */
+    .rich-editor {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--color-bg-white);
+    }
+
+    .rich-editor:focus-within {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .rich-editor-toolbar {
+      display: flex;
+      gap: 2px;
+      padding: 6px 8px;
+      background: var(--color-bg-subtle);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .toolbar-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .toolbar-btn:hover {
+      background: var(--color-bg-white);
+      color: var(--color-text-primary);
+    }
+
+    .toolbar-btn.active {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+    }
+
+    .toolbar-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--color-border);
+      margin: 0 4px;
+      align-self: center;
+    }
+
+    .rich-editor-content {
+      min-height: 120px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .rich-editor-content:empty::before {
+      content: attr(data-placeholder);
+      color: var(--color-text-muted);
+    }
+
+    .rich-editor-content ul, .rich-editor-content ol {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+
+    .rich-editor-content li {
+      margin-bottom: 4px;
+    }
+
+    .rich-editor-content p {
+      margin-bottom: 8px;
+    }
+
+    .rich-editor-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ============================================
+       Preview Panel
+       ============================================ */
+    .preview-panel {
+      width: 300px;
+      background: var(--color-bg-subtle);
+      border-left: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--color-bg-white);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .preview-header h4 {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .preview-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+    }
+
+    .preview-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .preview-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    /* Tooltip Preview Card */
+    .tooltip-preview {
+      background: var(--color-bg-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .tooltip-preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .tooltip-preview-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .tooltip-preview-category {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .tooltip-preview-trigger {
+      padding: 8px 14px;
+      background: var(--color-bg-subtle);
+      border-bottom: 1px solid var(--color-border);
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+
+    .tooltip-preview-trigger code {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: var(--color-bg-white);
+      padding: 2px 5px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--color-border);
+    }
+
+    .tooltip-preview-content {
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+    }
+
+    .tooltip-preview-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--color-border);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-info);
+      text-decoration: none;
+      transition: background var(--transition-fast);
+    }
+
+    .tooltip-preview-link:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    .tooltip-preview-link svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Usage Stats Grid */
+    .usage-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .usage-stat {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .usage-stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .usage-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-top: 2px;
+    }
+
+    /* Analytics Placeholder */
+    .analytics-placeholder {
+      margin-top: 16px;
+      padding: 20px;
+      background: var(--color-bg-white);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+
+    .analytics-placeholder svg {
+      width: 28px;
+      height: 28px;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+
+    .analytics-placeholder h5 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .analytics-placeholder p {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================
+       Editor Footer
+       ============================================ */
+    .editor-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 24px;
+      background: var(--color-bg-white);
+      border-top: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .btn-lg {
+      padding: 10px 20px;
+      font-size: 13px;
+    }
+
+    /* ============================================
+       Scrollbar Styling
+       ============================================ */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-text-muted);
+    }
+
+    /* ============================================
+       Utilities
+       ============================================ */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Main Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Home
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+          </svg>
+          Banners
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          Plays
+        </a>
+        <a href="#" class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Wiki
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Libraries
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">BT</div>
+          <div class="user-details">
+            <span class="user-name">Bruce Tomkins</span>
+            <span class="user-org">RevGuide Team</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Page Header -->
+      <header class="page-header">
+        <div class="page-header-left">
+          <h2>Wiki</h2>
+          <p>Create tooltips and glossary entries for your team</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary" id="importFieldsBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Import Fields
+          </button>
+          <button class="btn btn-primary" id="addEntryBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Entry
+          </button>
+        </div>
+      </header>
+
+      <!-- Wiki Layout -->
+      <div class="wiki-layout">
+        <!-- Collapse Toggle Button -->
+        <button class="panel-collapse-btn" id="panelCollapseBtn" title="Collapse panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Entry List Panel (4-Level Tree) -->
+        <aside class="entry-list-panel" id="entryListPanel">
+          <div class="entry-list-header">
+            <div class="search-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" class="search-input" id="searchInput" placeholder="Search entries...">
+            </div>
+            <div class="filter-row">
+              <select class="filter-select" id="objectFilter">
+                <option value="all">All Objects</option>
+                <option value="contacts">Contacts</option>
+                <option value="companies">Companies</option>
+                <option value="deals">Deals</option>
+                <option value="tickets">Tickets</option>
+                <option value="custom">Custom</option>
+              </select>
+              <select class="filter-select" id="categoryFilter">
+                <option value="all">All Categories</option>
+                <option value="general">General</option>
+                <option value="sales">Sales</option>
+                <option value="marketing">Marketing</option>
+                <option value="field">Field</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 4-Level Tree -->
+          <div class="entry-tree" id="entryTree">
+            <!-- Level 1: Contacts -->
+            <div class="tree-node tree-node--object" data-object="contacts">
+              <div class="tree-node-header">
+                <span class="tree-toggle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+                <span class="tree-object-icon contacts">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </span>
+                <span class="tree-node-label">Contacts</span>
+                <span class="tree-node-count">8</span>
+              </div>
+              <div class="tree-node-children">
+                <!-- Level 2: Property Group -->
+                <div class="tree-node tree-node--group" data-group="lead-info">
+                  <div class="tree-node-header">
+                    <span class="tree-toggle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                    <span class="tree-node-label">Lead Information</span>
+                    <span class="tree-node-count">3</span>
+                  </div>
+                  <div class="tree-node-children">
+                    <!-- Level 3: Property with children -->
+                    <div class="tree-node tree-node--entry" data-id="lead-status">
+                      <div class="tree-node-header selected">
+                        <span class="tree-toggle">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </span>
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Lead Status</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                        <span class="tree-node-count">5</span>
+                      </div>
+                      <div class="tree-node-children">
+                        <!-- Level 4: Property Values -->
+                        <div class="tree-node tree-node--value" data-id="new">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">New</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="open">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Open</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="in-progress">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">In Progress</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="qualified">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Qualified</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="unqualified">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Unqualified</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Level 3: Property without children -->
+                    <div class="tree-node tree-node--entry" data-id="mql">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Marketing Qualified Lead</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="sql">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Sales Qualified Lead</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Level 2: Another Property Group -->
+                <div class="tree-node tree-node--group" data-group="contact-info">
+                  <div class="tree-node-header">
+                    <span class="tree-toggle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                    <span class="tree-node-label">Contact Information</span>
+                    <span class="tree-node-count">2</span>
+                  </div>
+                  <div class="tree-node-children">
+                    <div class="tree-node tree-node--entry" data-id="lifecycle">
+                      <div class="tree-node-header">
+                        <span class="tree-toggle">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </span>
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Lifecycle Stage</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                        <span class="tree-node-count">4</span>
+                      </div>
+                      <div class="tree-node-children">
+                        <div class="tree-node tree-node--value" data-id="subscriber">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Subscriber</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="lead">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Lead</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="opportunity">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Opportunity</span>
+                          </div>
+                        </div>
+                        <div class="tree-node tree-node--value" data-id="customer">
+                          <div class="tree-node-header">
+                            <span class="value-indicator"></span>
+                            <span class="tree-node-label">Customer</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="persona">
+                      <div class="tree-node-header">
+                        <span class="entry-status disabled"></span>
+                        <span class="tree-node-label">Persona</span>
+                        <span class="entry-badge no-trigger">Glossary</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Level 1: Deals -->
+            <div class="tree-node tree-node--object" data-object="deals">
+              <div class="tree-node-header">
+                <span class="tree-toggle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+                <span class="tree-object-icon deals">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                </span>
+                <span class="tree-node-label">Deals</span>
+                <span class="tree-node-count">4</span>
+              </div>
+              <div class="tree-node-children">
+                <div class="tree-node tree-node--group" data-group="deal-info">
+                  <div class="tree-node-header">
+                    <span class="tree-toggle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                    <span class="tree-node-label">Deal Properties</span>
+                    <span class="tree-node-count">4</span>
+                  </div>
+                  <div class="tree-node-children">
+                    <div class="tree-node tree-node--entry" data-id="deal-stage">
+                      <div class="tree-node-header">
+                        <span class="tree-toggle">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </span>
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Deal Stage</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                        <span class="tree-node-count">6</span>
+                      </div>
+                      <div class="tree-node-children">
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Appointment Scheduled</span></div></div>
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Qualified to Buy</span></div></div>
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Presentation Scheduled</span></div></div>
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Decision Maker Bought-In</span></div></div>
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Closed Won</span></div></div>
+                        <div class="tree-node tree-node--value"><div class="tree-node-header"><span class="value-indicator"></span><span class="tree-node-label">Closed Lost</span></div></div>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="acv">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Annual Contract Value</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="arr">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Annual Recurring Revenue</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="mrr">
+                      <div class="tree-node-header">
+                        <span class="entry-status disabled"></span>
+                        <span class="tree-node-label">Monthly Recurring Revenue</span>
+                        <span class="entry-badge no-trigger">Glossary</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Level 1: Custom Terms -->
+            <div class="tree-node tree-node--object" data-object="custom">
+              <div class="tree-node-header">
+                <span class="tree-toggle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+                <span class="tree-object-icon custom">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </span>
+                <span class="tree-node-label">Custom Terms</span>
+                <span class="tree-node-count">3</span>
+              </div>
+              <div class="tree-node-children">
+                <div class="tree-node tree-node--group" data-group="sales-terms">
+                  <div class="tree-node-header">
+                    <span class="tree-toggle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                    <span class="tree-node-label">Sales Terms</span>
+                    <span class="tree-node-count">3</span>
+                  </div>
+                  <div class="tree-node-children">
+                    <div class="tree-node tree-node--entry" data-id="disco">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Discovery Call</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="champion">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Champion</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-node--entry" data-id="icp">
+                      <div class="tree-node-header">
+                        <span class="entry-status enabled"></span>
+                        <span class="tree-node-label">Ideal Customer Profile</span>
+                        <span class="entry-badge has-trigger">Tooltip</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="entry-list-stats">
+            <div class="stat-item"><strong>15</strong> total</div>
+            <div class="stat-item"><strong>12</strong> enabled</div>
+            <div class="stat-item"><strong>8</strong> fields</div>
+          </div>
+        </aside>
+
+        <!-- Editor Panel -->
+        <section class="editor-panel" id="editorPanel">
+          <!-- Empty State -->
+          <div class="editor-empty hidden" id="editorEmpty">
+            <div class="editor-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </div>
+            <h3>Select an entry</h3>
+            <p>Choose an entry from the list to view or edit its details</p>
+          </div>
+
+          <!-- Editor Content -->
+          <div class="editor-content" id="editorContent">
+            <div class="editor-scroll">
+              <!-- Editor Header -->
+              <div class="editor-header">
+                <div class="editor-header-left">
+                  <button class="status-toggle enabled" id="statusToggle">
+                    <span class="status-toggle-dot"></span>
+                    <span id="statusLabel">Enabled</span>
+                  </button>
+                </div>
+                <div class="editor-actions">
+                  <button class="btn-icon" title="Duplicate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <button class="btn-icon danger" title="Delete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Content Section (Accordion) -->
+              <div class="accordion-section" id="contentSection">
+                <div class="accordion-header">
+                  <div class="accordion-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </div>
+                  <span class="accordion-title">Content</span>
+                  <span class="accordion-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                </div>
+                <div class="accordion-body">
+                  <div class="form-group">
+                    <label class="form-label">Title <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="titleInput" value="Lead Status" placeholder="e.g., Marketing Qualified Lead">
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Trigger Text <span class="optional">optional</span></label>
+                      <input type="text" class="form-input" id="triggerInput" value="Lead Status" placeholder="e.g., MQL">
+                      <p class="form-hint">Text that triggers the tooltip</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Aliases <span class="optional">optional</span></label>
+                      <input type="text" class="form-input" id="aliasesInput" value="hs_lead_status" placeholder="Comma-separated">
+                      <p class="form-hint">Additional trigger terms</p>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Definition <span class="required">*</span></label>
+                    <div class="rich-editor">
+                      <div class="rich-editor-toolbar">
+                        <button class="toolbar-btn" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg></button>
+                        <button class="toolbar-btn" title="Italic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg></button>
+                        <button class="toolbar-btn" title="Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></button>
+                        <div class="toolbar-divider"></div>
+                        <button class="toolbar-btn" title="Bullet List"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
+                      </div>
+                      <div class="rich-editor-content" id="definitionEditor" contenteditable="true" data-placeholder="Enter the definition...">
+                        <p><strong>Lead Status</strong> indicates where a contact is in the sales process.</p>
+                        <p>Common values include:</p>
+                        <ul>
+                          <li><strong>New</strong> - Just entered the system</li>
+                          <li><strong>Open</strong> - Being actively worked</li>
+                          <li><strong>In Progress</strong> - Engaged in conversation</li>
+                          <li><strong>Qualified</strong> - Ready for sales</li>
+                          <li><strong>Unqualified</strong> - Not a fit</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Related Link <span class="optional">optional</span></label>
+                    <input type="url" class="form-input" id="linkInput" value="https://docs.company.com/lead-status" placeholder="https://...">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Classification Section (Accordion) -->
+              <div class="accordion-section" id="classificationSection">
+                <div class="accordion-header">
+                  <div class="accordion-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                      <polyline points="2 17 12 22 22 17"></polyline>
+                      <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                  </div>
+                  <span class="accordion-title">Classification</span>
+                  <span class="accordion-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                </div>
+                <div class="accordion-body">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Category</label>
+                      <select class="form-select" id="categorySelect">
+                        <option value="general">General</option>
+                        <option value="sales">Sales</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="product">Product</option>
+                        <option value="process">Process</option>
+                        <option value="field" selected>HubSpot Field</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">HubSpot Object</label>
+                      <select class="form-select" id="objectSelect">
+                        <option value="">None (Custom Term)</option>
+                        <option value="contacts" selected>Contacts</option>
+                        <option value="companies">Companies</option>
+                        <option value="deals">Deals</option>
+                        <option value="tickets">Tickets</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Property Group</label>
+                    <select class="form-select" id="propertyGroupSelect">
+                      <option value="">Select a property group...</option>
+                      <option value="lead-info" selected>Lead Information</option>
+                      <option value="contact-info">Contact Information</option>
+                      <option value="conversion-info">Conversion Information</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rules Section (Accordion) -->
+              <div class="accordion-section" id="rulesSection">
+                <div class="accordion-header">
+                  <div class="accordion-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                  </div>
+                  <span class="accordion-title">Rules</span>
+                  <span class="accordion-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                </div>
+                <div class="accordion-body">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Match Type</label>
+                      <select class="form-select" id="matchTypeSelect">
+                        <option value="exact" selected>Exact match</option>
+                        <option value="case-insensitive">Case-insensitive</option>
+                        <option value="starts-with">Starts with</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Frequency</label>
+                      <select class="form-select" id="frequencySelect">
+                        <option value="once" selected>Once per page</option>
+                        <option value="all">Every occurrence</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-checkbox">
+                        <input type="checkbox" id="includeAliasesCheckbox" checked>
+                        <span>Also match aliases</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Priority</label>
+                      <input type="number" class="form-input" id="priorityInput" value="50" min="0" max="100" placeholder="0-100">
+                      <p class="form-hint">Higher = matches first (0-100)</p>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Page Type</label>
+                    <select class="form-select" id="pageTypeSelect">
+                      <option value="any" selected>Any page</option>
+                      <option value="record">Record detail pages</option>
+                      <option value="index">Index/list pages</option>
+                      <option value="pipeline">Pipeline board</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">URL Patterns <span class="optional">optional</span></label>
+                    <textarea class="form-textarea" id="urlPatternsTextarea" placeholder="/contacts/*&#10;/deals/*/"></textarea>
+                    <p class="form-hint">One pattern per line. Use * as wildcard. Leave empty to match all.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Usage Section (Accordion) -->
+              <div class="accordion-section" id="usageSection">
+                <div class="accordion-header">
+                  <div class="accordion-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                  </div>
+                  <span class="accordion-title">Usage</span>
+                  <span class="accordion-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                </div>
+                <div class="accordion-body">
+                  <div class="usage-grid">
+                    <div class="usage-stat">
+                      <div class="usage-stat-label">Created</div>
+                      <div class="usage-stat-value">Dec 10, 2024</div>
+                    </div>
+                    <div class="usage-stat">
+                      <div class="usage-stat-label">Last Updated</div>
+                      <div class="usage-stat-value">Dec 18, 2024</div>
+                    </div>
+                    <div class="usage-stat">
+                      <div class="usage-stat-label">Aliases</div>
+                      <div class="usage-stat-value">1</div>
+                    </div>
+                    <div class="usage-stat">
+                      <div class="usage-stat-label">Child Entries</div>
+                      <div class="usage-stat-value">5</div>
+                    </div>
+                  </div>
+                  <div class="analytics-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <h5>Usage Analytics Coming Soon</h5>
+                    <p>Track how often this tooltip is displayed and clicked</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <aside class="preview-panel">
+              <div class="preview-header">
+                <h4>Live Preview</h4>
+                <span class="preview-badge">Auto-updating</span>
+              </div>
+              <div class="preview-body">
+                <p class="preview-label">Tooltip Appearance</p>
+                <div class="tooltip-preview">
+                  <div class="tooltip-preview-header">
+                    <span class="tooltip-preview-title" id="previewTitle">Lead Status</span>
+                    <span class="tooltip-preview-category" id="previewCategory">Field</span>
+                  </div>
+                  <div class="tooltip-preview-trigger">
+                    Triggers on: <code id="previewTrigger">Lead Status</code>
+                  </div>
+                  <div class="tooltip-preview-content" id="previewContent">
+                    <p><strong>Lead Status</strong> indicates where a contact is in the sales process.</p>
+                  </div>
+                  <a href="#" class="tooltip-preview-link" id="previewLink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    View documentation
+                  </a>
+                </div>
+
+                <div class="usage-grid" style="margin-top: 20px;">
+                  <div class="usage-stat">
+                    <div class="usage-stat-label">Match Type</div>
+                    <div class="usage-stat-value">Exact</div>
+                  </div>
+                  <div class="usage-stat">
+                    <div class="usage-stat-label">Frequency</div>
+                    <div class="usage-stat-value">Once</div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <!-- Editor Footer -->
+          <footer class="editor-footer">
+            <button class="btn btn-secondary btn-lg" id="cancelBtn">Cancel</button>
+            <button class="btn btn-primary btn-lg" id="saveBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Save Entry
+            </button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ============================================
+    // Wiki Page Interactions
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Panel Collapse
+      const panelCollapseBtn = document.getElementById('panelCollapseBtn');
+      const entryListPanel = document.getElementById('entryListPanel');
+
+      panelCollapseBtn.addEventListener('click', () => {
+        entryListPanel.classList.toggle('collapsed');
+        panelCollapseBtn.classList.toggle('collapsed');
+      });
+
+      // Tree Node Toggle (all levels)
+      document.querySelectorAll('.tree-node-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          // Don't collapse if clicking on a leaf entry without children
+          const node = header.closest('.tree-node');
+          const hasChildren = node.querySelector('.tree-node-children');
+          const hasToggle = header.querySelector('.tree-toggle');
+
+          if (hasToggle && hasChildren) {
+            // If clicking on the toggle area, collapse/expand
+            if (e.target.closest('.tree-toggle') || node.classList.contains('tree-node--object') || node.classList.contains('tree-node--group')) {
+              node.classList.toggle('collapsed');
+            }
+          }
+
+          // Handle selection for entries and values
+          if (node.classList.contains('tree-node--entry') || node.classList.contains('tree-node--value')) {
+            document.querySelectorAll('.tree-node-header.selected').forEach(h => h.classList.remove('selected'));
+            header.classList.add('selected');
+
+            // Show editor
+            document.getElementById('editorEmpty').classList.add('hidden');
+            document.getElementById('editorContent').classList.remove('hidden');
+          }
+        });
+      });
+
+      // Accordion Sections
+      document.querySelectorAll('.accordion-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const section = header.closest('.accordion-section');
+          section.classList.toggle('collapsed');
+        });
+      });
+
+      // Status Toggle
+      const statusToggle = document.getElementById('statusToggle');
+      const statusLabel = document.getElementById('statusLabel');
+
+      statusToggle.addEventListener('click', () => {
+        const isEnabled = statusToggle.classList.contains('enabled');
+        statusToggle.classList.toggle('enabled', !isEnabled);
+        statusToggle.classList.toggle('disabled', isEnabled);
+        statusLabel.textContent = isEnabled ? 'Disabled' : 'Enabled';
+      });
+
+      // Live Preview Updates
+      const titleInput = document.getElementById('titleInput');
+      const triggerInput = document.getElementById('triggerInput');
+      const categorySelect = document.getElementById('categorySelect');
+      const definitionEditor = document.getElementById('definitionEditor');
+
+      const previewTitle = document.getElementById('previewTitle');
+      const previewTrigger = document.getElementById('previewTrigger');
+      const previewCategory = document.getElementById('previewCategory');
+      const previewContent = document.getElementById('previewContent');
+
+      titleInput.addEventListener('input', () => {
+        previewTitle.textContent = titleInput.value || 'Title';
+      });
+
+      triggerInput.addEventListener('input', () => {
+        previewTrigger.textContent = triggerInput.value || '...';
+      });
+
+      categorySelect.addEventListener('change', () => {
+        const labels = { general: 'General', sales: 'Sales', marketing: 'Marketing', product: 'Product', process: 'Process', field: 'Field' };
+        previewCategory.textContent = labels[categorySelect.value] || 'General';
+      });
+
+      definitionEditor.addEventListener('input', () => {
+        const text = definitionEditor.innerText;
+        const truncated = text.length > 120 ? text.substring(0, 120) + '...' : text;
+        previewContent.innerHTML = `<p>${truncated}</p>`;
+      });
+
+      // Add Entry Button
+      const addEntryBtn = document.getElementById('addEntryBtn');
+      addEntryBtn.addEventListener('click', () => {
+        document.querySelectorAll('.tree-node-header.selected').forEach(h => h.classList.remove('selected'));
+        titleInput.value = '';
+        triggerInput.value = '';
+        document.getElementById('aliasesInput').value = '';
+        definitionEditor.innerHTML = '';
+        document.getElementById('linkInput').value = '';
+        categorySelect.value = 'general';
+        document.getElementById('objectSelect').value = '';
+
+        statusToggle.classList.add('enabled');
+        statusToggle.classList.remove('disabled');
+        statusLabel.textContent = 'Enabled';
+
+        document.getElementById('editorEmpty').classList.add('hidden');
+        document.getElementById('editorContent').classList.remove('hidden');
+
+        previewTitle.textContent = 'New Entry';
+        previewTrigger.textContent = '...';
+        previewCategory.textContent = 'General';
+        previewContent.innerHTML = '<p style="color: var(--color-text-muted); font-style: italic;">Start typing...</p>';
+
+        titleInput.focus();
+      });
+
+      // Search Filter
+      const searchInput = document.getElementById('searchInput');
+      searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase();
+        document.querySelectorAll('.tree-node--entry, .tree-node--value').forEach(node => {
+          const label = node.querySelector('.tree-node-label').textContent.toLowerCase();
+          node.style.display = label.includes(query) ? '' : 'none';
+        });
+      });
+
+      // Toolbar Buttons
+      document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.addEventListener('click', () => btn.classList.toggle('active'));
+      });
+    });
+  </script>
+</body>
+</html>

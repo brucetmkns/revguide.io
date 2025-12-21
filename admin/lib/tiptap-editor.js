@@ -582,7 +582,7 @@ window.TiptapEditor = {
   },
 
   /**
-   * Show image insert dialog
+   * Show image insert dialog (URL only - no uploads)
    */
   showImageDialog(editor) {
     // Create modal overlay
@@ -595,27 +595,7 @@ window.TiptapEditor = {
           <button type="button" class="tiptap-modal-close">&times;</button>
         </div>
         <div class="tiptap-modal-body">
-          <div class="tiptap-modal-tabs">
-            <button type="button" class="tiptap-modal-tab active" data-tab="upload">Upload</button>
-            <button type="button" class="tiptap-modal-tab" data-tab="url">URL</button>
-          </div>
-          <div class="tiptap-modal-tab-content" data-content="upload">
-            <div class="tiptap-upload-zone">
-              <input type="file" accept="image/*" class="tiptap-file-input" />
-              <div class="tiptap-upload-placeholder">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <span>Click or drag image here</span>
-              </div>
-              <img class="tiptap-upload-preview" style="display: none;" />
-            </div>
-          </div>
-          <div class="tiptap-modal-tab-content" data-content="url" style="display: none;">
-            <input type="text" class="tiptap-url-input" placeholder="https://example.com/image.jpg" />
-          </div>
+          <input type="text" class="tiptap-url-input" placeholder="https://example.com/image.jpg" />
           <input type="text" class="tiptap-alt-input" placeholder="Alt text (optional)" />
         </div>
         <div class="tiptap-modal-footer">
@@ -627,20 +607,11 @@ window.TiptapEditor = {
 
     document.body.appendChild(overlay);
 
-    const modal = overlay.querySelector('.tiptap-modal');
     const closeBtn = overlay.querySelector('.tiptap-modal-close');
     const cancelBtn = overlay.querySelector('.tiptap-modal-btn.cancel');
     const insertBtn = overlay.querySelector('.tiptap-modal-btn.primary');
-    const fileInput = overlay.querySelector('.tiptap-file-input');
-    const uploadZone = overlay.querySelector('.tiptap-upload-zone');
-    const uploadPlaceholder = overlay.querySelector('.tiptap-upload-placeholder');
-    const uploadPreview = overlay.querySelector('.tiptap-upload-preview');
     const urlInput = overlay.querySelector('.tiptap-url-input');
     const altInput = overlay.querySelector('.tiptap-alt-input');
-    const tabs = overlay.querySelectorAll('.tiptap-modal-tab');
-
-    let imageData = null;
-    let activeTab = 'upload';
 
     // Close modal function
     const closeModal = () => {
@@ -648,76 +619,17 @@ window.TiptapEditor = {
       editor.commands.focus();
     };
 
-    // Tab switching
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        activeTab = tab.dataset.tab;
-
-        overlay.querySelectorAll('.tiptap-modal-tab-content').forEach(content => {
-          content.style.display = content.dataset.content === activeTab ? 'block' : 'none';
-        });
-
-        updateInsertButton();
-      });
-    });
-
     // Update insert button state
     const updateInsertButton = () => {
-      if (activeTab === 'upload') {
-        insertBtn.disabled = !imageData;
-      } else {
-        insertBtn.disabled = !urlInput.value.trim();
-      }
+      insertBtn.disabled = !urlInput.value.trim();
     };
-
-    // File handling
-    const handleFile = (file) => {
-      if (!file || !file.type.startsWith('image/')) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imageData = e.target.result;
-        uploadPreview.src = imageData;
-        uploadPreview.style.display = 'block';
-        uploadPlaceholder.style.display = 'none';
-        updateInsertButton();
-      };
-      reader.readAsDataURL(file);
-    };
-
-    fileInput.addEventListener('change', (e) => {
-      handleFile(e.target.files[0]);
-    });
-
-    // Drag and drop
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
-
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      handleFile(e.dataTransfer.files[0]);
-    });
-
-    // Click to upload
-    uploadZone.addEventListener('click', () => {
-      fileInput.click();
-    });
 
     // URL input
     urlInput.addEventListener('input', updateInsertButton);
 
     // Insert image
     insertBtn.addEventListener('click', () => {
-      const src = activeTab === 'upload' ? imageData : urlInput.value.trim();
+      const src = urlInput.value.trim();
       const alt = altInput.value.trim();
 
       if (src) {
@@ -741,6 +653,9 @@ window.TiptapEditor = {
       }
     };
     document.addEventListener('keydown', handleEscape);
+
+    // Focus URL input
+    setTimeout(() => urlInput.focus(), 100);
   },
 
   /**
