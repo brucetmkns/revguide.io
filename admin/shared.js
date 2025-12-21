@@ -511,11 +511,25 @@ function renderSidebar(activePage) {
     });
   } else if (currentOrganization?.id) {
     // For web context with org, update nav links to use org-aware URLs
+    const shortId = getShortOrgId(currentOrganization.id);
+
     sidebar.querySelectorAll('.nav-item').forEach(link => {
       const href = link.getAttribute('href');
-      if (href && isOrgAwarePath(href)) {
-        const orgAwareUrl = buildOrgAwareUrl(href);
-        link.setAttribute('href', orgAwareUrl);
+      if (!href) return;
+
+      // Check if href already has an org prefix (8-char hex pattern)
+      const hasOrgPrefix = SHORT_ORG_ID_PATTERN.test(href);
+
+      if (hasOrgPrefix) {
+        // Already has org prefix - update to current org if different
+        const currentPrefix = href.match(SHORT_ORG_ID_PATTERN)?.[1];
+        if (currentPrefix !== shortId) {
+          const pathWithoutOrg = href.replace(SHORT_ORG_ID_PATTERN, '/');
+          link.setAttribute('href', `/${shortId}${pathWithoutOrg}`);
+        }
+      } else if (isOrgAwarePath(href)) {
+        // No org prefix yet - add one for org-aware paths
+        link.setAttribute('href', `/${shortId}${href}`);
       }
     });
   }
