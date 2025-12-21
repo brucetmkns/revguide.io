@@ -29,8 +29,8 @@
             </svg>
           </button>
           <div class="nav-group-menu">
-            <a href="/partner-home" class="nav-item active" data-section="partner-home">Home</a>
-            <a href="/managed-accounts" class="nav-item" data-section="managed-accounts">Managed Accounts</a>
+            <a href="/partner/home" class="nav-item active" data-section="partner-home">Home</a>
+            <a href="/partner/accounts" class="nav-item" data-section="partner-accounts">Managed Accounts</a>
           </div>
         </div>
         <a href="/libraries" class="nav-item" data-section="libraries">
@@ -128,7 +128,7 @@
           <h3>You're all set!</h3>
           <p>You're connected to client portals and ready to deploy content.</p>
           <div class="all-set-actions">
-            <a href="/managed-accounts" class="btn btn-primary">View Clients</a>
+            <a href="/partner/accounts" class="btn btn-primary">View Clients</a>
             <a href="/libraries" class="btn btn-secondary">Browse Libraries</a>
           </div>
         </div>
@@ -203,7 +203,7 @@
           <div class="dashboard-section">
             <div class="dashboard-header">
               <h3>Your Clients</h3>
-              <a href="/managed-accounts" class="btn btn-ghost btn-sm">View All</a>
+              <a href="/partner/accounts" class="btn btn-ghost btn-sm">View All</a>
             </div>
             <div class="client-quick-list" id="partnerClientList">
               <!-- Populated by JS -->
@@ -224,11 +224,12 @@
                 <span class="icon icon-download icon--sm"></span>
                 <span>Browse Libraries</span>
               </a>
-              <a href="https://help.supered.io" target="_blank" class="resource-link">
+<!-- TODO: Update Partner Guide and Help Center links when documentation is ready -->
+              <a href="https://revguide.io" target="_blank" class="resource-link">
                 <span class="icon icon-book icon--sm"></span>
                 <span>Partner Guide</span>
               </a>
-              <a href="https://help.supered.io" target="_blank" class="resource-link">
+              <a href="https://revguide.io" target="_blank" class="resource-link">
                 <span class="icon icon-help-circle icon--sm"></span>
                 <span>Help Center</span>
               </a>
@@ -245,9 +246,5 @@
   <script src="/lib/wiki-cache.js"></script>
   <script src="/admin/shared.js"></script>
   <script src="/admin/pages/partner-home.js"></script>
-
-  <!-- Help Scout Beacon -->
-  <script type="text/javascript">!function(e,t,n){function a(){var e=t.getElementsByTagName("script")[0],n=t.createElement("script");n.type="text/javascript",n.async=!0,n.src="https://beacon-v2.helpscout.net",e.parentNode.insertBefore(n,e)}if(e.Beacon=n=function(t,n,a){e.Beacon.readyQueue.push({method:t,options:n,data:a})},n.readyQueue=[],"complete"===t.readyState)return a();e.attachEvent?e.attachEvent("onload",a):e.addEventListener("load",a,!1)}(window,document,window.Beacon||function(){});</script>
-  <script type="text/javascript">window.Beacon('init', '3bd8f7ea-8853-4f72-bf02-f22113313a1d')</script>
 </body>
 </html>

@@ -13,6 +13,8 @@ Quick reference for AI assistants working on this codebase. For detailed documen
 - **Backend**: Supabase (database + edge functions)
 - **Email**: Cloudflare Workers (invitations)
 
+> **Important:** Supered is a COMPETITOR. Documentation may reference "Supered-style" patterns (implementation techniques we studied), but all URLs, branding, and external links must use RevGuide domains (`revguide.io`, `app.revguide.io`, `help.revguide.io`). Never use `supered.io`.
+
 ---
 
 ## Directory Structure
@@ -27,7 +29,6 @@ plugin/
 │   ├── shared.js          # Shared utilities
 │   ├── supabase.js        # Database client (RevGuideAuth, RevGuideDB)
 │   ├── hubspot.js         # HubSpot OAuth client
-│   ├── nango.js           # Legacy OAuth (still used in home.js)
 │   └── pages/             # Multi-page admin UI
 │       ├── home.js        # Dashboard
 │       ├── banners.js     # Banner CRUD
@@ -92,7 +93,6 @@ plugin/
 | `RevGuideAuth` | admin/supabase.js | Supabase auth wrapper |
 | `RevGuideDB` | admin/supabase.js | Database operations |
 | `RevGuideHubSpot` | admin/hubspot.js | HubSpot OAuth |
-| `RevGuideNango` | admin/nango.js | Legacy OAuth (still used) |
 | `RevGuideRulesEngine` | lib/rules-engine.js | Condition evaluation |
 | `RevGuideWikiCache` | lib/wiki-cache.js | Wiki term caching |
 | `StorageManager` | lib/storage.js | Chrome storage wrapper |
@@ -148,7 +148,7 @@ The codebase uses mixed terminology due to evolution:
 
 **Roles:** Owner > Admin > Editor > Viewer > Partner (external access to client orgs)
 
-**HubSpot OAuth:** Direct integration via `admin/hubspot.js` (replaced Nango in v2.1.0, but `nango.js` still referenced in `home.js`)
+**HubSpot OAuth:** Direct integration via `admin/hubspot.js`
 
 See: [AUTHENTICATION.md](AUTHENTICATION.md)
 
@@ -166,8 +166,8 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 **Partner Account System (v2.8.0+, v2.8.2+):**
 - `account_type` column: `'standard'` or `'partner'`
 - `home_organization_id` tracks partner's agency org
-- Partner Home (`/partner-home`) - 3-step onboarding for partners (v2.8.2+)
-- Managed Accounts (`/managed-accounts`) - dedicated UI for client management (renamed from `/partner`)
+- Partner Home (`/partner/home`) - 3-step onboarding for partners (v2.8.2+)
+- Managed Accounts (`/partner/accounts`) - dedicated UI for client management
 - Sidebar dropdown: Partner → Home, Managed Accounts
 - Partners have `partner` role in client orgs (distinct from legacy `consultant`)
 - Admins can invite partners or convert their account to partner
@@ -187,9 +187,9 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `convertToPartner(agencyName)` - Convert admin to partner (v2.8.0+)
 
 **Partner Signup Paths:**
-1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org → Redirects to `/partner-home`
+1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org → Redirects to `/partner/home`
 2. **Convert existing**: Settings → "Become a Partner" → Creates agency org, updates account_type
-3. **New signup**: Settings → "Sign Up with a New Account" → Signs out → `/signup?new_partner=true` → Fresh partner account → Redirects to `/partner-home`
+3. **New signup**: Settings → "Sign Up with a New Account" → Signs out → `/signup?new_partner=true` → Fresh partner account → Redirects to `/partner/home`
 
 **Role helpers (AdminShared) - v2.7.3+:**
 - `getEffectiveRole()` - Returns org-specific role from `organization_members`, falls back to `currentUser.role`
@@ -270,9 +270,8 @@ See: [HUBSPOT_DOM.md](HUBSPOT_DOM.md)
 
 ## Known Issues / Tech Debt
 
-1. **nango.js still used** - `home.js:322` calls `RevGuideNango` despite OAuth migration
-2. **Terminology inconsistency** - "plays" vs "battleCards" vs "presentations"
-3. **CSS @import warnings** - Build shows warnings for CSS imports (non-blocking)
+1. **Terminology inconsistency** - "plays" vs "battleCards" vs "presentations"
+2. **CSS @import warnings** - Build shows warnings for CSS imports (non-blocking)
 
 See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
@@ -295,4 +294,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2024 (v2.8.2)*
+*Last updated: December 2025 (v2.8.6)*

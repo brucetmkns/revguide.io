@@ -2,6 +2,25 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.8.7] - 2025-12-20 - Partner URL Restructure
+
+### Changed
+- **URL Structure**: Reorganized partner page URLs for cleaner hierarchy
+  - `/partner-home` → `/partner/home`
+  - `/managed-accounts` → `/partner/accounts`
+- All navigation links, redirects, and documentation updated to use new paths
+
+### Technical
+- **Files Modified**:
+  - `vercel.json` - Updated rewrites for new URL paths
+  - `admin/pages/*.html` - Updated sidebar navigation links (8 files)
+  - `admin/pages/signup.html` - Updated partner redirect URLs
+  - `admin/pages/partner-home.js` - Updated client list links
+  - `admin/pages/settings.html` - Updated partner dashboard button
+  - `docs/AI_CONTEXT.md` - Updated URL references
+
+---
+
 ## [2.8.6] - 2025-12-20 - Partner Access Requests
 
 ### Added

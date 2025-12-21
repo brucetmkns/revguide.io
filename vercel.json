@@ -12,8 +12,8 @@
     { "source": "/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
     { "source": "/settings", "destination": "/admin/pages/settings.html" },
-    { "source": "/partner-home", "destination": "/admin/pages/partner-home.html" },
-    { "source": "/managed-accounts", "destination": "/admin/pages/partner.html" },
+    { "source": "/partner/home", "destination": "/admin/pages/partner-home.html" },
+    { "source": "/partner/accounts", "destination": "/admin/pages/partner.html" },
     { "source": "/invite", "destination": "/admin/pages/invite.html" },
     { "source": "/extension/logged-in", "destination": "/admin/pages/extension-logged-in.html" }
   ],

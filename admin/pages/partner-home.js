@@ -230,7 +230,7 @@ class PartnerHomePage {
       const role = client.role || 'partner';
 
       return `
-        <a href="/managed-accounts" class="client-quick-item" data-org-id="${client.organization_id}">
+        <a href="/partner/accounts" class="client-quick-item" data-org-id="${client.organization_id}">
           <span class="client-color" style="background: ${color};"></span>
           <h4>${this.escapeHtml(name)}</h4>
           <div class="client-quick-stats">
@@ -261,7 +261,7 @@ class PartnerHomePage {
     const viewClientsBtn = document.getElementById('partnerViewClientsBtn');
     if (viewClientsBtn) {
       viewClientsBtn.addEventListener('click', () => {
-        window.location.href = '/managed-accounts';
+        window.location.href = '/partner/accounts';
       });
     }
 
