@@ -8,13 +8,15 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
 
-### Partner Account System (v2.8.0) - NEW
+### Partner Account System (v2.8.0+)
 - **Partner Account Type**: New `account_type` column (`standard` or `partner`) with dedicated `partner` role
 - **Partner Dashboard**: Dedicated `/partner` page for managing clients, libraries, and access requests
 - **Agency Organization**: Partners have their own `home_organization_id` separate from client portals
 - **Multiple Signup Paths**: Invited by client, convert existing account, or new partner signup
 - **Auto-connect**: Existing partners automatically added when invited to new client orgs
-- **Database Migration**: `021_partner_accounts.sql` with helper functions and constraints
+- **Database Migrations**: `021_partner_accounts.sql` and `023_rename_consultant_to_partner.sql`
+- **Terminology Rename** (v2.2.0): All "Consultant" terminology renamed to "Partner" throughout codebase
+- **Partner Join Notification** (v2.2.0): Email sent to admins when partner accepts invitation
 
 ### Role-Based Access Control (v2.5.3)
 - **Complete role hierarchy**: Owner > Admin > Editor > Viewer > Partner (external)
@@ -551,9 +553,9 @@ Extension → Background.js → Supabase API → Postgres
 
 ---
 
-## Partner Account System (v2.8.0) ✅ IMPLEMENTED
+## Partner Account System (v2.8.0+) ✅ IMPLEMENTED
 
-**Goal:** Improve the consultant invitation and onboarding flow with a dedicated Partner Account system.
+**Goal:** Improve the partner invitation and onboarding flow with a dedicated Partner Account system.
 
 ### What Was Implemented
 
@@ -605,22 +607,27 @@ Extension → Background.js → Supabase API → Postgres
 - [x] User enumeration prevention (always shows neutral success message)
 - [x] Re-request after decline updates existing row
 
+#### Partner Join Notification (v2.2.0) - COMPLETE
+- [x] Email notification sent to org admins when partner accepts invitation
+- [x] Fire-and-forget async notification (non-blocking)
+- [x] API endpoint `/api/notify-partner-joined` in Cloudflare Worker
+
 ---
 
-## Phase 3: Multi-Portal for Consultants (Local)
+## Phase 3: Multi-Portal for Partners (Local)
 
-**Goal:** Enable HubSpot consultants/agencies to manage multiple client portals with reusable content libraries, all within the Chrome extension (before SaaS).
+**Goal:** Enable HubSpot partners/agencies to manage multiple client portals with reusable content libraries, all within the Chrome extension (before SaaS).
 
 **Full Implementation Details:** See [docs/MULTI_PORTAL_DEV.md](docs/MULTI_PORTAL_DEV.md)
 
-### 3.1 Core Concept: Consultants as Library Authors
+### 3.1 Core Concept: Partners as Library Authors
 
-Rather than complex linked/synced content, consultants create their own libraries using the existing library infrastructure. Libraries can be installed (copied) to any portal on demand.
+Rather than complex linked/synced content, partners create their own libraries using the existing library infrastructure. Libraries can be installed (copied) to any portal on demand.
 
 ```
 LIBRARIES
 ├── Pre-built (GitHub) - HubSpot Basics, Sales Pipeline, etc.
-└── My Libraries (Consultant-created)
+└── My Libraries (Partner-created)
     ├── "Agency Standard Playbook"
     └── "SaaS Onboarding Kit"
            ↓
@@ -636,7 +643,7 @@ LIBRARIES
 
 | Mode | Who | Capabilities |
 |------|-----|--------------|
-| **Consultant** (default) | Agency users, freelancers | Portal switcher, My Libraries, create/manage libraries |
+| **Partner** (default) | Agency users, freelancers | Portal switcher, My Libraries, create/manage libraries |
 | **Single Portal** | End clients, internal teams | One portal only, no switcher, simplified UI |
 
 ### 3.3 Implementation Phases
@@ -649,7 +656,7 @@ LIBRARIES
 - [ ] Migration path for existing users (move to 'default' portal)
 - [ ] Content script loads active portal's data
 
-#### Phase 3.2: My Libraries (Consultant Library Creation)
+#### Phase 3.2: My Libraries (Partner Library Creation)
 - [ ] "My Libraries" section in Libraries page
 - [ ] Create library: select items from current portal
 - [ ] Edit library: add/remove items, update name/description
@@ -677,7 +684,7 @@ LIBRARIES
 
 ```javascript
 {
-  userMode: "consultant" | "single_portal",
+  userMode: "partner" | "single_portal",
   activePortalId: "12345678",
   portals: {
     "12345678": { name: "Client A", apiToken: "...", color: "#ff7a59" }
@@ -700,7 +707,7 @@ LIBRARIES
 
 - **No live linking** - Libraries are templates; installs create independent copies
 - **Updates are explicit** - User chooses when to update, with options for handling conflicts
-- **Consultant is default** - Single Portal mode is opt-in for simpler use cases
+- **Partner is default** - Single Portal mode is opt-in for simpler use cases
 - **Local storage only** - This phase is Chrome extension only (SaaS adds cloud sync later)
 
 ---
@@ -887,6 +894,35 @@ Would you like me to suggest values?"
 - [ ] **Single Page App (SPA) conversion** - Client-side routing for seamless page transitions without full reloads
 - [ ] Page transition animations
 
+#### Admin Dashboard Redesign (Draft)
+**Status:** Exploration / Not finalized
+
+Design mockups created in `website/admin-redesign.html` (Admin view) and `website/consultant-redesign.html` (Partner/Consultant view). Some elements worth considering:
+
+**Admin Dashboard (`admin-redesign.html`):**
+- Collapsible sidebar with localStorage persistence
+- Dynamic time-based greeting ("Good morning/afternoon/evening")
+- Circular progress ring for onboarding (vs current linear progress bar)
+- Recent activity feed with color-coded action types
+- Quick actions panel with primary CTA highlighted
+- Staggered fade-in animations on page load
+- Refined card shadows with hover state reveals
+
+**Partner Dashboard (`consultant-redesign.html`):**
+- Portal switcher dropdown with color-coded client portals
+- Welcome banner with gradient background and glowing accent
+- Client portals grid showing stats per organization
+- Access requests panel with inline approve/deny actions
+- Partner onboarding timeline (vertical progress line vs checklist)
+- "Partner" badge in logo to indicate account type
+
+**Design tokens applied:**
+- Primary accent: `#b2ef63`
+- Font: Manrope
+- Border radius: 12px (cards), 8px (buttons)
+- Near-black sidebar: `#0c0c0f`
+- Transition easing: `cubic-bezier(0.16, 1, 0.3, 1)`
+
 ### Account & Settings
 - [x] **User Profile section** - View/edit profile info (name, email display, company name)
 - [ ] **Billing management** - View subscription, update payment method, download invoices
@@ -967,8 +1003,8 @@ Would you like me to suggest values?"
 | **Phase 2 Total** | **SaaS MVP Launch** | **4-5 weeks** |
 | Phase 3.1 | Multi-org data model | 1 week |
 | Phase 3.2 | Template library | 1-2 weeks |
-| Phase 3.3 | Consultant dashboard | 1 week |
-| **Phase 3 Total** | **Consultant Features** | **3-4 weeks** |
+| Phase 3.3 | Partner dashboard | 1 week |
+| **Phase 3 Total** | **Partner Features** | **3-4 weeks** |
 
 ---
 
@@ -1233,8 +1269,8 @@ Would you like me to suggest values?"
 - [ ] NPS > 40
 
 ### Phase 2
-- [ ] 10 consultant accounts
-- [ ] 50+ organizations under consultant accounts
+- [ ] 10 partner accounts
+- [ ] 50+ organizations under partner accounts
 - [ ] Template library adoption > 60%
 
 ---

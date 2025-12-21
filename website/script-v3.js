@@ -77,7 +77,7 @@
 
   // Elements to animate on scroll
   const revealElements = document.querySelectorAll(
-    '.problem-card, .feature-row, .roi-item, .consultant-feature, .how-step, .price-card'
+    '.problem-card, .feature-row, .roi-item, .partner-feature, .how-step, .price-card'
   );
 
   revealElements.forEach((el, i) => {

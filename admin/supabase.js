@@ -881,6 +881,31 @@ const RevGuideDB = {
       .single();
   },
 
+  /**
+   * Get admin/owner users for an organization (for notifications)
+   * @param {string} organizationId - The organization ID
+   * @returns {Promise<{data: Array<{email, name}>, error}>}
+   */
+  async getOrganizationAdmins(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+    if (!organizationId) return { data: [], error: new Error('No organization ID') };
+
+    const { data, error } = await client
+      .from('organization_members')
+      .select('users(email, name)')
+      .eq('organization_id', organizationId)
+      .in('role', ['owner', 'admin']);
+
+    if (error) return { data: [], error };
+
+    // Flatten the nested users data
+    const admins = (data || [])
+      .map(m => m.users)
+      .filter(Boolean);
+
+    return { data: admins, error: null };
+  },
+
   // ============================================
   // HubSpot Connections
   // ============================================

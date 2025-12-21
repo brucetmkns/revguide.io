@@ -166,7 +166,7 @@ Chrome's native side panel with auth-aware UI:
 | `banners` | Banner configurations |
 | `plays` | Play/battle card configurations |
 | `wiki_entries` | Wiki glossary entries |
-| `consultant_libraries` | Reusable content packages for partners/consultants (v2.7.0+) |
+| `partner_libraries` | Reusable content packages for partners (v2.7.0+) |
 | `library_installations` | Track which libraries installed in which orgs (v2.7.0+) |
 
 **Partner Account Functions (v2.8.0+):**

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Get token and type from URL
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
-  const inviteType = params.get('type'); // 'consultant' for consultant invitations
+  const inviteType = params.get('type'); // 'partner' for partner invitations
 
   if (!token) {
     showError('Invalid Invitation', 'No invitation token provided. Please check the link in your email.');
@@ -37,18 +37,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data: invitation, error } = await RevGuideDB.getInvitationByToken(token, true);
     console.log('[Invite] Invitation result:', { invitation, error });
 
-    // Check if this is a consultant invitation
-    const isConsultantInvitation = inviteType === 'consultant' ||
-      invitation?.invitation_type === 'consultant' ||
-      invitation?.role === 'consultant';
-    console.log('[Invite] Is consultant invitation:', isConsultantInvitation, 'inviteType:', inviteType);
+    // Check if this is a partner invitation
+    const isPartnerInvitation = inviteType === 'partner' ||
+      invitation?.invitation_type === 'partner' ||
+      invitation?.role === 'partner';
+    console.log('[Invite] Is partner invitation:', isPartnerInvitation, 'inviteType:', inviteType);
 
     // Check if user already has a profile with an organization
     const { data: userProfile } = await RevGuideDB.getUserProfile();
     console.log('[Invite] User profile:', userProfile);
 
-    // For regular (non-consultant) invitations, if user already has an org, show success
-    if (userProfile?.organization_id && !isConsultantInvitation) {
+    // For regular (non-partner) invitations, if user already has an org, show success
+    if (userProfile?.organization_id && !isPartnerInvitation) {
       // User already belongs to an org - they're all set!
       console.log('[Invite] User already has org, showing success');
       showSuccess(userProfile.organizations?.name || 'your team');
@@ -78,9 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Show invitation details and accept button
-    // Use different UI for consultant invitations
-    if (inviteType === 'consultant' || invitation.invitation_type === 'consultant' || invitation.role === 'consultant') {
-      showConsultantInvitation(invitation);
+    // Use different UI for partner invitations
+    if (inviteType === 'partner' || invitation.invitation_type === 'partner' || invitation.role === 'partner') {
+      showPartnerInvitation(invitation);
     } else {
       showInvitation(invitation);
     }
@@ -137,20 +137,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
-   * Show consultant invitation details with accept button
+   * Show partner invitation details with accept button
    */
-  function showConsultantInvitation(invitation) {
+  function showPartnerInvitation(invitation) {
     const orgName = invitation.organizations?.name || 'Unknown Organization';
 
     inviteContent.innerHTML = `
-      <svg class="invite-icon consultant" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="invite-icon partner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <circle cx="9" cy="7" r="4"/>
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
-      <h2 class="invite-title">Consultant Access Invitation</h2>
-      <p class="invite-message">You've been invited to join as a consultant.</p>
+      <h2 class="invite-title">Partner Access Invitation</h2>
+      <p class="invite-message">You've been invited to join as a partner.</p>
 
       <div class="invite-details">
         <div class="invite-detail-row">
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div class="invite-detail-row">
           <span class="invite-detail-label">Your Role</span>
-          <span class="invite-detail-value consultant-role">Consultant</span>
+          <span class="invite-detail-value partner-role">Partner</span>
         </div>
         <div class="invite-detail-row">
           <span class="invite-detail-label">Email</span>
@@ -167,8 +167,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
 
-      <div class="consultant-benefits">
-        <h4>As a Consultant, you can:</h4>
+      <div class="partner-benefits">
+        <h4>As a Partner, you can:</h4>
         <ul>
           <li>Access and manage this client's RevGuide content</li>
           <li>Switch between multiple client portals</li>
@@ -177,24 +177,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="invite-actions">
-        <button class="invite-btn invite-btn-primary" id="acceptConsultantBtn">Accept Consultant Access</button>
+        <button class="invite-btn invite-btn-primary" id="acceptPartnerBtn">Accept Partner Access</button>
         <a href="/login" class="invite-btn invite-btn-secondary">Decline</a>
       </div>
 
       <div class="invite-footer">
-        <p>By accepting, you'll gain consultant access to ${escapeHtml(orgName)}'s RevGuide content.</p>
+        <p>By accepting, you'll gain partner access to ${escapeHtml(orgName)}'s RevGuide content.</p>
       </div>
     `;
 
     // Add accept handler
-    document.getElementById('acceptConsultantBtn').addEventListener('click', () => acceptConsultantInvitation(invitation));
+    document.getElementById('acceptPartnerBtn').addEventListener('click', () => acceptPartnerInvitation(invitation));
   }
 
   /**
-   * Accept consultant invitation
+   * Accept partner invitation
    */
-  async function acceptConsultantInvitation(invitation) {
-    const acceptBtn = document.getElementById('acceptConsultantBtn');
+  async function acceptPartnerInvitation(invitation) {
+    const acceptBtn = document.getElementById('acceptPartnerBtn');
     acceptBtn.disabled = true;
     acceptBtn.textContent = 'Accepting...';
 
@@ -205,27 +205,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         throw error;
       }
 
-      showConsultantSuccess(invitation.organizations?.name || 'the organization');
+      // Notify admins that partner has joined (fire and forget)
+      notifyAdminsOfPartnerJoined(invitation).catch(err => {
+        console.warn('Failed to send partner joined notification:', err);
+      });
+
+      showPartnerSuccess(invitation.organizations?.name || 'the organization');
 
     } catch (error) {
-      console.error('Failed to accept consultant invitation:', error);
+      console.error('Failed to accept partner invitation:', error);
       acceptBtn.disabled = false;
-      acceptBtn.textContent = 'Accept Consultant Access';
+      acceptBtn.textContent = 'Accept Partner Access';
       showError('Failed to Accept', error.message || 'Something went wrong. Please try again.');
     }
   }
 
   /**
-   * Show consultant success state
+   * Notify admins when a partner joins
    */
-  function showConsultantSuccess(orgName) {
+  async function notifyAdminsOfPartnerJoined(invitation) {
+    try {
+      // Get current user's info
+      const { data: profile } = await RevGuideDB.getUserProfile();
+      if (!profile) return;
+
+      // Get admin emails for the organization
+      const { data: admins } = await RevGuideDB.getOrganizationAdmins(invitation.organization_id);
+      if (!admins || admins.length === 0) return;
+
+      const adminEmails = admins.map(a => a.email).filter(Boolean);
+      if (adminEmails.length === 0) return;
+
+      await fetch('https://revguide-api.revguide.workers.dev/api/notify-partner-joined', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmails,
+          partnerName: profile.name,
+          partnerEmail: profile.email,
+          orgName: invitation.organizations?.name
+        })
+      });
+    } catch (error) {
+      console.warn('Error notifying admins of partner joined:', error);
+    }
+  }
+
+  /**
+   * Show partner success state
+   */
+  function showPartnerSuccess(orgName) {
     inviteContent.innerHTML = `
       <svg class="invite-icon success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <h2 class="invite-title">Consultant Access Granted!</h2>
-      <p class="invite-message">You now have consultant access to ${escapeHtml(orgName)}. You can manage their RevGuide content and switch between client portals.</p>
+      <h2 class="invite-title">Partner Access Granted!</h2>
+      <p class="invite-message">You now have partner access to ${escapeHtml(orgName)}. You can manage their RevGuide content and switch between client portals.</p>
 
       <div class="invite-actions">
         <a href="/clients" class="invite-btn invite-btn-primary">View Your Clients</a>

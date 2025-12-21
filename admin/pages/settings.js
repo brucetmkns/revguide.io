@@ -861,7 +861,6 @@ class SettingsPage {
     const email = document.getElementById('inviteEmail').value.trim();
     const role = document.getElementById('inviteRole').value;
     const isPartner = role === 'partner';
-    const isConsultant = role === 'consultant'; // Legacy support
 
     // Validate email
     if (!email) {
@@ -933,29 +932,6 @@ class SettingsPage {
             }
           } else {
             // Extract the invitation from the nested structure
-            invitationData = data.invitation;
-          }
-        } else if (isConsultant) {
-          // Legacy consultant invitation flow (for backward compatibility)
-          const { data, error } = await RevGuideDB.createConsultantInvitation(email);
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          if (data.autoConnected) {
-            autoConnected = true;
-            AdminShared.showToast(`${data.consultantName || email} has been added as a consultant`, 'success');
-
-            try {
-              await fetch('https://revguide-api.revguide.workers.dev/api/notify-auto-connect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ consultantEmail: email, orgName })
-              });
-            } catch (emailError) {
-              console.warn('Failed to send auto-connect notification:', emailError);
-            }
-          } else {
             invitationData = data.invitation;
           }
         } else {
@@ -1468,8 +1444,8 @@ class SettingsPage {
     list.innerHTML = this.accessRequests.map(request => `
       <div class="access-request-item" data-request-id="${request.request_id}">
         <div class="request-info">
-          <strong>${AdminShared.escapeHtml(request.consultant_name || request.consultant_email || 'Unknown Partner')}</strong>
-          <span>${AdminShared.escapeHtml(request.consultant_email || '')}</span>
+          <strong>${AdminShared.escapeHtml(request.partner_name || request.partner_email || 'Unknown Partner')}</strong>
+          <span>${AdminShared.escapeHtml(request.partner_email || '')}</span>
           ${request.message ? `
             <div class="request-message">"${AdminShared.escapeHtml(request.message)}"</div>
           ` : ''}
@@ -1495,7 +1471,7 @@ class SettingsPage {
 
     const confirmed = await AdminShared.showConfirmDialog({
       title: 'Approve Partner Access',
-      message: `Approve ${request.consultant_name || request.consultant_email}'s request to access your organization as a partner?`,
+      message: `Approve ${request.partner_name || request.partner_email}'s request to access your organization as a partner?`,
       primaryLabel: 'Approve',
       secondaryLabel: 'Cancel',
       showCancel: false
@@ -1517,8 +1493,8 @@ class SettingsPage {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            consultantEmail: request.consultant_email,
-            consultantName: request.consultant_name,
+            partnerEmail: request.partner_email,
+            partnerName: request.partner_name,
             orgName: org?.name
           })
         });
@@ -1526,7 +1502,7 @@ class SettingsPage {
         console.warn('[Settings] Failed to send approval notification:', emailError);
       }
 
-      AdminShared.showToast(`${request.consultant_name || 'Partner'} has been added to your organization`, 'success');
+      AdminShared.showToast(`${request.partner_name || 'Partner'} has been added to your organization`, 'success');
 
       // Remove from local list and re-render
       this.accessRequests = this.accessRequests.filter(r => r.request_id !== requestId);
@@ -1558,7 +1534,7 @@ class SettingsPage {
 
     const confirmed = await AdminShared.showConfirmDialog({
       title: 'Decline Partner Access',
-      message: `Decline ${request.consultant_name || request.consultant_email}'s request to access your organization?`,
+      message: `Decline ${request.partner_name || request.partner_email}'s request to access your organization?`,
       primaryLabel: 'Decline',
       secondaryLabel: 'Cancel',
       showCancel: false
@@ -1580,8 +1556,8 @@ class SettingsPage {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            consultantEmail: request.consultant_email,
-            consultantName: request.consultant_name,
+            partnerEmail: request.partner_email,
+            partnerName: request.partner_name,
             orgName: org?.name
           })
         });

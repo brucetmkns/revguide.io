@@ -39,9 +39,9 @@ function buildInvitationEmailHtml(role, token, orgName, invitationType = 'team',
     return buildPartnerInvitationEmailHtml(token, orgName, inviterName);
   }
 
-  // Handle consultant invitations separately
+  // Handle legacy consultant invitations (map to partner)
   if (invitationType === 'consultant' || role === 'consultant') {
-    return buildConsultantInvitationEmailHtml(token, orgName, inviterName);
+    return buildPartnerInvitationEmailHtml(token, orgName, inviterName);
   }
 
   const roleLabels = {
@@ -130,9 +130,9 @@ function buildInvitationEmailText(role, token, orgName, invitationType = 'team',
     return buildPartnerInvitationEmailText(token, orgName, inviterName);
   }
 
-  // Handle consultant invitations separately
+  // Handle legacy consultant invitations (map to partner)
   if (invitationType === 'consultant' || role === 'consultant') {
-    return buildConsultantInvitationEmailText(token, orgName, inviterName);
+    return buildPartnerInvitationEmailText(token, orgName, inviterName);
   }
 
   const roleLabels = {
@@ -182,13 +182,11 @@ RevGuide - Contextual guidance for your revenue team`;
 }
 
 // ===========================================
-// CONSULTANT EMAIL TEMPLATES
+// PARTNER ACCESS REQUEST EMAIL TEMPLATES
 // ===========================================
 
-function buildConsultantInvitationEmailHtml(token, orgName, inviterName = null) {
-  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=consultant`;
-  const orgDisplay = orgName ? `<strong>${orgName}</strong>` : 'a RevGuide organization';
-  const inviterDisplay = inviterName ? `<strong>${inviterName}</strong> has invited you` : "You've been invited";
+function buildAccessRequestNotificationEmailHtml(partnerName, partnerEmail, orgName, message) {
+  const reviewLink = `${CONFIG.appUrl}/settings#partner-access`;
 
   return `
 <!DOCTYPE html>
@@ -199,94 +197,12 @@ function buildConsultantInvitationEmailHtml(token, orgName, inviterName = null) 
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Consultant Access Invitation</h1>
+    <h1 style="color: white; margin: 0; font-size: 24px;">New Partner Access Request</h1>
   </div>
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      ${inviterDisplay} to join ${orgDisplay} as a <strong>Consultant</strong> on RevGuide.
-    </p>
-
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-      <h3 style="margin: 0 0 12px 0; color: #166534; font-size: 16px;">As a Consultant, you can:</h3>
-      <ul style="margin: 0; padding-left: 20px; color: #166534;">
-        <li>Access and manage this client's RevGuide content</li>
-        <li>Switch between multiple client portals seamlessly</li>
-        <li>Create and deploy reusable content libraries</li>
-        <li>Help clients optimize their HubSpot workflow</li>
-      </ul>
-    </div>
-
-    <div style="text-align: center; margin-bottom: 25px;">
-      <a href="${inviteLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-        Accept Consultant Invitation
-      </a>
-    </div>
-
-    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="margin: 0; font-size: 14px; color: #6b7280;">
-        <strong>Your Role:</strong> Consultant<br>
-        You'll have full editing access to help manage this organization's RevGuide content.
-      </p>
-    </div>
-
-    <p style="font-size: 13px; color: #9ca3af; margin-bottom: 0;">
-      This invitation expires in 7 days. Questions? Reply to this email.
-    </p>
-  </div>
-
-  <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-    RevGuide - Contextual guidance for your revenue team
-  </div>
-</body>
-</html>`;
-}
-
-function buildConsultantInvitationEmailText(token, orgName, inviterName = null) {
-  const inviteLink = `${CONFIG.appUrl}/invite?token=${encodeURIComponent(token)}&type=consultant`;
-  const orgDisplay = orgName || 'a RevGuide organization';
-  const inviterDisplay = inviterName ? `${inviterName} has invited you` : "You've been invited";
-
-  return `Consultant Access Invitation
-
-${inviterDisplay} to join ${orgDisplay} as a Consultant on RevGuide.
-
-As a Consultant, you can:
-- Access and manage this client's RevGuide content
-- Switch between multiple client portals seamlessly
-- Create and deploy reusable content libraries
-- Help clients optimize their HubSpot workflow
-
-Accept your invitation here:
-${inviteLink}
-
-Your Role: Consultant
-You'll have full editing access to help manage this organization's RevGuide content.
-
-This invitation expires in 7 days. Questions? Reply to this email.
-
----
-RevGuide - Contextual guidance for your revenue team`;
-}
-
-function buildAccessRequestNotificationEmailHtml(consultantName, consultantEmail, orgName, message) {
-  const reviewLink = `${CONFIG.appUrl}/settings#consultant-access`;
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">New Consultant Access Request</h1>
-  </div>
-
-  <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-    <p style="font-size: 16px; margin-bottom: 20px;">
-      <strong>${consultantName || 'A consultant'}</strong> (${consultantEmail}) is requesting consultant access to <strong>${orgName}</strong>.
+      <strong>${partnerName || 'A partner'}</strong> (${partnerEmail}) is requesting partner access to <strong>${orgName}</strong>.
     </p>
 
     ${message ? `
@@ -315,12 +231,12 @@ function buildAccessRequestNotificationEmailHtml(consultantName, consultantEmail
 </html>`;
 }
 
-function buildAccessRequestNotificationEmailText(consultantName, consultantEmail, orgName, message) {
-  const reviewLink = `${CONFIG.appUrl}/settings#consultant-access`;
+function buildAccessRequestNotificationEmailText(partnerName, partnerEmail, orgName, message) {
+  const reviewLink = `${CONFIG.appUrl}/settings#partner-access`;
 
-  return `New Consultant Access Request
+  return `New Partner Access Request
 
-${consultantName || 'A consultant'} (${consultantEmail}) is requesting consultant access to ${orgName}.
+${partnerName || 'A partner'} (${partnerEmail}) is requesting partner access to ${orgName}.
 
 ${message ? `Message: "${message}"\n` : ''}
 Review this request in your RevGuide settings:
@@ -333,7 +249,7 @@ RevGuide - Contextual guidance for your revenue team`;
 }
 
 function buildRequestApprovedEmailHtml(orgName) {
-  const dashboardLink = `${CONFIG.appUrl}/clients`;
+  const dashboardLink = `${CONFIG.appUrl}/partner`;
 
   return `
 <!DOCTYPE html>
@@ -349,16 +265,16 @@ function buildRequestApprovedEmailHtml(orgName) {
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      Great news! Your request for consultant access to <strong>${orgName}</strong> has been approved.
+      Great news! Your request for partner access to <strong>${orgName}</strong> has been approved.
     </p>
 
     <p style="margin-bottom: 25px;">
-      You can now access and manage their RevGuide content from your Clients dashboard.
+      You can now access and manage their RevGuide content from your Partner Dashboard.
     </p>
 
     <div style="text-align: center; margin-bottom: 25px;">
       <a href="${dashboardLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-        View Your Clients
+        View Partner Dashboard
       </a>
     </div>
   </div>
@@ -371,13 +287,13 @@ function buildRequestApprovedEmailHtml(orgName) {
 }
 
 function buildRequestApprovedEmailText(orgName) {
-  const dashboardLink = `${CONFIG.appUrl}/clients`;
+  const dashboardLink = `${CONFIG.appUrl}/partner`;
 
   return `Access Request Approved!
 
-Great news! Your request for consultant access to ${orgName} has been approved.
+Great news! Your request for partner access to ${orgName} has been approved.
 
-You can now access and manage their RevGuide content from your Clients dashboard:
+You can now access and manage their RevGuide content from your Partner Dashboard:
 ${dashboardLink}
 
 ---
@@ -399,7 +315,7 @@ function buildRequestDeclinedEmailHtml(orgName, reason) {
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      Your request for consultant access to <strong>${orgName}</strong> was not approved at this time.
+      Your request for partner access to <strong>${orgName}</strong> was not approved at this time.
     </p>
 
     ${reason ? `
@@ -425,7 +341,7 @@ function buildRequestDeclinedEmailHtml(orgName, reason) {
 function buildRequestDeclinedEmailText(orgName, reason) {
   return `Access Request Declined
 
-Your request for consultant access to ${orgName} was not approved at this time.
+Your request for partner access to ${orgName} was not approved at this time.
 
 ${reason ? `Reason: ${reason}\n` : ''}
 If you believe this was a mistake, please contact the organization directly.
@@ -434,8 +350,12 @@ If you believe this was a mistake, please contact the organization directly.
 RevGuide - Contextual guidance for your revenue team`;
 }
 
-function buildAutoConnectNotificationEmailHtml(orgName) {
-  const dashboardLink = `${CONFIG.appUrl}/clients`;
+// ===========================================
+// PARTNER JOINED NOTIFICATION (to admins)
+// ===========================================
+
+function buildPartnerJoinedEmailHtml(partnerName, partnerEmail, orgName) {
+  const settingsLink = `${CONFIG.appUrl}/settings`;
 
   return `
 <!DOCTYPE html>
@@ -445,22 +365,30 @@ function buildAutoConnectNotificationEmailHtml(orgName) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: #111827; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">New Client Added</h1>
+  <div style="background: #166534; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Partner Joined Your Organization</h1>
   </div>
 
   <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; margin-bottom: 20px;">
-      You've been added as a consultant to <strong>${orgName}</strong>.
+      Great news! <strong>${partnerName || partnerEmail}</strong> has accepted your invitation and joined <strong>${orgName}</strong> as a partner.
     </p>
 
-    <p style="margin-bottom: 25px;">
-      You can now access and manage their RevGuide content from your Clients dashboard.
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <h3 style="margin: 0 0 12px 0; color: #166534; font-size: 16px;">Partner Details</h3>
+      <p style="margin: 0; color: #166534; font-size: 14px;">
+        <strong>Name:</strong> ${partnerName || 'Not provided'}<br>
+        <strong>Email:</strong> ${partnerEmail}
+      </p>
+    </div>
+
+    <p style="margin-bottom: 25px; color: #6b7280;">
+      This partner now has access to view and manage your RevGuide content. You can manage team members and their roles in your settings.
     </p>
 
     <div style="text-align: center; margin-bottom: 25px;">
-      <a href="${dashboardLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-        View Your Clients
+      <a href="${settingsLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        View Team Members
       </a>
     </div>
   </div>
@@ -472,15 +400,19 @@ function buildAutoConnectNotificationEmailHtml(orgName) {
 </html>`;
 }
 
-function buildAutoConnectNotificationEmailText(orgName) {
-  const dashboardLink = `${CONFIG.appUrl}/clients`;
+function buildPartnerJoinedEmailText(partnerName, partnerEmail, orgName) {
+  const settingsLink = `${CONFIG.appUrl}/settings`;
 
-  return `New Client Added
+  return `Partner Joined Your Organization
 
-You've been added as a consultant to ${orgName}.
+Great news! ${partnerName || partnerEmail} has accepted your invitation and joined ${orgName} as a partner.
 
-You can now access and manage their RevGuide content from your Clients dashboard:
-${dashboardLink}
+Partner Details:
+- Name: ${partnerName || 'Not provided'}
+- Email: ${partnerEmail}
+
+This partner now has access to view and manage your RevGuide content. You can manage team members and their roles in your settings:
+${settingsLink}
 
 ---
 RevGuide - Contextual guidance for your revenue team`;
@@ -678,9 +610,9 @@ export default {
       return handleInvite(request, env, corsHeaders);
     }
 
-    // Route: POST /api/invite-consultant - Invite a consultant (with auto-connect check)
+    // Route: POST /api/invite-consultant - Legacy endpoint (maps to partner)
     if (url.pathname === '/api/invite-consultant') {
-      return handleInviteConsultant(request, env, corsHeaders);
+      return handleInvitePartner(request, env, corsHeaders);
     }
 
     // Route: POST /api/notify-access-request - Notify admins of access request
@@ -688,19 +620,24 @@ export default {
       return handleNotifyAccessRequest(request, env, corsHeaders);
     }
 
-    // Route: POST /api/notify-request-approved - Notify consultant of approval
+    // Route: POST /api/notify-request-approved - Notify partner of approval
     if (url.pathname === '/api/notify-request-approved') {
       return handleNotifyRequestApproved(request, env, corsHeaders);
     }
 
-    // Route: POST /api/notify-request-declined - Notify consultant of decline
+    // Route: POST /api/notify-request-declined - Notify partner of decline
     if (url.pathname === '/api/notify-request-declined') {
       return handleNotifyRequestDeclined(request, env, corsHeaders);
     }
 
-    // Route: POST /api/notify-auto-connect - Notify consultant of auto-connection
+    // Route: POST /api/notify-auto-connect - Legacy endpoint (maps to partner auto-connect)
     if (url.pathname === '/api/notify-auto-connect') {
-      return handleNotifyAutoConnect(request, env, corsHeaders);
+      return handleNotifyPartnerAutoConnect(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/notify-partner-joined - Notify admins when partner accepts invitation
+    if (url.pathname === '/api/notify-partner-joined') {
+      return handleNotifyPartnerJoined(request, env, corsHeaders);
     }
 
     // Route: POST /api/signup-invited - Create user for invited users (skips email confirmation)
@@ -756,10 +693,10 @@ async function handleInvite(request, env, corsHeaders) {
       });
     }
 
-    // Accept valid roles
-    const validRoles = ['viewer', 'editor', 'admin', 'consultant', 'partner'];
+    // Accept valid roles (consultant maps to partner for backward compatibility)
+    const validRoles = ['viewer', 'editor', 'admin', 'partner', 'consultant'];
     if (!role || !validRoles.includes(role)) {
-      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", "admin", "consultant", or "partner"' }), {
+      return new Response(JSON.stringify({ error: 'Role must be "viewer", "editor", "admin", or "partner"' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1053,88 +990,18 @@ async function handleSignupInvited(request, env, corsHeaders) {
 }
 
 // ===========================================
-// CONSULTANT INVITATION HANDLERS
+// PARTNER ACCESS REQUEST HANDLERS
 // ===========================================
-
-async function handleInviteConsultant(request, env, corsHeaders) {
-  try {
-    const body = await request.json();
-    const { email, token, orgName, invitationType } = body;
-
-    if (!email || !isValidEmail(email)) {
-      return new Response(JSON.stringify({ error: 'Valid email is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    if (!token) {
-      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const apiKey = env.RESEND_API_KEY;
-    if (!apiKey) {
-      console.error('RESEND_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Send consultant invitation email
-    const resendResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: CONFIG.fromEmail,
-        to: [email],
-        subject: orgName ? `Consultant access invitation from ${orgName}` : 'Consultant Access Invitation - RevGuide',
-        html: buildConsultantInvitationEmailHtml(token, orgName),
-        text: buildConsultantInvitationEmailText(token, orgName)
-      })
-    });
-
-    if (!resendResponse.ok) {
-      const errorData = await resendResponse.json().catch(() => ({}));
-      console.error('Resend error:', errorData);
-      return new Response(JSON.stringify({
-        error: errorData.message || 'Failed to send email'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const result = await resendResponse.json();
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Consultant invitation sent',
-      id: result.id
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    console.error('Invite consultant error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-}
 
 async function handleNotifyAccessRequest(request, env, corsHeaders) {
   try {
     const body = await request.json();
-    const { adminEmails, consultantName, consultantEmail, orgName, message } = body;
+    // Support both old (consultantName/consultantEmail) and new (partnerName/partnerEmail) field names
+    const adminEmails = body.adminEmails;
+    const partnerName = body.partnerName || body.consultantName;
+    const partnerEmail = body.partnerEmail || body.consultantEmail;
+    const orgName = body.orgName;
+    const message = body.message;
 
     if (!adminEmails || !Array.isArray(adminEmails) || adminEmails.length === 0) {
       return new Response(JSON.stringify({ error: 'Admin emails are required' }), {
@@ -1143,8 +1010,8 @@ async function handleNotifyAccessRequest(request, env, corsHeaders) {
       });
     }
 
-    if (!consultantEmail) {
-      return new Response(JSON.stringify({ error: 'Consultant email is required' }), {
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1168,9 +1035,9 @@ async function handleNotifyAccessRequest(request, env, corsHeaders) {
       body: JSON.stringify({
         from: CONFIG.fromEmail,
         to: adminEmails,
-        subject: `New consultant access request for ${orgName || 'your organization'}`,
-        html: buildAccessRequestNotificationEmailHtml(consultantName, consultantEmail, orgName, message),
-        text: buildAccessRequestNotificationEmailText(consultantName, consultantEmail, orgName, message)
+        subject: `New partner access request for ${orgName || 'your organization'}`,
+        html: buildAccessRequestNotificationEmailHtml(partnerName, partnerEmail, orgName, message),
+        text: buildAccessRequestNotificationEmailText(partnerName, partnerEmail, orgName, message)
       })
     });
 
@@ -1208,10 +1075,12 @@ async function handleNotifyAccessRequest(request, env, corsHeaders) {
 async function handleNotifyRequestApproved(request, env, corsHeaders) {
   try {
     const body = await request.json();
-    const { consultantEmail, orgName } = body;
+    // Support both old (consultantEmail) and new (partnerEmail) field names
+    const partnerEmail = body.partnerEmail || body.consultantEmail;
+    const orgName = body.orgName;
 
-    if (!consultantEmail) {
-      return new Response(JSON.stringify({ error: 'Consultant email is required' }), {
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1233,7 +1102,7 @@ async function handleNotifyRequestApproved(request, env, corsHeaders) {
       },
       body: JSON.stringify({
         from: CONFIG.fromEmail,
-        to: [consultantEmail],
+        to: [partnerEmail],
         subject: `Your access request to ${orgName || 'an organization'} was approved!`,
         html: buildRequestApprovedEmailHtml(orgName),
         text: buildRequestApprovedEmailText(orgName)
@@ -1274,10 +1143,13 @@ async function handleNotifyRequestApproved(request, env, corsHeaders) {
 async function handleNotifyRequestDeclined(request, env, corsHeaders) {
   try {
     const body = await request.json();
-    const { consultantEmail, orgName, reason } = body;
+    // Support both old (consultantEmail) and new (partnerEmail) field names
+    const partnerEmail = body.partnerEmail || body.consultantEmail;
+    const orgName = body.orgName;
+    const reason = body.reason;
 
-    if (!consultantEmail) {
-      return new Response(JSON.stringify({ error: 'Consultant email is required' }), {
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1299,7 +1171,7 @@ async function handleNotifyRequestDeclined(request, env, corsHeaders) {
       },
       body: JSON.stringify({
         from: CONFIG.fromEmail,
-        to: [consultantEmail],
+        to: [partnerEmail],
         subject: `Your access request to ${orgName || 'an organization'} was declined`,
         html: buildRequestDeclinedEmailHtml(orgName, reason),
         text: buildRequestDeclinedEmailText(orgName, reason)
@@ -1337,13 +1209,20 @@ async function handleNotifyRequestDeclined(request, env, corsHeaders) {
   }
 }
 
-async function handleNotifyAutoConnect(request, env, corsHeaders) {
+async function handleNotifyPartnerJoined(request, env, corsHeaders) {
   try {
     const body = await request.json();
-    const { consultantEmail, orgName } = body;
+    const { adminEmails, partnerName, partnerEmail, orgName } = body;
 
-    if (!consultantEmail) {
-      return new Response(JSON.stringify({ error: 'Consultant email is required' }), {
+    if (!adminEmails || !Array.isArray(adminEmails) || adminEmails.length === 0) {
+      return new Response(JSON.stringify({ error: 'Admin emails are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -1357,6 +1236,7 @@ async function handleNotifyAutoConnect(request, env, corsHeaders) {
       });
     }
 
+    // Send notification to all admins
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -1365,10 +1245,10 @@ async function handleNotifyAutoConnect(request, env, corsHeaders) {
       },
       body: JSON.stringify({
         from: CONFIG.fromEmail,
-        to: [consultantEmail],
-        subject: `You've been added as a consultant to ${orgName || 'a new organization'}`,
-        html: buildAutoConnectNotificationEmailHtml(orgName),
-        text: buildAutoConnectNotificationEmailText(orgName)
+        to: adminEmails,
+        subject: `${partnerName || partnerEmail} joined ${orgName || 'your organization'} as a partner`,
+        html: buildPartnerJoinedEmailHtml(partnerName, partnerEmail, orgName),
+        text: buildPartnerJoinedEmailText(partnerName, partnerEmail, orgName)
       })
     });
 
@@ -1387,7 +1267,7 @@ async function handleNotifyAutoConnect(request, env, corsHeaders) {
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Auto-connect notification sent',
+      message: 'Partner joined notification sent',
       id: result.id
     }), {
       status: 200,
@@ -1395,7 +1275,7 @@ async function handleNotifyAutoConnect(request, env, corsHeaders) {
     });
 
   } catch (error) {
-    console.error('Notify auto-connect error:', error);
+    console.error('Notify partner joined error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

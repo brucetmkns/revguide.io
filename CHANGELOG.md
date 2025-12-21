@@ -2,6 +2,45 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.2.0] - 2025-12-21 - Consultant to Partner Terminology Rename
+
+### Changed
+- **Terminology Update**: Renamed all "Consultant" terminology to "Partner" throughout the codebase
+  - User-facing labels, email templates, UI text
+  - Database tables: `consultant_libraries` → `partner_libraries`, `consultant_access_requests` → `partner_access_requests`
+  - Database columns: `consultant_user_id` → `partner_user_id`
+  - Role values: `'consultant'` → `'partner'` in all tables
+  - JavaScript variables/functions updated to use partner terminology
+  - CSS classes renamed (`.consultant-*` → `.partner-*`)
+
+### Added
+- **Partner Joined Notification**: Admins now receive an email when an invited partner accepts and joins the organization
+  - New API endpoint: `POST /api/notify-partner-joined`
+  - Email includes partner name, email, and link to team settings
+  - `getOrganizationAdmins()` helper function for fetching admin emails
+
+### Technical
+- **Database Migration**: `023_rename_consultant_to_partner.sql`
+  - Renames tables and columns
+  - Migrates role values from 'consultant' to 'partner'
+  - Updates CHECK constraints to only allow 'partner' (removes 'consultant')
+  - Creates new RPC functions with partner naming
+  - Updates RLS policies for renamed tables
+
+- **Files Modified**:
+  - `admin/supabase.js` - Table references, function logic
+  - `admin/shared.js` - `isConsultantUser` → `isPartnerUser`, `isConsultant()` → `isPartner()`
+  - `admin/pages/invite.js` - Invitation flow, partner joined notification
+  - `admin/pages/settings.js` - Access request handling with partner fields
+  - `admin/pages/partner-home.js` - Updated variable references
+  - `api/invite-worker.js` - Email templates, API handlers (with backward compatibility)
+  - `admin/pages/invite.html`, `settings.html` - CSS class updates
+  - `admin/shared.css` - Role indicator classes
+  - `website/styles-v3.css`, `index-v3.html`, `script-v3.js` - Website partner section
+  - `docs/AI_CONTEXT.md`, `docs/ARCHITECTURE.md` - Documentation updates
+
+---
+
 ## [2.1.0] - 2025-12-21 - Org-Aware URLs & Extension Auto-Match
 
 ### Added

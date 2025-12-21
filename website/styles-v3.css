@@ -1,6 +1,6 @@
 /* ============================================
    RevGuide V3 - Executive Premium Design
-   For Revenue Leaders & HubSpot Consultants
+   For Revenue Leaders & HubSpot Partners
    ============================================ */
 
 :root {
@@ -1066,42 +1066,42 @@ ul, ol { list-style: none; }
 }
 
 /* ----------------------------------------
-   Consultants Section
+   Partners Section
    ---------------------------------------- */
-.consultants {
+.partners {
   padding: var(--s-24) 0;
   background: var(--paper);
 }
 
-.consultant-grid {
+.partner-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--s-16);
   align-items: center;
 }
 
-.consultant-content h2 {
+.partner-content h2 {
   font-size: clamp(1.75rem, 3vw, 2.25rem);
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: var(--s-4);
 }
 
-.consultant-lead {
+.partner-lead {
   font-size: 1.05rem;
   color: var(--charcoal);
   line-height: 1.7;
   margin-bottom: var(--s-8);
 }
 
-.consultant-features {
+.partner-features {
   display: flex;
   flex-direction: column;
   gap: var(--s-6);
   margin-bottom: var(--s-8);
 }
 
-.consultant-feature {
+.partner-feature {
   display: flex;
   gap: var(--s-4);
 }
@@ -1136,7 +1136,7 @@ ul, ol { list-style: none; }
 }
 
 /* Partner Preview */
-.consultant-visual {
+.partner-visual {
   display: flex;
   justify-content: center;
 }
@@ -1619,7 +1619,7 @@ ul, ol { list-style: none; }
     direction: ltr;
   }
 
-  .consultant-grid {
+  .partner-grid {
     grid-template-columns: 1fr;
     gap: var(--s-12);
   }

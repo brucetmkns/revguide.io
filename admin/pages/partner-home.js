@@ -79,12 +79,12 @@ class PartnerHomePage {
     if (typeof RevGuideDB === 'undefined') return false;
 
     try {
-      // Check if user is a partner or consultant
+      // Check if user is a partner
       const isPartner = await RevGuideDB.isPartner();
-      const isConsultant = AdminShared.isConsultantUser;
+      const isPartnerUser = AdminShared.isPartnerUser;
       const hasMultipleOrgs = AdminShared.userOrganizations?.length > 1;
 
-      return isPartner || isConsultant || hasMultipleOrgs;
+      return isPartner || isPartnerUser || hasMultipleOrgs;
     } catch (error) {
       console.error('Error checking partner status:', error);
       return false;
