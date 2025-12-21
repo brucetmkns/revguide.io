@@ -4,9 +4,16 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.3.0 (Google & Microsoft SSO)
+## Current State: v2.4.0 (Shareable Invite Links)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, **Google and Microsoft SSO for passwordless authentication**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, **shareable invite links for team onboarding**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+
+### Shareable Invite Links (v2.4.0)
+- **Create Invite Links**: Admins/Partners can create reusable links from Settings > Team Members
+- **Configurable Limits**: Links have max signup limit (default: 10) and 7-day expiry
+- **Public Join Page**: `/join/:code` page for self-service signups
+- **Auto-join as Viewer**: New users automatically join the organization with Viewer role
+- **Link Management**: Copy, view usage stats, and revoke links from settings
 
 ### SSO Authentication (v2.3.0)
 - **Google SSO**: One-click sign-in with Google accounts
