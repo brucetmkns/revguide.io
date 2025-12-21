@@ -20,17 +20,27 @@ let orgsLoadedThisSession = false; // Track if we've loaded orgs this session
 // ============ ORG-AWARE URL HANDLING ============
 
 /**
- * UUID regex pattern for org-prefixed URLs
+ * Short org ID pattern (first 8 chars of UUID) for org-prefixed URLs
+ * Example: /a1b2c3d4/banners
  */
-const UUID_PATTERN = /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/|$)/i;
+const SHORT_ORG_ID_PATTERN = /^\/([0-9a-f]{8})(?:\/|$)/i;
 
 /**
- * Extract org ID from URL path if present
- * @returns {string|null} The org UUID or null if not in URL
+ * Extract short org ID from URL path if present
+ * @returns {string|null} The 8-char org ID prefix or null if not in URL
  */
 function getOrgIdFromUrl() {
-  const match = window.location.pathname.match(UUID_PATTERN);
+  const match = window.location.pathname.match(SHORT_ORG_ID_PATTERN);
   return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Get the short org ID (first 8 chars) from a full UUID
+ * @param {string} fullId - Full UUID
+ * @returns {string} First 8 characters
+ */
+function getShortOrgId(fullId) {
+  return fullId ? fullId.substring(0, 8).toLowerCase() : '';
 }
 
 /**
@@ -71,13 +81,15 @@ function isOrgAwarePath(path) {
 
 /**
  * Build an org-aware URL for navigation
+ * Uses short org ID (first 8 chars of UUID) for cleaner URLs
  * @param {string} path - The path to navigate to (e.g., "/banners")
  * @returns {string} The org-prefixed path if org is available and path supports it
  */
 function buildOrgAwareUrl(path) {
   const orgId = currentOrganization?.id;
   if (orgId && isOrgAwarePath(path)) {
-    return `/${orgId}${path}`;
+    const shortId = getShortOrgId(orgId);
+    return `/${shortId}${path}`;
   }
   return path;
 }
@@ -85,24 +97,25 @@ function buildOrgAwareUrl(path) {
 /**
  * Handle URL-based org switching
  * Called after user orgs are loaded to check if URL specifies a different org
+ * Matches using short org ID (first 8 chars of UUID)
  * @returns {Promise<boolean>} True if org was switched, false otherwise
  */
 async function handleUrlOrgSwitch() {
-  const urlOrgId = getOrgIdFromUrl();
+  const urlShortId = getOrgIdFromUrl();
 
   // No org in URL - nothing to do
-  if (!urlOrgId) {
+  if (!urlShortId) {
     return false;
   }
 
-  // Already on the correct org
-  if (currentOrganization?.id?.toLowerCase() === urlOrgId) {
+  // Already on the correct org (compare short IDs)
+  if (getShortOrgId(currentOrganization?.id) === urlShortId) {
     return false;
   }
 
-  // Find matching org in user's organizations
+  // Find matching org in user's organizations (by short ID prefix)
   const matchingOrg = userOrganizations.find(
-    org => org.organization_id?.toLowerCase() === urlOrgId
+    org => getShortOrgId(org.organization_id) === urlShortId
   );
 
   if (matchingOrg) {
@@ -130,7 +143,7 @@ async function handleUrlOrgSwitch() {
     return true;
   } else {
     // User doesn't have access to this org
-    console.warn('[Auth] User does not have access to org:', urlOrgId);
+    console.warn('[Auth] User does not have access to org:', urlShortId);
     showToast('You do not have access to this organization', 'error');
 
     // Redirect to home without org prefix
@@ -749,8 +762,9 @@ async function switchPortal(organizationId) {
     let newUrl;
 
     if (isOrgAwarePath(currentPath)) {
-      // Content pages get org prefix
-      newUrl = `/${organizationId}${currentPath}`;
+      // Content pages get short org prefix (first 8 chars)
+      const shortId = getShortOrgId(organizationId);
+      newUrl = `/${shortId}${currentPath}`;
     } else {
       // Non-org pages (partner, settings, etc.) just reload
       newUrl = currentPath;
@@ -2184,6 +2198,7 @@ window.AdminShared = {
   getUserRole,
   // Org-aware URLs
   getOrgIdFromUrl,
+  getShortOrgId,
   getCurrentPagePath,
   buildOrgAwareUrl,
   isOrgAwarePath,
