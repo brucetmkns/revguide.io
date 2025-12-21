@@ -2,6 +2,21 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.1] - 2025-12-21 - Partner Display Fix
+
+### Fixed
+- **Team Members table**: Partner users now display name/email correctly after accepting access request
+  - Root cause: RLS policy on `users` table only allowed viewing own record, blocking the join when fetching partner data
+  - Added `can_view_user()` helper function to check org membership
+  - New policy allows viewing users who are members of your organization
+
+### Technical
+- **Files Modified**:
+  - `supabase/migrations/022_fix_users_org_visibility.sql` - New migration adding org-based user visibility
+  - `admin/supabase.js` - Added null check filter in `getTeamMembers()` partner transformation
+
+---
+
 ## [2.0.0] - 2025-12-21 - Remove Nango, Direct HubSpot OAuth
 
 ### Changed

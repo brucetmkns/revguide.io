@@ -479,7 +479,7 @@ const RevGuideDB = {
       .from('organization_members')
       .select('user_id, role, joined_at, users(id, name, email, auth_user_id, created_at)')
       .eq('organization_id', orgId)
-      .in('role', ['consultant', 'partner']);
+      .in('role', ['partner']);
 
     if (partnerError) {
       console.warn('[getTeamMembers] Error fetching partners:', partnerError);
@@ -488,12 +488,20 @@ const RevGuideDB = {
     }
 
     // Transform partner data to match regular member format
-    const transformedPartners = (partnerMembers || []).map(pm => ({
-      ...pm.users,
-      role: 'partner', // Normalize consultant to partner
-      joined_at: pm.joined_at,
-      is_partner: true // Flag to identify partners
-    }));
+    const transformedPartners = (partnerMembers || [])
+      .filter(pm => {
+        if (!pm.users) {
+          console.warn('[getTeamMembers] Partner member missing user data:', pm.user_id);
+          return false;
+        }
+        return true;
+      })
+      .map(pm => ({
+        ...pm.users,
+        role: 'partner',
+        joined_at: pm.joined_at,
+        is_partner: true // Flag to identify partners
+      }));
 
     // Filter out duplicates (in case someone is both a regular member and partner)
     const regularIds = new Set((regularMembers || []).map(m => m.id));
@@ -612,12 +620,12 @@ const RevGuideDB = {
     // Determine the name to use: provided fullName > metadata > email prefix
     const userName = fullName || user.user_metadata?.full_name || user.email.split('@')[0];
 
-    // Check if this is a consultant invitation
-    const isConsultantInvitation = invitation.invitation_type === 'consultant' || invitation.role === 'consultant';
+    // Check if this is a partner invitation
+    const isPartnerInvitation = invitation.invitation_type === 'partner' || invitation.role === 'partner';
 
-    if (isConsultantInvitation) {
-      // CONSULTANT INVITATION FLOW
-      // Add user to organization_members with consultant role (don't change their primary org)
+    if (isPartnerInvitation) {
+      // PARTNER INVITATION FLOW
+      // Add user to organization_members with partner role (don't change their primary org)
 
       let userProfile = existingProfile;
 
@@ -638,19 +646,19 @@ const RevGuideDB = {
         userProfile = data;
       }
 
-      // Add to organization_members as consultant
+      // Add to organization_members as partner
       const { error: memberError } = await client
         .from('organization_members')
         .upsert({
           user_id: userProfile.id,
           organization_id: invitation.organization_id,
-          role: 'consultant'
+          role: 'partner'
         }, {
           onConflict: 'user_id,organization_id'
         });
 
       if (memberError) {
-        console.error('Failed to add consultant to organization_members:', memberError);
+        console.error('Failed to add partner to organization_members:', memberError);
         return { error: memberError };
       }
 
@@ -976,7 +984,7 @@ const RevGuideDB = {
   },
 
   // ============================================
-  // Multi-Portal Support (Consultant Feature)
+  // Multi-Portal Support (Partner Feature)
   // ============================================
 
   /**
@@ -1044,7 +1052,8 @@ const RevGuideDB = {
   },
 
   /**
-   * Check if current user is a consultant (can manage multiple portals)
+   * Check if current user is a partner (can manage multiple portals)
+   * Note: Calls user_is_consultant RPC for backward compatibility (it checks partner role)
    * @returns {Promise<boolean>}
    */
   async isConsultant() {
@@ -1052,6 +1061,7 @@ const RevGuideDB = {
     const { data: { user } } = await client.auth.getUser();
     if (!user) return false;
 
+    // user_is_consultant now checks for partner role internally
     const { data } = await client.rpc('user_is_consultant', { p_auth_uid: user.id });
     return data === true;
   },
@@ -1079,11 +1089,11 @@ const RevGuideDB = {
   },
 
   /**
-   * Add user to an organization (for consultants adding themselves to client portals)
+   * Add user to an organization (for partners adding themselves to client portals)
    * @param {string} organizationId - The organization to join
-   * @param {string} role - The role to have in that org (default: consultant)
+   * @param {string} role - The role to have in that org (default: partner)
    */
-  async joinOrganization(organizationId, role = 'consultant') {
+  async joinOrganization(organizationId, role = 'partner') {
     const client = await RevGuideAuth.waitForClient();
     const { data: profile } = await this.getUserProfile();
 
@@ -1123,7 +1133,7 @@ const RevGuideDB = {
   },
 
   // ============================================
-  // Consultant Libraries
+  // Partner Libraries
   // ============================================
 
   /**
@@ -1136,7 +1146,7 @@ const RevGuideDB = {
     if (!profile) return { data: [], error: new Error('Not authenticated') };
 
     return client
-      .from('consultant_libraries')
+      .from('partner_libraries')
       .select('*')
       .eq('owner_id', profile.id)
       .order('updated_at', { ascending: false });
@@ -1153,7 +1163,7 @@ const RevGuideDB = {
     if (!profile) return { error: new Error('Not authenticated') };
 
     return client
-      .from('consultant_libraries')
+      .from('partner_libraries')
       .insert({
         owner_id: profile.id,
         name: library.name,
@@ -1177,7 +1187,7 @@ const RevGuideDB = {
     // Get current library to bump version
     if (bumpVersion) {
       const { data: current } = await client
-        .from('consultant_libraries')
+        .from('partner_libraries')
         .select('version')
         .eq('id', libraryId)
         .single();
@@ -1191,7 +1201,7 @@ const RevGuideDB = {
     updates.updated_at = new Date().toISOString();
 
     return client
-      .from('consultant_libraries')
+      .from('partner_libraries')
       .update(updates)
       .eq('id', libraryId)
       .select()
@@ -1206,7 +1216,7 @@ const RevGuideDB = {
     const client = await RevGuideAuth.waitForClient();
 
     return client
-      .from('consultant_libraries')
+      .from('partner_libraries')
       .delete()
       .eq('id', libraryId);
   },
@@ -1223,7 +1233,7 @@ const RevGuideDB = {
 
     return client
       .from('library_installations')
-      .select('*, consultant_libraries(name, version, description)')
+      .select('*, partner_libraries(name, version, description)')
       .eq('organization_id', orgId)
       .order('installed_at', { ascending: false });
   },
@@ -1243,7 +1253,7 @@ const RevGuideDB = {
 
     // Get the library content
     const { data: library, error: libError } = await client
-      .from('consultant_libraries')
+      .from('partner_libraries')
       .select('*')
       .eq('id', libraryId)
       .single();
@@ -1325,20 +1335,20 @@ const RevGuideDB = {
 
     const { data: installations } = await client
       .from('library_installations')
-      .select('*, consultant_libraries(id, name, version, updated_at)')
+      .select('*, partner_libraries(id, name, version, updated_at)')
       .eq('organization_id', orgId);
 
     if (!installations) return { data: [], error: null };
 
     // Find libraries with newer versions
     const updates = installations
-      .filter(inst => inst.consultant_libraries &&
-        inst.consultant_libraries.version !== inst.installed_version)
+      .filter(inst => inst.partner_libraries &&
+        inst.partner_libraries.version !== inst.installed_version)
       .map(inst => ({
         libraryId: inst.library_id,
-        libraryName: inst.consultant_libraries.name,
+        libraryName: inst.partner_libraries.name,
         installedVersion: inst.installed_version,
-        availableVersion: inst.consultant_libraries.version,
+        availableVersion: inst.partner_libraries.version,
         installedAt: inst.installed_at
       }));
 
@@ -1346,13 +1356,13 @@ const RevGuideDB = {
   },
 
   // ============================================
-  // Consultant Invitations & Access Requests
+  // Partner Invitations & Access Requests
   // ============================================
 
   /**
-   * Check if a user exists by email and if they're a consultant
+   * Check if a user exists by email and if they're a partner
    * @param {string} email - Email to check
-   * @returns {Promise<{data: {user_id, is_consultant, has_account}, error}>}
+   * @returns {Promise<{data: {user_id, is_partner, has_account}, error}>}
    */
   async checkUserByEmail(email) {
     const client = await RevGuideAuth.waitForClient();
@@ -1361,8 +1371,8 @@ const RevGuideDB = {
   },
 
   /**
-   * Create a consultant invitation (checks for auto-connect first)
-   * @param {string} email - Consultant's email
+   * Create a partner invitation (checks for auto-connect first)
+   * @param {string} email - Partner's email
    * @param {string} organizationId - Optional, uses active org if not provided
    * @returns {Promise<{data: {autoConnected: boolean, invitation?}, error}>}
    */
@@ -1376,11 +1386,11 @@ const RevGuideDB = {
     // Normalize email to lowercase for consistent matching
     const normalizedEmail = email.toLowerCase();
 
-    // Check if user already exists and is a consultant
+    // Check if user already exists and is a partner
     const { data: existingUser } = await this.checkUserByEmail(normalizedEmail);
 
-    if (existingUser && existingUser.is_consultant) {
-      // Auto-connect existing consultant
+    if (existingUser && (existingUser.is_partner || existingUser.is_consultant)) {
+      // Auto-connect existing partner
       const { data: success } = await client.rpc('auto_connect_consultant', {
         p_user_id: existingUser.user_id,
         p_organization_id: orgId
@@ -1393,28 +1403,28 @@ const RevGuideDB = {
           .insert({
             organization_id: orgId,
             email: normalizedEmail,
-            role: 'consultant',
-            invitation_type: 'consultant',
+            role: 'partner',
+            invitation_type: 'partner',
             invited_by: profile?.id,
             auto_accepted: true,
             accepted_at: new Date().toISOString()
           });
 
         return {
-          data: { autoConnected: true, consultantName: existingUser.user_name },
+          data: { autoConnected: true, partnerName: existingUser.user_name },
           error: null
         };
       }
     }
 
-    // Create a new consultant invitation
+    // Create a new partner invitation
     const { data: invitation, error } = await client
       .from('invitations')
       .insert({
         organization_id: orgId,
         email: normalizedEmail,
-        role: 'consultant',
-        invitation_type: 'consultant',
+        role: 'partner',
+        invitation_type: 'partner',
         invited_by: profile?.id
       })
       .select()
@@ -1427,7 +1437,7 @@ const RevGuideDB = {
   },
 
   /**
-   * Get consultant invitations for current organization
+   * Get partner invitations for current organization
    */
   async getConsultantInvitations() {
     const client = await RevGuideAuth.waitForClient();
@@ -1438,13 +1448,13 @@ const RevGuideDB = {
       .from('invitations')
       .select('*')
       .eq('organization_id', orgId)
-      .eq('invitation_type', 'consultant')
+      .eq('invitation_type', 'partner')
       .is('accepted_at', null)
       .order('created_at', { ascending: false });
   },
 
   /**
-   * Create an access request (consultant requesting access to an org)
+   * Create an access request (partner requesting access to an org)
    * @param {string} organizationId - The org to request access to
    * @param {string} message - Optional message explaining the request
    */
@@ -1455,9 +1465,9 @@ const RevGuideDB = {
     if (!profile) return { error: new Error('Not authenticated') };
 
     return client
-      .from('consultant_access_requests')
+      .from('partner_access_requests')
       .insert({
-        consultant_user_id: profile.id,
+        partner_user_id: profile.id,
         organization_id: organizationId,
         message: message || null
       })
@@ -1478,7 +1488,7 @@ const RevGuideDB = {
   },
 
   /**
-   * Approve an access request (adds consultant to org)
+   * Approve an access request (adds partner to org)
    * @param {string} requestId - The request ID to approve
    */
   async approveAccessRequest(requestId) {
@@ -1516,7 +1526,7 @@ const RevGuideDB = {
   },
 
   /**
-   * Search organizations for consultant to request access
+   * Search organizations for partner to request access
    * @param {string} query - Search term
    */
   async searchOrganizations(query) {
@@ -1525,7 +1535,7 @@ const RevGuideDB = {
 
     if (!user) return { data: [], error: new Error('Not authenticated') };
 
-    const { data, error } = await client.rpc('search_organizations_for_consultant', {
+    const { data, error } = await client.rpc('search_organizations_for_partner', {
       p_auth_uid: user.id,
       p_query: query
     });
@@ -1534,7 +1544,7 @@ const RevGuideDB = {
   },
 
   /**
-   * Get consultant's own access requests (for their dashboard)
+   * Get partner's own access requests (for their dashboard)
    */
   async getMyAccessRequests() {
     const client = await RevGuideAuth.waitForClient();
@@ -1542,7 +1552,7 @@ const RevGuideDB = {
 
     if (!user) return { data: [], error: new Error('Not authenticated') };
 
-    const { data, error } = await client.rpc('get_consultant_access_requests', {
+    const { data, error } = await client.rpc('get_partner_access_requests', {
       p_auth_uid: user.id
     });
 
@@ -1557,7 +1567,7 @@ const RevGuideDB = {
     const client = await RevGuideAuth.waitForClient();
 
     return client
-      .from('consultant_access_requests')
+      .from('partner_access_requests')
       .update({ status: 'cancelled' })
       .eq('id', requestId)
       .select()
