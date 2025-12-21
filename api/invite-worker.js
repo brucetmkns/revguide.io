@@ -723,6 +723,11 @@ export default {
       return handleSignupPartner(request, env, corsHeaders);
     }
 
+    // Route: POST /api/signup-invite-link - Create user from shareable invite link
+    if (url.pathname === '/api/signup-invite-link') {
+      return handleSignupInviteLink(request, env, corsHeaders);
+    }
+
     // Route: POST /api/invite-partner - Send partner invitation email
     if (url.pathname === '/api/invite-partner') {
       return handleInvitePartner(request, env, corsHeaders);
@@ -1055,6 +1060,205 @@ async function handleSignupInvited(request, env, corsHeaders) {
 
   } catch (error) {
     console.error('Signup error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// SIGNUP VIA INVITE LINK
+// ===========================================
+
+async function handleSignupInviteLink(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { email, password, fullName, inviteCode } = body;
+
+    // Validate input
+    if (!email || !isValidEmail(email)) {
+      return new Response(JSON.stringify({ error: 'Valid email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!fullName || fullName.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Name is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!inviteCode) {
+      return new Response(JSON.stringify({ error: 'Invite code is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 1. Validate invite link (before creating user)
+    const validateResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/rpc/get_invite_link_by_code`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_code: inviteCode })
+      }
+    );
+
+    if (!validateResponse.ok) {
+      console.error('Failed to validate invite link:', await validateResponse.text());
+      return new Response(JSON.stringify({ error: 'Failed to validate invite link' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const linkData = await validateResponse.json();
+    if (!linkData || linkData.length === 0 || !linkData[0].is_valid) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired invite link' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const inviteLink = linkData[0];
+
+    // 2. Create auth user with email_confirm = true (skips email verification)
+    const createUserResponse = await fetch(
+      `${CONFIG.supabaseUrl}/auth/v1/admin/users`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          email_confirm: true,
+          user_metadata: { full_name: fullName }
+        })
+      }
+    );
+
+    if (!createUserResponse.ok) {
+      const errorData = await createUserResponse.json().catch(() => ({}));
+      console.error('Failed to create user:', errorData);
+
+      if (errorData.message?.includes('already been registered') || errorData.msg?.includes('already been registered')) {
+        return new Response(JSON.stringify({
+          error: 'An account with this email already exists. Please sign in instead.',
+          code: 'USER_EXISTS'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({ error: errorData.message || 'Failed to create account' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const authUser = await createUserResponse.json();
+
+    // 3. Create user profile in users table
+    const profilePayload = {
+      auth_user_id: authUser.id,
+      email: email.toLowerCase(),
+      name: fullName,
+      organization_id: inviteLink.organization_id,
+      role: inviteLink.role // 'viewer'
+    };
+
+    const createProfileResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/users`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(profilePayload)
+      }
+    );
+
+    if (!createProfileResponse.ok) {
+      const errorData = await createProfileResponse.json().catch(() => ({}));
+      console.error('Failed to create user profile:', JSON.stringify(errorData));
+      return new Response(JSON.stringify({
+        error: 'Failed to create user profile',
+        authUserCreated: true
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const userProfile = await createProfileResponse.json();
+    const userId = Array.isArray(userProfile) ? userProfile[0].id : userProfile.id;
+
+    // 4. Consume the invite link (increment counter and record signup)
+    const consumeResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/rpc/consume_invite_link`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_code: inviteCode,
+          p_user_id: userId
+        })
+      }
+    );
+
+    if (!consumeResponse.ok) {
+      console.error('Failed to consume invite link:', await consumeResponse.text());
+      // Don't fail - user is already created
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Account created successfully',
+      user: { id: authUser.id, email: authUser.email },
+      organization: { id: inviteLink.organization_id, name: inviteLink.organization_name }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Signup invite link error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -184,9 +184,19 @@ class SidePanel {
   }
 
   setupAuthHandlers() {
-    // Login button in logged out state
+    // Login button in logged out state (email login)
     document.getElementById('loginBtn')?.addEventListener('click', () => {
       this.openLoginPage();
+    });
+
+    // Google SSO button
+    document.getElementById('googleSsoBtn')?.addEventListener('click', () => {
+      this.openLoginPage('google');
+    });
+
+    // Microsoft SSO button
+    document.getElementById('microsoftSsoBtn')?.addEventListener('click', () => {
+      this.openLoginPage('azure');
     });
 
     // Signup link
@@ -196,11 +206,16 @@ class SidePanel {
     });
   }
 
-  openLoginPage() {
+  openLoginPage(provider = null) {
     // Get extension ID and construct login URL with callback
     const extensionId = chrome.runtime.id;
     const callbackPath = `/extension/logged-in?eid=${extensionId}`;
-    const loginUrl = `${WEB_APP_URL}/login?request_path=${encodeURIComponent(callbackPath)}`;
+    let loginUrl = `${WEB_APP_URL}/login?request_path=${encodeURIComponent(callbackPath)}`;
+
+    // If a provider is specified, add it to auto-start OAuth
+    if (provider) {
+      loginUrl += `&provider=${provider}`;
+    }
 
     chrome.tabs.create({ url: loginUrl });
   }

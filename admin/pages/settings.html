@@ -616,6 +616,40 @@
             </button>
           </div>
 
+          <!-- Shareable Invite Link Section -->
+          <div class="invite-link-section" id="inviteLinkSection" style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0; font-size: var(--font-size-base);">Shareable Invite Link</h4>
+                <p style="margin: var(--space-1) 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                  Create a link anyone can use to join your team as a Viewer
+                </p>
+              </div>
+              <button class="btn btn-secondary" id="createInviteLinkBtn">
+                <span class="icon icon-link icon--sm"></span> Create Link
+              </button>
+            </div>
+
+            <!-- Active Invite Link Display (hidden by default) -->
+            <div id="activeInviteLinkContainer" style="display: none; margin-top: var(--space-4);">
+              <div class="invite-link-card" style="background: var(--color-bg-secondary); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border-subtle);">
+                <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <input type="text" id="inviteLinkUrl" readonly style="flex: 1; background: var(--color-bg-primary); font-family: var(--font-mono); font-size: var(--font-size-sm);">
+                  <button class="btn btn-secondary" id="copyInviteLinkBtn" title="Copy link">
+                    <span class="icon icon-copy icon--sm"></span>
+                  </button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                    <span id="inviteLinkUsage">0 / 10 signups</span>
+                    <span id="inviteLinkExpiry">Expires in 7 days</span>
+                  </div>
+                  <button class="btn btn-danger-outline btn-sm" id="revokeInviteLinkBtn">Revoke</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Users Table -->
           <div class="table-container" id="usersTableContainer">
             <table class="data-table" id="usersTable">

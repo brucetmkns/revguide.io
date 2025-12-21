@@ -878,3 +878,81 @@ body {
   width: 16px;
   height: 16px;
 }
+
+/* ============================================
+   SSO Buttons in Logged Out State
+   ============================================ */
+
+.sso-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 260px;
+  margin-top: 20px;
+}
+
+.btn-sso {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #cbd6e2;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #33475b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sso:hover {
+  background: #f5f8fa;
+  border-color: #7c98b6;
+}
+
+.btn-sso svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.btn-google:hover {
+  border-color: #4285F4;
+}
+
+.btn-microsoft:hover {
+  border-color: #00A4EF;
+}
+
+.sso-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 260px;
+  margin: 16px 0 4px 0;
+}
+
+.sso-divider::before,
+.sso-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #cbd6e2;
+}
+
+.sso-divider span {
+  font-size: 12px;
+  color: #7c98b6;
+}
+
+.logged-out-state .btn-secondary {
+  width: 100%;
+  max-width: 260px;
+  justify-content: center;
+  padding: 10px 16px;
+}

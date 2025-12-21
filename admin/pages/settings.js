@@ -88,6 +88,9 @@ class SettingsPage {
 
       // Load partner access requests (admin only)
       await this.loadAccessRequests();
+
+      // Load shareable invite links (admin only)
+      await this.loadInviteLinks();
     }
 
     // Load account settings (user email, company name)
@@ -390,6 +393,21 @@ class SettingsPage {
     const createNewPartnerAccountBtn = document.getElementById('createNewPartnerAccountBtn');
     if (createNewPartnerAccountBtn) {
       createNewPartnerAccountBtn.addEventListener('click', () => this.createNewPartnerAccount());
+    }
+
+    // Shareable Invite Link buttons
+    const createInviteLinkBtn = document.getElementById('createInviteLinkBtn');
+    const copyInviteLinkBtn = document.getElementById('copyInviteLinkBtn');
+    const revokeInviteLinkBtn = document.getElementById('revokeInviteLinkBtn');
+
+    if (createInviteLinkBtn) {
+      createInviteLinkBtn.addEventListener('click', () => this.createInviteLink());
+    }
+    if (copyInviteLinkBtn) {
+      copyInviteLinkBtn.addEventListener('click', () => this.copyInviteLink());
+    }
+    if (revokeInviteLinkBtn) {
+      revokeInviteLinkBtn.addEventListener('click', () => this.revokeInviteLink());
     }
 
     // Close modal on backdrop click
@@ -1622,6 +1640,169 @@ class SettingsPage {
       console.error('[Settings] Decline request error:', error);
       AdminShared.showToast(error.message || 'Failed to decline request', 'error');
     }
+  }
+
+  // ============================================
+  // Shareable Invite Links
+  // ============================================
+
+  /**
+   * Load active invite links for the current organization
+   */
+  async loadInviteLinks() {
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      try {
+        const { data, error } = await RevGuideDB.getActiveInviteLinks();
+        if (error) {
+          console.error('[Settings] Error loading invite links:', error);
+          return;
+        }
+
+        // Display the most recent active link (if any)
+        if (data && data.length > 0) {
+          this.activeInviteLink = data[0];
+          this.displayActiveInviteLink();
+        } else {
+          this.activeInviteLink = null;
+          this.hideActiveInviteLink();
+        }
+      } catch (error) {
+        console.error('[Settings] Failed to load invite links:', error);
+      }
+    }
+  }
+
+  /**
+   * Create a new shareable invite link
+   */
+  async createInviteLink() {
+    if (AdminShared.isExtensionContext || typeof RevGuideDB === 'undefined') {
+      AdminShared.showToast('Invite links are only available in the web app', 'error');
+      return;
+    }
+
+    const createBtn = document.getElementById('createInviteLinkBtn');
+    if (createBtn) {
+      createBtn.disabled = true;
+      createBtn.innerHTML = '<span class="icon icon-loader icon--sm spin"></span> Creating...';
+    }
+
+    try {
+      const { data, error } = await RevGuideDB.createInviteLink(10); // Default 10 uses
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.activeInviteLink = data;
+      this.displayActiveInviteLink();
+      AdminShared.showToast('Invite link created!', 'success');
+    } catch (error) {
+      console.error('[Settings] Failed to create invite link:', error);
+      AdminShared.showToast(error.message || 'Failed to create invite link', 'error');
+    } finally {
+      if (createBtn) {
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<span class="icon icon-link icon--sm"></span> Create Link';
+      }
+    }
+  }
+
+  /**
+   * Display the active invite link in the UI
+   */
+  displayActiveInviteLink() {
+    const container = document.getElementById('activeInviteLinkContainer');
+    const urlInput = document.getElementById('inviteLinkUrl');
+    const usageSpan = document.getElementById('inviteLinkUsage');
+    const expirySpan = document.getElementById('inviteLinkExpiry');
+    const createBtn = document.getElementById('createInviteLinkBtn');
+
+    if (!this.activeInviteLink || !container) return;
+
+    const link = this.activeInviteLink;
+    const inviteUrl = `${window.location.origin}/join/${link.code}`;
+
+    urlInput.value = inviteUrl;
+    usageSpan.textContent = `${link.use_count} / ${link.max_uses} signups`;
+    expirySpan.textContent = `Expires ${this.formatRelativeTime(link.expires_at)}`;
+
+    container.style.display = 'block';
+    if (createBtn) createBtn.style.display = 'none';
+  }
+
+  /**
+   * Hide the active invite link UI
+   */
+  hideActiveInviteLink() {
+    const container = document.getElementById('activeInviteLinkContainer');
+    const createBtn = document.getElementById('createInviteLinkBtn');
+
+    if (container) container.style.display = 'none';
+    if (createBtn) createBtn.style.display = 'inline-flex';
+  }
+
+  /**
+   * Copy the invite link to clipboard
+   */
+  copyInviteLink() {
+    const urlInput = document.getElementById('inviteLinkUrl');
+    if (!urlInput || !urlInput.value) return;
+
+    navigator.clipboard.writeText(urlInput.value).then(() => {
+      AdminShared.showToast('Link copied to clipboard!', 'success');
+    }).catch(() => {
+      // Fallback for older browsers
+      urlInput.select();
+      document.execCommand('copy');
+      AdminShared.showToast('Link copied to clipboard!', 'success');
+    });
+  }
+
+  /**
+   * Revoke the active invite link
+   */
+  async revokeInviteLink() {
+    if (!this.activeInviteLink) return;
+
+    const confirmed = await AdminShared.showConfirmDialog({
+      title: 'Revoke Invite Link',
+      message: 'This link will no longer work for new signups. Existing users will not be affected.',
+      primaryLabel: 'Revoke',
+      secondaryLabel: 'Cancel',
+      showCancel: false
+    });
+
+    if (confirmed !== 'primary') return;
+
+    try {
+      const { error } = await RevGuideDB.revokeInviteLink(this.activeInviteLink.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.activeInviteLink = null;
+      this.hideActiveInviteLink();
+      AdminShared.showToast('Invite link revoked', 'success');
+    } catch (error) {
+      console.error('[Settings] Failed to revoke invite link:', error);
+      AdminShared.showToast(error.message || 'Failed to revoke invite link', 'error');
+    }
+  }
+
+  /**
+   * Format a date as relative time (e.g., "in 7 days")
+   */
+  formatRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = date - now;
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) return 'expired';
+    if (diffDays === 1) return 'in 1 day';
+    return `in ${diffDays} days`;
   }
 
 }

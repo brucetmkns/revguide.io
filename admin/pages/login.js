@@ -44,6 +44,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Check if we should auto-start OAuth (provider param from extension sidebar)
+  const autoProvider = queryParams.get('provider');
+  if (autoProvider && !window.location.hash) {
+    // Auto-start OAuth flow immediately
+    (async () => {
+      try {
+        if (autoProvider === 'google') {
+          await RevGuideAuth.signInWithGoogle();
+        } else if (autoProvider === 'azure') {
+          await RevGuideAuth.signInWithMicrosoft();
+        }
+        // Browser will redirect to OAuth provider
+      } catch (err) {
+        console.error('OAuth auto-start error:', err);
+        showMessage('Failed to start sign-in. Please try again.', 'error');
+      }
+    })();
+    return; // Don't render the page, we're redirecting to OAuth
+  }
+
   // Check for OAuth callback (access_token in hash)
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   if (hashParams.get('access_token')) {
