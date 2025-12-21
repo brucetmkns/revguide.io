@@ -49,32 +49,46 @@ class JoinPage {
 
   async validateInviteLink() {
     try {
+      // Query the table directly (RLS policy allows public SELECT for valid links)
       const { data, error } = await this.supabase
-        .rpc('get_invite_link_by_code', { p_code: this.inviteCode });
+        .from('invite_links')
+        .select('*, organizations(name)')
+        .eq('code', this.inviteCode)
+        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
+        .single();
 
       if (error) {
         console.error('[Join] Validation error:', error);
-        this.showError('Failed to validate invite link. Please try again.');
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        this.showError('This invite link does not exist.');
-        return;
-      }
-
-      const link = data[0];
-
-      if (!link.is_valid) {
-        if (link.use_count >= link.max_uses && link.max_uses > 0) {
-          this.showError('This invite link has reached its maximum number of uses.');
+        if (error.code === 'PGRST116') {
+          // No rows returned
+          this.showError('This invite link is invalid or has expired.');
         } else {
-          this.showError('This invite link has expired.');
+          this.showError('Failed to validate invite link. Please try again.');
         }
         return;
       }
 
-      this.inviteLink = link;
+      if (!data) {
+        this.showError('This invite link does not exist.');
+        return;
+      }
+
+      // Check if maxed out
+      if (data.max_uses > 0 && data.use_count >= data.max_uses) {
+        this.showError('This invite link has reached its maximum number of uses.');
+        return;
+      }
+
+      // Build the link object with computed fields
+      this.inviteLink = {
+        ...data,
+        organization_id: data.organization_id,
+        organization_name: data.organizations?.name || 'this organization',
+        remaining_uses: data.max_uses === 0 ? -1 : data.max_uses - data.use_count,
+        is_valid: true
+      };
+
       this.showJoinForm();
     } catch (error) {
       console.error('[Join] Error validating link:', error);
@@ -221,15 +235,26 @@ class JoinPage {
     // User is already logged in
     // Check if they're already a member of this organization
     try {
-      const { data: link } = await this.supabase
-        .rpc('get_invite_link_by_code', { p_code: this.inviteCode });
+      const { data: link, error } = await this.supabase
+        .from('invite_links')
+        .select('*, organizations(name)')
+        .eq('code', this.inviteCode)
+        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
+        .single();
 
-      if (!link || link.length === 0 || !link[0].is_valid) {
+      if (error || !link) {
         this.showError('This invite link is invalid or has expired.');
         return;
       }
 
-      const orgId = link[0].organization_id;
+      // Check if maxed out
+      if (link.max_uses > 0 && link.use_count >= link.max_uses) {
+        this.showError('This invite link has reached its maximum number of uses.');
+        return;
+      }
+
+      const orgId = link.organization_id;
 
       // Check if user is already in this org
       const { data: profile } = await this.supabase
