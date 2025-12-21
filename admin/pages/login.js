@@ -26,79 +26,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     return '/home';
   }
 
-  // Check for OAuth callback FIRST (access_token in hash)
-  // This must happen before getSession() because we need to let Supabase process the hash
+  // Check for OAuth callback FIRST (access_token or code in hash/query)
+  // This must happen before getSession() because we need to let Supabase process the tokens
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  if (hashParams.get('access_token')) {
+  const hasOAuthCallback = hashParams.get('access_token') || hashParams.get('refresh_token') || queryParams.get('code');
+
+  if (hasOAuthCallback) {
     showMessage('Signing you in...', 'success');
 
-    // Wait for Supabase to process the hash and establish session
-    // Use a polling approach to ensure we catch the session
-    const maxAttempts = 10;
-    let attempts = 0;
+    // Use onAuthStateChange to detect when Supabase has processed the OAuth callback
+    const client = await RevGuideAuth.waitForClient();
 
-    const checkSession = async () => {
-      attempts++;
-      try {
-        const { data: { session } } = await RevGuideAuth.getSession();
+    // Set up a one-time listener for the session
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Login] Auth state change:', event, session ? 'session exists' : 'no session');
 
-        if (session) {
-          // Clear hash from URL
-          window.history.replaceState({}, '', window.location.pathname + window.location.search);
+      if (event === 'SIGNED_IN' && session) {
+        // Unsubscribe immediately
+        subscription.unsubscribe();
 
-          // Check if user has a profile
-          const { data: profile } = await RevGuideDB.getUserProfile();
+        // Clear hash/code from URL
+        window.history.replaceState({}, '', window.location.pathname);
 
-          if (profile && profile.organization_id) {
-            // User is fully set up, redirect
-            window.location.href = getRedirectUrl();
-          } else {
-            // New OAuth user - check for pending invitation
-            const email = session.user.email;
-            const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(email);
+        // Check if user has a profile
+        const { data: profile } = await RevGuideDB.getUserProfile();
 
-            if (invitation) {
-              // Accept invitation
-              const fullName = session.user.user_metadata?.full_name ||
-                               session.user.user_metadata?.name ||
-                               email.split('@')[0];
-              const { error: acceptError } = await RevGuideDB.acceptInvitation(invitation.id, fullName);
+        if (profile && profile.organization_id) {
+          // User is fully set up, redirect
+          window.location.href = getRedirectUrl();
+        } else {
+          // New OAuth user - check for pending invitation
+          const email = session.user.email;
+          const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(email);
 
-              if (acceptError) {
-                console.error('Failed to accept invitation:', acceptError);
-                showMessage('Failed to join organization. Please contact support.', 'error');
-                return;
-              }
+          if (invitation) {
+            // Accept invitation
+            const fullName = session.user.user_metadata?.full_name ||
+                             session.user.user_metadata?.name ||
+                             email.split('@')[0];
+            const { error: acceptError } = await RevGuideDB.acceptInvitation(invitation.id, fullName);
 
-              showMessage('Welcome! Redirecting...', 'success');
-              setTimeout(() => {
-                window.location.href = getRedirectUrl();
-              }, 500);
-            } else {
-              // No invitation - redirect to onboarding
-              window.location.href = '/onboarding?oauth=true';
+            if (acceptError) {
+              console.error('Failed to accept invitation:', acceptError);
+              showMessage('Failed to join organization. Please contact support.', 'error');
+              return;
             }
+
+            showMessage('Welcome! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = getRedirectUrl();
+            }, 500);
+          } else {
+            // No invitation - redirect to onboarding
+            window.location.href = '/onboarding?oauth=true';
           }
-        } else if (attempts < maxAttempts) {
-          // Session not ready yet, try again
-          setTimeout(checkSession, 200);
-        } else {
-          showMessage('Authentication failed. Please try again.', 'error');
-          window.history.replaceState({}, '', window.location.pathname + window.location.search);
-        }
-      } catch (err) {
-        console.error('OAuth callback error:', err);
-        if (attempts < maxAttempts) {
-          setTimeout(checkSession, 200);
-        } else {
-          showMessage('Something went wrong. Please try again.', 'error');
-          window.history.replaceState({}, '', window.location.pathname + window.location.search);
         }
       }
-    };
+    });
 
-    // Start checking after a brief delay to let Supabase initialize
-    setTimeout(checkSession, 100);
+    // Also check if session already exists (in case onAuthStateChange already fired)
+    setTimeout(async () => {
+      const { data: { session } } = await RevGuideAuth.getSession();
+      if (session) {
+        console.log('[Login] Session already exists, processing...');
+        subscription.unsubscribe();
+
+        // Clear hash from URL
+        window.history.replaceState({}, '', window.location.pathname);
+
+        const { data: profile } = await RevGuideDB.getUserProfile();
+        if (profile && profile.organization_id) {
+          window.location.href = getRedirectUrl();
+        } else {
+          const email = session.user.email;
+          const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(email);
+          if (invitation) {
+            const fullName = session.user.user_metadata?.full_name ||
+                             session.user.user_metadata?.name ||
+                             email.split('@')[0];
+            await RevGuideDB.acceptInvitation(invitation.id, fullName);
+            window.location.href = getRedirectUrl();
+          } else {
+            window.location.href = '/onboarding?oauth=true';
+          }
+        }
+      }
+    }, 500);
+
+    // Timeout fallback after 5 seconds
+    setTimeout(() => {
+      subscription.unsubscribe();
+      showMessage('Authentication timed out. Please try again.', 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }, 5000);
+
     return; // Don't proceed with normal page setup while processing OAuth
   }
 
