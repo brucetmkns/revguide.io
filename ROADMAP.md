@@ -12,6 +12,7 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Create Invite Links**: Admins/Partners can create reusable links from Settings > Team Members
 - **Configurable Limits**: Links have max signup limit (default: 10) and 7-day expiry
 - **Public Join Page**: `/join/:code` page for self-service signups
+- **Join Page SSO**: Google & Microsoft OAuth buttons for one-click signup
 - **Auto-join as Viewer**: New users automatically join the organization with Viewer role
 - **Link Management**: Copy, view usage stats, and revoke links from settings
 
