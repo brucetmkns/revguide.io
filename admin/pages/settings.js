@@ -1095,6 +1095,18 @@ class SettingsPage {
         if (isPartner) {
           // Remove partner from organization_members table
           const orgId = await RevGuideDB.getOrganizationId();
+
+          // Get org name and admin name for notification
+          const { data: orgData } = await client
+            .from('organizations')
+            .select('name')
+            .eq('id', orgId)
+            .single();
+          const orgName = orgData?.name || 'the organization';
+
+          const { data: profile } = await RevGuideDB.getUserProfile();
+          const adminName = profile?.name || null;
+
           const { error } = await client
             .from('organization_members')
             .delete()
@@ -1104,6 +1116,11 @@ class SettingsPage {
           if (error) throw new Error(error.message);
 
           this.teamMembers = this.teamMembers.filter(m => m.id !== userId);
+
+          // Notify the partner they've been removed (fire and forget)
+          this.notifyPartnerRemoved(email, orgName, adminName).catch(err => {
+            console.warn('Failed to send partner removal notification:', err);
+          });
         } else if (isMember) {
           // Remove user from organization (set organization_id to null)
           const { error } = await client
@@ -1137,10 +1154,30 @@ class SettingsPage {
       // Refresh table
       this.renderUsersTable();
 
-      AdminShared.showToast(isMember ? 'Team member removed' : 'Invitation cancelled', 'success');
+      const toastMessage = isPartner ? 'Partner removed' : (isMember ? 'Team member removed' : 'Invitation cancelled');
+      AdminShared.showToast(toastMessage, 'success');
     } catch (error) {
       console.error('Failed to remove user:', error);
       AdminShared.showToast(`Failed to remove: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Notify partner that they have been removed from the organization
+   */
+  async notifyPartnerRemoved(partnerEmail, orgName, adminName) {
+    try {
+      await fetch('https://revguide-api.revguide.workers.dev/api/notify-partner-removed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerEmail,
+          orgName,
+          adminName
+        })
+      });
+    } catch (error) {
+      console.warn('Error notifying partner of removal:', error);
     }
   }
 

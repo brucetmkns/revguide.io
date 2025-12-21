@@ -418,6 +418,74 @@ ${settingsLink}
 RevGuide - Contextual guidance for your revenue team`;
 }
 
+// Partner Removed Email Templates (sent to the partner when removed from an org)
+function buildPartnerRemovedEmailHtml(orgName, adminName) {
+  const partnersLink = `${CONFIG.appUrl}/partner`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #7c3aed; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Partner Access Removed</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      Your partner access to <strong>${orgName}</strong> has been removed${adminName ? ` by ${adminName}` : ''}.
+    </p>
+
+    <div style="background: #f5f3ff; border: 1px solid #ddd6fe; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <h3 style="margin: 0 0 12px 0; color: #7c3aed; font-size: 16px;">What This Means</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #6b7280; font-size: 14px;">
+        <li>You no longer have access to ${orgName}'s RevGuide content</li>
+        <li>This organization has been removed from your client list</li>
+        <li>Your other client accounts are not affected</li>
+      </ul>
+    </div>
+
+    <p style="margin-bottom: 25px; color: #6b7280;">
+      If you believe this was done in error, please contact the organization's administrator directly.
+    </p>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${partnersLink}" style="display: inline-block; background: #b2ef63; color: #111827; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        View Your Clients
+      </a>
+    </div>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+    RevGuide - Contextual guidance for your revenue team
+  </div>
+</body>
+</html>`;
+}
+
+function buildPartnerRemovedEmailText(orgName, adminName) {
+  const partnersLink = `${CONFIG.appUrl}/partner`;
+
+  return `Partner Access Removed
+
+Your partner access to ${orgName} has been removed${adminName ? ` by ${adminName}` : ''}.
+
+What This Means:
+- You no longer have access to ${orgName}'s RevGuide content
+- This organization has been removed from your client list
+- Your other client accounts are not affected
+
+If you believe this was done in error, please contact the organization's administrator directly.
+
+View your remaining clients: ${partnersLink}
+
+---
+RevGuide - Contextual guidance for your revenue team`;
+}
+
 // ===========================================
 // PARTNER EMAIL TEMPLATES
 // ===========================================
@@ -638,6 +706,11 @@ export default {
     // Route: POST /api/notify-partner-joined - Notify admins when partner accepts invitation
     if (url.pathname === '/api/notify-partner-joined') {
       return handleNotifyPartnerJoined(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/notify-partner-removed - Notify partner when removed from organization
+    if (url.pathname === '/api/notify-partner-removed') {
+      return handleNotifyPartnerRemoved(request, env, corsHeaders);
     }
 
     // Route: POST /api/signup-invited - Create user for invited users (skips email confirmation)
@@ -1276,6 +1349,80 @@ async function handleNotifyPartnerJoined(request, env, corsHeaders) {
 
   } catch (error) {
     console.error('Notify partner joined error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleNotifyPartnerRemoved(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { partnerEmail, orgName, adminName } = body;
+
+    if (!partnerEmail) {
+      return new Response(JSON.stringify({ error: 'Partner email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!orgName) {
+      return new Response(JSON.stringify({ error: 'Organization name is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Send notification to the partner
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.fromEmail,
+        to: [partnerEmail],
+        subject: `Your partner access to ${orgName} has been removed`,
+        html: buildPartnerRemovedEmailHtml(orgName, adminName),
+        text: buildPartnerRemovedEmailText(orgName, adminName)
+      })
+    });
+
+    if (!resendResponse.ok) {
+      const errorData = await resendResponse.json().catch(() => ({}));
+      console.error('Resend error:', errorData);
+      return new Response(JSON.stringify({
+        error: errorData.message || 'Failed to send notification'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const result = await resendResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Partner removed notification sent',
+      id: result.id
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Notify partner removed error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
