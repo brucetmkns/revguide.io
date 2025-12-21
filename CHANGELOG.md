@@ -2,6 +2,27 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.0] - 2025-12-21 - Remove Nango, Direct HubSpot OAuth
+
+### Changed
+- **OAuth Flow**: Removed Nango middleware, now using direct HubSpot OAuth via RevGuideHubSpot class
+- **Simplified Architecture**: Fewer external dependencies for authentication
+
+### Removed
+- `admin/nango.js` - Nango OAuth helper module
+- `supabase/functions/nango-callback/` - Nango callback edge function
+- `docs/NANGO_SETUP.md` - Nango setup documentation
+
+### Technical
+- **Files Modified**:
+  - `admin/pages/home.js` - Updated OAuth callback handling
+  - `manifest.json` - Version bump to 2.0.0
+  - `docs/AUTHENTICATION.md` - Updated for direct OAuth flow
+  - `docs/MULTI_PORTAL_DEV.md` - Removed Nango references
+  - `CLAUDE.md` - Added project identity section
+
+---
+
 ## [2.8.7] - 2025-12-20 - Partner URL Restructure
 
 ### Changed
