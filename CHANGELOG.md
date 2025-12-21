@@ -2,6 +2,45 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.4.0] - 2025-12-21 - Shareable Invite Links
+
+### Added
+- **Shareable Invite Links**: Create reusable links for team onboarding
+  - Admins/Partners can create invite links from Settings > Team Members
+  - Links have configurable usage limits (default: 10 signups)
+  - Links expire after 7 days
+  - New users join as Viewers automatically
+  - Share with team leaders who can distribute to their teams
+
+- **Public Join Page**: New `/join/:code` page for invite link signups
+  - Validates link and shows organization name
+  - Displays remaining spots
+  - Simple signup form (name, email, password)
+  - Auto-login after successful signup
+
+### Technical
+- **Database**: New `invite_links` and `invite_link_signups` tables
+  - Migration: `024_shareable_invite_links.sql`
+  - RLS policies for admin management and public validation
+  - Helper functions: `generate_invite_code()`, `get_invite_link_by_code()`, `consume_invite_link()`
+
+- **API**: New endpoint `POST /api/signup-invite-link`
+  - Validates invite code
+  - Creates user account (email auto-confirmed)
+  - Consumes invite link (increments counter)
+
+- **Files Modified/Created**:
+  - `supabase/migrations/024_shareable_invite_links.sql` - Database schema
+  - `admin/supabase.js` - Added invite link methods
+  - `admin/pages/settings.html` - Invite link UI section
+  - `admin/pages/settings.js` - Invite link management logic
+  - `admin/pages/join.html` - Public join page
+  - `admin/pages/join.js` - Join page logic
+  - `api/invite-worker.js` - New signup endpoint
+  - `vercel.json` - Added `/join/:code` route
+
+---
+
 ## [2.3.0] - 2025-12-21 - Google & Microsoft SSO
 
 ### Added
