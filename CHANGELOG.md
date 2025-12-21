@@ -44,12 +44,13 @@ All notable changes to RevGuide will be documented in this file.
 ## [2.1.0] - 2025-12-21 - Org-Aware URLs & Extension Auto-Match
 
 ### Added
-- **Org-Aware Admin URLs**: Admin panel now supports URLs with organization UUID prefix
-  - `/[org-uuid]/banners`, `/[org-uuid]/wiki`, etc.
+- **Org-Aware Admin URLs**: Admin panel now supports URLs with short org ID prefix
+  - `/a1b2c3d4/banners`, `/a1b2c3d4/wiki`, etc. (first 8 chars of UUID)
   - Enables deep linking to specific organization's content
   - Backward compatible - `/banners` still works (uses active org)
-  - Sidebar nav links automatically include org UUID
+  - Sidebar nav links automatically include short org ID
   - Portal selector redirects to org-prefixed URLs
+  - Excludes partner/settings pages from org-aware URLs (identity pages, not org-specific)
 
 - **Extension Auto-Match**: Extension automatically detects HubSpot portal and shows correct library
   - Extracts portal ID from HubSpot URL (`/contacts/12345678/...`)
@@ -60,8 +61,8 @@ All notable changes to RevGuide will be documented in this file.
 
 ### Technical
 - **Files Modified**:
-  - `vercel.json` - Added UUID-based route patterns for org-prefixed URLs
-  - `admin/shared.js` - Added URL parsing (`getOrgIdFromUrl`, `getCurrentPagePath`, `buildOrgAwareUrl`), auto-switch handling, org-aware navigation
+  - `vercel.json` - Added 8-char hex route patterns for org-prefixed URLs
+  - `admin/shared.js` - Added URL parsing (`getOrgIdFromUrl`, `getShortOrgId`, `getCurrentPagePath`, `buildOrgAwareUrl`, `isOrgAwarePath`), auto-switch handling, org-aware navigation
   - `background/background.js` - Added `getOrgByCrmPortalId()` for portal matching, updated `getContent()` with org-specific caching
   - `content/content.js` - Added CRM type detection, passes portal context when loading data
 
