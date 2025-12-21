@@ -7,21 +7,22 @@
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 
-// Expose for nango.js to use
+// Expose for hubspot.js to use
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
 // Import Supabase client
-// In extension context: use local bundle
-// In web context: Supabase must be loaded separately (e.g., via build process or separate script)
+// In extension context: use local bundle via chrome.runtime.getURL
+// In web context: load from /admin/lib/supabase.min.js
 const supabaseScript = document.createElement('script');
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
   // Chrome extension context - use local bundle (Manifest V3 requirement)
   supabaseScript.src = chrome.runtime.getURL('admin/lib/supabase.min.js');
   document.head.appendChild(supabaseScript);
 } else if (typeof window.supabase === 'undefined') {
-  // Web context - Supabase should be loaded by the hosting page
-  console.warn('RevGuide: Supabase client not found. Please ensure Supabase is loaded before this script.');
+  // Web context - load Supabase from local bundle
+  supabaseScript.src = '/admin/lib/supabase.min.js';
+  document.head.appendChild(supabaseScript);
 }
 
 // Wait for Supabase to load
