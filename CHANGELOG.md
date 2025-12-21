@@ -19,6 +19,11 @@ All notable changes to RevGuide will be documented in this file.
   - **Google & Microsoft SSO**: One-click signup with OAuth providers
   - Auto-login after successful signup
 
+### Fixed
+- **SSO Login Redirect**: Fixed issue where users had to click SSO button twice after OAuth redirect
+  - OAuth callback now processed before session check
+  - Added polling mechanism to wait for Supabase to establish session
+
 ### Technical
 - **Database**: New `invite_links` and `invite_link_signups` tables
   - Migration: `024_shareable_invite_links.sql`
