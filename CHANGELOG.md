@@ -2,6 +2,45 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.3.0] - 2025-12-21 - Google & Microsoft SSO
+
+### Added
+- **Google SSO**: Users can now sign in with their Google account
+  - One-click authentication using existing Google credentials
+  - Auto-accepts pending invitations for matching email addresses
+  - New OAuth users redirected to onboarding if no invitation exists
+
+- **Microsoft SSO**: Users can now sign in with their Microsoft/Azure AD account
+  - Supports both work/school and personal Microsoft accounts
+  - Publisher verification configured for `app.revguide.io` domain
+  - Same invitation auto-accept flow as Google
+
+- **Extension Sidebar SSO Buttons**: Direct SSO login from the extension
+  - "Sign in with Google" and "Sign in with Microsoft" buttons in sidebar
+  - Clicking opens OAuth flow directly (skips login page)
+  - Streamlined onboarding: Install → Click SSO → Done
+
+### Fixed
+- **Close Tab Button**: Auth callback page now properly closes after successful login
+  - Extension uses `chrome.tabs.remove()` instead of `window.close()`
+  - Falls back to redirecting to HubSpot if close fails
+
+### Technical
+- **Files Modified**:
+  - `admin/supabase.js` - Added `signInWithGoogle()`, `signInWithMicrosoft()` methods
+  - `admin/pages/login.html/js` - OAuth buttons, auto-start OAuth from `provider` param
+  - `admin/pages/signup.html` - OAuth buttons (hidden for invite flows)
+  - `sidepanel/sidepanel.html/css/js` - SSO buttons in logged-out state
+  - `admin/pages/extension-logged-in.js` - CLOSE_AUTH_TAB message handling
+  - `background/background.js` - CLOSE_AUTH_TAB handler
+
+### Configuration Required
+- Google OAuth: Configure in Google Cloud Console + Supabase Dashboard
+- Microsoft OAuth: Configure in Azure Portal + Supabase Dashboard
+- See setup guide in conversation history
+
+---
+
 ## [2.2.2] - 2025-12-21 - Partner Removal Notification
 
 ### Added

@@ -4,9 +4,16 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.8.0 (Partner Account System)
+## Current State: v2.3.0 (Google & Microsoft SSO)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, **Google and Microsoft SSO for passwordless authentication**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+
+### SSO Authentication (v2.3.0)
+- **Google SSO**: One-click sign-in with Google accounts
+- **Microsoft SSO**: Sign-in with work/school or personal Microsoft accounts
+- **Extension Sidebar SSO**: Direct SSO buttons in the Chrome extension sidebar
+- **Auto-invite acceptance**: OAuth users with pending invitations are automatically added to teams
+- **Streamlined onboarding**: Install extension → Click SSO → Ready to use
 
 ### Partner Account System (v2.8.0+)
 - **Partner Account Type**: New `account_type` column (`standard` or `partner`) with dedicated `partner` role
@@ -488,10 +495,13 @@ presentations
 #### Authentication & Onboarding
 - [x] Sign up with email (Magic Link)
 - [x] Sign in with Google OAuth
+- [x] Sign in with Microsoft/Azure AD OAuth
+- [x] SSO buttons in Chrome extension sidebar (direct OAuth flow)
+- [x] Auto-accept pending invitations for OAuth users
 - [x] Custom branded email templates via Resend SMTP
+- [x] Extension login flow (redirect to web, store token)
 - [ ] Organization auto-created on first sign-up
 - [ ] Onboarding wizard for HubSpot API token setup
-- [ ] Extension login flow (redirect to web, store token)
 
 #### Team Management
 - [x] Invite team members by email
@@ -980,7 +990,8 @@ Design mockups created in `website/admin-redesign.html` (Admin view) and `websit
 **Total Estimate:** ~1-2 days of development
 
 ### Enterprise Features
-- [ ] SSO (SAML, OKTA)
+- [x] SSO (Google, Microsoft) - *Implemented in v2.3.0*
+- [ ] SSO (SAML, OKTA) - *Enterprise single sign-on*
 - [ ] Audit logs
 - [ ] Custom domains
 - [ ] SLA guarantees
