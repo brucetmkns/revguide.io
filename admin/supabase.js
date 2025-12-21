@@ -120,15 +120,45 @@ const RevGuideAuth = {
 
   /**
    * Sign in with Google OAuth
+   * @param {string} redirectPath - Optional custom redirect path after auth
    */
-  async signInWithGoogle() {
+  async signInWithGoogle(redirectPath = null) {
     const client = await this.waitForClient();
-    const redirectUrl = window.location.origin + window.location.pathname;
+    // Preserve request_path query param if present
+    const params = new URLSearchParams(window.location.search);
+    const requestPath = params.get('request_path');
+    let redirectUrl = window.location.origin + (redirectPath || window.location.pathname);
+    if (requestPath) {
+      redirectUrl += `?request_path=${encodeURIComponent(requestPath)}`;
+    }
 
     return client.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl
+      }
+    });
+  },
+
+  /**
+   * Sign in with Microsoft OAuth (Azure AD)
+   * @param {string} redirectPath - Optional custom redirect path after auth
+   */
+  async signInWithMicrosoft(redirectPath = null) {
+    const client = await this.waitForClient();
+    // Preserve request_path query param if present
+    const params = new URLSearchParams(window.location.search);
+    const requestPath = params.get('request_path');
+    let redirectUrl = window.location.origin + (redirectPath || window.location.pathname);
+    if (requestPath) {
+      redirectUrl += `?request_path=${encodeURIComponent(requestPath)}`;
+    }
+
+    return client.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: redirectUrl,
+        scopes: 'email profile openid'
       }
     });
   },
@@ -743,6 +773,90 @@ const RevGuideDB = {
       .delete()
       .eq('id', invitationId)
       .eq('organization_id', orgId);
+  },
+
+  // ============================================
+  // Shareable Invite Links
+  // ============================================
+
+  /**
+   * Create a shareable invite link for the current organization
+   * @param {number} maxUses - Maximum number of signups allowed (default: 10)
+   * @returns {Promise<{data: {id, code, max_uses, expires_at, ...}, error}>}
+   */
+  async createInviteLink(maxUses = 10) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    const { data: profile } = await this.getUserProfile();
+
+    if (!orgId) return { error: new Error('No organization') };
+
+    // Generate unique code via RPC
+    const { data: code, error: codeError } = await client.rpc('generate_invite_code');
+    if (codeError) return { error: codeError };
+
+    // Calculate expiry (7 days)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    return client
+      .from('invite_links')
+      .insert({
+        organization_id: orgId,
+        code: code,
+        max_uses: maxUses,
+        role: 'viewer',
+        expires_at: expiresAt.toISOString(),
+        created_by: profile?.id
+      })
+      .select('*, organizations(name)')
+      .single();
+  },
+
+  /**
+   * Get active invite links for current organization
+   * @returns {Promise<{data: Array, error}>}
+   */
+  async getActiveInviteLinks() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('invite_links')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('is_active', true)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+  },
+
+  /**
+   * Revoke an invite link (deactivate it)
+   * @param {string} linkId - The invite link ID to revoke
+   */
+  async revokeInviteLink(linkId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('invite_links')
+      .update({ is_active: false })
+      .eq('id', linkId);
+  },
+
+  /**
+   * Get invite link by code (for public join page validation)
+   * @param {string} code - The invite link code
+   * @returns {Promise<{data: {id, organization_id, organization_name, role, max_uses, use_count, remaining_uses, expires_at, is_valid}, error}>}
+   */
+  async getInviteLinkByCode(code) {
+    const client = await RevGuideAuth.waitForClient();
+
+    const { data, error } = await client.rpc('get_invite_link_by_code', { p_code: code });
+
+    // RPC returns an array, get first item
+    return { data: data && data.length > 0 ? data[0] : null, error };
   },
 
   // ============================================
