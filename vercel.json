@@ -10,6 +10,7 @@
     { "source": "/partner/home", "destination": "/admin/pages/partner-home.html" },
     { "source": "/partner/accounts", "destination": "/admin/pages/partner.html" },
     { "source": "/invite", "destination": "/admin/pages/invite.html" },
+    { "source": "/join/:code", "destination": "/admin/pages/join.html" },
 
     { "source": "/:orgId([0-9a-f]{8})/home", "destination": "/admin/pages/home.html" },
     { "source": "/:orgId([0-9a-f]{8})/wiki", "destination": "/admin/pages/wiki.html" },

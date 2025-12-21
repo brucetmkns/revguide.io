@@ -48,6 +48,22 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     return true;
   }
 
+  if (message.type === 'CLOSE_AUTH_TAB') {
+    // Close the auth callback tab
+    console.log('[RevGuide BG] Closing auth tab');
+    if (sender.tab?.id) {
+      chrome.tabs.remove(sender.tab.id).then(() => {
+        sendResponse({ success: true });
+      }).catch(err => {
+        console.error('[RevGuide BG] Failed to close tab:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    } else {
+      sendResponse({ success: false, error: 'No tab ID' });
+    }
+    return true;
+  }
+
   sendResponse({ success: false, error: 'Unknown message type' });
   return true;
 });

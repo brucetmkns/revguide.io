@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Team - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <style>
+    body {
+      background: var(--color-bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      font-family: var(--font-family-sans);
+    }
+
+    .join-container {
+      width: 100%;
+      max-width: 420px;
+      padding: var(--space-6);
+    }
+
+    .join-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-8);
+    }
+
+    .join-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+
+    .join-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .join-logo .icon {
+      width: 40px;
+      height: 40px;
+      color: var(--color-primary);
+    }
+
+    .join-logo h1 {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .join-header p {
+      color: var(--color-text-secondary);
+      margin: 0;
+      font-size: var(--font-size-base);
+    }
+
+    .join-header .org-name {
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .join-header .subtitle {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+      margin-top: var(--space-2);
+    }
+
+    .join-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .join-form .form-group {
+      margin-bottom: 0;
+    }
+
+    .join-form label {
+      font-weight: var(--font-weight-medium);
+      margin-bottom: var(--space-2);
+      display: block;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+    }
+
+    .join-form input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      font-family: var(--font-family-sans);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+
+    .join-form input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-focus);
+    }
+
+    .join-btn {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      font-family: var(--font-family-sans);
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: var(--space-2);
+    }
+
+    .join-btn:hover {
+      background: var(--color-primary-dark);
+    }
+
+    .join-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .join-footer {
+      text-align: center;
+      margin-top: var(--space-6);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+
+    .join-footer a {
+      color: var(--color-primary-dark);
+      text-decoration: none;
+      font-weight: var(--font-weight-medium);
+    }
+
+    .join-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .error-message {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      font-size: var(--font-size-sm);
+      text-align: center;
+    }
+
+    .info-badge {
+      display: inline-block;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-secondary);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      margin-top: var(--space-2);
+    }
+
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+    }
+
+    .loading-spinner .icon {
+      width: 32px;
+      height: 32px;
+      color: var(--color-primary);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Hidden by default, shown via JS */
+    .join-content { display: none; }
+    .error-content { display: none; }
+  </style>
+</head>
+<body>
+  <div class="join-container">
+    <div class="join-card">
+      <!-- Loading State -->
+      <div class="loading-spinner" id="loadingState">
+        <span class="icon icon-loader"></span>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-content" id="errorState">
+        <div class="join-header">
+          <div class="join-logo">
+            <span class="icon icon-alert-triangle"></span>
+            <h1>RevGuide</h1>
+          </div>
+          <p id="errorMessage">This invite link is invalid or has expired.</p>
+        </div>
+        <div class="join-footer">
+          <p>Need an invite? Contact your team administrator.</p>
+          <p style="margin-top: var(--space-4);">
+            Already have an account? <a href="/login">Sign in</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Join Form -->
+      <div class="join-content" id="joinContent">
+        <div class="join-header">
+          <div class="join-logo">
+            <span class="icon icon-logo"></span>
+            <h1>RevGuide</h1>
+          </div>
+          <p>Join <span class="org-name" id="orgName"></span></p>
+          <div class="info-badge" id="spotsBadge"></div>
+        </div>
+
+        <div class="error-message" id="formError" style="display: none;"></div>
+
+        <form class="join-form" id="joinForm">
+          <div class="form-group">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" placeholder="Jane Smith" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Work Email</label>
+            <input type="email" id="email" placeholder="jane@company.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Create a password (min. 8 characters)" required minlength="8">
+          </div>
+
+          <button type="submit" class="join-btn" id="joinBtn">
+            Join Team
+          </button>
+        </form>
+
+        <div class="join-footer">
+          <p>Already have an account? <a href="/login">Sign in</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Client (for auto-login after signup) -->
+  <script src="/admin/lib/supabase.min.js"></script>
+  <script src="/admin/pages/join.js"></script>
+</body>
+</html>

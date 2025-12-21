@@ -168,9 +168,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     callbackTitle.textContent = 'Extension Connected!';
     callbackMessage.textContent = 'Your RevGuide extension is now connected to your account.';
     callbackContent.innerHTML += `
-      <p class="callback-hint">You can close this tab and return to HubSpot.</p>
-      <button class="callback-btn" onclick="window.close()">Close Tab</button>
+      <p class="callback-hint">Closing this tab...</p>
+      <button class="callback-btn" id="closeTabBtn">Close Tab</button>
     `;
+
+    // Try to close the tab via extension
+    if (extensionId && chrome.runtime) {
+      chrome.runtime.sendMessage(extensionId, { type: 'CLOSE_AUTH_TAB' }, (response) => {
+        // If extension doesn't close the tab, update the UI
+        if (chrome.runtime.lastError || !response?.success) {
+          const hint = document.querySelector('.callback-hint');
+          if (hint) hint.textContent = 'You can now close this tab and return to HubSpot.';
+        }
+      });
+    }
+
+    // Also set up the button as a fallback
+    document.getElementById('closeTabBtn')?.addEventListener('click', () => {
+      // Try extension first
+      if (extensionId && chrome.runtime) {
+        chrome.runtime.sendMessage(extensionId, { type: 'CLOSE_AUTH_TAB' });
+      }
+      // Also try window.close() as fallback (works if opened via window.open)
+      window.close();
+      // If neither works, redirect to HubSpot
+      setTimeout(() => {
+        window.location.href = 'https://app.hubspot.com';
+      }, 500);
+    });
   }
 
   function showError(errorMsg) {
