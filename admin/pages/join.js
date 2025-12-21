@@ -58,55 +58,74 @@ class JoinPage {
     const loadingState = document.getElementById('loadingState');
     loadingState.innerHTML = '<span class="icon icon-loader" style="animation: spin 1s linear infinite;"></span><p style="margin-top: var(--space-4);">Completing signup...</p>';
 
-    try {
-      // Wait for Supabase to process the OAuth token
-      await new Promise(resolve => setTimeout(resolve, 500));
+    const completeSignup = async (session) => {
+      try {
+        // Get user info from OAuth
+        const email = session.user.email;
+        const fullName = session.user.user_metadata?.full_name ||
+                         session.user.user_metadata?.name ||
+                         email.split('@')[0];
 
-      const { data: { session } } = await this.supabase.auth.getSession();
+        // Complete signup via API
+        const response = await fetch(`${API_BASE_URL}/api/signup-invite-link-oauth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            authUserId: session.user.id,
+            email,
+            fullName,
+            inviteCode: this.inviteCode
+          })
+        });
 
-      if (!session) {
-        this.showError('Authentication failed. Please try again.');
-        return;
-      }
+        const result = await response.json();
 
-      // Get user info from OAuth
-      const email = session.user.email;
-      const fullName = session.user.user_metadata?.full_name ||
-                       session.user.user_metadata?.name ||
-                       email.split('@')[0];
-
-      // Complete signup via API
-      const response = await fetch(`${API_BASE_URL}/api/signup-invite-link-oauth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          authUserId: session.user.id,
-          email,
-          fullName,
-          inviteCode: this.inviteCode
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (result.code === 'USER_EXISTS') {
-          // User already exists - just redirect
-          window.location.href = '/home';
+        if (!response.ok) {
+          if (result.code === 'USER_EXISTS') {
+            // User already exists - just redirect
+            window.location.href = '/home';
+            return;
+          }
+          this.showError(result.error || 'Failed to complete signup.');
           return;
         }
-        this.showError(result.error || 'Failed to complete signup.');
-        return;
+
+        // Clear hash and redirect
+        window.history.replaceState({}, '', window.location.pathname);
+        window.location.href = '/home';
+
+      } catch (error) {
+        console.error('[Join] OAuth signup error:', error);
+        this.showError('Something went wrong. Please try again.');
       }
+    };
 
-      // Clear hash and redirect
+    // Use onAuthStateChange to detect when Supabase has processed the OAuth callback
+    const { data: { subscription } } = this.supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Join] Auth state change:', event, session ? 'session exists' : 'no session');
+
+      if (event === 'SIGNED_IN' && session) {
+        subscription.unsubscribe();
+        await completeSignup(session);
+      }
+    });
+
+    // Also check if session already exists (in case onAuthStateChange already fired)
+    setTimeout(async () => {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (session) {
+        console.log('[Join] Session already exists, completing signup...');
+        subscription.unsubscribe();
+        await completeSignup(session);
+      }
+    }, 500);
+
+    // Timeout fallback after 5 seconds
+    setTimeout(() => {
+      subscription.unsubscribe();
+      this.showError('Authentication timed out. Please try again.');
       window.history.replaceState({}, '', window.location.pathname);
-      window.location.href = '/home';
-
-    } catch (error) {
-      console.error('[Join] OAuth callback error:', error);
-      this.showError('Something went wrong. Please try again.');
-    }
+    }, 5000);
   }
 
   async validateInviteLink() {
