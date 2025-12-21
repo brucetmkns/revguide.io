@@ -26,6 +26,82 @@ document.addEventListener('DOMContentLoaded', async () => {
     return '/home';
   }
 
+  // Check for OAuth callback FIRST (access_token in hash)
+  // This must happen before getSession() because we need to let Supabase process the hash
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  if (hashParams.get('access_token')) {
+    showMessage('Signing you in...', 'success');
+
+    // Wait for Supabase to process the hash and establish session
+    // Use a polling approach to ensure we catch the session
+    const maxAttempts = 10;
+    let attempts = 0;
+
+    const checkSession = async () => {
+      attempts++;
+      try {
+        const { data: { session } } = await RevGuideAuth.getSession();
+
+        if (session) {
+          // Clear hash from URL
+          window.history.replaceState({}, '', window.location.pathname + window.location.search);
+
+          // Check if user has a profile
+          const { data: profile } = await RevGuideDB.getUserProfile();
+
+          if (profile && profile.organization_id) {
+            // User is fully set up, redirect
+            window.location.href = getRedirectUrl();
+          } else {
+            // New OAuth user - check for pending invitation
+            const email = session.user.email;
+            const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(email);
+
+            if (invitation) {
+              // Accept invitation
+              const fullName = session.user.user_metadata?.full_name ||
+                               session.user.user_metadata?.name ||
+                               email.split('@')[0];
+              const { error: acceptError } = await RevGuideDB.acceptInvitation(invitation.id, fullName);
+
+              if (acceptError) {
+                console.error('Failed to accept invitation:', acceptError);
+                showMessage('Failed to join organization. Please contact support.', 'error');
+                return;
+              }
+
+              showMessage('Welcome! Redirecting...', 'success');
+              setTimeout(() => {
+                window.location.href = getRedirectUrl();
+              }, 500);
+            } else {
+              // No invitation - redirect to onboarding
+              window.location.href = '/onboarding?oauth=true';
+            }
+          }
+        } else if (attempts < maxAttempts) {
+          // Session not ready yet, try again
+          setTimeout(checkSession, 200);
+        } else {
+          showMessage('Authentication failed. Please try again.', 'error');
+          window.history.replaceState({}, '', window.location.pathname + window.location.search);
+        }
+      } catch (err) {
+        console.error('OAuth callback error:', err);
+        if (attempts < maxAttempts) {
+          setTimeout(checkSession, 200);
+        } else {
+          showMessage('Something went wrong. Please try again.', 'error');
+          window.history.replaceState({}, '', window.location.pathname + window.location.search);
+        }
+      }
+    };
+
+    // Start checking after a brief delay to let Supabase initialize
+    setTimeout(checkSession, 100);
+    return; // Don't proceed with normal page setup while processing OAuth
+  }
+
   // Check if already logged in
   const { data: { session } } = await RevGuideAuth.getSession();
   if (session) {
@@ -62,63 +138,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     })();
     return; // Don't render the page, we're redirecting to OAuth
-  }
-
-  // Check for OAuth callback (access_token in hash)
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  if (hashParams.get('access_token')) {
-    showMessage('Signing you in...', 'success');
-    // Supabase will automatically pick up the token from the URL
-    // Wait for session to be established, then check user setup
-    setTimeout(async () => {
-      try {
-        const { data: { session } } = await RevGuideAuth.getSession();
-        if (session) {
-          // Check if user has a profile
-          const { data: profile } = await RevGuideDB.getUserProfile();
-
-          if (profile && profile.organization_id) {
-            // User is fully set up, redirect
-            window.location.href = getRedirectUrl();
-          } else {
-            // New OAuth user - check for pending invitation
-            const email = session.user.email;
-            const { data: invitation } = await RevGuideDB.getPendingInvitationByEmail(email);
-
-            if (invitation) {
-              // Accept invitation
-              const fullName = session.user.user_metadata?.full_name ||
-                               session.user.user_metadata?.name ||
-                               email.split('@')[0];
-              const { error: acceptError } = await RevGuideDB.acceptInvitation(invitation.id, fullName);
-
-              if (acceptError) {
-                console.error('Failed to accept invitation:', acceptError);
-                showMessage('Failed to join organization. Please contact support.', 'error');
-                return;
-              }
-
-              showMessage('Welcome! Redirecting...', 'success');
-              setTimeout(() => {
-                window.location.href = getRedirectUrl();
-              }, 500);
-            } else {
-              // No invitation - redirect to onboarding
-              window.location.href = '/onboarding?oauth=true';
-            }
-          }
-        } else {
-          showMessage('Authentication failed. Please try again.', 'error');
-          // Clear hash
-          window.history.replaceState({}, '', window.location.pathname + window.location.search);
-        }
-      } catch (err) {
-        console.error('OAuth callback error:', err);
-        showMessage('Something went wrong. Please try again.', 'error');
-        window.history.replaceState({}, '', window.location.pathname + window.location.search);
-      }
-    }, 500);
-    return; // Don't proceed with normal page setup while processing OAuth
   }
 
   // Login form submit
