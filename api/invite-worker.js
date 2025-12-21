@@ -748,6 +748,11 @@ export default {
       return handleRequestPartnerAccess(request, env, corsHeaders);
     }
 
+    // Route: POST /api/delete-user - Delete user from users table and auth.users
+    if (url.pathname === '/api/delete-user') {
+      return handleDeleteUser(request, env, corsHeaders);
+    }
+
     // Health check
     if (url.pathname === '/health' || url.pathname === '/') {
       return new Response(JSON.stringify({ status: 'ok', service: 'revguide-api' }), {
@@ -2494,6 +2499,171 @@ async function handleRequestPartnerAccess(request, env, corsHeaders) {
       message: 'Request processed'
     }), {
       status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// DELETE USER HANDLER
+// ===========================================
+
+async function handleDeleteUser(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { userId, authUserId, requestingUserId, organizationId } = body;
+
+    // Validate input
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!requestingUserId || !organizationId) {
+      return new Response(JSON.stringify({ error: 'Authorization info required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify requesting user is admin/owner of the organization
+    const memberCheckResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organization_members?user_id=eq.${requestingUserId}&organization_id=eq.${organizationId}&role=in.(owner,admin)&select=id`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!memberCheckResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Authorization check failed' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const memberships = await memberCheckResponse.json();
+
+    // Also check users table for role
+    const userCheckResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/users?id=eq.${requestingUserId}&organization_id=eq.${organizationId}&role=in.(owner,admin)&select=id`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const userRoles = userCheckResponse.ok ? await userCheckResponse.json() : [];
+
+    if ((!memberships || memberships.length === 0) && (!userRoles || userRoles.length === 0)) {
+      return new Response(JSON.stringify({ error: 'Not authorized to delete users' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify target user belongs to the same organization
+    const targetUserResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/users?id=eq.${userId}&organization_id=eq.${organizationId}&select=id,auth_user_id`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!targetUserResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Failed to verify target user' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const targetUsers = await targetUserResponse.json();
+    if (!targetUsers || targetUsers.length === 0) {
+      return new Response(JSON.stringify({ error: 'User not found in organization' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const targetAuthUserId = authUserId || targetUsers[0].auth_user_id;
+
+    // 1. Delete from users table
+    const deleteUserResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/users?id=eq.${userId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!deleteUserResponse.ok) {
+      const errorText = await deleteUserResponse.text();
+      console.error('Failed to delete from users table:', errorText);
+      return new Response(JSON.stringify({ error: 'Failed to delete user profile' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 2. Delete from auth.users if we have the auth_user_id
+    if (targetAuthUserId) {
+      const deleteAuthResponse = await fetch(
+        `${CONFIG.supabaseUrl}/auth/v1/admin/users/${targetAuthUserId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': serviceRoleKey,
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!deleteAuthResponse.ok) {
+        const errorText = await deleteAuthResponse.text();
+        console.error('Failed to delete from auth.users:', errorText);
+        // Don't fail - the profile is already deleted
+        // Just log the warning
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'User deleted successfully'
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

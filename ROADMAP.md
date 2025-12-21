@@ -997,6 +997,64 @@ Design mockups created in `website/admin-redesign.html` (Admin view) and `websit
 
 **Total Estimate:** ~1-2 days of development
 
+### Safari Extension (Cross-Browser Support)
+
+**Goal:** Port RevGuide to Safari using an injected sidebar overlay instead of the Chrome-specific Side Panel API.
+
+**Background:** The Chrome extension uses `chrome.sidePanel` which has no Safari equivalent. However, we previously had an injected sidebar/overlay approach before migrating to Chrome's native side panel - this pattern can be reused for Safari.
+
+#### Compatibility Analysis
+
+| Chrome API | Safari Support | Notes |
+|------------|----------------|-------|
+| `chrome.storage.local` | Yes | Full support |
+| `chrome.tabs` | Yes | Full support |
+| `chrome.runtime.onMessage` | Yes | Full support |
+| `chrome.scripting` | Yes | Full support |
+| `chrome.sidePanel` | No | Replace with injected overlay |
+| `chrome.runtime.onMessageExternal` | Partial | Needs alternative auth flow |
+| `externally_connectable` | No | Web app → extension messaging needs rework |
+
+#### Implementation Phases
+
+**Phase 1: Injected Sidebar Component**
+- [ ] Create `content/modules/injected-sidebar.js` as alternative to native side panel
+- [ ] Floating overlay UI matching current sidepanel design
+- [ ] Drag-to-resize functionality
+- [ ] Collapse/expand toggle
+- [ ] Position persistence (localStorage)
+- [ ] Shared by both Chrome (optional) and Safari (required)
+
+**Phase 2: Safari Extension Conversion**
+- [ ] Run Xcode converter: `xcrun safari-web-extension-converter`
+- [ ] Create Safari-specific manifest adaptations
+- [ ] Handle `browser` vs `chrome` namespace differences
+- [ ] Test on macOS Safari 14+
+
+**Phase 3: Auth Flow Adaptation**
+- [ ] Replace `onMessageExternal` with alternative for Safari
+- [ ] Options: URL scheme handlers, shared cookies, or native messaging
+- [ ] Test web app → extension authentication on Safari
+
+**Phase 4: Testing & Polish**
+- [ ] Cross-browser testing matrix (Chrome, Safari, Edge)
+- [ ] Performance testing on Safari
+- [ ] Safari-specific bug fixes
+
+#### Requirements
+- Apple Developer account ($99/year) for Safari distribution
+- Xcode for building Safari extension wrapper
+- macOS for development/testing
+
+#### Effort Estimate
+| Component | Effort |
+|-----------|--------|
+| Injected sidebar component | 1-2 days |
+| Safari conversion (Xcode) | 2-4 hours |
+| Auth flow rework | 1-2 days |
+| Testing & fixes | 1-2 days |
+| **Total** | **~1 week** |
+
 ### Enterprise Features
 - [x] SSO (Google, Microsoft) - *Implemented in v2.3.0*
 - [ ] SSO (SAML, OKTA) - *Enterprise single sign-on*

@@ -1140,13 +1140,24 @@ class SettingsPage {
             console.warn('Failed to send partner removal notification:', err);
           });
         } else if (isMember) {
-          // Remove user from organization (set organization_id to null)
-          const { error } = await client
-            .from('users')
-            .update({ organization_id: null })
-            .eq('id', userId);
+          // Delete user via API (deletes from users table AND auth.users)
+          const orgId = await RevGuideDB.getOrganizationId();
+          const { data: profile } = await RevGuideDB.getUserProfile();
 
-          if (error) throw new Error(error.message);
+          const response = await fetch('https://revguide-api.revguide.workers.dev/api/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              requestingUserId: profile.id,
+              organizationId: orgId
+            })
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || 'Failed to delete user');
+          }
 
           this.teamMembers = this.teamMembers.filter(m => m.id !== userId);
         } else {
