@@ -16,6 +16,7 @@ All notable changes to RevGuide will be documented in this file.
   - Validates link and shows organization name
   - Displays remaining spots
   - Simple signup form (name, email, password)
+  - **Google & Microsoft SSO**: One-click signup with OAuth providers
   - Auto-login after successful signup
 
 ### Technical
@@ -24,10 +25,10 @@ All notable changes to RevGuide will be documented in this file.
   - RLS policies for admin management and public validation
   - Helper functions: `generate_invite_code()`, `get_invite_link_by_code()`, `consume_invite_link()`
 
-- **API**: New endpoint `POST /api/signup-invite-link`
-  - Validates invite code
-  - Creates user account (email auto-confirmed)
-  - Consumes invite link (increments counter)
+- **API**: New endpoints for invite link signup
+  - `POST /api/signup-invite-link` - Email/password signup
+  - `POST /api/signup-invite-link-oauth` - OAuth signup (Google/Microsoft)
+  - Validates invite code, creates user, consumes link
 
 - **Files Modified/Created**:
   - `supabase/migrations/024_shareable_invite_links.sql` - Database schema
