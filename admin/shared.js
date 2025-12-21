@@ -46,13 +46,37 @@ function getCurrentPagePath() {
 }
 
 /**
+ * Pages that should NOT use org-prefixed URLs
+ * These are identity/account pages, not org-specific content pages
+ */
+const NON_ORG_AWARE_PAGES = [
+  '/partner/accounts',
+  '/partner/home',
+  '/login',
+  '/signup',
+  '/reset-password',
+  '/onboarding',
+  '/invite',
+  '/settings'
+];
+
+/**
+ * Check if a path should use org-aware URLs
+ * @param {string} path - The path to check
+ * @returns {boolean} True if path should be org-prefixed
+ */
+function isOrgAwarePath(path) {
+  return !NON_ORG_AWARE_PAGES.some(p => path.startsWith(p));
+}
+
+/**
  * Build an org-aware URL for navigation
  * @param {string} path - The path to navigate to (e.g., "/banners")
- * @returns {string} The org-prefixed path if org is available
+ * @returns {string} The org-prefixed path if org is available and path supports it
  */
 function buildOrgAwareUrl(path) {
   const orgId = currentOrganization?.id;
-  if (orgId) {
+  if (orgId && isOrgAwarePath(path)) {
     return `/${orgId}${path}`;
   }
   return path;
@@ -474,12 +498,9 @@ function renderSidebar(activePage) {
     });
   } else if (currentOrganization?.id) {
     // For web context with org, update nav links to use org-aware URLs
-    // Only update main content pages, not partner/login/etc
-    const orgAwarePages = ['/home', '/wiki', '/banners', '/plays', '/libraries', '/settings'];
-
     sidebar.querySelectorAll('.nav-item').forEach(link => {
       const href = link.getAttribute('href');
-      if (href && orgAwarePages.includes(href)) {
+      if (href && isOrgAwarePath(href)) {
         const orgAwareUrl = buildOrgAwareUrl(href);
         link.setAttribute('href', orgAwareUrl);
       }
@@ -723,9 +744,17 @@ async function switchPortal(organizationId) {
 
     showToast(`Switching to ${newOrg?.organization_name || 'portal'}...`, 'success');
 
-    // Navigate to org-prefixed URL for current page
+    // Navigate to org-prefixed URL for current page (if applicable)
     const currentPath = getCurrentPagePath();
-    const newUrl = `/${organizationId}${currentPath}`;
+    let newUrl;
+
+    if (isOrgAwarePath(currentPath)) {
+      // Content pages get org prefix
+      newUrl = `/${organizationId}${currentPath}`;
+    } else {
+      // Non-org pages (partner, settings, etc.) just reload
+      newUrl = currentPath;
+    }
 
     setTimeout(() => {
       window.location.href = newUrl;
@@ -2157,6 +2186,7 @@ window.AdminShared = {
   getOrgIdFromUrl,
   getCurrentPagePath,
   buildOrgAwareUrl,
+  isOrgAwarePath,
   // Multi-portal
   renderPortalSelector,
   switchPortal,
