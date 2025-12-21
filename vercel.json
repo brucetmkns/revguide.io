@@ -6,16 +6,25 @@
     { "source": "/signup", "destination": "/admin/pages/signup.html" },
     { "source": "/onboarding", "destination": "/admin/pages/onboarding.html" },
     { "source": "/reset-password", "destination": "/admin/pages/reset-password.html" },
+    { "source": "/extension/logged-in", "destination": "/admin/pages/extension-logged-in.html" },
+    { "source": "/partner/home", "destination": "/admin/pages/partner-home.html" },
+    { "source": "/partner/accounts", "destination": "/admin/pages/partner.html" },
+    { "source": "/invite", "destination": "/admin/pages/invite.html" },
+
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/home", "destination": "/admin/pages/home.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/wiki", "destination": "/admin/pages/wiki.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/banners", "destination": "/admin/pages/banners.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/plays", "destination": "/admin/pages/plays.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/libraries", "destination": "/admin/pages/libraries.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/settings", "destination": "/admin/pages/settings.html" },
+    { "source": "/:orgId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", "destination": "/admin/pages/home.html" },
+
     { "source": "/home", "destination": "/admin/pages/home.html" },
     { "source": "/wiki", "destination": "/admin/pages/wiki.html" },
     { "source": "/banners", "destination": "/admin/pages/banners.html" },
     { "source": "/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
-    { "source": "/settings", "destination": "/admin/pages/settings.html" },
-    { "source": "/partner/home", "destination": "/admin/pages/partner-home.html" },
-    { "source": "/partner/accounts", "destination": "/admin/pages/partner.html" },
-    { "source": "/invite", "destination": "/admin/pages/invite.html" },
-    { "source": "/extension/logged-in", "destination": "/admin/pages/extension-logged-in.html" }
+    { "source": "/settings", "destination": "/admin/pages/settings.html" }
   ],
   "headers": [
     {

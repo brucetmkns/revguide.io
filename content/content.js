@@ -183,11 +183,35 @@
     /**
      * Load configuration data - tries cloud first (via background script), falls back to local
      * Also loads pre-built wiki term map cache for faster tooltip initialization
+     * Supports CRM portal matching for automatic org detection
      */
     async loadData() {
-      // First, try to get content via background script (handles cloud vs local)
+      // Detect CRM context early to enable portal matching
+      const url = window.location.href;
+      let portalId = null;
+      let crmType = null;
+
+      // HubSpot portal detection
+      if (url.includes('hubspot.com')) {
+        crmType = 'hubspot';
+        const portalMatch = url.match(/\/contacts\/(\d+)\//);
+        if (portalMatch) {
+          portalId = portalMatch[1];
+        }
+      }
+
+      // Future: Add detection for other CRMs here
+      // if (url.includes('salesforce.com')) { ... }
+
+      log('Detected CRM context:', { crmType, portalId });
+
+      // Get content via background script (handles cloud vs local with portal matching)
       const contentResult = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+        chrome.runtime.sendMessage({
+          action: 'getContent',
+          portalId: portalId,
+          crmType: crmType
+        }, (response) => {
           if (chrome.runtime.lastError) {
             log('Error getting content:', chrome.runtime.lastError.message);
             resolve(null);
@@ -196,6 +220,13 @@
           }
         });
       });
+
+      // Log portal matching result
+      if (contentResult?.matchedOrg) {
+        log('Content loaded for matched org:', contentResult.matchedOrg.name);
+      } else if (contentResult?.usingFallback) {
+        log('No org matched portal, using default org');
+      }
 
       // Get settings and wiki cache from local storage
       const localData = await new Promise((resolve) => {
@@ -665,6 +696,7 @@
 
     /**
      * Detect page context from URL
+     * Includes CRM type detection for future multi-CRM support
      */
     detectContext() {
       const url = window.location.href;
@@ -672,15 +704,33 @@
         objectType: null,
         recordId: null,
         portalId: null,
+        crmType: null,
         pipeline: null,
         stage: null
       };
 
-      // Extract portal ID: /contacts/{portalId}/...
-      const portalMatch = url.match(/\/contacts\/(\d+)\//);
-      if (portalMatch) {
-        context.portalId = portalMatch[1];
+      // HubSpot detection
+      if (url.includes('hubspot.com')) {
+        context.crmType = 'hubspot';
+
+        // Extract portal ID: /contacts/{portalId}/...
+        const portalMatch = url.match(/\/contacts\/(\d+)\//);
+        if (portalMatch) {
+          context.portalId = portalMatch[1];
+        }
       }
+
+      // Future: Salesforce detection
+      // if (url.includes('salesforce.com') || url.includes('force.com')) {
+      //   context.crmType = 'salesforce';
+      //   // Extract org ID from URL
+      // }
+
+      // Future: Attio detection
+      // if (url.includes('attio.com')) {
+      //   context.crmType = 'attio';
+      //   // Extract workspace ID from URL
+      // }
 
       // Extract object type and record ID from record pages
       // Pattern: /record/{objectTypeId}/{recordId}

@@ -196,6 +196,63 @@ async function ensureValidToken() {
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 const CLOUD_CONTENT_TTL_MS = 5 * 60 * 1000;
+
+// ============ CRM PORTAL MATCHING ============
+
+/**
+ * Match a CRM portal ID to a RevGuide organization
+ * Currently supports HubSpot, designed to be CRM-agnostic for future expansion
+ * @param {string} portalId - The CRM portal/workspace ID
+ * @param {string} crmType - The CRM type ('hubspot', future: 'salesforce', 'attio')
+ * @param {string} accessToken - The user's Supabase access token
+ * @returns {Object|null} - The matched organization { id, name } or null
+ */
+async function getOrgByCrmPortalId(portalId, crmType, accessToken) {
+  if (!portalId || !accessToken) {
+    return null;
+  }
+
+  // Map CRM types to their portal ID column in the organizations table
+  const columnMap = {
+    'hubspot': 'hubspot_portal_id',
+    // Future CRM support:
+    // 'salesforce': 'salesforce_org_id',
+    // 'attio': 'attio_workspace_id',
+  };
+
+  const column = columnMap[crmType] || 'hubspot_portal_id';
+
+  try {
+    // Query Supabase REST API directly (can't use RevGuideDB in service worker)
+    // RLS will automatically filter to orgs the user has access to
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/organizations?${column}=eq.${portalId}&select=id,name`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': SUPABASE_ANON_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.log('[RevGuide] Portal matching query failed:', response.status);
+      return null;
+    }
+
+    const orgs = await response.json();
+    if (orgs.length > 0) {
+      console.log('[RevGuide] Matched portal', portalId, 'to org:', orgs[0].name);
+      return orgs[0];
+    }
+
+    console.log('[RevGuide] No org found for portal:', portalId);
+    return null;
+  } catch (error) {
+    console.error('[RevGuide] Error matching portal ID:', error);
+    return null;
+  }
+}
 const HUBSPOT_PROPERTIES_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const HUBSPOT_PROPERTIES_CACHE_KEY = 'hubspotPropertiesCache';
 const HUBSPOT_OBJECT_TYPE_MAP = {
@@ -331,17 +388,19 @@ function mapWikiFromSupabase(data) {
 }
 
 /**
- * Fetch all content (banners, plays, wiki) for the user's organization
+ * Fetch all content (banners, plays, wiki) for an organization
+ * @param {string} [targetOrgId] - Optional org ID to fetch content for. If not provided, uses user's active org.
  */
-async function fetchCloudContent() {
+async function fetchCloudContent(targetOrgId = null) {
   const authState = await getAuthState();
-  console.log('[RevGuide] fetchCloudContent called - isAuthenticated:', authState.isAuthenticated, 'orgId:', authState.profile?.organizationId);
-  if (!authState.isAuthenticated || !authState.profile?.organizationId) {
+  const orgId = targetOrgId || authState.profile?.organizationId;
+
+  console.log('[RevGuide] fetchCloudContent called - isAuthenticated:', authState.isAuthenticated, 'targetOrgId:', targetOrgId, 'activeOrgId:', authState.profile?.organizationId, 'usingOrgId:', orgId);
+
+  if (!authState.isAuthenticated || !orgId) {
     console.log('[RevGuide] Cannot fetch cloud content: not authenticated or no org');
     return null;
   }
-
-  const orgId = authState.profile.organizationId;
   console.log('[RevGuide] Fetching cloud content for org:', orgId);
 
   try {
@@ -407,35 +466,95 @@ async function fetchCloudContent() {
 
 /**
  * Get content - from cloud if authenticated, otherwise local
+ * Supports CRM portal matching for automatic org detection
+ * @param {Object} options
+ * @param {boolean} [options.forceRefresh] - Force refresh from cloud
+ * @param {string} [options.portalId] - CRM portal ID to match to an org
+ * @param {string} [options.crmType='hubspot'] - CRM type for portal matching
  */
 async function getContent(options = {}) {
   const authState = await getAuthState();
-  const { forceRefresh = false } = options;
+  const { forceRefresh = false, portalId = null, crmType = 'hubspot' } = options;
 
   if (authState.isAuthenticated && authState.profile?.organizationId) {
+    let orgId = authState.profile.organizationId;
+    let matchedOrg = null;
+
+    // Silent switch: If CRM portal ID provided, find matching org
+    if (portalId) {
+      matchedOrg = await getOrgByCrmPortalId(portalId, crmType, authState.accessToken);
+      if (matchedOrg) {
+        orgId = matchedOrg.id; // Use matched org's content
+        console.log('[RevGuide] Using matched org:', matchedOrg.name, 'for portal:', portalId);
+      } else {
+        console.log('[RevGuide] No match for portal:', portalId, '- using default org');
+      }
+    }
+
+    // Check cache - use org-specific cache key when portal matching
+    const cacheKey = matchedOrg ? `cloudContent_${orgId}` : 'cloudContent';
+    const cacheTimeKey = matchedOrg ? `cloudContentLastFetch_${orgId}` : 'cloudContentLastFetch';
+
     const cachedResult = await chrome.storage.local.get({
+      [cacheKey]: null,
+      [cacheTimeKey]: 0,
+      // Also get default cache for fallback
       cloudContent: null,
       cloudContentLastFetch: 0
     });
-    const cacheAge = Date.now() - (cachedResult.cloudContentLastFetch || 0);
 
-    if (!forceRefresh && cachedResult.cloudContent && cacheAge < CLOUD_CONTENT_TTL_MS) {
-      return { source: 'cloud-cached', content: cachedResult.cloudContent };
+    const cachedContent = cachedResult[cacheKey] || cachedResult.cloudContent;
+    const cacheTime = cachedResult[cacheTimeKey] || cachedResult.cloudContentLastFetch;
+    const cacheAge = Date.now() - (cacheTime || 0);
+
+    // Use cache if fresh and not forcing refresh
+    if (!forceRefresh && cachedContent && cacheAge < CLOUD_CONTENT_TTL_MS) {
+      return {
+        source: 'cloud-cached',
+        content: cachedContent,
+        matchedOrg: matchedOrg ? { id: matchedOrg.id, name: matchedOrg.name } : null,
+        usingFallback: portalId && !matchedOrg
+      };
     }
 
-    const cloudContent = await fetchCloudContent();
+    // Fetch fresh content for the org
+    const cloudContent = await fetchCloudContent(orgId);
     if (cloudContent) {
-      return { source: 'cloud', content: cloudContent };
+      // Cache with org-specific key if portal matching
+      if (matchedOrg) {
+        await chrome.storage.local.set({
+          [cacheKey]: cloudContent,
+          [cacheTimeKey]: Date.now()
+        });
+      }
+
+      return {
+        source: 'cloud',
+        content: cloudContent,
+        matchedOrg: matchedOrg ? { id: matchedOrg.id, name: matchedOrg.name } : null,
+        usingFallback: portalId && !matchedOrg
+      };
     }
 
-    if (cachedResult.cloudContent) {
-      return { source: 'cloud-cached', content: cachedResult.cloudContent };
+    // Fall back to cached content if fetch failed
+    if (cachedContent) {
+      return {
+        source: 'cloud-cached',
+        content: cachedContent,
+        matchedOrg: matchedOrg ? { id: matchedOrg.id, name: matchedOrg.name } : null,
+        usingFallback: portalId && !matchedOrg
+      };
     }
   }
 
   // Fall back to local content
   const local = await chrome.storage.local.get(['rules', 'battleCards', 'wikiEntries']);
-  return { source: 'local', content: local };
+  return {
+    source: 'local',
+    content: local,
+    matchedOrg: null,
+    usingFallback: !!portalId
+  };
 }
 
 // ============ ORIGINAL CODE ============
@@ -716,7 +835,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'getContent') {
-    getContent({ forceRefresh: !!request.forceRefresh }).then(sendResponse);
+    getContent({
+      forceRefresh: !!request.forceRefresh,
+      portalId: request.portalId || null,
+      crmType: request.crmType || 'hubspot'
+    }).then(sendResponse);
     return true;
   }
 

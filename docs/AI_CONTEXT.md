@@ -106,9 +106,11 @@ plugin/
 ```
 HubSpot Page Load
     ↓
-content.js detects page type (record vs index)
+content.js detects page type + CRM context (portal ID, CRM type)
     ↓
-background.js fetches data from Supabase
+background.js matches portal ID to organization (v2.1.0+)
+    ↓
+background.js fetches data from Supabase for matched org
     ↓
 content.js extracts page properties from DOM
     ↓
@@ -154,14 +156,30 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 
 ---
 
-## Multi-Portal & Partner Accounts (v2.7.0+, v2.8.0+)
+## Multi-Portal & Partner Accounts (v2.7.0+, v2.8.0+, v2.1.0+)
 
-**For agencies/consultants managing multiple HubSpot portals:**
+**For agencies/partners managing multiple HubSpot portals:**
 
 - Users can belong to multiple organizations via `organization_members` table
 - `active_organization_id` tracks which portal is currently active
 - Portal selector dropdown appears in sidebar when user has 2+ portals
 - **Import/Export** (v2.7.2+): JSON export from one portal, import to another with Replace All or Merge mode
+
+**Org-Aware URLs (v2.1.0+):**
+- Admin URLs support org UUID prefix: `/[org-uuid]/banners`, `/[org-uuid]/wiki`, etc.
+- Enables deep linking to specific organization's content
+- Backward compatible - `/banners` still works (uses active org)
+- Sidebar nav links automatically include org UUID when available
+- Portal selector redirects to org-prefixed URL for current page
+- URL functions: `getOrgIdFromUrl()`, `getCurrentPagePath()`, `buildOrgAwareUrl()`
+
+**Extension Auto-Match (v2.1.0+):**
+- Extension extracts HubSpot portal ID from URL (`/contacts/12345678/...`)
+- Queries Supabase to find org with matching `hubspot_portal_id`
+- Silently loads that organization's content (no prompt needed)
+- Falls back to user's default org if no match found
+- CRM-agnostic design: supports future Salesforce, Attio, etc. via `crmType` parameter
+- Key function: `getOrgByCrmPortalId(portalId, crmType, accessToken)` in background.js
 
 **Partner Account System (v2.8.0+, v2.8.2+):**
 - `account_type` column: `'standard'` or `'partner'`
@@ -169,18 +187,18 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - Partner Home (`/partner/home`) - 3-step onboarding for partners (v2.8.2+)
 - Managed Accounts (`/partner/accounts`) - dedicated UI for client management
 - Sidebar dropdown: Partner → Home, Managed Accounts
-- Partners have `partner` role in client orgs (distinct from legacy `consultant`)
+- Partners have `partner` role in client orgs
 - Admins can invite partners or convert their account to partner
 
 **Key tables:**
 - `organization_members` - Many-to-many user↔org with per-org roles
-- `consultant_libraries` - Reusable content packages
+- `partner_libraries` - Reusable content packages
 - `library_installations` - Track installed libraries per org
 
 **Key functions (RevGuideDB):**
 - `getUserOrganizations()` - Get all portals user can access
 - `switchOrganization(orgId)` - Switch active portal
-- `isConsultant()` - Check consultant privileges (includes partners)
+- `isConsultant()` - Check partner privileges (legacy name, checks partner role)
 - `isPartner()` - Check if user is a partner (v2.8.0+)
 - `getPartnerClients()` - Get client portals for partner (v2.8.0+)
 - `getPartnerStats()` - Get dashboard stats for partner (v2.8.0+)
@@ -228,7 +246,7 @@ Build script: `scripts/build.js`
 - `plays` - Battle cards
 - `wiki_entries` - Wiki glossary
 - `hubspot_connections` - OAuth tokens (encrypted)
-- `consultant_libraries` - Reusable content packages (v2.7.0+)
+- `partner_libraries` - Reusable content packages (v2.7.0+)
 - `library_installations` - Track installed libraries per org (v2.7.0+)
 
 **RLS:** Row-level security enforced for all tables.

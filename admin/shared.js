@@ -13,9 +13,110 @@ const isExtensionContext = typeof chrome !== 'undefined' && chrome.storage && ch
  */
 let currentUser = null;
 let currentOrganization = null;
-let userOrganizations = []; // All organizations user has access to (for consultants)
-let isConsultantUser = false; // Whether user has consultant privileges
+let userOrganizations = []; // All organizations user has access to (for partners)
+let isPartnerUser = false; // Whether user has partner privileges
 let orgsLoadedThisSession = false; // Track if we've loaded orgs this session
+
+// ============ ORG-AWARE URL HANDLING ============
+
+/**
+ * UUID regex pattern for org-prefixed URLs
+ */
+const UUID_PATTERN = /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/|$)/i;
+
+/**
+ * Extract org ID from URL path if present
+ * @returns {string|null} The org UUID or null if not in URL
+ */
+function getOrgIdFromUrl() {
+  const match = window.location.pathname.match(UUID_PATTERN);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Get current page path without org prefix
+ * @returns {string} Path like "/banners" regardless of whether org prefix is present
+ */
+function getCurrentPagePath() {
+  const orgId = getOrgIdFromUrl();
+  if (orgId) {
+    return window.location.pathname.replace(`/${orgId}`, '') || '/home';
+  }
+  return window.location.pathname;
+}
+
+/**
+ * Build an org-aware URL for navigation
+ * @param {string} path - The path to navigate to (e.g., "/banners")
+ * @returns {string} The org-prefixed path if org is available
+ */
+function buildOrgAwareUrl(path) {
+  const orgId = currentOrganization?.id;
+  if (orgId) {
+    return `/${orgId}${path}`;
+  }
+  return path;
+}
+
+/**
+ * Handle URL-based org switching
+ * Called after user orgs are loaded to check if URL specifies a different org
+ * @returns {Promise<boolean>} True if org was switched, false otherwise
+ */
+async function handleUrlOrgSwitch() {
+  const urlOrgId = getOrgIdFromUrl();
+
+  // No org in URL - nothing to do
+  if (!urlOrgId) {
+    return false;
+  }
+
+  // Already on the correct org
+  if (currentOrganization?.id?.toLowerCase() === urlOrgId) {
+    return false;
+  }
+
+  // Find matching org in user's organizations
+  const matchingOrg = userOrganizations.find(
+    org => org.organization_id?.toLowerCase() === urlOrgId
+  );
+
+  if (matchingOrg) {
+    console.log('[Auth] URL specifies org:', matchingOrg.organization_name, '- switching silently');
+
+    // Update current organization without API call (org is in user's list)
+    currentOrganization = {
+      id: matchingOrg.organization_id,
+      name: matchingOrg.organization_name,
+      hubspot_portal_id: matchingOrg.portal_id
+    };
+
+    // Update the database to reflect the new active org
+    if (typeof RevGuideDB !== 'undefined') {
+      try {
+        await RevGuideDB.switchOrganization(matchingOrg.organization_id);
+      } catch (e) {
+        console.warn('[Auth] Failed to persist org switch:', e);
+      }
+    }
+
+    // Update cache
+    saveUserToCache();
+
+    return true;
+  } else {
+    // User doesn't have access to this org
+    console.warn('[Auth] User does not have access to org:', urlOrgId);
+    showToast('You do not have access to this organization', 'error');
+
+    // Redirect to home without org prefix
+    setTimeout(() => {
+      window.location.href = '/home';
+    }, 1000);
+
+    return false;
+  }
+}
 
 /**
  * Load user's organizations for multi-portal feature
@@ -57,8 +158,15 @@ async function loadUserOrganizations() {
       }
     }
 
-    // Check if user is a consultant
-    isConsultantUser = await RevGuideDB.isConsultant();
+    // Check if user is a partner
+    isPartnerUser = await RevGuideDB.isConsultant();
+
+    // Handle URL-based org switching (if URL contains org ID)
+    const orgSwitched = await handleUrlOrgSwitch();
+    if (orgSwitched) {
+      // Clear storage cache so fresh data loads for new org
+      clearStorageDataCache();
+    }
 
     // Render portal selector if user has multiple orgs
     if (userOrganizations.length > 1) {
@@ -347,7 +455,6 @@ function renderSidebar(activePage) {
         admin: 'Admin',
         editor: 'Editor',
         viewer: 'Viewer',
-        consultant: 'Consultant',
         partner: 'Partner',
         member: 'Viewer' // Legacy role
       };
@@ -365,6 +472,18 @@ function renderSidebar(activePage) {
         link.setAttribute('href', href.slice(1) + '.html');
       }
     });
+  } else if (currentOrganization?.id) {
+    // For web context with org, update nav links to use org-aware URLs
+    // Only update main content pages, not partner/login/etc
+    const orgAwarePages = ['/home', '/wiki', '/banners', '/plays', '/libraries', '/settings'];
+
+    sidebar.querySelectorAll('.nav-item').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && orgAwarePages.includes(href)) {
+        const orgAwareUrl = buildOrgAwareUrl(href);
+        link.setAttribute('href', orgAwareUrl);
+      }
+    });
   }
 
   // Hide admin-only navigation items for members
@@ -376,11 +495,11 @@ function renderSidebar(activePage) {
     }
   }
 
-  // Show/hide Partner nav group for partners, consultants, or users with multiple orgs
+  // Show/hide Partner nav group for partners or users with multiple orgs
   const partnerNavGroup = sidebar.querySelector('#partnerNavGroup');
   if (partnerNavGroup) {
-    // Show for consultants, partners, or users with multiple orgs
-    const showPartnerDashboard = isConsultantUser || (userOrganizations && userOrganizations.length > 1);
+    // Show for partners or users with multiple orgs
+    const showPartnerDashboard = isPartnerUser || (userOrganizations && userOrganizations.length > 1);
 
     if (showPartnerDashboard) {
       partnerNavGroup.style.display = 'block';
@@ -567,6 +686,7 @@ function initPortalSelector() {
 
 /**
  * Switch to a different portal/organization
+ * Redirects to org-prefixed URL for the current page
  * @param {string} organizationId
  */
 async function switchPortal(organizationId) {
@@ -596,16 +716,19 @@ async function switchPortal(organizationId) {
       };
     }
 
-    // Clear all caches so fresh data loads after reload
+    // Clear all caches so fresh data loads after navigation
     clearStorageDataCache();
     clearUserCache(); // Clear auth cache so new active org is used
     orgsLoadedThisSession = false; // Reset orgs loading flag
 
     showToast(`Switching to ${newOrg?.organization_name || 'portal'}...`, 'success');
 
-    // Reload the page to refresh content with new organization
+    // Navigate to org-prefixed URL for current page
+    const currentPath = getCurrentPagePath();
+    const newUrl = `/${organizationId}${currentPath}`;
+
     setTimeout(() => {
-      window.location.reload();
+      window.location.href = newUrl;
     }, 300);
 
   } catch (e) {
@@ -1990,7 +2113,7 @@ function isEditor() {
 function canEditContent() {
   if (isExtensionContext) return true;
   const role = getEffectiveRole();
-  return role === 'owner' || role === 'admin' || role === 'editor' || role === 'consultant';
+  return role === 'owner' || role === 'admin' || role === 'editor' || role === 'partner';
 }
 
 /**
@@ -2003,11 +2126,11 @@ function getUserRole() {
 }
 
 /**
- * Check if current user is a consultant
+ * Check if current user is a partner
  * @returns {boolean}
  */
-function isConsultant() {
-  return isConsultantUser;
+function isPartner() {
+  return isPartnerUser;
 }
 
 // Export for use in page scripts
@@ -2021,15 +2144,19 @@ window.AdminShared = {
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
   get userOrganizations() { return userOrganizations; },
-  get isConsultantUser() { return isConsultantUser; },
+  get isPartnerUser() { return isPartnerUser; },
   // Role helpers
   getEffectiveRole,
   isAdmin,
   isEditor,
   isMember,
-  isConsultant,
+  isPartner,
   canEditContent,
   getUserRole,
+  // Org-aware URLs
+  getOrgIdFromUrl,
+  getCurrentPagePath,
+  buildOrgAwareUrl,
   // Multi-portal
   renderPortalSelector,
   switchPortal,

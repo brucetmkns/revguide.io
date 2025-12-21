@@ -2,6 +2,32 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.1.0] - 2025-12-21 - Org-Aware URLs & Extension Auto-Match
+
+### Added
+- **Org-Aware Admin URLs**: Admin panel now supports URLs with organization UUID prefix
+  - `/[org-uuid]/banners`, `/[org-uuid]/wiki`, etc.
+  - Enables deep linking to specific organization's content
+  - Backward compatible - `/banners` still works (uses active org)
+  - Sidebar nav links automatically include org UUID
+  - Portal selector redirects to org-prefixed URLs
+
+- **Extension Auto-Match**: Extension automatically detects HubSpot portal and shows correct library
+  - Extracts portal ID from HubSpot URL (`/contacts/12345678/...`)
+  - Queries Supabase to find matching organization by `hubspot_portal_id`
+  - Silently loads that organization's content (no prompt)
+  - Falls back to user's default org if no match found
+  - CRM-agnostic design supports future Salesforce, Attio integration
+
+### Technical
+- **Files Modified**:
+  - `vercel.json` - Added UUID-based route patterns for org-prefixed URLs
+  - `admin/shared.js` - Added URL parsing (`getOrgIdFromUrl`, `getCurrentPagePath`, `buildOrgAwareUrl`), auto-switch handling, org-aware navigation
+  - `background/background.js` - Added `getOrgByCrmPortalId()` for portal matching, updated `getContent()` with org-specific caching
+  - `content/content.js` - Added CRM type detection, passes portal context when loading data
+
+---
+
 ## [2.0.1] - 2025-12-21 - Partner Display Fix
 
 ### Fixed
