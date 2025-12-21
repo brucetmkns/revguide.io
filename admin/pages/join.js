@@ -5,7 +5,7 @@
  */
 
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZGh2aHJvd21mbmFjeWlra2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQyOTI5NDksImV4cCI6MjA0OTg2ODk0OX0.7FpNlKfhoFfJajMnNy-xRF37px6MrGmPHr-wu0J5f-o';
+const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 const API_BASE_URL = 'https://revguide-api.revguide.workers.dev';
 
 class JoinPage {
