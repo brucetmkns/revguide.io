@@ -2,6 +2,17 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.2.2] - 2025-12-21 - Partner Removal Notification
+
+### Added
+- **Partner Removal Email**: Partners now receive an email when removed from an organization
+  - New API endpoint: `POST /api/notify-partner-removed`
+  - Email includes organization name and admin who removed them
+  - Purple-themed email to distinguish from green "joined" notifications
+  - Fire-and-forget notification (non-blocking)
+
+---
+
 ## [2.2.1] - 2025-12-21 - TipTap Editor Image URL-Only
 
 ### Changed
