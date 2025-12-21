@@ -82,7 +82,6 @@ const TERSER_OPTIONS = {
       'RevGuideAuth',
       'RevGuideDB',
       'RevGuideHubSpot',
-      'RevGuideNango',
       'SidePanel',
       'BannersModule',
       'WikiModule',

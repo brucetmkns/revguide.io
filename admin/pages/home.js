@@ -41,10 +41,52 @@ class HomePage {
     }
   }
 
+  /**
+   * Handle OAuth callback if returning from HubSpot
+   */
+  async handleOAuthCallback() {
+    const oauthReturn = RevGuideHubSpot.checkOAuthReturn();
+
+    if (!oauthReturn.isReturning) {
+      return;
+    }
+
+    console.log('[Home] Returning from OAuth flow:', oauthReturn);
+
+    // Clear URL parameters
+    RevGuideHubSpot.clearOAuthParams();
+
+    if (oauthReturn.success) {
+      AdminShared.showToast('HubSpot connected successfully!', 'success');
+
+      // Hide connect banner
+      const connectBanner = document.getElementById('connectHubSpotBanner');
+      if (connectBanner) {
+        connectBanner.style.display = 'none';
+      }
+
+      // Mark API step as completed
+      const stepApi = document.getElementById('stepApi');
+      if (stepApi) {
+        stepApi.classList.add('completed');
+        const stepApiStatus = document.getElementById('stepApiStatus');
+        if (stepApiStatus) {
+          stepApiStatus.textContent = 'Connected';
+          stepApiStatus.classList.add('completed');
+        }
+      }
+    } else {
+      AdminShared.showToast(oauthReturn.error || 'Failed to connect HubSpot', 'error');
+    }
+  }
+
   async init() {
     // Check authentication (redirects to login if not authenticated)
     const isAuthenticated = await AdminShared.checkAuth();
     if (!isAuthenticated) return;
+
+    // Handle OAuth callback if returning from HubSpot
+    await this.handleOAuthCallback();
 
     // Render sidebar (role-aware)
     AdminShared.renderSidebar('home');
@@ -348,62 +390,13 @@ class HomePage {
     }
 
     try {
-      // Generate unique connection ID
-      const connectionId = 'conn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      // Start HubSpot OAuth flow - this will redirect to HubSpot
+      await RevGuideHubSpot.connect(window.location.href);
 
-      // Get current organization ID
-      const orgId = await RevGuideDB.getOrganizationId();
-
-      // Start Nango OAuth flow
-      const result = await RevGuideNango.connectHubSpot(connectionId);
-
-      if (result.success) {
-        // Get portal info
-        const portalInfo = await RevGuideNango.getPortalInfo(connectionId);
-
-        if (portalInfo && orgId) {
-          // Create HubSpot connection record
-          await RevGuideDB.createHubSpotConnection({
-            organization_id: orgId,
-            portal_id: portalInfo.portalId,
-            portal_domain: portalInfo.portalDomain,
-            portal_name: portalInfo.portalName,
-            nango_connection_id: connectionId
-          });
-
-          // Update organization with portal info
-          await RevGuideDB.updateOrganization({
-            hubspot_portal_id: portalInfo.portalId,
-            hubspot_portal_domain: portalInfo.portalDomain,
-            nango_connection_id: connectionId
-          });
-
-          // Success - hide banner and update UI
-          const connectBanner = document.getElementById('connectHubSpotBanner');
-          if (connectBanner) {
-            connectBanner.style.display = 'none';
-          }
-
-          // Mark API step as completed
-          const stepApi = document.getElementById('stepApi');
-          if (stepApi) {
-            stepApi.classList.add('completed');
-            document.getElementById('stepApiStatus').textContent = 'Connected';
-            document.getElementById('stepApiStatus').classList.add('completed');
-          }
-
-          AdminShared.showToast('HubSpot connected successfully!', 'success');
-
-          // Recalculate onboarding progress
-          this.updateOnboardingProgress();
-        }
-      } else {
-        AdminShared.showToast(result.error || 'Failed to connect HubSpot', 'error');
-        this.resetConnectButtons();
-      }
+      // Note: Page will redirect, so code below won't execute
     } catch (error) {
       console.error('HubSpot connection error:', error);
-      AdminShared.showToast('Failed to connect HubSpot. Please try again.', 'error');
+      AdminShared.showToast('Failed to start HubSpot connection. Please try again.', 'error');
       this.resetConnectButtons();
     }
   }

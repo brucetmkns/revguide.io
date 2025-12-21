@@ -2,6 +2,15 @@
 
 Project-specific instructions for Claude Code sessions.
 
+## Important: Project Identity
+
+**This project is RevGuide** - a Chrome extension + SaaS for HubSpot.
+
+- **Our domains**: `revguide.io`, `app.revguide.io`, `help.revguide.io`
+- **Supered is a COMPETITOR** - never use `supered.io` or any Supered branding
+- When the docs reference "Supered-style" patterns, this describes implementation techniques we studied - it does NOT mean we are Supered
+- All external links, help URLs, and branding must use RevGuide domains
+
 ## Key Documentation
 
 - `docs/AI_CONTEXT.md` - Project overview, architecture, key objects

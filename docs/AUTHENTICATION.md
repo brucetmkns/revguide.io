@@ -19,7 +19,7 @@ This document outlines the authentication architecture for RevGuide, covering bo
 RevGuide uses a **dual authentication** approach:
 
 1. **User Authentication**: Supabase Auth (Email/Password) for web app access
-2. **CRM Authentication**: HubSpot OAuth via Nango for CRM data access
+2. **CRM Authentication**: Direct HubSpot OAuth via Supabase Edge Functions (since v2.1.0)
 
 ```
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
@@ -28,10 +28,12 @@ RevGuide uses a **dual authentication** approach:
 └──────────────────┘     └──────────────────┘     └──────────────────┘
 
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Chrome Extension│────▶│  Nango OAuth     │────▶│   HubSpot API    │
-│  (User's browser)│     │  (Token mgmt)    │     │   (CRM Data)     │
+│  Chrome Extension│────▶│  Supabase Edge   │────▶│   HubSpot API    │
+│  (User's browser)│     │  (hubspot-oauth) │     │   (CRM Data)     │
 └──────────────────┘     └──────────────────┘     └──────────────────┘
 ```
+
+> **Note**: This document contains historical research on Nango as an OAuth solution. RevGuide now uses direct HubSpot OAuth implemented via Supabase Edge Functions. See `supabase/functions/hubspot-oauth/` and `admin/hubspot.js` for the current implementation.
 
 ---
 

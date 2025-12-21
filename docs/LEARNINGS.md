@@ -741,7 +741,7 @@ async function getValidAccessToken(connectionId) {
 
 ### Files for HubSpot OAuth
 - `supabase/functions/hubspot-oauth/index.ts` - Edge function with all endpoints
-- `admin/hubspot.js` - Frontend client (replaces nango.js)
+- `admin/hubspot.js` - Frontend HubSpot OAuth client
 - `admin/pages/settings.js` - Uses RevGuideHubSpot client
 - `supabase/migrations/002_direct_hubspot_oauth.sql` - Token columns and oauth_states table
 

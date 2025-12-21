@@ -106,14 +106,14 @@ This document outlines the implementation plan for multi-portal support and user
   portals: {
     "12345678": {
       name: "Client A - Acme Corp",
-      nangoConnectionId: "conn_abc123",  // OAuth connection via Nango
+      connectionId: "conn_abc123",  // OAuth connection ID
       color: "#ff7a59",  // Visual identifier
       addedAt: 1702500000000,
       userRoleInPortal: "admin" | "user" | "consultant"  // Role within this specific portal
     },
     "87654321": {
       name: "Client B - Widget Inc",
-      nangoConnectionId: "conn_def456",  // OAuth connection via Nango
+      connectionId: "conn_def456",  // OAuth connection ID
       color: "#00bda5",
       addedAt: 1702600000000,
       userRoleInPortal: "consultant"
