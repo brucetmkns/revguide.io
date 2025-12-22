@@ -22,7 +22,13 @@ All notable changes to RevGuide will be documented in this file.
 ### Fixed
 - **SSO Login Redirect**: Fixed issue where users had to click SSO button twice after OAuth redirect
   - OAuth callback now processed before session check
-  - Added polling mechanism to wait for Supabase to establish session
+  - Added `onAuthStateChange` listener for reliable session detection
+  - Join page OAuth now redirects to `/login` which handles invite signup
+
+- **User Deletion**: Removing a team member now fully deletes their account
+  - Previously only set `organization_id` to null, leaving auth account intact
+  - New `/api/delete-user` endpoint deletes from both `users` table and `auth.users`
+  - Deleted users can now sign up fresh via invite links
 
 ### Technical
 - **Database**: New `invite_links` and `invite_link_signups` tables
@@ -30,9 +36,10 @@ All notable changes to RevGuide will be documented in this file.
   - RLS policies for admin management and public validation
   - Helper functions: `generate_invite_code()`, `get_invite_link_by_code()`, `consume_invite_link()`
 
-- **API**: New endpoints for invite link signup
+- **API**: New endpoints for invite link signup and user management
   - `POST /api/signup-invite-link` - Email/password signup
   - `POST /api/signup-invite-link-oauth` - OAuth signup (Google/Microsoft)
+  - `POST /api/delete-user` - Full user deletion (profile + auth)
   - Validates invite code, creates user, consumes link
 
 - **Files Modified/Created**:
