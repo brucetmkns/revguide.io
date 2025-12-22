@@ -50,7 +50,8 @@ plugin/
 │       ├── banners.js     # Banner rendering
 │       ├── wiki.js        # Wiki tooltips
 │       ├── sidepanel.js   # FAB button & sidepanel
-│       └── presentations.js # Media embeds (Google Slides, etc.)
+│       ├── presentations.js # Media embeds (Google Slides, etc.)
+│       └── index-tags.js  # Index page tags (table & board views)
 │
 ├── sidepanel/
 │   └── sidepanel.js       # Chrome side panel UI
@@ -312,4 +313,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2025 (v2.8.6)*
+*Last updated: December 2025 (v2.5.1)*

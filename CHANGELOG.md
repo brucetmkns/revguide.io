@@ -2,6 +2,40 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.5.1] - 2025-12-22 - Index Tags Enhancements
+
+### Added
+- **Board View Tags**: Tags now display on Kanban/board view record cards
+  - Supports Deals and Companies board views
+  - Tags appear below the record title on each card
+  - Virtual scroll support - tags load as new cards scroll into view
+  - MutationObserver + scroll listeners + periodic fallback for reliable detection
+
+- **Clickable Tags**: Tags are now interactive
+  - Clicking a tag with a related play opens the sidepanel to that play
+  - Clicking a tag without a play shows a popup with the banner message content
+  - Banner popup displays with type-colored header (info, warning, success, etc.)
+
+### Fixed
+- **Properties Not Loading in Admin Panel**: Fixed banner rule conditions showing "HubSpot integration not loaded"
+  - Added missing `hubspot.js` script to `banners.html`
+  - Improved error handling with user-friendly messages for connection issues
+
+- **Cloud Content Cache Invalidation**: Fixed tags not updating after changes in web admin
+  - Reduced cache TTL from 5 minutes to 1 minute
+  - Added cache clearing to `refreshUI` handler
+  - Content script now supports `forceRefresh` parameter
+
+- **Column Resize Tag Disappearance**: Fixed tags disappearing when resizing table columns
+  - Enhanced MutationObserver to detect DOM changes from column resize
+  - Tags now re-render after HubSpot reconstructs table cells
+
+### Technical
+- **Board View Detection**: `detectViewType()` checks URL and DOM for board indicators
+- **Record ID Extraction**: `extractRecordIdFromCard()` reads `data-selenium-id` attribute
+- **Scroll Detection**: Multiple strategies for detecting lazy-loaded board cards
+- **Debug Logging**: Added condition evaluation logging to rules engine for troubleshooting
+
 ## [2.5.0] - 2025-12-22 - Index Page Tags
 
 ### Added

@@ -4,11 +4,11 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.5.0 (Index Page Tags)
+## Current State: v2.5.1 (Index Tags Enhancements)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
 
-### Index Page Tags (v2.5.0)
+### Index Page Tags (v2.5.0 + v2.5.1)
 - **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages
 - **Visual Tags**: Colored pill-shaped tags appear under record names on list pages
 - **Rule-Based Display**: Tags show when records match banner conditions
@@ -16,6 +16,9 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Sidebar Integration**: Clicking a tag opens the related play in sidebar
 - **Batch API**: Efficient property fetching for multiple records at once
 - **Virtual Scroll Support**: MutationObserver handles dynamic table updates
+- **Board/Kanban View Support** (v2.5.1): Tags display on board view record cards
+- **Clickable Tags** (v2.5.1): Tags open play in sidepanel or show banner popup
+- **Board Scroll Loading** (v2.5.1): Tags load as new cards scroll into view
 
 ### Shareable Invite Links (v2.4.0)
 - **Create Invite Links**: Admins/Partners can create reusable links from Settings > Team Members
@@ -891,6 +894,9 @@ Would you like me to suggest values?"
 - [ ] Entry merge tool for consolidating duplicates
 
 ### Index Page Tags Improvements
+- [x] **Board/Kanban view support** - Tags now display on board view cards (v2.5.1)
+- [x] **Clickable tags** - Open related play or show banner popup (v2.5.1)
+- [x] **Board scroll loading** - Tags load as new cards scroll into view (v2.5.1)
 - [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
 - [ ] **Investigate HubSpot's React reconciliation** - Tags are removed during HubSpot re-renders; current workaround uses MutationObserver to restore them
 - [ ] **Consider alternative injection strategies** - Floating overlay outside table DOM vs injecting into MediaBody

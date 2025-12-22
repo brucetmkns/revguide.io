@@ -2236,4 +2236,180 @@ profile: userProfile ? {
 
 ---
 
-*Last updated: December 2024*
+## HubSpot Board/Kanban View DOM Structure (v2.5.1)
+
+### Board View Detection
+**Lesson**: HubSpot board views can be detected via URL or DOM elements, but DOM is more reliable for hybrid pages.
+
+**Pattern**:
+```javascript
+detectViewType() {
+  // URL check first (fastest)
+  if (window.location.href.includes('/board/')) return 'board';
+
+  // DOM check for board card elements
+  const boardCards = document.querySelector(
+    '[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]'
+  );
+  if (boardCards) return 'board';
+
+  return 'table';
+}
+```
+
+### Board Card Record ID Extraction
+**Lesson**: HubSpot stores the record ID in `data-selenium-id` attribute on board cards, not in the URL.
+
+**Problem**: Unlike table rows where record ID is in a link URL, board cards store the ID differently.
+
+**Solution**: Extract from `data-selenium-id`:
+```javascript
+extractRecordIdFromCard(card) {
+  const seleniumId = card.getAttribute('data-selenium-id');
+  if (seleniumId) return seleniumId;
+
+  // Fallback: parse from link if present
+  const link = card.querySelector('a[href*="/record/"]');
+  if (link) {
+    const match = link.href.match(/\/record\/\d+-\d+\/(\d+)/);
+    if (match) return match[1];
+  }
+  return null;
+}
+```
+
+### Board View Virtual Scrolling
+**Lesson**: HubSpot's board view uses virtual scrolling - DOM elements are reused as you scroll. Multiple detection strategies are needed.
+
+**Problem**: Initial card rendering works, but scrolling to new cards shows them without tags because:
+1. MutationObserver may not catch all changes
+2. Cards may be recycled (DOM element reused with new `data-selenium-id`)
+3. Different columns scroll independently
+
+**Solution**: Use multiple detection strategies:
+```javascript
+setupBoardObserver() {
+  const board = document.querySelector('[class*="BoardView"], [class*="Pipeline"]');
+
+  // 1. MutationObserver for new cards and attribute changes
+  this.observer = new MutationObserver((mutations) => {
+    let shouldProcess = false;
+    mutations.forEach(mutation => {
+      // Watch for data-selenium-id changes (card recycling)
+      if (mutation.type === 'attributes' &&
+          mutation.attributeName === 'data-selenium-id') {
+        shouldProcess = true;
+      }
+      // Watch for new nodes
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === 1 &&
+              node.matches?.('[data-test-id="cdb-column-item"]')) {
+            shouldProcess = true;
+          }
+        });
+      }
+    });
+    if (shouldProcess) debouncedProcess();
+  });
+
+  this.observer.observe(board, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-selenium-id']
+  });
+
+  // 2. Scroll listeners on each column
+  const columns = board.querySelectorAll('[class*="Column"], [class*="Stage"]');
+  columns.forEach(column => {
+    const scrollContainer = column.querySelector('[class*="ScrollContainer"]') || column;
+    scrollContainer.addEventListener('scroll', debouncedProcess, { passive: true });
+  });
+
+  // 3. Fallback interval check for untagged cards
+  this.boardCheckInterval = setInterval(() => {
+    const untaggedCards = document.querySelectorAll(
+      '[data-test-id="cdb-column-item"]:not(:has(.hshelper-index-tags))'
+    );
+    if (untaggedCards.length > 0) this.processBoardCards();
+  }, 2000);
+}
+```
+
+**Key insight**: The combination of MutationObserver, scroll listeners, and interval fallback ensures reliable tag rendering across all scrolling scenarios.
+
+### Board Card Title Container
+**Lesson**: The title container in board cards uses `TitleSection__StyledTitleContainer` class pattern.
+
+**Pattern for inserting content after title**:
+```javascript
+const titleContainer = card.querySelector('[class*="TitleSection__StyledTitleContainer"]');
+if (titleContainer) {
+  titleContainer.insertAdjacentElement('afterend', tagsContainer);
+}
+```
+
+---
+
+## Admin Panel Script Loading Order (v2.5.1)
+
+### Missing Script Dependencies
+**Lesson**: Admin pages that use HubSpot API features need the `hubspot.js` script loaded, even if they don't directly connect to HubSpot.
+
+**Problem**: The banners page showed "HubSpot integration not loaded" when trying to load properties for rule conditions, because `hubspot.js` wasn't in the script list.
+
+**Symptom**: `typeof RevGuideHubSpot === 'undefined'` in `fetchProperties()`.
+
+**Solution**: Check that all required scripts are loaded on each admin page:
+```html
+<!-- Order matters: supabase first, then hubspot, then shared -->
+<script src="/admin/supabase.js"></script>
+<script src="/admin/hubspot.js"></script>  <!-- Don't forget this! -->
+<script src="/lib/wiki-cache.js"></script>
+<script src="/admin/shared.js"></script>
+<script src="/admin/pages/banners.js"></script>
+```
+
+**Pattern**: When adding features that use `RevGuideHubSpot`, verify the script is loaded on all pages that use that feature.
+
+---
+
+## Cloud Content Cache Refresh (v2.5.1)
+
+### Web Admin Changes Not Reflected in Extension
+**Lesson**: When making changes in the web admin (app.revguide.io), the extension may still show cached content. Implement a cache refresh mechanism.
+
+**Problem**: User updates banner settings in web admin, but extension shows old settings because content is cached (5 minute TTL).
+
+**Solution**: Multi-pronged approach:
+```javascript
+// 1. Reduce cache TTL for faster natural refresh
+const CLOUD_CONTENT_TTL_MS = 1 * 60 * 1000; // 1 minute instead of 5
+
+// 2. Add forceRefresh parameter to bypass cache
+async loadData(forceRefresh = false) {
+  chrome.runtime.sendMessage({
+    action: 'getContent',
+    forceRefresh: forceRefresh  // Skips cache check
+  });
+}
+
+// 3. Clear cache on refreshUI handler
+if (request.action === 'refreshUI') {
+  chrome.storage.local.remove(['cloudContent', 'cloudContentLastFetch']);
+  chrome.tabs.sendMessage(tabId, { action: 'refresh' });
+}
+
+// 4. Content script refresh handler
+if (message.action === 'refresh') {
+  this.cleanup(true);
+  this.loadData(true).then(() => this.init());
+}
+```
+
+**Key insight**: The web admin panel sends `refreshUI` message after saving, which triggers cache clearing and content reload.
+
+---
+
+*Last updated: December 2025*
