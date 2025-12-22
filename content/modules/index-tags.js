@@ -502,7 +502,7 @@ class IndexTagsModule {
   }
 
   /**
-   * Setup MutationObserver for virtual scrolling
+   * Setup MutationObserver for virtual scrolling and table re-renders
    */
   setupObserver() {
     const table = document.querySelector('[data-test-id="framework-data-table"]') ||
@@ -513,6 +513,7 @@ class IndexTagsModule {
 
     this.observer = new MutationObserver((mutations) => {
       let hasNewRows = false;
+      let hasCellChanges = false;
 
       mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
@@ -524,17 +525,36 @@ class IndexTagsModule {
               const rows = node.querySelectorAll('tr[data-test-id^="row-"]');
               if (rows.length > 0) hasNewRows = true;
             }
+            // Check if cell content changed (e.g., column resize causes re-render)
+            if (node.matches?.('td') || node.closest?.('td')) {
+              hasCellChanges = true;
+            }
+          }
+        });
+        // Also check for removed nodes that might be our tags or cells
+        mutation.removedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.classList?.contains('hshelper-index-tags') ||
+                node.matches?.('td') ||
+                node.querySelector?.('.hshelper-index-tags')) {
+              hasCellChanges = true;
+            }
           }
         });
       });
 
-      if (hasNewRows) {
+      if (hasNewRows || hasCellChanges) {
         // Debounce processing - wait for HubSpot to finish DOM updates
         clearTimeout(this.processTimeout);
         this.processTimeout = setTimeout(() => {
           // Use requestAnimationFrame to ensure DOM is stable
           requestAnimationFrame(() => {
-            this.processVisibleRows();
+            // For cell changes, we need to recheck all rows
+            if (hasCellChanges) {
+              this.recheckVisibleRows();
+            } else {
+              this.processVisibleRows();
+            }
           });
         }, 150);
       }
@@ -552,6 +572,36 @@ class IndexTagsModule {
         this.processVisibleRows();
       }, 200);
     }, { passive: true });
+  }
+
+  /**
+   * Recheck visible rows for missing tags (used after column resize, etc.)
+   */
+  recheckVisibleRows() {
+    const rows = document.querySelectorAll('tr[data-test-id^="row-"]');
+
+    rows.forEach(row => {
+      const testId = row.getAttribute('data-test-id');
+      const match = testId.match(/row-(\d+)/);
+      if (!match) return;
+
+      const recordId = match[1];
+      const nameCell = row.querySelector('td[data-column-index="0"]');
+      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
+
+      // If row exists but has no tags, and we have cached properties, re-render
+      if (mediaBody && !mediaBody.querySelector('.hshelper-index-tags')) {
+        const cached = this.propertiesCache.get(recordId);
+        if (cached) {
+          // Disconnect old observer if it exists (mediaBody was likely replaced)
+          if (this.tagObservers?.has(recordId)) {
+            this.tagObservers.get(recordId).disconnect();
+            this.tagObservers.delete(recordId);
+          }
+          this.renderTagsForRecord(row, recordId, cached.properties);
+        }
+      }
+    });
   }
 
   /**
