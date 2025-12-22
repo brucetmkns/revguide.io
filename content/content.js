@@ -196,8 +196,9 @@
      * Load configuration data - tries cloud first (via background script), falls back to local
      * Also loads pre-built wiki term map cache for faster tooltip initialization
      * Supports CRM portal matching for automatic org detection
+     * @param {boolean} forceRefresh - Force refresh from cloud, bypassing cache
      */
-    async loadData() {
+    async loadData(forceRefresh = false) {
       // Detect CRM context early to enable portal matching
       const url = window.location.href;
       let portalId = null;
@@ -222,7 +223,8 @@
         chrome.runtime.sendMessage({
           action: 'getContent',
           portalId: portalId,
-          crmType: crmType
+          crmType: crmType,
+          forceRefresh: forceRefresh
         }, (response) => {
           if (chrome.runtime.lastError) {
             log('Error getting content:', chrome.runtime.lastError.message);
@@ -1120,6 +1122,15 @@
             properties: this.properties,
             context: this.context
           });
+        }
+        if (message.action === 'refresh') {
+          log('Refresh requested, reloading data...');
+          this.cleanup(true);
+          this.loadData(true).then(() => {
+            this.init();
+            sendResponse({ success: true });
+          });
+          return true; // Keep channel open for async response
         }
         return true;
       });

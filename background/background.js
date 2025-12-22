@@ -211,7 +211,7 @@ async function ensureValidToken() {
 
 const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
-const CLOUD_CONTENT_TTL_MS = 5 * 60 * 1000;
+const CLOUD_CONTENT_TTL_MS = 1 * 60 * 1000; // 1 minute cache for faster updates
 
 // ============ CRM PORTAL MATCHING ============
 
@@ -882,6 +882,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'refreshUI') {
+    // Clear cloud content cache so next load gets fresh data
+    chrome.storage.local.remove(['cloudContent', 'cloudContentLastFetch']);
     // Tell content script to refresh
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && tabs[0].url?.includes('hubspot.com')) {
