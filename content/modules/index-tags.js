@@ -978,35 +978,74 @@ class IndexTagsModule {
       return;
     }
 
+    // Debounced function to process cards
+    const debouncedProcess = () => {
+      clearTimeout(this.processTimeout);
+      this.processTimeout = setTimeout(() => {
+        requestAnimationFrame(() => {
+          this.processBoardCards();
+        });
+      }, 150);
+    };
+
+    // MutationObserver for DOM changes
     this.observer = new MutationObserver((mutations) => {
-      let hasNewCards = false;
+      let shouldProcess = false;
 
       mutations.forEach(mutation => {
+        // Check for added nodes
         mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check if it's a card or contains cards
             if (node.matches?.('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]')) {
-              hasNewCards = true;
+              shouldProcess = true;
             } else if (node.querySelectorAll) {
               const cards = node.querySelectorAll('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]');
-              if (cards.length > 0) hasNewCards = true;
+              if (cards.length > 0) shouldProcess = true;
             }
           }
         });
+
+        // Check for attribute changes (HubSpot may reuse cards with new data)
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-selenium-id') {
+          shouldProcess = true;
+        }
       });
 
-      if (hasNewCards) {
-        clearTimeout(this.processTimeout);
-        this.processTimeout = setTimeout(() => {
-          requestAnimationFrame(() => {
-            this.processBoardCards();
-          });
-        }, 150);
+      if (shouldProcess) {
+        debouncedProcess();
       }
     });
 
-    this.observer.observe(board, { childList: true, subtree: true });
-    console.log('[RevGuide IndexTags] Board observer attached');
+    // Observe with attributes to catch card content changes
+    this.observer.observe(board, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-selenium-id']
+    });
+
+    // Add scroll listeners to each column (board columns scroll independently)
+    const columns = board.querySelectorAll('[class*="Column"], [class*="Stage"]');
+    columns.forEach(column => {
+      const scrollContainer = column.querySelector('[class*="ScrollContainer"], [class*="Droppable"]') || column;
+      scrollContainer.addEventListener('scroll', debouncedProcess, { passive: true });
+    });
+
+    // Also add scroll listener to the board itself
+    board.addEventListener('scroll', debouncedProcess, { passive: true });
+
+    // Fallback: check for untagged cards periodically when board is visible
+    this.boardCheckInterval = setInterval(() => {
+      const untaggedCards = document.querySelectorAll(
+        '[data-test-id="cdb-column-item"]:not(:has(.hshelper-index-tags))'
+      );
+      if (untaggedCards.length > 0) {
+        console.log('[RevGuide IndexTags] Found', untaggedCards.length, 'untagged cards, processing...');
+        this.processBoardCards();
+      }
+    }, 2000);
+
+    console.log('[RevGuide IndexTags] Board observer and scroll listeners attached');
   }
 
   /**
@@ -1019,10 +1058,11 @@ class IndexTagsModule {
       this.observer = null;
     }
 
-    // Clear timeouts
+    // Clear timeouts and intervals
     clearTimeout(this.batchTimeout);
     clearTimeout(this.processTimeout);
     clearTimeout(this.scrollTimeout);
+    clearInterval(this.boardCheckInterval);
 
     // Remove all tag containers
     this.taggedRecords.forEach((container) => {
