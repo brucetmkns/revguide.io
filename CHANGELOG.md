@@ -36,6 +36,13 @@ All notable changes to RevGuide will be documented in this file.
 - Updated `initPortalSelector()` for new dropdown structure
 - Partner nav visibility now checks `isViewingHomeOrg`
 
+### Infrastructure
+- **Shared Analytics**: Added centralized `analytics.js` for tracking code
+  - `admin/analytics.js` for app.revguide.io pages
+  - `website/analytics.js` for revguide.io pages
+  - Auto-skips in Chrome extension context
+  - Microsoft Clarity integration for session recording and heatmaps
+
 ## [2.9.0] - 2025-12-22 - Partner Library Creation
 
 ### Added
