@@ -250,11 +250,11 @@ class JoinPage {
     }
 
     try {
-      // Store invite code in localStorage so we can recover it after OAuth
+      // Store invite code in localStorage - login page will handle the signup
       localStorage.setItem('revguide_pending_invite', this.inviteCode);
 
-      // Redirect back to this join page after OAuth
-      const redirectTo = `${window.location.origin}/join/${this.inviteCode}`;
+      // Always redirect to /login - it will process the pending invite
+      const redirectTo = `${window.location.origin}/login`;
 
       const { error } = await this.supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -284,11 +284,11 @@ class JoinPage {
     }
 
     try {
-      // Store invite code in localStorage so we can recover it after OAuth
+      // Store invite code in localStorage - login page will handle the signup
       localStorage.setItem('revguide_pending_invite', this.inviteCode);
 
-      // Redirect back to this join page after OAuth
-      const redirectTo = `${window.location.origin}/join/${this.inviteCode}`;
+      // Always redirect to /login - it will process the pending invite
+      const redirectTo = `${window.location.origin}/login`;
 
       const { error } = await this.supabase.auth.signInWithOAuth({
         provider: 'azure',
