@@ -558,18 +558,26 @@ function renderSidebar(activePage) {
     // Show Partner nav only when: has partner access AND viewing home org
     const showPartnerNav = hasPartnerAccess && isViewingHomeOrg;
 
+    // Hide regular Home when Partner nav is shown (Partner Home replaces it)
+    const regularHomeLink = sidebar.querySelector('[data-section="home"]');
+
     if (showPartnerNav) {
       partnerNavGroup.style.display = 'block';
+      if (regularHomeLink) regularHomeLink.style.display = 'none';
     } else if (!hasPartnerAccess && typeof RevGuideDB !== 'undefined') {
       // Check isPartner() for users who converted but aren't consultants
       RevGuideDB.isPartner().then(isPartner => {
         // Still only show if viewing home org
-        partnerNavGroup.style.display = (isPartner && isViewingHomeOrg) ? 'block' : 'none';
+        const showNav = isPartner && isViewingHomeOrg;
+        partnerNavGroup.style.display = showNav ? 'block' : 'none';
+        if (regularHomeLink) regularHomeLink.style.display = showNav ? 'none' : 'block';
       }).catch(() => {
         partnerNavGroup.style.display = 'none';
+        if (regularHomeLink) regularHomeLink.style.display = 'block';
       });
     } else {
       partnerNavGroup.style.display = 'none';
+      if (regularHomeLink) regularHomeLink.style.display = 'block';
     }
 
     // Setup nav group toggle handler
