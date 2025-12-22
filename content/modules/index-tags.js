@@ -169,23 +169,31 @@ class IndexTagsModule {
     const recordIds = [];
 
     rows.forEach(row => {
-      if (this.processedRows.has(row)) return;
-
       const testId = row.getAttribute('data-test-id');
       const match = testId.match(/row-(\d+)/);
-      if (match) {
-        const recordId = match[1];
-        // Check if we have cached properties
-        const cached = this.propertiesCache.get(recordId);
-        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-          // Use cached properties
-          this.renderTagsForRecord(row, recordId, cached.properties);
-        } else {
-          // Need to fetch properties
-          recordIds.push(recordId);
-        }
+      if (!match) return;
+
+      const recordId = match[1];
+
+      // Check if tags already exist in this row (skip if so)
+      const nameCell = row.querySelector('td[data-column-index="0"]');
+      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
+      if (mediaBody?.querySelector('.hshelper-index-tags')) {
+        // Tags already exist, mark as processed and skip
         this.processedRows.add(row);
+        return;
       }
+
+      // Check if we have cached properties
+      const cached = this.propertiesCache.get(recordId);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        // Use cached properties - render immediately
+        this.renderTagsForRecord(row, recordId, cached.properties);
+      } else {
+        // Need to fetch properties
+        recordIds.push(recordId);
+      }
+      this.processedRows.add(row);
     });
 
     if (recordIds.length > 0) {
@@ -262,10 +270,24 @@ class IndexTagsModule {
    * @param {Object} properties - Record properties
    */
   renderTagsForRecord(row, recordId, properties) {
-    // Remove existing tags if any
-    const existingContainer = this.taggedRecords.get(recordId);
-    if (existingContainer) {
-      existingContainer.remove();
+    // Find the name cell
+    const nameCell = row.querySelector('td[data-column-index="0"]');
+    if (!nameCell) return;
+
+    // Find the MediaBody container to append tags to
+    const mediaBody = nameCell.querySelector('[class*="MediaBody"]');
+    if (!mediaBody) return;
+
+    // Check if tags already exist in THIS row (handles HubSpot re-rendering)
+    const existingInRow = mediaBody.querySelector('.hshelper-index-tags');
+    if (existingInRow) {
+      // Tags already exist in this row, skip
+      return;
+    }
+
+    // Clean up orphaned reference from our map (old DOM element may be gone)
+    const oldContainer = this.taggedRecords.get(recordId);
+    if (oldContainer && !oldContainer.isConnected) {
       this.taggedRecords.delete(recordId);
     }
 
@@ -285,14 +307,6 @@ class IndexTagsModule {
 
     // Take top N by priority (already sorted)
     const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
-
-    // Find the name cell
-    const nameCell = row.querySelector('td[data-column-index="0"]');
-    if (!nameCell) return;
-
-    // Find the MediaBody container to append tags to
-    const mediaBody = nameCell.querySelector('[class*="MediaBody"]');
-    if (!mediaBody) return;
 
     // Create tags container
     const tagsContainer = document.createElement('div');
@@ -389,11 +403,14 @@ class IndexTagsModule {
       });
 
       if (hasNewRows) {
-        // Debounce processing
+        // Debounce processing - wait for HubSpot to finish DOM updates
         clearTimeout(this.processTimeout);
         this.processTimeout = setTimeout(() => {
-          this.processVisibleRows();
-        }, 100);
+          // Use requestAnimationFrame to ensure DOM is stable
+          requestAnimationFrame(() => {
+            this.processVisibleRows();
+          });
+        }, 150);
       }
     });
 
