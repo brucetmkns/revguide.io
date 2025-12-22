@@ -2,6 +2,22 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.5.0] - 2025-12-22 - Index Page Tags
+
+### Added
+- **Index Page Tags**: Display visual tags on HubSpot record list/index pages
+  - Tags appear underneath record names when records match banner rule criteria
+  - New "Show as Tag on Index" checkbox in banner editor (Rules tab)
+  - Max 3 tags per record, sorted by priority (highest first)
+  - Clicking a tag opens the related play in the sidebar
+  - Supports deals, contacts, companies, and tickets index pages
+
+### Technical
+- **New Module**: `content/modules/index-tags.js` for index page tag rendering
+- **Batch API Fetching**: Efficient batch record property fetching via HubSpot API
+- **MutationObserver**: Handles virtual scrolling on large record lists
+- **Database**: Migration `025_add_show_on_index.sql` adds `show_on_index` column to banners
+
 ## [2.4.1] - 2025-12-22 - Extension Auth Fix
 
 ### Fixed

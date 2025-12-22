@@ -4,9 +4,18 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.4.0 (Shareable Invite Links)
+## Current State: v2.5.0 (Index Page Tags)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, **shareable invite links for team onboarding**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+
+### Index Page Tags (v2.5.0)
+- **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages
+- **Visual Tags**: Colored pill-shaped tags appear under record names on list pages
+- **Rule-Based Display**: Tags show when records match banner conditions
+- **Priority Sorting**: Max 3 tags per record, sorted by banner priority
+- **Sidebar Integration**: Clicking a tag opens the related play in sidebar
+- **Batch API**: Efficient property fetching for multiple records at once
+- **Virtual Scroll Support**: MutationObserver handles dynamic table updates
 
 ### Shareable Invite Links (v2.4.0)
 - **Create Invite Links**: Admins/Partners can create reusable links from Settings > Team Members
