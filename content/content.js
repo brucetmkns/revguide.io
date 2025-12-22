@@ -139,6 +139,8 @@
       // Exit early if not a record page (wiki and index tags already handled above)
       if (!isRecord) {
         log('Not a record page, wiki highlighting and index tags applied, done');
+        // Still set up URL watcher for SPA navigation (object type switching)
+        this.watchForChanges();
         return;
       }
 
