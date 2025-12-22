@@ -496,35 +496,11 @@ function renderSidebar(activePage) {
       }
     }
 
-    // Add role indicator badge next to user name
-    // Use role from organization_members for current org, fallback to user.role
-    let currentRole = currentUser.role || 'member';
-    if (userOrganizations.length > 0 && currentOrganization?.id) {
-      const currentOrgMembership = userOrganizations.find(o => o.organization_id === currentOrganization.id);
-      if (currentOrgMembership) {
-        currentRole = currentOrgMembership.role;
-      }
-    }
-
-    let roleIndicator = document.getElementById('sidebarRoleIndicator');
-    if (!roleIndicator && nameEl) {
-      roleIndicator = document.createElement('span');
-      roleIndicator.id = 'sidebarRoleIndicator';
-      roleIndicator.className = `role-indicator ${currentRole}`;
-      nameEl.parentNode.insertBefore(roleIndicator, nameEl.nextSibling);
-    }
-    if (roleIndicator) {
-      const roleLabels = {
-        owner: 'Owner',
-        admin: 'Admin',
-        editor: 'Editor',
-        viewer: 'Viewer',
-        partner: 'Partner',
-        member: 'Viewer' // Legacy role
-      };
-      const roleLabel = roleLabels[currentRole] || 'Viewer';
-      roleIndicator.textContent = roleLabel;
-      roleIndicator.className = `role-indicator ${currentRole}`;
+    // Role badge is now shown in the portal selector, not here
+    // Remove any existing old role indicator
+    const oldRoleIndicator = document.getElementById('sidebarRoleIndicator');
+    if (oldRoleIndicator) {
+      oldRoleIndicator.remove();
     }
   }
 
@@ -570,18 +546,25 @@ function renderSidebar(activePage) {
     }
   }
 
-  // Show/hide Partner nav group for partners or users with multiple orgs
+  // Show/hide Partner nav group
+  // Only show when viewing home org (not a client portal)
   const partnerNavGroup = sidebar.querySelector('#partnerNavGroup');
   if (partnerNavGroup) {
-    // Show for partners or users with multiple orgs
-    const showPartnerDashboard = isPartnerUser || (userOrganizations && userOrganizations.length > 1);
+    const hasPartnerAccess = isPartnerUser || (userOrganizations && userOrganizations.length > 1);
+    const isViewingHomeOrg = !homeOrganization ||
+      !currentOrganization?.id ||
+      currentOrganization.id === homeOrganization.organization_id;
 
-    if (showPartnerDashboard) {
+    // Show Partner nav only when: has partner access AND viewing home org
+    const showPartnerNav = hasPartnerAccess && isViewingHomeOrg;
+
+    if (showPartnerNav) {
       partnerNavGroup.style.display = 'block';
-    } else if (typeof RevGuideDB !== 'undefined') {
-      // Also check isPartner() for users who converted but aren't consultants
+    } else if (!hasPartnerAccess && typeof RevGuideDB !== 'undefined') {
+      // Check isPartner() for users who converted but aren't consultants
       RevGuideDB.isPartner().then(isPartner => {
-        partnerNavGroup.style.display = isPartner ? 'block' : 'none';
+        // Still only show if viewing home org
+        partnerNavGroup.style.display = (isPartner && isViewingHomeOrg) ? 'block' : 'none';
       }).catch(() => {
         partnerNavGroup.style.display = 'none';
       });
@@ -654,6 +637,19 @@ async function renderPortalSelector() {
   // Determine if currently viewing a client portal
   const isViewingClient = currentOrgId && homeOrgId && currentOrgId !== homeOrgId;
 
+  // Get current role in this org for the badge
+  const currentOrgMembership = userOrganizations.find(o => o.organization_id === currentOrgId);
+  const currentRole = currentOrgMembership?.role || 'viewer';
+  const roleLabels = {
+    owner: 'Owner',
+    admin: 'Admin',
+    editor: 'Editor',
+    viewer: 'Viewer',
+    partner: 'Partner',
+    member: 'Viewer'
+  };
+  const roleLabel = roleLabels[currentRole] || 'Viewer';
+
   selectorContainer.innerHTML = `
     <div class="portal-switcher">
       <div class="portal-switcher-label">Current Portal</div>
@@ -663,6 +659,7 @@ async function renderPortalSelector() {
           <span class="portal-name">${escapeHtml(currentOrganization?.name || 'Select Portal')}</span>
           ${currentOrganization?.hubspot_portal_id ? `<span class="portal-id">Hub ID: ${currentOrganization.hubspot_portal_id}</span>` : ''}
         </div>
+        <span class="portal-role-badge ${currentRole}">${roleLabel}</span>
         <svg class="portal-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9"/>
         </svg>

@@ -10,6 +10,7 @@ All notable changes to RevGuide will be documented in this file.
   - "Client Portals" section with count badge showing managed accounts
   - Visual separation between agency and client contexts
   - "+ Add Client" quick action linking to Partner Accounts page
+  - Role badge (Owner/Partner/Editor/Viewer) shown next to current portal
 
 - **Persistent Home Identity**: Partners always see their agency name in sidebar
   - User info section shows home organization name (not current portal)
@@ -22,12 +23,18 @@ All notable changes to RevGuide will be documented in this file.
   - Subtle gradient styling with RevGuide brand colors
   - Appears at top of main content area
 
+- **Context-Aware Partner Navigation**: Partner menu only visible in agency mode
+  - Partner nav hidden when viewing a client portal
+  - Use context banner to return to agency and access Partner pages
+  - Clear separation between "agency mode" and "client mode"
+
 ### Technical
 - Added `homeOrganization` global variable and getter in shared.js
 - New `renderClientContextBanner()` function for context awareness
 - Updated `loadUserOrganizations()` to identify home org
-- New CSS styles for portal-switcher, section labels, and context banner
+- New CSS styles for portal-switcher, section labels, context banner, and role badges
 - Updated `initPortalSelector()` for new dropdown structure
+- Partner nav visibility now checks `isViewingHomeOrg`
 
 ## [2.9.0] - 2025-12-22 - Partner Library Creation
 
