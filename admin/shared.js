@@ -1502,7 +1502,7 @@ async function fetchProperties(objectType, propertiesCache = {}) {
     // Check if RevGuideHubSpot is available
     if (typeof RevGuideHubSpot === 'undefined') {
       console.error('RevGuideHubSpot not loaded');
-      return [];
+      throw new Error('HubSpot integration not loaded. Please refresh the page.');
     }
 
     try {
@@ -1510,7 +1510,7 @@ async function fetchProperties(objectType, propertiesCache = {}) {
       const connection = await RevGuideHubSpot.getConnection();
       if (!connection || !connection.isConnected) {
         console.log('HubSpot not connected - cannot fetch properties');
-        return [];
+        throw new Error('HubSpot not connected. Please connect your HubSpot account in Settings.');
       }
 
       // Fetch properties via proxy
@@ -1520,7 +1520,11 @@ async function fetchProperties(objectType, propertiesCache = {}) {
       return properties;
     } catch (error) {
       console.error('Failed to fetch properties via HubSpot OAuth:', error);
-      return [];
+      // Re-throw with user-friendly message if it's a connection error
+      if (error.message.includes('HubSpot not connected') || error.message.includes('not loaded')) {
+        throw error;
+      }
+      throw new Error('Failed to fetch properties: ' + error.message);
     }
   }
 
