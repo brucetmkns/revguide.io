@@ -4,7 +4,7 @@ A Chrome extension and SaaS platform that displays contextual banners, plays, wi
 
 **Live App:** [app.revguide.io](https://app.revguide.io)
 
-**Current Version:** v2.8.0 (Partner Account System)
+**Current Version:** v2.9.0 (Partner Library Creation)
 
 ## Beta Program
 
@@ -96,6 +96,14 @@ For agencies and freelancers managing multiple client HubSpot portals:
   - **New partner signup**: Create fresh partner account via `/signup?new_partner=true`
 - **Auto-connect**: Existing partners are automatically added when invited to new client orgs
 - **Client Management**: View all client portals, switch between them, track access requests
+
+### Partner Libraries (v2.9.0+)
+Partners can create reusable content libraries to deploy across client organizations:
+- **Library Creation**: Create libraries from existing wiki entries, plays, and banners
+- **Tabbed Content Selection**: Easy selection interface with Wiki / Plays / Banners tabs
+- **Install to Clients**: One-click deployment to any managed client organization
+- **My Libraries Section**: Dedicated section on `/libraries` page for partner-created libraries
+- **Collapsible Sections**: All library sections (My Libraries, Installed, Available) are collapsible
 
 ### Design
 - Modern UI with **Manrope font** and **#b2ef63 accent color** (lime green)

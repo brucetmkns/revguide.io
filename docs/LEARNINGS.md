@@ -2412,4 +2412,34 @@ if (message.action === 'refresh') {
 
 ---
 
+## Variable Naming Conflicts with Global Scope (v2.9.0)
+
+### Shared.js Global Functions
+**Lesson**: When declaring variables in page scripts, check for naming conflicts with global functions exported from `shared.js`.
+
+**Problem**: `libraries.js` declared `let isPartner = false` but `shared.js` already exports a global `isPartner()` function. This caused a JavaScript error: `Identifier 'isPartner' has already been declared`.
+
+**Context**: The admin panel uses `shared.js` which exposes many utility functions globally via `AdminShared.isPartner()`. However, these are also accessible directly as `isPartner()`. Declaring a variable with the same name causes a conflict.
+
+**Solution**: Use distinct variable names that don't conflict with shared functions:
+```javascript
+// WRONG - conflicts with shared.js isPartner() function
+let isPartner = false;
+isPartner = await RevGuideDB.isPartner();
+
+// CORRECT - use descriptive name
+let userIsPartner = false;
+userIsPartner = await RevGuideDB.isPartner();
+```
+
+**Common global names from shared.js to avoid**:
+- `isPartner` - Use `userIsPartner` or `partnerStatus`
+- `isAdmin` - Use `userIsAdmin` or `adminStatus`
+- `isMember` - Use `userIsMember` or `memberStatus`
+- `canEditContent` - Use `hasEditPermission`
+
+**Pattern**: When adding page-level state variables, prefix with context like `user`, `current`, `local`, or `page` to avoid conflicts with global functions.
+
+---
+
 *Last updated: December 2025*

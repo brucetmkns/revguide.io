@@ -4,9 +4,9 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.5.1 (Index Tags Enhancements)
+## Current State: v2.9.0 (Partner Library Creation)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, and a dedicated Partner Account system for agencies/freelancers managing multiple client portals.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, and **partner-created content libraries that can be deployed across client organizations**.
 
 ### Index Page Tags (v2.5.0 + v2.5.1)
 - **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages

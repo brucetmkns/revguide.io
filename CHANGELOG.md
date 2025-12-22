@@ -2,6 +2,34 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.9.0] - 2025-12-22 - Partner Library Creation
+
+### Added
+- **Partner Library Creation**: Partners can now create content libraries from their wiki entries, plays, and banners
+  - "My Libraries" section on `/libraries` page (visible to partners only)
+  - Create Library modal with tabbed content selection (Wiki / Plays / Banners)
+  - Search and filter content within each tab
+  - Select All / Deselect All buttons per content type
+  - Selection summary showing counts of each content type
+  - Auto version bump on library updates
+
+- **Install Libraries to Client Organizations**: Deploy content to managed accounts
+  - Install button on each library card opens organization selector
+  - Click any client organization to install library content
+  - Real-time status feedback during installation
+  - Shows item counts after successful install
+
+- **Collapsible Library Sections**: All three sections on `/libraries` page are now collapsible
+  - Click section header to expand/collapse
+  - Chevron icon rotates to indicate state
+  - Smooth animation on toggle
+  - All sections expanded by default
+
+### Technical
+- Added `getLibraryById()` method to `supabase.js`
+- Partner library state management in `libraries.js`
+- CSS styles for partner library cards, editor modal, and org selector
+
 ## [2.5.1] - 2025-12-22 - Index Tags Enhancements
 
 ### Added
