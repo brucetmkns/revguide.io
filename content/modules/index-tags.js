@@ -274,25 +274,20 @@ class IndexTagsModule {
    * @param {Object} properties - Record properties
    */
   renderTagsForRecord(row, recordId, properties) {
-    // Find the name cell
+    // Find the name cell - this is the first column
     const nameCell = row.querySelector('td[data-column-index="0"]');
     if (!nameCell) return;
 
-    // Find the MediaBody container to append tags to
-    const mediaBody = nameCell.querySelector('[class*="MediaBody"]');
-    if (!mediaBody) return;
-
-    // Check if tags already exist in THIS row (handles HubSpot re-rendering)
-    const existingInRow = mediaBody.querySelector('.hshelper-index-tags');
-    if (existingInRow) {
-      // Tags already exist in this row, skip
+    // Check if tags already exist in THIS cell (not inside React components)
+    // We append directly to the cell, not inside MediaBody
+    const existingInCell = nameCell.querySelector('.hshelper-index-tags');
+    if (existingInCell) {
       return;
     }
 
     // Check render cooldown to prevent rapid re-rendering loop with HubSpot
     const lastRender = this.renderCooldown.get(recordId);
     if (lastRender && Date.now() - lastRender < this.RENDER_COOLDOWN) {
-      // Too soon since last render for this record, skip
       return;
     }
 
@@ -329,8 +324,9 @@ class IndexTagsModule {
       tagsContainer.appendChild(tag);
     });
 
-    // Append after existing content
-    mediaBody.appendChild(tagsContainer);
+    // Append directly to the cell (outside React's MediaBody control)
+    // Position with CSS - the cell itself is more stable
+    nameCell.appendChild(tagsContainer);
     this.taggedRecords.set(recordId, tagsContainer);
     this.renderCooldown.set(recordId, Date.now());
   }
