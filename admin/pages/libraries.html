@@ -109,42 +109,61 @@
           <!-- My Libraries Section (Partners Only) -->
           <div class="libraries-section" id="myLibrariesSection" style="display: none;">
             <div class="libraries-section-header">
-              <h3 class="libraries-section-title">
+              <button class="section-toggle" data-section="myLibraries" aria-expanded="true">
+                <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
                 <span class="icon icon-folder"></span>
-                My Libraries
-              </h3>
+                <h3 class="libraries-section-title">My Libraries</h3>
+              </button>
               <button class="btn btn-primary btn-sm" id="createLibraryBtn">
                 <span class="icon icon-plus icon--sm"></span> Create Library
               </button>
             </div>
-            <div class="libraries-grid" id="myLibrariesGrid">
+            <div class="libraries-section-content" id="myLibrariesContent">
+              <div class="libraries-grid" id="myLibrariesGrid">
               <!-- Populated by JS -->
-            </div>
-            <div class="empty-state" id="myLibrariesEmptyState" style="display: none;">
-              <p>You haven't created any libraries yet.</p>
-              <p class="hint">Create a library to package your content for easy deployment to client portals.</p>
+              </div>
+              <div class="empty-state" id="myLibrariesEmptyState" style="display: none;">
+                <p>You haven't created any libraries yet.</p>
+                <p class="hint">Create a library to package your content for easy deployment to client portals.</p>
+              </div>
             </div>
           </div>
 
           <!-- Installed Section -->
           <div class="libraries-section" id="installedSection" style="display: none;">
-            <h3 class="libraries-section-title">
-              <span class="icon icon-check-circle"></span>
-              Installed Libraries
-            </h3>
-            <div class="libraries-grid" id="installedGrid">
-              <!-- Populated by JS -->
+            <div class="libraries-section-header">
+              <button class="section-toggle" data-section="installed" aria-expanded="true">
+                <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="icon icon-check-circle"></span>
+                <h3 class="libraries-section-title">Installed Libraries</h3>
+              </button>
+            </div>
+            <div class="libraries-section-content" id="installedContent">
+              <div class="libraries-grid" id="installedGrid">
+                <!-- Populated by JS -->
+              </div>
             </div>
           </div>
 
           <!-- Available Section -->
           <div class="libraries-section">
-            <h3 class="libraries-section-title">
-              <span class="icon icon-download"></span>
-              Available Libraries
-            </h3>
-            <div class="libraries-grid" id="availableGrid">
-              <!-- Populated by JS -->
+            <div class="libraries-section-header">
+              <button class="section-toggle" data-section="available" aria-expanded="true">
+                <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="icon icon-download"></span>
+                <h3 class="libraries-section-title">Available Libraries</h3>
+              </button>
+            </div>
+            <div class="libraries-section-content" id="availableContent">
+              <div class="libraries-grid" id="availableGrid">
+                <!-- Populated by JS -->
+              </div>
             </div>
           </div>
         </div>

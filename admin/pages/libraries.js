@@ -134,6 +134,34 @@ function setupEventListeners() {
   elements.uninstallModal.addEventListener('click', (e) => {
     if (e.target === elements.uninstallModal) closeUninstallModal();
   });
+
+  // Section toggle buttons
+  document.querySelectorAll('.section-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => toggleSection(toggle));
+  });
+}
+
+/**
+ * Toggle a collapsible section
+ */
+function toggleSection(toggleBtn) {
+  const sectionName = toggleBtn.dataset.section;
+  const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+  const contentId = sectionName === 'myLibraries' ? 'myLibrariesContent' :
+                    sectionName === 'installed' ? 'installedContent' : 'availableContent';
+  const content = document.getElementById(contentId);
+
+  if (!content) return;
+
+  if (isExpanded) {
+    // Collapse
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    content.classList.add('collapsed');
+  } else {
+    // Expand
+    toggleBtn.setAttribute('aria-expanded', 'true');
+    content.classList.remove('collapsed');
+  }
 }
 
 /**
