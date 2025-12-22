@@ -2,6 +2,13 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.4.1] - 2025-12-22 - Extension Auth Fix
+
+### Fixed
+- **Extension Cloud Data**: Fixed issue where extension showed local data instead of cloud data for partners/consultants
+  - Partners use `active_organization_id` instead of `organization_id`
+  - Extension auth callback now uses whichever ID is set
+
 ## [2.4.0] - 2025-12-21 - Shareable Invite Links
 
 ### Added

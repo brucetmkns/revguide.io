@@ -2201,4 +2201,39 @@ body: JSON.stringify({
 
 ---
 
+## Extension Auth: Organization ID for Partners (v2.4.1)
+
+### Primary vs Active Organization ID
+**Lesson**: Partners/consultants use `active_organization_id`, not `organization_id`. Auth payloads must check both.
+
+**Problem**: Extension showed "Content loaded from: local" instead of cloud data for partners. The auth callback was only sending `organization_id` to the extension, but partners have this field as `null`.
+
+**Context**: The user data model has two org ID fields:
+- `organization_id` - Primary org (set for regular team members)
+- `active_organization_id` - Currently active org (used by partners who access multiple orgs)
+
+Partners typically have `organization_id = null` and use `active_organization_id` exclusively.
+
+**Solution**: Use fallback pattern when building auth payload:
+```javascript
+// In extension-logged-in.js
+profile: userProfile ? {
+  id: userProfile.id,
+  name: userProfile.name,
+  organizationId: userProfile.active_organization_id || userProfile.organization_id,
+  role: userProfile.role
+} : null
+```
+
+**Debugging tip**: When extension falls back to local data unexpectedly:
+1. Check console for `Content loaded from: local`
+2. Verify `authState.profile.organizationId` is set in extension storage
+3. For partners, check that `active_organization_id` is being used
+
+**Files**:
+- `admin/pages/extension-logged-in.js` - Auth payload construction
+- `background/background.js` - Uses `authState.profile.organizationId` to fetch cloud content
+
+---
+
 *Last updated: December 2024*
