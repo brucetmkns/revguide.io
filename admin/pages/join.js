@@ -250,6 +250,9 @@ class JoinPage {
     }
 
     try {
+      // Store invite code in localStorage so we can recover it after OAuth
+      localStorage.setItem('revguide_pending_invite', this.inviteCode);
+
       // Redirect back to this join page after OAuth
       const redirectTo = `${window.location.origin}/join/${this.inviteCode}`;
 
@@ -281,6 +284,9 @@ class JoinPage {
     }
 
     try {
+      // Store invite code in localStorage so we can recover it after OAuth
+      localStorage.setItem('revguide_pending_invite', this.inviteCode);
+
       // Redirect back to this join page after OAuth
       const redirectTo = `${window.location.origin}/join/${this.inviteCode}`;
 

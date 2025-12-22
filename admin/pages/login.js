@@ -32,6 +32,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hasOAuthCallback = hashParams.get('access_token') || hashParams.get('refresh_token') || queryParams.get('code');
 
   if (hasOAuthCallback) {
+    // Check if there's a pending invite code from join page
+    const pendingInvite = localStorage.getItem('revguide_pending_invite');
+    if (pendingInvite) {
+      // Clear it and redirect to join page with the OAuth tokens
+      localStorage.removeItem('revguide_pending_invite');
+      const joinUrl = `/join/${pendingInvite}${window.location.hash}`;
+      console.log('[Login] Redirecting to pending invite:', joinUrl);
+      window.location.href = joinUrl;
+      return;
+    }
+
     showMessage('Signing you in...', 'success');
 
     // Use onAuthStateChange to detect when Supabase has processed the OAuth callback
