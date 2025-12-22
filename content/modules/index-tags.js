@@ -274,20 +274,17 @@ class IndexTagsModule {
    * @param {Object} properties - Record properties
    */
   renderTagsForRecord(row, recordId, properties) {
-    // Find the name cell - this is the first column
+    // Find the name cell
     const nameCell = row.querySelector('td[data-column-index="0"]');
     if (!nameCell) return;
 
-    // Check if tags already exist in THIS cell (not inside React components)
-    // We append directly to the cell, not inside MediaBody
-    const existingInCell = nameCell.querySelector('.hshelper-index-tags');
-    if (existingInCell) {
-      return;
-    }
+    // Find the MediaBody container to append tags to
+    const mediaBody = nameCell.querySelector('[class*="MediaBody"]');
+    if (!mediaBody) return;
 
-    // Check render cooldown to prevent rapid re-rendering loop with HubSpot
-    const lastRender = this.renderCooldown.get(recordId);
-    if (lastRender && Date.now() - lastRender < this.RENDER_COOLDOWN) {
+    // Check if tags already exist in THIS row
+    const existingInRow = mediaBody.querySelector('.hshelper-index-tags');
+    if (existingInRow) {
       return;
     }
 
@@ -324,11 +321,51 @@ class IndexTagsModule {
       tagsContainer.appendChild(tag);
     });
 
-    // Append directly to the cell (outside React's MediaBody control)
-    // Position with CSS - the cell itself is more stable
-    nameCell.appendChild(tagsContainer);
+    // Append to MediaBody (pushes cell height nicely)
+    mediaBody.appendChild(tagsContainer);
     this.taggedRecords.set(recordId, tagsContainer);
-    this.renderCooldown.set(recordId, Date.now());
+
+    // Schedule re-checks after HubSpot settles (handles post-load React reconciliation)
+    // Check at 800ms and 2000ms to catch different loading phases
+    this.scheduleRecheck(recordId, properties, 800);
+    this.scheduleRecheck(recordId, properties, 2000);
+  }
+
+  /**
+   * Schedule a re-check for tags
+   */
+  scheduleRecheck(recordId, properties, delay) {
+    setTimeout(() => {
+      const row = document.querySelector(`tr[data-test-id="row-${recordId}"]`);
+      if (!row) return;
+
+      const nameCell = row.querySelector('td[data-column-index="0"]');
+      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
+      if (!mediaBody) return;
+
+      // If tags are gone, re-add them (no further rechecks to prevent loops)
+      if (!mediaBody.querySelector('.hshelper-index-tags')) {
+        this.taggedRecords.delete(recordId);
+
+        // Re-render without scheduling more rechecks
+        const context = { objectType: this.objectType, recordId };
+        const matchingRules = this.helper.rulesEngine.evaluateRules(this.eligibleBanners, properties, context);
+        if (matchingRules.length === 0) return;
+
+        const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'hshelper-index-tags';
+        tagsContainer.dataset.recordId = recordId;
+
+        tagsToShow.forEach(rule => {
+          const tag = this.createTag(rule);
+          tagsContainer.appendChild(tag);
+        });
+
+        mediaBody.appendChild(tagsContainer);
+        this.taggedRecords.set(recordId, tagsContainer);
+      }
+    }, delay);
   }
 
   /**
