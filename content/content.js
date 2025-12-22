@@ -1014,17 +1014,24 @@
      * Set up watchers for SPA navigation and DOM changes
      */
     watchForChanges() {
-      // URL change observer (SPA navigation)
+      // URL change detection (SPA navigation)
       let lastUrl = window.location.href;
-      const urlObserver = new MutationObserver(() => {
+
+      const handleUrlChange = () => {
         if (window.location.href !== lastUrl) {
           log('URL changed from', lastUrl, 'to', window.location.href);
           lastUrl = window.location.href;
           this.cleanup(true);
           setTimeout(() => this.init(), 1000);
         }
-      });
+      };
+
+      // Method 1: MutationObserver (catches most SPA navigations)
+      const urlObserver = new MutationObserver(handleUrlChange);
       urlObserver.observe(document.body, { childList: true, subtree: true });
+
+      // Method 2: Polling (catches object type dropdown changes that don't trigger mutations)
+      setInterval(handleUrlChange, 500);
 
       // Tab click observer
       const middlePane = document.querySelector('[data-test-id="middle-pane"]');
