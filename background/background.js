@@ -346,7 +346,8 @@ function mapBannerFromSupabase(data) {
     displayOnAll: data.display_on_all,
     tabVisibility: data.tab_visibility,
     relatedPlayId: data.related_play_id,
-    enabled: data.enabled,
+    enabled: data.enabled !== false, // Default to true if not explicitly false
+    showOnIndex: data.show_on_index,
     url: data.url,
     embedUrl: data.embed_url,
     createdAt: data.created_at,
