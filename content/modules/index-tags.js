@@ -60,6 +60,8 @@ class IndexTagsModule {
    * Initialize the module on an index page
    */
   async init() {
+    console.log('[RevGuide IndexTags] init() called, URL:', window.location.href);
+
     // Extract context from URL
     const urlInfo = this.parseIndexUrl();
     if (!urlInfo) {
@@ -72,10 +74,11 @@ class IndexTagsModule {
     this.portalId = urlInfo.portalId;
 
     console.log('[RevGuide IndexTags] Initializing for', this.objectType, 'index page');
+    console.log('[RevGuide IndexTags] Total rules from helper:', this.helper.rules?.length || 0);
 
     // Filter to banners that have showOnIndex enabled and match object type
     this.eligibleBanners = this.getEligibleBanners();
-    console.log('[RevGuide IndexTags] Found', this.eligibleBanners.length, 'eligible banners');
+    console.log('[RevGuide IndexTags] Found', this.eligibleBanners.length, 'eligible banners for', this.objectType);
 
     if (this.eligibleBanners.length === 0) {
       console.log('[RevGuide IndexTags] No eligible banners, skipping');
