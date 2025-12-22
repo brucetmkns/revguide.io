@@ -33,6 +33,7 @@ class IndexTagsModule {
     this.propertiesCache = new Map(); // recordId -> { properties, timestamp }
     this.processedRows = new WeakSet(); // Track rows we've already processed
     this.taggedRecords = new Map(); // recordId -> container element
+    this.renderCooldown = new Map(); // recordId -> last render timestamp
     this.observer = null;
     this.pendingRecordIds = new Set();
     this.batchTimeout = null;
@@ -50,6 +51,9 @@ class IndexTagsModule {
 
     // Batch delay before API call
     this.BATCH_DELAY = 300;
+
+    // Cooldown between renders for same record (prevents HubSpot render loop)
+    this.RENDER_COOLDOWN = 2000;
   }
 
   /**
@@ -285,6 +289,13 @@ class IndexTagsModule {
       return;
     }
 
+    // Check render cooldown to prevent rapid re-rendering loop with HubSpot
+    const lastRender = this.renderCooldown.get(recordId);
+    if (lastRender && Date.now() - lastRender < this.RENDER_COOLDOWN) {
+      // Too soon since last render for this record, skip
+      return;
+    }
+
     // Clean up orphaned reference from our map (old DOM element may be gone)
     const oldContainer = this.taggedRecords.get(recordId);
     if (oldContainer && !oldContainer.isConnected) {
@@ -321,6 +332,7 @@ class IndexTagsModule {
     // Append after existing content
     mediaBody.appendChild(tagsContainer);
     this.taggedRecords.set(recordId, tagsContainer);
+    this.renderCooldown.set(recordId, Date.now());
   }
 
   /**
@@ -453,6 +465,7 @@ class IndexTagsModule {
     this.propertiesCache.clear();
     this.pendingRecordIds.clear();
     this.processedRows = new WeakSet();
+    this.renderCooldown.clear();
 
     console.log('[RevGuide IndexTags] Cleanup complete');
   }
