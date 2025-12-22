@@ -106,6 +106,26 @@
 
         <!-- Libraries Content -->
         <div class="libraries-content" id="librariesContent" style="display: none;">
+          <!-- My Libraries Section (Partners Only) -->
+          <div class="libraries-section" id="myLibrariesSection" style="display: none;">
+            <div class="libraries-section-header">
+              <h3 class="libraries-section-title">
+                <span class="icon icon-folder"></span>
+                My Libraries
+              </h3>
+              <button class="btn btn-primary btn-sm" id="createLibraryBtn">
+                <span class="icon icon-plus icon--sm"></span> Create Library
+              </button>
+            </div>
+            <div class="libraries-grid" id="myLibrariesGrid">
+              <!-- Populated by JS -->
+            </div>
+            <div class="empty-state" id="myLibrariesEmptyState" style="display: none;">
+              <p>You haven't created any libraries yet.</p>
+              <p class="hint">Create a library to package your content for easy deployment to client portals.</p>
+            </div>
+          </div>
+
           <!-- Installed Section -->
           <div class="libraries-section" id="installedSection" style="display: none;">
             <h3 class="libraries-section-title">
@@ -228,6 +248,135 @@
         <button class="btn btn-danger" id="confirmUninstallBtn">
           <span class="icon icon-trash icon--sm"></span> Uninstall
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Library Modal (Partner Feature) -->
+  <div class="modal" id="libraryEditorModal">
+    <div class="modal-content modal-xl">
+      <div class="modal-header">
+        <h2 id="libraryEditorTitle">Create Library</h2>
+        <button class="modal-close" id="closeLibraryEditorModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Library Details -->
+        <div class="library-editor-details">
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label for="libraryName">Library Name <span class="required">*</span></label>
+              <input type="text" id="libraryName" class="form-control" placeholder="e.g., Agency Playbook">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label for="libraryDescription">Description</label>
+              <textarea id="libraryDescription" class="form-control" rows="2" placeholder="Brief description of this library..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Selection Tabs -->
+        <div class="library-content-selection">
+          <div class="library-tabs">
+            <button class="library-tab active" data-tab="wiki">
+              Wiki <span class="tab-count" id="wikiTabCount">(0)</span>
+            </button>
+            <button class="library-tab" data-tab="plays">
+              Plays <span class="tab-count" id="playsTabCount">(0)</span>
+            </button>
+            <button class="library-tab" data-tab="banners">
+              Banners <span class="tab-count" id="bannersTabCount">(0)</span>
+            </button>
+          </div>
+
+          <div class="library-content-header">
+            <input type="text" class="search-input" id="libraryContentSearch" placeholder="Search content...">
+            <div class="library-content-actions">
+              <button class="btn btn-secondary btn-sm" id="selectAllContentBtn">Select All</button>
+              <button class="btn btn-secondary btn-sm" id="deselectAllContentBtn">Deselect All</button>
+            </div>
+          </div>
+
+          <div class="library-content-list" id="libraryContentList">
+            <!-- Populated by JS -->
+          </div>
+
+          <div class="library-content-empty" id="libraryContentEmpty" style="display: none;">
+            <p>No content available in this category.</p>
+          </div>
+        </div>
+
+        <!-- Selection Summary -->
+        <div class="library-selection-summary">
+          <span class="summary-item">
+            <span class="icon icon-book icon--sm"></span>
+            <span id="selectedWikiCount">0</span> wiki entries
+          </span>
+          <span class="summary-item">
+            <span class="icon icon-layers icon--sm"></span>
+            <span id="selectedPlaysCount">0</span> plays
+          </span>
+          <span class="summary-item">
+            <span class="icon icon-flag icon--sm"></span>
+            <span id="selectedBannersCount">0</span> banners
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelLibraryEditorBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveLibraryBtn">
+          <span class="icon icon-save icon--sm"></span> Save Library
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Library Confirmation Modal -->
+  <div class="modal" id="deleteLibraryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Delete Library</h2>
+        <button class="modal-close" id="closeDeleteLibraryModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteLibraryMessage">Are you sure you want to delete this library? This action cannot be undone.</p>
+        <p class="hint">Note: This will not affect content already installed to client organizations.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteLibraryBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteLibraryBtn">
+          <span class="icon icon-trash icon--sm"></span> Delete Library
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install to Org Modal -->
+  <div class="modal" id="installToOrgModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Install Library</h2>
+        <button class="modal-close" id="closeInstallToOrgModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Select a client organization to install this library:</p>
+        <div class="org-list" id="installOrgList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="org-list-empty" id="installOrgListEmpty" style="display: none;">
+          <p>No client organizations available.</p>
+          <p class="hint">You need to be connected to client organizations to install libraries.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelInstallToOrgBtn">Close</button>
       </div>
     </div>
   </div>

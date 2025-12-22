@@ -1361,6 +1361,20 @@ const RevGuideDB = {
   },
 
   /**
+   * Get a single library by ID
+   * @param {string} libraryId
+   */
+  async getLibraryById(libraryId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    return client
+      .from('partner_libraries')
+      .select('*')
+      .eq('id', libraryId)
+      .single();
+  },
+
+  /**
    * Get libraries installed in an organization
    * @param {string} organizationId - If not provided, uses active org
    */

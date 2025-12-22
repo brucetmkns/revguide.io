@@ -644,27 +644,27 @@ Extension → Background.js → Supabase API → Postgres
 
 ---
 
-## Phase 3: Multi-Portal for Partners (Local)
+## Phase 3: Multi-Portal for Partners ✅ COMPLETE
 
-**Goal:** Enable HubSpot partners/agencies to manage multiple client portals with reusable content libraries, all within the Chrome extension (before SaaS).
+**Goal:** Enable HubSpot partners/agencies to manage multiple client portals with reusable content libraries.
 
-**Full Implementation Details:** See [docs/MULTI_PORTAL_DEV.md](docs/MULTI_PORTAL_DEV.md)
+**Status:** Complete - implemented via cloud/SaaS architecture (supersedes original local storage approach).
 
 ### 3.1 Core Concept: Partners as Library Authors
 
-Rather than complex linked/synced content, partners create their own libraries using the existing library infrastructure. Libraries can be installed (copied) to any portal on demand.
+Partners create their own libraries in the web app. Libraries can be installed (copied) to any client organization on demand.
 
 ```
 LIBRARIES
 ├── Pre-built (GitHub) - HubSpot Basics, Sales Pipeline, etc.
-└── My Libraries (Partner-created)
+└── My Libraries (Partner-created in web app)
     ├── "Agency Standard Playbook"
     └── "SaaS Onboarding Kit"
            ↓
-    Install to portal (creates copy)
+    Install to organization (creates copy)
            ↓
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│  Portal A   │  │  Portal B   │  │  Portal C   │
+│  Client A   │  │  Client B   │  │  Client C   │
 │  (copy)     │  │  (copy)     │  │  (empty)    │
 └─────────────┘  └─────────────┘  └─────────────┘
 ```
@@ -673,72 +673,66 @@ LIBRARIES
 
 | Mode | Who | Capabilities |
 |------|-----|--------------|
-| **Partner** (default) | Agency users, freelancers | Portal switcher, My Libraries, create/manage libraries |
-| **Single Portal** | End clients, internal teams | One portal only, no switcher, simplified UI |
+| **Partner** | Agency users, freelancers | Portal switcher, My Libraries, create/manage libraries, Partner Dashboard |
+| **Standard** | End clients, internal teams | Single organization, no partner features |
 
-### 3.3 Implementation Phases
+### 3.3 Completed Features
 
-#### Phase 3.1: Portal Detection & Registry
-- [ ] Auto-detect portal ID from HubSpot URL
-- [ ] Portal registry with name, API token, color identifier
-- [ ] Portal selector dropdown in admin panel header
-- [ ] Per-portal isolated storage (portalData structure)
-- [ ] Migration path for existing users (move to 'default' portal)
-- [ ] Content script loads active portal's data
+#### Partner Account System
+- [x] Partner account type (`account_type`: `standard` or `partner`)
+- [x] `home_organization_id` tracks partner's agency organization
+- [x] Partner signup flow (`/signup?new_partner=true`)
+- [x] Admin conversion to partner ("Become a Partner" in Settings)
+- [x] Existing partners auto-connected when invited to new client orgs
+- [x] Partner join notification emails to org admins
 
-#### Phase 3.2: My Libraries (Partner Library Creation)
-- [ ] "My Libraries" section in Libraries page
-- [ ] Create library: select items from current portal
-- [ ] Edit library: add/remove items, update name/description
-- [ ] Library versioning (semver format)
-- [ ] Export library to JSON file (backup/sharing)
-- [ ] Import library from JSON file
-- [ ] Delete library with confirmation
+#### Partner Dashboard (`/partner`)
+- [x] Stats overview: Client count, Library count, Pending requests
+- [x] My Clients tab: Grid of client portals with "Manage Portal" buttons
+- [x] My Libraries tab: View and manage reusable content libraries
+- [x] Access Requests tab: Email-based secure request flow
 
-#### Phase 3.3: Install Libraries to Portals
-- [ ] Install library to current portal
-- [ ] Install to different portal via dropdown
-- [ ] Duplicate handling options (skip existing / overwrite)
-- [ ] Track installed libraries per portal (version, date)
-- [ ] Update detection (compare installed vs library version)
-- [ ] Update options: "Add new only" vs "Full sync"
-- [ ] Quick setup modal when switching to empty portal
+#### Organization Management
+- [x] Portal selector dropdown in admin panel header
+- [x] Switch between client organizations
+- [x] Portal color identifiers and role badges
+- [x] Per-organization role enforcement (Owner/Admin/Editor/Viewer/Partner)
 
-#### Phase 3.4: Single Portal Mode & Polish
-- [ ] User mode toggle in Settings
-- [ ] Hide portal selector in Single Portal mode
-- [ ] Hide My Libraries section in Single Portal mode
-- [ ] Storage limit handling (request unlimitedStorage permission)
+#### Library Management
+- [x] Create libraries from organization content
+- [x] Edit library: add/remove items, update name/description
+- [x] Library versioning
+- [x] Install library to client organizations
+- [x] Track installed libraries per organization
+- [x] Duplicate handling options
 
-### 3.4 Data Structure
+#### Access Request Flow
+- [x] Email-based request (partner enters client admin email)
+- [x] System validates admin exists before sending
+- [x] Admin receives notification and can approve/decline
+- [x] User enumeration prevention (neutral success message)
 
-```javascript
-{
-  userMode: "partner" | "single_portal",
-  activePortalId: "12345678",
-  portals: {
-    "12345678": { name: "Client A", apiToken: "...", color: "#ff7a59" }
-  },
-  myLibraries: [
-    { id, name, version, content: { wikiEntries, battleCards, rules } }
-  ],
-  portalData: {
-    "12345678": {
-      wikiEntries: [...],
-      battleCards: [...],
-      rules: [...],
-      installedLibraries: [{ id, version, installedAt }]
-    }
-  }
-}
-```
+### 3.4 Database Schema
+
+**Key Tables:**
+- `users.account_type` - `'standard'` or `'partner'`
+- `users.home_organization_id` - Partner's agency org
+- `organization_members` - Many-to-many user ↔ org with roles
+- `consultant_libraries` - Partner-created libraries (JSONB content)
+- `library_installations` - Track installations per org
+
+**Helper Functions:**
+- `get_partner_stats()` - Client count, library count, pending requests
+- `get_partner_clients()` - List organizations where user has partner role
+- `user_is_partner()` - Check if account_type='partner'
+- `convert_to_partner_account()` - Upgrade standard to partner
 
 ### 3.5 Key Decisions
 
+- **Cloud-first** - All data stored in Supabase, syncs across devices
 - **No live linking** - Libraries are templates; installs create independent copies
-- **Updates are explicit** - User chooses when to update, with options for handling conflicts
-- **Partner is default** - Single Portal mode is opt-in for simpler use cases
-- **Local storage only** - This phase is Chrome extension only (SaaS adds cloud sync later)
+- **Updates are explicit** - User chooses when to update installed libraries
+- **Role-based access** - Partners have read-only access to client content by default
 
 ---
 
@@ -897,6 +891,9 @@ Would you like me to suggest values?"
 - [x] **Board/Kanban view support** - Tags now display on board view cards (v2.5.1)
 - [x] **Clickable tags** - Open related play or show banner popup (v2.5.1)
 - [x] **Board scroll loading** - Tags load as new cards scroll into view (v2.5.1)
+- [ ] **Improve tag UI contrast** - Current low contrast makes tags hard to read; increase color contrast for better readability
+- [ ] **Improve tag placement on board cards** - Move tags to bottom of card next to action buttons (currently positioned higher)
+- [ ] **Default "Show as Tag on Index" to ON** - New banners should have tag display enabled by default; users can toggle off if desired
 - [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
 - [ ] **Investigate HubSpot's React reconciliation** - Tags are removed during HubSpot re-renders; current workaround uses MutationObserver to restore them
 - [ ] **Consider alternative injection strategies** - Floating overlay outside table DOM vs injecting into MediaBody
