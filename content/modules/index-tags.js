@@ -325,47 +325,47 @@ class IndexTagsModule {
     mediaBody.appendChild(tagsContainer);
     this.taggedRecords.set(recordId, tagsContainer);
 
-    // Schedule re-checks after HubSpot settles (handles post-load React reconciliation)
-    // Check at 800ms and 2000ms to catch different loading phases
-    this.scheduleRecheck(recordId, properties, 800);
-    this.scheduleRecheck(recordId, properties, 2000);
+    // Watch this specific container for our tags being removed
+    this.watchForTagRemoval(mediaBody, recordId, properties);
   }
 
   /**
-   * Schedule a re-check for tags
+   * Watch a MediaBody for our tags being removed and restore them
    */
-  scheduleRecheck(recordId, properties, delay) {
-    setTimeout(() => {
-      const row = document.querySelector(`tr[data-test-id="row-${recordId}"]`);
-      if (!row) return;
+  watchForTagRemoval(mediaBody, recordId, properties) {
+    // Don't create multiple observers for same record
+    if (this.tagObservers?.has(recordId)) return;
+    if (!this.tagObservers) this.tagObservers = new Map();
 
-      const nameCell = row.querySelector('td[data-column-index="0"]');
-      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
-      if (!mediaBody) return;
+    const observer = new MutationObserver((mutations) => {
+      // Check if our tags were removed
+      if (!mediaBody.querySelector('.hshelper-index-tags') && mediaBody.isConnected) {
+        // Tags were removed - restore them after a micro-delay
+        requestAnimationFrame(() => {
+          if (!mediaBody.querySelector('.hshelper-index-tags') && mediaBody.isConnected) {
+            const context = { objectType: this.objectType, recordId };
+            const matchingRules = this.helper.rulesEngine.evaluateRules(this.eligibleBanners, properties, context);
+            if (matchingRules.length === 0) return;
 
-      // If tags are gone, re-add them (no further rechecks to prevent loops)
-      if (!mediaBody.querySelector('.hshelper-index-tags')) {
-        this.taggedRecords.delete(recordId);
+            const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'hshelper-index-tags';
+            tagsContainer.dataset.recordId = recordId;
 
-        // Re-render without scheduling more rechecks
-        const context = { objectType: this.objectType, recordId };
-        const matchingRules = this.helper.rulesEngine.evaluateRules(this.eligibleBanners, properties, context);
-        if (matchingRules.length === 0) return;
+            tagsToShow.forEach(rule => {
+              const tag = this.createTag(rule);
+              tagsContainer.appendChild(tag);
+            });
 
-        const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
-        const tagsContainer = document.createElement('div');
-        tagsContainer.className = 'hshelper-index-tags';
-        tagsContainer.dataset.recordId = recordId;
-
-        tagsToShow.forEach(rule => {
-          const tag = this.createTag(rule);
-          tagsContainer.appendChild(tag);
+            mediaBody.appendChild(tagsContainer);
+            this.taggedRecords.set(recordId, tagsContainer);
+          }
         });
-
-        mediaBody.appendChild(tagsContainer);
-        this.taggedRecords.set(recordId, tagsContainer);
       }
-    }, delay);
+    });
+
+    observer.observe(mediaBody, { childList: true, subtree: true });
+    this.tagObservers.set(recordId, observer);
   }
 
   /**
@@ -493,6 +493,12 @@ class IndexTagsModule {
       container.remove();
     });
     this.taggedRecords.clear();
+
+    // Clear tag observers
+    if (this.tagObservers) {
+      this.tagObservers.forEach(observer => observer.disconnect());
+      this.tagObservers.clear();
+    }
 
     // Clear caches
     this.propertiesCache.clear();
