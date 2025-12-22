@@ -85,11 +85,56 @@ class IndexTagsModule {
     // Wait for table to be ready
     await this.waitForTable();
 
+    // Wait for HubSpot to finish its initial render passes before adding tags
+    await this.waitForHubSpotToSettle();
+
     // Process visible rows
     this.processVisibleRows();
 
     // Setup observer for virtual scrolling
     this.setupObserver();
+  }
+
+  /**
+   * Wait for HubSpot to finish its initial loading/render passes
+   * Detects when DOM mutations stop for a period
+   */
+  waitForHubSpotToSettle() {
+    return new Promise((resolve) => {
+      const table = document.querySelector('[data-test-id="crm-object-table"]') ||
+                    document.querySelector('table[role="grid"]') ||
+                    document.querySelector('table');
+
+      if (!table) {
+        resolve();
+        return;
+      }
+
+      let settleTimeout;
+      const SETTLE_DELAY = 500; // Wait for 500ms of no changes
+
+      const observer = new MutationObserver(() => {
+        clearTimeout(settleTimeout);
+        settleTimeout = setTimeout(() => {
+          observer.disconnect();
+          resolve();
+        }, SETTLE_DELAY);
+      });
+
+      observer.observe(table, { childList: true, subtree: true });
+
+      // Start the timer - if no mutations, we're already settled
+      settleTimeout = setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, SETTLE_DELAY);
+
+      // Max wait of 3 seconds regardless
+      setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, 3000);
+    });
   }
 
   /**
