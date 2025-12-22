@@ -34,16 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hasOAuthCallback) {
     // Check if there's a pending invite code from join page
     const pendingInvite = localStorage.getItem('revguide_pending_invite');
-    if (pendingInvite) {
-      // Clear it and redirect to join page with the OAuth tokens
-      localStorage.removeItem('revguide_pending_invite');
-      const joinUrl = `/join/${pendingInvite}${window.location.hash}`;
-      console.log('[Login] Redirecting to pending invite:', joinUrl);
-      window.location.href = joinUrl;
-      return;
-    }
 
-    showMessage('Signing you in...', 'success');
+    showMessage(pendingInvite ? 'Completing signup...' : 'Signing you in...', 'success');
 
     // Use onAuthStateChange to detect when Supabase has processed the OAuth callback
     const client = await RevGuideAuth.waitForClient();
@@ -58,6 +50,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Clear hash/code from URL
         window.history.replaceState({}, '', window.location.pathname);
+
+        // Check if there's a pending invite link signup
+        if (pendingInvite) {
+          console.log('[Login] Processing pending invite:', pendingInvite);
+          localStorage.removeItem('revguide_pending_invite');
+
+          const email = session.user.email;
+          const fullName = session.user.user_metadata?.full_name ||
+                           session.user.user_metadata?.name ||
+                           email.split('@')[0];
+
+          try {
+            const response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-invite-link-oauth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                authUserId: session.user.id,
+                email,
+                fullName,
+                inviteCode: pendingInvite
+              })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok && result.code !== 'USER_EXISTS') {
+              console.error('[Login] Invite signup failed:', result);
+              showMessage(result.error || 'Failed to complete signup.', 'error');
+              return;
+            }
+
+            showMessage('Welcome! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = '/home';
+            }, 500);
+          } catch (err) {
+            console.error('[Login] Invite signup error:', err);
+            showMessage('Something went wrong. Please try again.', 'error');
+          }
+          return;
+        }
 
         // Check if user has a profile
         const { data: profile } = await RevGuideDB.getUserProfile();
@@ -104,6 +137,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Clear hash from URL
         window.history.replaceState({}, '', window.location.pathname);
+
+        // Check if there's a pending invite link signup
+        if (pendingInvite) {
+          console.log('[Login] Processing pending invite (fallback):', pendingInvite);
+          localStorage.removeItem('revguide_pending_invite');
+
+          const email = session.user.email;
+          const fullName = session.user.user_metadata?.full_name ||
+                           session.user.user_metadata?.name ||
+                           email.split('@')[0];
+
+          try {
+            const response = await fetch('https://revguide-api.revguide.workers.dev/api/signup-invite-link-oauth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                authUserId: session.user.id,
+                email,
+                fullName,
+                inviteCode: pendingInvite
+              })
+            });
+
+            const result = await response.json();
+            if (response.ok || result.code === 'USER_EXISTS') {
+              window.location.href = '/home';
+            } else {
+              showMessage(result.error || 'Failed to complete signup.', 'error');
+            }
+          } catch (err) {
+            console.error('[Login] Invite signup error:', err);
+            showMessage('Something went wrong. Please try again.', 'error');
+          }
+          return;
+        }
 
         const { data: profile } = await RevGuideDB.getUserProfile();
         if (profile && profile.organization_id) {
