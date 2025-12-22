@@ -14,6 +14,7 @@ const isExtensionContext = typeof chrome !== 'undefined' && chrome.storage && ch
 let currentUser = null;
 let currentOrganization = null;
 let userOrganizations = []; // All organizations user has access to (for partners)
+let homeOrganization = null; // Partner's home/agency organization
 let isPartnerUser = false; // Whether user has partner privileges
 let orgsLoadedThisSession = false; // Track if we've loaded orgs this session
 
@@ -197,6 +198,20 @@ async function loadUserOrganizations() {
 
     // Check if user is a partner
     isPartnerUser = await RevGuideDB.isConsultant();
+
+    // Identify home organization for partners
+    // Home org is either: explicitly set via home_organization_id, or where user is owner/admin
+    if (isPartnerUser || userOrganizations.length > 1) {
+      const homeOrgId = currentUser?.home_organization_id;
+      if (homeOrgId) {
+        homeOrganization = userOrganizations.find(o => o.organization_id === homeOrgId) || null;
+      }
+      // Fallback: find org where user is owner or admin (not partner)
+      if (!homeOrganization) {
+        homeOrganization = userOrganizations.find(o => o.role === 'owner' || o.role === 'admin') || null;
+      }
+      console.log('[Auth] Home organization:', homeOrganization?.organization_name || 'none');
+    }
 
     // Handle URL-based org switching (if URL contains org ID)
     const orgSwitched = await handleUrlOrgSwitch();
@@ -465,8 +480,20 @@ function renderSidebar(activePage) {
     if (nameEl) {
       nameEl.textContent = currentUser.name || currentUser.email?.split('@')[0] || 'User';
     }
+
+    // Show home org for partners, otherwise current org
+    const isViewingClient = homeOrganization &&
+      currentOrganization?.id &&
+      currentOrganization.id !== homeOrganization.organization_id;
+
     if (orgEl) {
-      orgEl.textContent = currentOrganization?.name || '';
+      if (isViewingClient && homeOrganization) {
+        // Partner viewing client: show home org name
+        orgEl.textContent = homeOrganization.organization_name || '';
+      } else {
+        // Regular user or partner in home org: show current org
+        orgEl.textContent = currentOrganization?.name || '';
+      }
     }
 
     // Add role indicator badge next to user name
@@ -590,6 +617,7 @@ function handleNavGroupToggle(event) {
 /**
  * Render the portal selector dropdown (for consultants with multiple portals)
  * Should be called after checkAuth() has populated userOrganizations
+ * Uses hierarchical design: "Your Agency" section + "Client Portals" section
  */
 async function renderPortalSelector() {
   // Only show for web context with multiple organizations
@@ -600,43 +628,71 @@ async function renderPortalSelector() {
   // Find the portal selector container in the sidebar
   let selectorContainer = document.getElementById('portalSelectorContainer');
 
-  // If no dedicated container, create one after the user info section
+  // If no dedicated container, create one BEFORE the user info section (higher in sidebar)
   if (!selectorContainer) {
-    // Try multiple possible parent elements
-    const userInfo = document.querySelector('.user-info') || document.querySelector('.sidebar-footer');
-    if (userInfo) {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (sidebarNav) {
       selectorContainer = document.createElement('div');
       selectorContainer.id = 'portalSelectorContainer';
       selectorContainer.className = 'portal-selector-container';
-      // Insert after the user-info div (inside sidebar-footer)
-      userInfo.parentNode.insertBefore(selectorContainer, userInfo.nextSibling);
+      // Insert before sidebar-nav for prominence
+      sidebarNav.parentNode.insertBefore(selectorContainer, sidebarNav);
     } else {
-      console.warn('[Portal Selector] Could not find .user-info or .sidebar-footer');
-      return; // Can't find where to put it
+      console.warn('[Portal Selector] Could not find .sidebar-nav');
+      return;
     }
   }
 
   const currentOrgId = currentOrganization?.id;
+  const homeOrgId = homeOrganization?.organization_id;
+
+  // Separate orgs into home agency and client portals
+  const clientPortals = userOrganizations.filter(o =>
+    o.organization_id !== homeOrgId && o.role === 'partner'
+  );
+
+  // Determine if currently viewing a client portal
+  const isViewingClient = currentOrgId && homeOrgId && currentOrgId !== homeOrgId;
 
   selectorContainer.innerHTML = `
-    <div class="portal-selector">
-      <label class="portal-selector-label">Portal</label>
-      <div class="portal-dropdown" id="portalDropdown">
-        <button type="button" class="portal-dropdown-trigger" id="portalDropdownTrigger">
-          <span class="portal-color" style="background: ${getPortalColor(currentOrgId)}"></span>
+    <div class="portal-switcher">
+      <div class="portal-switcher-label">Current Portal</div>
+      <div class="portal-current" id="portalDropdownTrigger">
+        <span class="portal-color" style="background: ${getPortalColor(currentOrgId)}"></span>
+        <div class="portal-info">
           <span class="portal-name">${escapeHtml(currentOrganization?.name || 'Select Portal')}</span>
-          <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>
-        <div class="portal-dropdown-menu" id="portalDropdownMenu">
-          ${userOrganizations.map(org => `
+          ${currentOrganization?.hubspot_portal_id ? `<span class="portal-id">Hub ID: ${currentOrganization.hubspot_portal_id}</span>` : ''}
+        </div>
+        <svg class="portal-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="portal-dropdown-menu" id="portalDropdownMenu">
+        ${homeOrganization ? `
+          <div class="portal-section-label">Your Agency</div>
+          <button type="button" class="portal-dropdown-item ${homeOrganization.organization_id === currentOrgId ? 'active' : ''}"
+                  data-org-id="${homeOrganization.organization_id}">
+            <span class="portal-color" style="background: ${getPortalColor(homeOrganization.organization_id)}"></span>
+            <div class="portal-item-content">
+              <span class="portal-item-name">${escapeHtml(homeOrganization.organization_name || 'My Agency')}</span>
+              <span class="portal-item-role">Owner</span>
+            </div>
+            ${homeOrganization.organization_id === currentOrgId ? `
+              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            ` : ''}
+          </button>
+        ` : ''}
+        ${clientPortals.length > 0 ? `
+          <div class="portal-section-label">Client Portals (${clientPortals.length})</div>
+          ${clientPortals.map(org => `
             <button type="button" class="portal-dropdown-item ${org.organization_id === currentOrgId ? 'active' : ''}"
                     data-org-id="${org.organization_id}">
               <span class="portal-color" style="background: ${getPortalColor(org.organization_id)}"></span>
               <div class="portal-item-content">
                 <span class="portal-item-name">${escapeHtml(org.organization_name || 'Unnamed Portal')}</span>
-                <span class="portal-item-role">${org.role}</span>
+                <span class="portal-item-role">${capitalizeRole(org.role)}</span>
               </div>
               ${org.organization_id === currentOrgId ? `
                 <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -645,13 +701,89 @@ async function renderPortalSelector() {
               ` : ''}
             </button>
           `).join('')}
-        </div>
+        ` : `
+          <div class="portal-section-label">Client Portals</div>
+          <div class="portal-empty-state">No clients yet</div>
+        `}
+        <div class="portal-dropdown-divider"></div>
+        <a href="/partner/accounts" class="portal-dropdown-item portal-add-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Add Client</span>
+        </a>
       </div>
     </div>
   `;
 
   // Set up event listeners
   initPortalSelector();
+
+  // Also render the context banner if viewing a client
+  renderClientContextBanner();
+}
+
+/**
+ * Capitalize role name for display
+ */
+function capitalizeRole(role) {
+  if (!role) return '';
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+/**
+ * Render a context banner when viewing a client portal (not your home org)
+ */
+function renderClientContextBanner() {
+  // Remove existing banner
+  const existingBanner = document.getElementById('clientContextBanner');
+  if (existingBanner) existingBanner.remove();
+
+  // Only show if viewing a client portal (not home org)
+  const isViewingClient = homeOrganization &&
+    currentOrganization?.id &&
+    currentOrganization.id !== homeOrganization.organization_id;
+
+  if (!isViewingClient) return;
+
+  // Find main content area
+  const mainContent = document.querySelector('.main-content') || document.querySelector('main');
+  if (!mainContent) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'clientContextBanner';
+  banner.className = 'client-context-banner';
+  banner.innerHTML = `
+    <div class="context-banner-content">
+      <span class="context-banner-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </span>
+      <span class="context-banner-text">
+        You're viewing <strong>${escapeHtml(currentOrganization?.name || 'client portal')}</strong> as a partner
+      </span>
+    </div>
+    <button type="button" class="context-banner-action" id="backToAgencyBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to ${escapeHtml(homeOrganization?.organization_name || 'My Agency')}
+    </button>
+  `;
+
+  // Insert at top of main content
+  mainContent.insertBefore(banner, mainContent.firstChild);
+
+  // Add click handler for back button
+  document.getElementById('backToAgencyBtn')?.addEventListener('click', async () => {
+    if (homeOrganization?.organization_id) {
+      await switchPortal(homeOrganization.organization_id);
+    }
+  });
 }
 
 /**
@@ -691,43 +823,51 @@ function getPortalColor(orgId) {
 function initPortalSelector() {
   const trigger = document.getElementById('portalDropdownTrigger');
   const menu = document.getElementById('portalDropdownMenu');
-  const dropdown = document.getElementById('portalDropdown');
+  const container = document.getElementById('portalSelectorContainer');
 
-  if (!trigger || !menu || !dropdown) return;
+  if (!trigger || !menu) return;
 
   // Toggle dropdown
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
-    dropdown.classList.toggle('open');
+    trigger.classList.toggle('open');
+    menu.classList.toggle('open');
   });
 
   // Handle portal selection
   menu.addEventListener('click', async (e) => {
+    // Ignore clicks on the "Add Client" link (let it navigate)
+    if (e.target.closest('.portal-add-new')) return;
+
     const item = e.target.closest('.portal-dropdown-item');
     if (!item) return;
 
     const orgId = item.dataset.orgId;
     if (!orgId || orgId === currentOrganization?.id) {
-      dropdown.classList.remove('open');
+      trigger.classList.remove('open');
+      menu.classList.remove('open');
       return;
     }
 
     // Switch portal
-    dropdown.classList.remove('open');
+    trigger.classList.remove('open');
+    menu.classList.remove('open');
     await switchPortal(orgId);
   });
 
   // Close on outside click
   document.addEventListener('click', (e) => {
-    if (!dropdown.contains(e.target)) {
-      dropdown.classList.remove('open');
+    if (container && !container.contains(e.target)) {
+      trigger.classList.remove('open');
+      menu.classList.remove('open');
     }
   });
 
   // Close on escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      dropdown.classList.remove('open');
+      trigger.classList.remove('open');
+      menu.classList.remove('open');
     }
   });
 }
@@ -2205,6 +2345,7 @@ window.AdminShared = {
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
   get userOrganizations() { return userOrganizations; },
+  get homeOrganization() { return homeOrganization; },
   get isPartnerUser() { return isPartnerUser; },
   // Role helpers
   getEffectiveRole,
@@ -2222,6 +2363,7 @@ window.AdminShared = {
   isOrgAwarePath,
   // Multi-portal
   renderPortalSelector,
+  renderClientContextBanner,
   switchPortal,
   getPortalColor,
   // UI

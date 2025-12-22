@@ -2,6 +2,33 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.10.0] - 2025-12-22 - Partner UX Improvements
+
+### Added
+- **Hierarchical Portal Selector**: Redesigned portal switcher with clear sections
+  - "Your Agency" section at the top showing home organization
+  - "Client Portals" section with count badge showing managed accounts
+  - Visual separation between agency and client contexts
+  - "+ Add Client" quick action linking to Partner Accounts page
+
+- **Persistent Home Identity**: Partners always see their agency name in sidebar
+  - User info section shows home organization name (not current portal)
+  - Eliminates confusion about "who am I" when switching portals
+  - Home org identified via `home_organization_id` or owner/admin role
+
+- **Client Context Banner**: Visual indicator when viewing a client portal
+  - Shows "You're viewing [Client Name] as a partner" message
+  - "Back to [Agency]" button for quick return to home org
+  - Subtle gradient styling with RevGuide brand colors
+  - Appears at top of main content area
+
+### Technical
+- Added `homeOrganization` global variable and getter in shared.js
+- New `renderClientContextBanner()` function for context awareness
+- Updated `loadUserOrganizations()` to identify home org
+- New CSS styles for portal-switcher, section labels, and context banner
+- Updated `initPortalSelector()` for new dropdown structure
+
 ## [2.9.0] - 2025-12-22 - Partner Library Creation
 
 ### Added

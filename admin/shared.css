@@ -364,6 +364,268 @@
 
 
 /* ----------------------------------------
+   Partner Portal Switcher (Redesigned)
+   ---------------------------------------- */
+.portal-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.portal-switcher-label {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.portal-current {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.portal-current:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.portal-current.open {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.portal-current .portal-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.portal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-info .portal-name {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-inverse);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-info .portal-id {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.portal-chevron {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform var(--transition-fast);
+}
+
+.portal-current.open .portal-chevron {
+  transform: rotate(180deg);
+}
+
+/* Portal Dropdown Menu (Hierarchical) */
+.portal-switcher .portal-dropdown-menu {
+  position: relative;
+  margin-top: var(--space-2);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: none;
+  animation: slideDown 0.2s ease;
+}
+
+.portal-switcher .portal-dropdown-menu.open {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-section-label {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--space-3) var(--space-3) var(--space-1);
+}
+
+.portal-section-label:first-child {
+  padding-top: var(--space-2);
+}
+
+.portal-empty-state {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.portal-switcher .portal-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  color: inherit;
+  text-decoration: none;
+}
+
+.portal-switcher .portal-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.portal-switcher .portal-dropdown-item.active {
+  background: rgba(178, 239, 99, 0.15);
+}
+
+.portal-switcher .portal-dropdown-item.active .portal-item-name {
+  color: var(--color-primary);
+}
+
+.portal-switcher .portal-dropdown-item .portal-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.portal-switcher .portal-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-switcher .portal-item-name {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-inverse);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-switcher .portal-item-role {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: capitalize;
+}
+
+.portal-switcher .portal-dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: var(--space-2) 0;
+}
+
+.portal-switcher .portal-add-new {
+  color: var(--color-primary);
+  gap: var(--space-2);
+}
+
+.portal-switcher .portal-add-new span {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.portal-switcher .portal-add-new:hover {
+  background: rgba(178, 239, 99, 0.1);
+}
+
+.portal-switcher .check-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+
+/* ----------------------------------------
+   Client Context Banner
+   ---------------------------------------- */
+.client-context-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: linear-gradient(135deg, rgba(178, 239, 99, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1px solid rgba(178, 239, 99, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.context-banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.context-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+.context-banner-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.context-banner-text strong {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-banner-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid rgba(178, 239, 99, 0.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.context-banner-action:hover {
+  background: rgba(178, 239, 99, 0.1);
+  border-color: var(--color-primary);
+}
+
+
+/* ----------------------------------------
    Add Portal Modal
    ---------------------------------------- */
 .add-portal-modal {
