@@ -169,11 +169,30 @@ class IndexTagsModule {
   }
 
   /**
+   * Normalize object type to handle singular/plural variations
+   * @param {string} type - Object type (e.g., 'company', 'companies')
+   * @returns {string} Normalized singular form
+   */
+  normalizeObjectType(type) {
+    if (!type) return '';
+    const normalized = type.toLowerCase();
+    // Map plural to singular
+    const pluralToSingular = {
+      'contacts': 'contact',
+      'companies': 'company',
+      'deals': 'deal',
+      'tickets': 'ticket'
+    };
+    return pluralToSingular[normalized] || normalized;
+  }
+
+  /**
    * Get banners eligible for index page display
    * @returns {Array} Filtered and sorted banners
    */
   getEligibleBanners() {
     const rules = this.helper.rules || [];
+    const normalizedPageType = this.normalizeObjectType(this.objectType);
 
     return rules.filter(rule => {
       // Must be enabled
@@ -184,7 +203,9 @@ class IndexTagsModule {
 
       // Must match object type (or have none specified)
       if (rule.objectTypes?.length > 0) {
-        if (!rule.objectTypes.includes(this.objectType)) return false;
+        // Normalize both sides for comparison
+        const normalizedRuleTypes = rule.objectTypes.map(t => this.normalizeObjectType(t));
+        if (!normalizedRuleTypes.includes(normalizedPageType)) return false;
       }
 
       return true;
