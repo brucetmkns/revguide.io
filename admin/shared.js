@@ -908,16 +908,24 @@ async function switchPortal(organizationId) {
 
     showToast(`Switching to ${newOrg?.organization_name || 'portal'}...`, 'success');
 
-    // Navigate to org-prefixed URL for current page (if applicable)
+    // Navigate to appropriate page after switching
     const currentPath = getCurrentPagePath();
+    const shortId = getShortOrgId(organizationId);
     let newUrl;
 
-    if (isOrgAwarePath(currentPath)) {
+    // Check if switching to a client portal (not home org)
+    const isSwitchingToClient = homeOrganization &&
+      organizationId !== homeOrganization.organization_id;
+
+    // If on a partner page and switching to client, redirect to home
+    // Partner pages don't make sense in client context
+    if (currentPath.startsWith('/partner') && isSwitchingToClient) {
+      newUrl = `/${shortId}/home`;
+    } else if (isOrgAwarePath(currentPath)) {
       // Content pages get short org prefix (first 8 chars)
-      const shortId = getShortOrgId(organizationId);
       newUrl = `/${shortId}${currentPath}`;
     } else {
-      // Non-org pages (partner, settings, etc.) just reload
+      // Non-org pages (settings, etc.) just reload
       newUrl = currentPath;
     }
 
