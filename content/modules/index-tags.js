@@ -85,17 +85,67 @@ class IndexTagsModule {
       return;
     }
 
-    // Wait for table to be ready
-    await this.waitForTable();
+    // Detect view type (table or board)
+    this.viewType = this.detectViewType();
+    console.log('[RevGuide IndexTags] View type:', this.viewType);
 
-    // Wait for HubSpot to finish its initial render passes before adding tags
-    await this.waitForHubSpotToSettle();
+    if (this.viewType === 'board') {
+      // Board view handling
+      await this.waitForBoard();
+      await this.waitForHubSpotToSettle();
+      this.processBoardCards();
+      this.setupBoardObserver();
+    } else {
+      // Table view handling (default)
+      await this.waitForTable();
+      await this.waitForHubSpotToSettle();
+      this.processVisibleRows();
+      this.setupObserver();
+    }
+  }
 
-    // Process visible rows
-    this.processVisibleRows();
+  /**
+   * Detect whether we're in table view or board view
+   * @returns {string} 'table' or 'board'
+   */
+  detectViewType() {
+    // Check URL for board indicator
+    if (window.location.href.includes('/board/')) {
+      return 'board';
+    }
 
-    // Setup observer for virtual scrolling
-    this.setupObserver();
+    // Check DOM for board view elements (cdb = CRM Data Board)
+    const boardCards = document.querySelector('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]');
+    if (boardCards) {
+      return 'board';
+    }
+
+    // Check for board view containers
+    const boardContainer = document.querySelector('[class*="BoardView"], [class*="PipelineBoard"]');
+    if (boardContainer) {
+      return 'board';
+    }
+
+    return 'table';
+  }
+
+  /**
+   * Wait for board view to be ready
+   */
+  waitForBoard() {
+    return new Promise((resolve) => {
+      const check = () => {
+        // Look for board cards or column items
+        const board = document.querySelector('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]') ||
+                      document.querySelector('[class*="BoardView"], [class*="PipelineBoard"]');
+        if (board) {
+          resolve();
+        } else {
+          setTimeout(check, 500);
+        }
+      };
+      check();
+    });
   }
 
   /**
@@ -602,6 +652,265 @@ class IndexTagsModule {
         }
       }
     });
+  }
+
+  // ============ BOARD VIEW METHODS ============
+
+  /**
+   * Process all visible board cards
+   */
+  processBoardCards() {
+    if (this.isProcessing) return;
+
+    // Find all deal/record cards in the board view
+    // HubSpot board cards have data-test-id="cdb-column-item" and data-selenium-id for record ID
+    const cards = document.querySelectorAll(
+      '[data-test-id="cdb-column-item"], [data-test-id="cdb-card"], ' +
+      '[class*="CardWrapper__StyledUITile"]'
+    );
+
+    console.log('[RevGuide IndexTags] Found', cards.length, 'board cards');
+
+    const recordIds = [];
+
+    cards.forEach(card => {
+      // Try to extract record ID from the card
+      const recordId = this.extractRecordIdFromCard(card);
+      if (!recordId) return;
+
+      // Check if tags already exist
+      if (card.querySelector('.hshelper-index-tags')) {
+        this.processedRows.add(card);
+        return;
+      }
+
+      // Check cache
+      const cached = this.propertiesCache.get(recordId);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        this.renderTagsForBoardCard(card, recordId, cached.properties);
+      } else {
+        recordIds.push(recordId);
+        // Store card reference for later rendering
+        if (!this.pendingCards) this.pendingCards = new Map();
+        this.pendingCards.set(recordId, card);
+      }
+      this.processedRows.add(card);
+    });
+
+    if (recordIds.length > 0) {
+      this.scheduleBatchFetchForBoard(recordIds);
+    }
+  }
+
+  /**
+   * Extract record ID from a board card element
+   * @param {HTMLElement} card - The card element
+   * @returns {string|null} Record ID or null
+   */
+  extractRecordIdFromCard(card) {
+    // Try data-selenium-id (primary method for HubSpot board cards)
+    const seleniumId = card.getAttribute('data-selenium-id');
+    if (seleniumId) return seleniumId;
+
+    // Try href in card title link
+    const link = card.querySelector('a[data-test-id="board-card-section-title-link"], a[href*="/record/"]');
+    if (link) {
+      const match = link.href.match(/\/record\/\d+-\d+\/(\d+)/);
+      if (match) return match[1];
+    }
+
+    // Try other data attributes
+    const objectId = card.getAttribute('data-object-id') ||
+                     card.getAttribute('data-record-id') ||
+                     card.getAttribute('data-deal-id');
+    if (objectId) return objectId;
+
+    return null;
+  }
+
+  /**
+   * Schedule batch fetch for board cards
+   * @param {Array} recordIds - Array of record IDs to fetch
+   */
+  scheduleBatchFetchForBoard(recordIds) {
+    recordIds.forEach(id => this.pendingRecordIds.add(id));
+
+    clearTimeout(this.batchTimeout);
+    this.batchTimeout = setTimeout(() => {
+      this.executeBatchFetchForBoard();
+    }, this.BATCH_DELAY);
+  }
+
+  /**
+   * Execute batch fetch for board cards
+   */
+  async executeBatchFetchForBoard() {
+    if (this.pendingRecordIds.size === 0) return;
+
+    const recordIds = Array.from(this.pendingRecordIds);
+    this.pendingRecordIds.clear();
+    this.isProcessing = true;
+
+    console.log('[RevGuide IndexTags] Fetching properties for', recordIds.length, 'board cards');
+
+    try {
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'fetchBatchRecordProperties',
+          objectType: this.objectType,
+          recordIds: recordIds,
+          portalId: this.portalId
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (!response?.success) {
+            reject(new Error(response?.error || 'Unknown error'));
+          } else {
+            resolve(response.data);
+          }
+        });
+      });
+
+      // Cache and render tags
+      const now = Date.now();
+      for (const [recordId, properties] of Object.entries(response)) {
+        this.propertiesCache.set(recordId, { properties, timestamp: now });
+
+        // Find the card and render tags
+        const card = this.pendingCards?.get(recordId) ||
+                     document.querySelector(`[data-test-id*="card-${recordId}"]`);
+        if (card) {
+          this.renderTagsForBoardCard(card, recordId, properties);
+        }
+      }
+    } catch (error) {
+      console.error('[RevGuide IndexTags] Error fetching board card properties:', error);
+    } finally {
+      this.isProcessing = false;
+      if (this.pendingCards) this.pendingCards.clear();
+    }
+  }
+
+  /**
+   * Render tags for a board card
+   * @param {HTMLElement} card - The card element
+   * @param {string} recordId - The record ID
+   * @param {Object} properties - Record properties
+   */
+  renderTagsForBoardCard(card, recordId, properties) {
+    // Check if tags already exist
+    if (card.querySelector('.hshelper-index-tags')) {
+      return;
+    }
+
+    // Evaluate rules against properties
+    const context = {
+      objectType: this.objectType,
+      recordId: recordId
+    };
+
+    const matchingRules = this.helper.rulesEngine.evaluateRules(
+      this.eligibleBanners,
+      properties,
+      context
+    );
+
+    if (matchingRules.length === 0) return;
+
+    // Take top N by priority (already sorted)
+    const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
+
+    // Create tags container (styled for board cards)
+    const tagsContainer = document.createElement('div');
+    tagsContainer.className = 'hshelper-index-tags hshelper-board-tags';
+    tagsContainer.dataset.recordId = recordId;
+
+    tagsToShow.forEach(rule => {
+      const tag = this.createTag(rule);
+      tagsContainer.appendChild(tag);
+    });
+
+    // Find best insertion point in the card
+    // HubSpot structure: TitleSection__StyledTitleContainer contains the title link
+    const titleContainer = card.querySelector('[class*="TitleSection__StyledTitleContainer"]') ||
+                           card.querySelector('[class*="TitleSection"]');
+    if (titleContainer) {
+      // Insert after the title container
+      titleContainer.parentNode.insertBefore(tagsContainer, titleContainer.nextSibling);
+      this.taggedRecords.set(recordId, tagsContainer);
+      return;
+    }
+
+    // Alternative: find the title link and insert after its container
+    const titleLink = card.querySelector('a[data-test-id="board-card-section-title-link"]');
+    if (titleLink) {
+      const titleParent = titleLink.closest('[class*="TitleSection"]') || titleLink.parentElement;
+      if (titleParent) {
+        titleParent.parentNode.insertBefore(tagsContainer, titleParent.nextSibling);
+        this.taggedRecords.set(recordId, tagsContainer);
+        return;
+      }
+    }
+
+    // Fallback: insert after the first link in the card
+    const firstLink = card.querySelector('a[href*="/record/"]');
+    if (firstLink) {
+      const linkContainer = firstLink.closest('div') || firstLink.parentElement;
+      linkContainer.parentNode.insertBefore(tagsContainer, linkContainer.nextSibling);
+      this.taggedRecords.set(recordId, tagsContainer);
+      return;
+    }
+
+    // Last resort: append to the card-wrapper-container
+    const cardWrapper = card.querySelector('.card-wrapper-container') || card;
+    cardWrapper.appendChild(tagsContainer);
+    this.taggedRecords.set(recordId, tagsContainer);
+  }
+
+  /**
+   * Setup MutationObserver for board view
+   */
+  setupBoardObserver() {
+    // Find the board container - look for the parent of column items
+    const columnItem = document.querySelector('[data-test-id="cdb-column-item"]');
+    const board = columnItem?.closest('[class*="BoardView"], [class*="Pipeline"]') ||
+                  columnItem?.parentElement?.parentElement ||
+                  document.querySelector('[class*="BoardView"], [class*="PipelineBoard"]');
+
+    if (!board) {
+      console.log('[RevGuide IndexTags] Board container not found for observer');
+      return;
+    }
+
+    this.observer = new MutationObserver((mutations) => {
+      let hasNewCards = false;
+
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if it's a card or contains cards
+            if (node.matches?.('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]')) {
+              hasNewCards = true;
+            } else if (node.querySelectorAll) {
+              const cards = node.querySelectorAll('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]');
+              if (cards.length > 0) hasNewCards = true;
+            }
+          }
+        });
+      });
+
+      if (hasNewCards) {
+        clearTimeout(this.processTimeout);
+        this.processTimeout = setTimeout(() => {
+          requestAnimationFrame(() => {
+            this.processBoardCards();
+          });
+        }, 150);
+      }
+    });
+
+    this.observer.observe(board, { childList: true, subtree: true });
+    console.log('[RevGuide IndexTags] Board observer attached');
   }
 
   /**
