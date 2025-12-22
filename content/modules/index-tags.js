@@ -194,20 +194,32 @@ class IndexTagsModule {
     const rules = this.helper.rules || [];
     const normalizedPageType = this.normalizeObjectType(this.objectType);
 
+    console.log('[RevGuide IndexTags] Filtering rules for objectType:', this.objectType, '(normalized:', normalizedPageType + ')');
+
     return rules.filter(rule => {
       // Must be enabled
-      if (rule.enabled === false) return false;
+      if (rule.enabled === false) {
+        console.log('[RevGuide IndexTags] Rule', rule.id, rule.name, '- skipped: disabled');
+        return false;
+      }
 
       // Must have showOnIndex enabled
-      if (!rule.showOnIndex) return false;
+      if (!rule.showOnIndex) {
+        console.log('[RevGuide IndexTags] Rule', rule.id, rule.name, '- skipped: showOnIndex not enabled');
+        return false;
+      }
 
       // Must match object type (or have none specified)
       if (rule.objectTypes?.length > 0) {
         // Normalize both sides for comparison
         const normalizedRuleTypes = rule.objectTypes.map(t => this.normalizeObjectType(t));
-        if (!normalizedRuleTypes.includes(normalizedPageType)) return false;
+        if (!normalizedRuleTypes.includes(normalizedPageType)) {
+          console.log('[RevGuide IndexTags] Rule', rule.id, rule.name, '- skipped: objectType mismatch', rule.objectTypes, 'vs', normalizedPageType);
+          return false;
+        }
       }
 
+      console.log('[RevGuide IndexTags] Rule', rule.id, rule.name, '- ELIGIBLE');
       return true;
     }).sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sort by priority descending
   }
