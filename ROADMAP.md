@@ -881,6 +881,12 @@ Would you like me to suggest values?"
 - [ ] Bulk entry management (select multiple, delete, enable/disable)
 - [ ] Entry merge tool for consolidating duplicates
 
+### Index Page Tags Improvements
+- [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
+- [ ] **Investigate HubSpot's React reconciliation** - Tags are removed during HubSpot re-renders; current workaround uses MutationObserver to restore them
+- [ ] **Consider alternative injection strategies** - Floating overlay outside table DOM vs injecting into MediaBody
+- [ ] **Performance optimization** - Reduce rules engine evaluations per record on virtual scroll
+
 ### Performance Optimization (Admin Pages)
 
 **Goal:** Improve load times for `/banners`, `/plays`, and `/wiki` pages.
