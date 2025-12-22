@@ -1331,3 +1331,121 @@
   flex-shrink: 0;
 }
 
+
+/* ----------------------------------------
+   Index Page Tags
+   ---------------------------------------- */
+.hshelper-index-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  max-width: 100%;
+}
+
+.hshelper-index-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "Lexend Deca", "Avenir Next", Helvetica, Arial, sans-serif;
+  line-height: 1.4;
+}
+
+.hshelper-index-tag:hover {
+  filter: brightness(0.95);
+  transform: scale(1.02);
+}
+
+.hshelper-index-tag:active {
+  transform: scale(0.98);
+}
+
+/* Tag type colors - matching banner colors */
+.hshelper-index-tag--info {
+  background: #e5f5f8;
+  color: #00a4bd;
+}
+
+.hshelper-index-tag--success {
+  background: #e5f8f0;
+  color: #00bda5;
+}
+
+.hshelper-index-tag--warning {
+  background: #fef3e5;
+  color: #c87d2f;
+}
+
+.hshelper-index-tag--error {
+  background: #fce8e8;
+  color: #f2545b;
+}
+
+.hshelper-index-tag--embed {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.hshelper-index-tag--battle-card {
+  background: #e5f5f8;
+  color: #00a4bd;
+}
+
+/* Hover states with slightly darker backgrounds */
+.hshelper-index-tag--info:hover {
+  background: #d6eef2;
+}
+
+.hshelper-index-tag--success:hover {
+  background: #d6f2e8;
+}
+
+.hshelper-index-tag--warning:hover {
+  background: #fde8d0;
+}
+
+.hshelper-index-tag--error:hover {
+  background: #f8d6d6;
+}
+
+.hshelper-index-tag--embed:hover {
+  background: #e8d6ff;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .hshelper-index-tag--info {
+    background: rgba(0, 164, 189, 0.2);
+    color: #4dd4e8;
+  }
+
+  .hshelper-index-tag--success {
+    background: rgba(0, 189, 165, 0.2);
+    color: #4de8d4;
+  }
+
+  .hshelper-index-tag--warning {
+    background: rgba(245, 194, 107, 0.2);
+    color: #f5c26b;
+  }
+
+  .hshelper-index-tag--error {
+    background: rgba(242, 84, 91, 0.2);
+    color: #f5898e;
+  }
+
+  .hshelper-index-tag--embed {
+    background: rgba(124, 58, 237, 0.2);
+    color: #a78bfa;
+  }
+}
+

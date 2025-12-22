@@ -130,9 +130,15 @@
         }
       }
 
-      // Exit early if not a record page (wiki already handled above)
+      // Initialize index page tags if on an index page
+      if (isIndex && this.indexTagsModule) {
+        log('Initializing index page tags');
+        this.indexTagsModule.init();
+      }
+
+      // Exit early if not a record page (wiki and index tags already handled above)
       if (!isRecord) {
-        log('Not a record page, wiki highlighting applied, done');
+        log('Not a record page, wiki highlighting and index tags applied, done');
         return;
       }
 
@@ -169,12 +175,16 @@
       if (typeof PresentationsModule !== 'undefined') {
         this.presentationsModule = new PresentationsModule(this);
       }
+      if (typeof IndexTagsModule !== 'undefined') {
+        this.indexTagsModule = new IndexTagsModule(this);
+      }
 
       log('Modules initialized:', {
         banners: !!this.bannersModule,
         wiki: !!this.wikiModule,
         sidePanel: !!this.sidePanelModule,
-        presentations: !!this.presentationsModule
+        presentations: !!this.presentationsModule,
+        indexTags: !!this.indexTagsModule
       });
     }
 
@@ -1121,6 +1131,7 @@
       if (this.bannersModule) this.bannersModule.cleanup();
       if (this.presentationsModule) this.presentationsModule.cleanup();
       if (this.sidePanelModule) this.sidePanelModule.cleanup();
+      if (this.indexTagsModule) this.indexTagsModule.cleanup();
 
       // Remove Q360 link
       const q360Link = document.querySelector('.hshelper-q360-link');

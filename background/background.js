@@ -949,6 +949,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // Fetch batch record properties from HubSpot API (for index page tags)
+  if (request.action === 'fetchBatchRecordProperties') {
+    fetchHubSpotBatchRecords(request.objectType, request.recordIds)
+      .then(data => sendResponse({ success: true, data }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   // Fetch properties for an object type
   if (request.action === 'fetchObjectProperties') {
     fetchHubSpotProperties(request.objectType)
@@ -1105,6 +1113,96 @@ async function fetchHubSpotRecord(objectType, recordId) {
   const data = await response.json();
   console.log('[RevGuide BG] Success, got', Object.keys(data.properties || {}).length, 'properties');
   return data;
+}
+
+/**
+ * Batch fetch multiple HubSpot records at once
+ * Used for index page tags to efficiently fetch properties for many records
+ * @param {string} objectType - Object type (deal, contact, company, ticket)
+ * @param {Array} recordIds - Array of record IDs to fetch
+ * @returns {Object} Map of recordId -> properties
+ */
+async function fetchHubSpotBatchRecords(objectType, recordIds) {
+  console.log('[RevGuide BG] Batch fetching', recordIds.length, objectType, 'records');
+
+  if (!recordIds || recordIds.length === 0) {
+    return {};
+  }
+
+  const { settings } = await chrome.storage.local.get({ settings: {} });
+  const apiToken = settings.hubspotApiToken;
+
+  if (!apiToken) {
+    throw new Error('HubSpot API token not configured. Add it in extension settings.');
+  }
+
+  const apiObjectType = getHubSpotApiObjectType(objectType);
+
+  // Get property names to fetch
+  let cachedProperties = await getCachedHubSpotProperties(apiObjectType);
+  let propertyNames = cachedProperties ? cachedProperties.map(p => p.name) : [];
+
+  if (propertyNames.length === 0) {
+    try {
+      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { apiToken, forceRefresh: true });
+      propertyNames = fetchedProperties.map(p => p.name);
+    } catch (e) {
+      console.log('[RevGuide BG] Could not fetch property list, using defaults');
+      const defaults = {
+        contacts: ['firstname', 'lastname', 'email', 'phone', 'lifecyclestage', 'hubspot_owner_id'],
+        companies: ['name', 'domain', 'industry', 'annualrevenue', 'numberofemployees', 'hubspot_owner_id'],
+        deals: ['dealname', 'amount', 'dealstage', 'hubspot_owner_id', 'pipeline', 'closedate'],
+        tickets: ['subject', 'content', 'hs_ticket_priority', 'hs_pipeline_stage', 'hubspot_owner_id']
+      };
+      propertyNames = defaults[apiObjectType] || [];
+    }
+  }
+
+  // HubSpot batch read API - max 100 records per request
+  const results = {};
+  const batchSize = 100;
+
+  for (let i = 0; i < recordIds.length; i += batchSize) {
+    const batch = recordIds.slice(i, i + batchSize);
+    const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/batch/read`;
+
+    const requestBody = {
+      properties: propertyNames,
+      idProperty: 'hs_object_id',
+      inputs: batch.map(id => ({ id: String(id) }))
+    };
+
+    console.log('[RevGuide BG] Batch request for', batch.length, 'records');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[RevGuide BG] Batch API error:', response.status, errText);
+      // Continue with next batch instead of throwing
+      continue;
+    }
+
+    const data = await response.json();
+
+    // Map results by record ID
+    if (data.results && Array.isArray(data.results)) {
+      data.results.forEach(record => {
+        const recordId = record.id;
+        results[recordId] = record.properties || {};
+      });
+    }
+  }
+
+  console.log('[RevGuide BG] Batch fetch complete, got', Object.keys(results).length, 'records');
+  return results;
 }
 
 // Fetch properties for a HubSpot object type

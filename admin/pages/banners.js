@@ -586,6 +586,9 @@ class BannersPage {
     const tabVis = rule?.tabVisibility;
     document.getElementById('ruleTabVisibility').value = (tabVis && tabVis !== 'all') ? tabVis : '';
 
+    // Show on index pages
+    document.getElementById('ruleShowOnIndex').checked = rule?.showOnIndex || false;
+
     // Load properties and conditions
     if (mappedType && rule?.conditions?.length) {
       this.loadPropertiesAndConditions(mappedType, rule.conditions);
@@ -619,6 +622,7 @@ class BannersPage {
       objectType: document.getElementById('ruleObjectType').value,
       displayOnAll: document.getElementById('ruleDisplayOnAll').checked,
       tabVisibility: document.getElementById('ruleTabVisibility').value,
+      showOnIndex: document.getElementById('ruleShowOnIndex').checked,
       logic: AdminShared.getLogic('ruleLogicToggle'),
       conditions: AdminShared.getConditions('ruleConditions'),
       embedUrl: document.getElementById('ruleEmbedUrl').value,
@@ -803,6 +807,7 @@ class BannersPage {
     const displayOnAll = document.getElementById('ruleDisplayOnAll').checked;
     const tabVisibilityInput = document.getElementById('ruleTabVisibility').value.trim();
     const tabVisibility = tabVisibilityInput ? String(tabVisibilityInput) : 'all';
+    const showOnIndex = document.getElementById('ruleShowOnIndex').checked;
 
     // Get related play
     const playSelectEl = document.getElementById('ruleRelatedPlay');
@@ -821,6 +826,7 @@ class BannersPage {
       logic,
       displayOnAll,
       tabVisibility,
+      showOnIndex,
       relatedPlayId: relatedPlayId || null,
       enabled: true
     };
@@ -847,6 +853,7 @@ class BannersPage {
           logic,
           display_on_all: displayOnAll,
           tab_visibility: tabVisibility,
+          show_on_index: showOnIndex,
           related_play_id: relatedPlayId || null,
           enabled: true
         };
@@ -895,6 +902,7 @@ class BannersPage {
           logic,
           displayOnAll,
           tabVisibility,
+          showOnIndex,
           relatedPlayId,
           enabled: true,
           createdAt: Date.now()
@@ -945,6 +953,7 @@ class BannersPage {
       logic: data.logic,
       displayOnAll: data.display_on_all,
       tabVisibility: data.tab_visibility,
+      showOnIndex: data.show_on_index,
       relatedPlayId: data.related_play_id,
       enabled: data.enabled,
       url: data.url,
