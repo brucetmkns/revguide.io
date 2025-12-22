@@ -849,7 +849,7 @@ async function performUninstall() {
 // ============================================
 
 // Partner state
-let isPartner = false;
+let userIsPartner = false;
 let myLibraries = [];
 let partnerClients = [];
 let currentEditingLibraryId = null;
@@ -888,10 +888,10 @@ const partnerElements = {
 async function initPartnerFeatures() {
   // Check if user is a partner
   if (typeof RevGuideDB !== 'undefined') {
-    isPartner = await RevGuideDB.isPartner();
+    userIsPartner = await RevGuideDB.isPartner();
   }
 
-  if (!isPartner) {
+  if (!userIsPartner) {
     return;
   }
 
