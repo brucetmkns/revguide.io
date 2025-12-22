@@ -1465,3 +1465,108 @@
   max-width: 120px;
 }
 
+/* ----------------------------------------
+   Banner Popup (from tag click)
+   ---------------------------------------- */
+.hshelper-banner-popup {
+  position: absolute;
+  z-index: 10001;
+  min-width: 280px;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  font-family: "Lexend Deca", "Avenir Next", Helvetica, Arial, sans-serif;
+  animation: hshelper-popup-fade-in 0.15s ease-out;
+}
+
+@keyframes hshelper-popup-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hshelper-banner-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  border-radius: 8px 8px 0 0;
+}
+
+.hshelper-banner-popup--info .hshelper-banner-popup__header {
+  background: #e5f5f8;
+}
+
+.hshelper-banner-popup--success .hshelper-banner-popup__header {
+  background: #e5f8f0;
+}
+
+.hshelper-banner-popup--warning .hshelper-banner-popup__header {
+  background: #fef3e5;
+}
+
+.hshelper-banner-popup--error .hshelper-banner-popup__header {
+  background: #fce8e8;
+}
+
+.hshelper-banner-popup__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #33475b;
+}
+
+.hshelper-banner-popup__close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #7c98b6;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.hshelper-banner-popup__close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #33475b;
+}
+
+.hshelper-banner-popup__content {
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #516f90;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.hshelper-banner-popup__content p {
+  margin: 0 0 12px;
+}
+
+.hshelper-banner-popup__content p:last-child {
+  margin-bottom: 0;
+}
+
+.hshelper-banner-popup__content a {
+  color: #0091ae;
+  text-decoration: none;
+}
+
+.hshelper-banner-popup__content a:hover {
+  text-decoration: underline;
+}
+

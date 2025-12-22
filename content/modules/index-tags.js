@@ -515,17 +515,18 @@ class IndexTagsModule {
     tag.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.handleTagClick(rule);
+      this.handleTagClick(rule, e);
     });
 
     return tag;
   }
 
   /**
-   * Handle tag click - open related play in sidepanel
+   * Handle tag click - open related play in sidepanel or show banner popup
    * @param {Object} rule - The banner rule
+   * @param {Event} event - The click event
    */
-  handleTagClick(rule) {
+  handleTagClick(rule, event) {
     if (rule.relatedPlayId) {
       console.log('[RevGuide IndexTags] Opening play:', rule.relatedPlayId);
 
@@ -545,10 +546,105 @@ class IndexTagsModule {
           playData: play || null
         });
       });
+    } else if (rule.message) {
+      // Show banner content in a popup
+      console.log('[RevGuide IndexTags] Showing banner popup:', rule.name);
+      this.showBannerPopup(rule, event?.target);
     } else {
-      // No related play - could show banner details in a tooltip/modal
-      console.log('[RevGuide IndexTags] Tag clicked, no related play:', rule.name);
+      // No content to show
+      console.log('[RevGuide IndexTags] Tag clicked, no content:', rule.name);
     }
+  }
+
+  /**
+   * Show banner content in a popup near the clicked tag
+   * @param {Object} rule - The banner rule
+   * @param {HTMLElement} anchorElement - Element to position popup near
+   */
+  showBannerPopup(rule, anchorElement) {
+    // Remove any existing popup
+    this.closeBannerPopup();
+
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.className = `hshelper-banner-popup hshelper-banner-popup--${rule.type || 'info'}`;
+    popup.id = 'hshelper-banner-popup';
+
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'hshelper-banner-popup__header';
+    header.innerHTML = `
+      <span class="hshelper-banner-popup__title">${this.helper.escapeHtml(rule.title || rule.name)}</span>
+      <button class="hshelper-banner-popup__close" aria-label="Close">&times;</button>
+    `;
+    popup.appendChild(header);
+
+    // Create content
+    const content = document.createElement('div');
+    content.className = 'hshelper-banner-popup__content';
+    content.innerHTML = rule.message; // Message is HTML content
+    popup.appendChild(content);
+
+    // Add close button handler
+    header.querySelector('.hshelper-banner-popup__close').addEventListener('click', () => {
+      this.closeBannerPopup();
+    });
+
+    // Close on click outside
+    const handleClickOutside = (e) => {
+      if (!popup.contains(e.target) && e.target !== anchorElement) {
+        this.closeBannerPopup();
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    // Close on escape
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        this.closeBannerPopup();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Position popup
+    document.body.appendChild(popup);
+
+    if (anchorElement) {
+      const rect = anchorElement.getBoundingClientRect();
+      const popupRect = popup.getBoundingClientRect();
+
+      // Position below the tag by default
+      let top = rect.bottom + 8;
+      let left = rect.left;
+
+      // Keep within viewport
+      if (top + popupRect.height > window.innerHeight - 20) {
+        top = rect.top - popupRect.height - 8;
+      }
+      if (left + popupRect.width > window.innerWidth - 20) {
+        left = window.innerWidth - popupRect.width - 20;
+      }
+
+      popup.style.top = `${top + window.scrollY}px`;
+      popup.style.left = `${left + window.scrollX}px`;
+    }
+
+    this.currentPopup = popup;
+  }
+
+  /**
+   * Close the banner popup
+   */
+  closeBannerPopup() {
+    const existing = document.getElementById('hshelper-banner-popup');
+    if (existing) {
+      existing.remove();
+    }
+    this.currentPopup = null;
   }
 
   /**
