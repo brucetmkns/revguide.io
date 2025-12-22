@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     profile: userProfile ? {
       id: userProfile.id,
       name: userProfile.name,
-      organizationId: userProfile.organization_id,
+      organizationId: userProfile.active_organization_id || userProfile.organization_id,
       role: userProfile.role
     } : null
   };
