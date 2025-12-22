@@ -570,14 +570,15 @@ function renderSidebar(activePage) {
         // Still only show if viewing home org
         const showNav = isPartner && isViewingHomeOrg;
         partnerNavGroup.style.display = showNav ? 'block' : 'none';
-        if (regularHomeLink) regularHomeLink.style.display = showNav ? 'none' : 'block';
+        // Use empty string to remove inline style and let CSS flex take over
+        if (regularHomeLink) regularHomeLink.style.display = showNav ? 'none' : '';
       }).catch(() => {
         partnerNavGroup.style.display = 'none';
-        if (regularHomeLink) regularHomeLink.style.display = 'block';
+        if (regularHomeLink) regularHomeLink.style.display = '';
       });
     } else {
       partnerNavGroup.style.display = 'none';
-      if (regularHomeLink) regularHomeLink.style.display = 'block';
+      if (regularHomeLink) regularHomeLink.style.display = '';
     }
 
     // Setup nav group toggle handler
