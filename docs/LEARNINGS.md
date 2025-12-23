@@ -148,6 +148,103 @@ applyForIndex() {
 ### MutationObserver Pitfalls
 **Lesson**: When using MutationObserver and modifying the DOM, disconnect first to avoid infinite loops.
 
+---
+
+## Supabase RLS Policies
+
+### RLS Policy Evaluation Order
+**Lesson**: PostgreSQL evaluates ALL SELECT policies (they're OR'd together). If ANY policy throws an error, the entire query fails - even if another policy would have granted access.
+
+**Context**: Organizations table had multiple SELECT policies. One directly queried the `users` table, which caused "permission denied for table users" errors that blocked all org lookups.
+
+**Pattern**: When multiple RLS policies exist:
+1. Each policy is evaluated independently
+2. If any policy throws an error (not just returns false), the query fails
+3. Use SECURITY DEFINER functions to isolate table access
+
+### Inline Queries in RLS Policies
+**Lesson**: NEVER put inline queries to RLS-protected tables inside RLS policies. This creates circular dependencies and permission errors.
+
+**Bad pattern**:
+```sql
+-- This queries 'users' table inline - if users has RLS, this fails!
+CREATE POLICY "view orgs" ON organizations
+  FOR SELECT USING (
+    id IN (SELECT organization_id FROM users WHERE auth_user_id = auth.uid())
+  );
+```
+
+**Good pattern**:
+```sql
+-- Use SECURITY DEFINER function to bypass RLS
+CREATE OR REPLACE FUNCTION user_can_view_org(p_auth_uid UUID, p_org_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM users WHERE ...);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE POLICY "view orgs" ON organizations
+  FOR SELECT USING (user_can_view_org(auth.uid(), id));
+```
+
+### SECURITY DEFINER Functions
+**Lesson**: SECURITY DEFINER functions execute with the privileges of the function owner (usually postgres), bypassing RLS. Use them to break circular RLS dependencies.
+
+**Key points**:
+- Function runs as definer, not caller
+- RLS is bypassed for tables accessed inside the function
+- Must explicitly GRANT EXECUTE to `authenticated` role
+- Mark as STABLE for query optimizer
+
+**Pattern**:
+```sql
+CREATE OR REPLACE FUNCTION my_check(p_auth_uid UUID)
+RETURNS BOOLEAN AS $$
+  -- This bypasses RLS on the tables accessed here
+  SELECT EXISTS (SELECT 1 FROM users WHERE auth_user_id = p_auth_uid);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+GRANT EXECUTE ON FUNCTION my_check TO authenticated;
+```
+
+### Partner Role in RLS Policies
+**Lesson**: When adding new roles (like 'partner'), ensure ALL relevant RLS check functions include the new role.
+
+**Context**: Partners couldn't create content because `check_user_can_edit_content()` only checked for 'owner', 'admin', 'editor' roles, not 'partner'.
+
+**Pattern**: Audit all RLS helper functions when adding roles:
+```sql
+-- Find all functions that check roles
+\df *check*
+\df *can*
+\df *permission*
+```
+
+---
+
+## Extension Portal Matching
+
+### Portal ID Extraction
+**Lesson**: HubSpot URLs contain portal IDs in the path: `/contacts/{portalId}/...`. Extract using regex.
+
+**Pattern**:
+```javascript
+const url = window.location.href;
+const match = url.match(/\/contacts\/(\d+)\//);
+const portalId = match ? match[1] : null;
+```
+
+### Portal Matching Flow
+**Lesson**: For partners viewing client HubSpot portals, the extension must:
+1. Extract portal ID from URL
+2. Query organizations by `hubspot_portal_id`
+3. Fetch content for matched org (not partner's home org)
+
+**Debug checklist**:
+1. Is portal ID extracted? (check content script logs)
+2. Is portal ID sent to background? (check `getContent` request)
+3. Does org have `hubspot_portal_id` set? (check Supabase)
+4. Does RLS allow querying org? (test with auth token)
+
 **Pattern**:
 ```javascript
 apply() {
@@ -2439,6 +2536,311 @@ userIsPartner = await RevGuideDB.isPartner();
 - `canEditContent` - Use `hasEditPermission`
 
 **Pattern**: When adding page-level state variables, prefix with context like `user`, `current`, `local`, or `page` to avoid conflicts with global functions.
+
+---
+
+## Stripe Billing Integration (v2.11.0)
+
+### Stripe Checkout Mode and customer_creation
+**Lesson**: The `customer_creation` parameter is only valid in `payment` mode, not `subscription` mode.
+
+**Problem**: Creating a checkout session with `customer_creation: 'always'` in subscription mode throws error:
+```
+`customer_creation` can only be used in `payment` mode.
+```
+
+**Solution**: In subscription mode, Stripe automatically creates a customer. Remove the `customer_creation` parameter:
+```javascript
+// WRONG - causes error in subscription mode
+checkoutParams.append('customer_creation', 'always');
+
+// CORRECT - let Stripe handle it automatically
+// Just don't include customer_creation at all
+```
+
+### PostgreSQL STABLE Functions Cannot Write
+**Lesson**: Functions marked as `STABLE` run in a read-only transaction context and cannot perform INSERT/UPDATE/DELETE.
+
+**Problem**: RPC function marked `STABLE` called another function that did an INSERT:
+```
+cannot execute INSERT in a read-only transaction
+```
+
+**Root cause**: `get_subscription_with_limits()` was marked STABLE but called `sync_usage_counts()` which writes to `usage_counts` table.
+
+**Solution**: Either:
+1. Remove `STABLE` marker from the function
+2. Don't call writing functions from stable functions
+3. Do the writes via direct COUNT queries instead of caching
+
+```sql
+-- WRONG - STABLE function can't do writes
+CREATE FUNCTION get_subscription_with_limits(...)
+RETURNS ... STABLE AS $$
+  PERFORM sync_usage_counts(p_org_id);  -- This writes!
+  ...
+$$;
+
+-- CORRECT - No STABLE, or use direct counts
+CREATE FUNCTION get_subscription_with_limits(...)
+RETURNS ... AS $$  -- No STABLE
+  -- Count directly instead of syncing
+  SELECT COUNT(*) INTO v_banner_count FROM banners WHERE organization_id = p_org_id;
+$$;
+```
+
+### Cannot Change Return Type of Existing Function
+**Lesson**: PostgreSQL requires you to DROP a function before recreating it with a different return type.
+
+**Problem**: Migration fails with "cannot change return type of existing function".
+
+**Solution**: Always DROP FUNCTION first when changing return type:
+```sql
+-- WRONG - fails if return type changed
+CREATE OR REPLACE FUNCTION my_function() RETURNS new_type AS $$...$$;
+
+-- CORRECT - drop first
+DROP FUNCTION IF EXISTS my_function(UUID);  -- Include parameter types!
+CREATE OR REPLACE FUNCTION my_function(p_id UUID) RETURNS new_type AS $$...$$;
+```
+
+### Stripe Webhook Race Condition
+**Lesson**: Multiple Stripe events fire in sequence, but database updates may not complete before the next event tries to use them.
+
+**Problem**: Webhook receives events in order:
+1. `checkout.session.completed` - Sets `stripe_customer_id` on organization
+2. `customer.subscription.created` - Looks up org by `stripe_customer_id`
+
+If #2 fires before #1's database write completes, the subscription handler won't find the organization.
+
+**Solution**: Use subscription metadata as the primary lookup, not customer ID:
+```typescript
+// Check subscription metadata first (most reliable)
+if (subscription.metadata?.organization_id) {
+  orgId = subscription.metadata.organization_id;
+} else {
+  // Fall back to customer ID lookup
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+}
+```
+
+**Key insight**: Pass `subscription_data[metadata][organization_id]` when creating checkout session, so the subscription itself carries the org ID.
+
+### showConfirmDialog Rendering HTML
+**Lesson**: Dialog content is escaped by default for security. Add explicit HTML support when needed.
+
+**Problem**: Plan selection modal displayed raw HTML tags instead of rendered content.
+
+**Solution**: Add `allowHtml` option to `showConfirmDialog()`:
+```javascript
+AdminShared.showConfirmDialog({
+  title: 'Select Plan',
+  message: '<div class="plan-card">...</div>',
+  allowHtml: true,  // Render as HTML, not escaped text
+  onOpen: () => {
+    // Setup event listeners after dialog renders
+  }
+});
+```
+
+### Dialog onOpen Callback for Dynamic Content
+**Lesson**: When dialogs need JavaScript setup after rendering (event listeners, state tracking), use an `onOpen` callback.
+
+**Problem**: Plan selection state was read from DOM after dialog closed, but the selected plan wasn't being tracked.
+
+**Solution**: Add `onOpen` callback that runs after dialog is added to DOM:
+```javascript
+let selectedPlan = null;  // Track in closure
+
+AdminShared.showConfirmDialog({
+  message: planCardsHtml,
+  allowHtml: true,
+  onOpen: () => {
+    // Now dialog exists in DOM - attach listeners
+    document.querySelectorAll('.plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedPlan = card.dataset.plan;  // Track selection
+      });
+    });
+  }
+});
+```
+
+### Stripe Price ID Validation
+**Lesson**: Validate that environment variables contain actual Stripe IDs, not placeholder values.
+
+**Problem**: Price ID check was inverted, accepting placeholders and rejecting real IDs:
+```javascript
+// WRONG - rejects valid IDs!
+if (!priceId || !priceId.startsWith('price_')) {
+  return error('Price not configured');
+}
+```
+
+Wait, that's actually correct. The issue was the lookup was returning a placeholder string that started with "price_" but wasn't valid.
+
+**Solution**: Check that the lookup returned a real value:
+```javascript
+const priceId = env[`STRIPE_PRICE_${priceKey.toUpperCase()}`] || STRIPE_PRICES[priceKey];
+
+// Must exist AND be a valid Stripe price ID format
+if (!priceId || !priceId.startsWith('price_')) {
+  return new Response(JSON.stringify({
+    error: 'Price not configured',
+    details: `Set STRIPE_PRICE_${priceKey.toUpperCase()} environment variable`
+  }), { status: 500 });
+}
+```
+
+### Stripe API Version Differences (2025-12-15)
+**Lesson**: Newer Stripe API versions may move fields to different locations in the response object.
+
+**Problem**: Webhook crashed with "Invalid time value" when parsing subscription dates:
+```javascript
+new Date(subscription.current_period_start * 1000).toISOString()
+// subscription.current_period_start is undefined → NaN → Invalid Date
+```
+
+**Root cause**: In Stripe API 2025-12-15, `current_period_start` and `current_period_end` are at the subscription item level, not the subscription level.
+
+**Solution**: Check multiple locations with fallbacks:
+```javascript
+const subscriptionItem = subscription.items.data[0]
+const periodStart = subscription.current_period_start
+  || subscriptionItem?.current_period_start
+  || subscription.start_date
+const periodEnd = subscription.current_period_end
+  || subscriptionItem?.current_period_end
+
+// Always null-check before Date conversion
+p_current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null
+```
+
+### Stripe Metadata on Product vs Price
+**Lesson**: When using Stripe metadata for plan configuration, it can be set on either the Product or the Price. Check both.
+
+**Problem**: Webhook defaulted to 'starter' plan even though metadata was set - because it was on the Product, not the Price.
+
+**Solution**: Check both locations:
+```typescript
+const price = await stripe.prices.retrieve(priceId, { expand: ['product'] })
+const product = price.product as Stripe.Product
+
+const planType = (price.metadata?.plan_type as string)
+  || (product?.metadata?.plan_type as string)
+  || 'starter'
+```
+
+**Best practice**: Put `plan_type` metadata on the **Product** (not Price) since:
+- Products represent the plan concept
+- Prices are just billing variations (monthly/yearly)
+- One product can have multiple prices with same plan_type
+
+### Files for Stripe Billing
+- `supabase/migrations/026_billing_tables.sql` - Core billing schema
+- `supabase/migrations/027_update_billing_pricing.sql` - Pricing updates
+- `supabase/migrations/028_fix_subscription_rpc.sql` - Remove STABLE marker
+- `supabase/migrations/029_fix_subscription_rpc_v2.sql` - Drop and recreate function
+- `supabase/functions/stripe-webhook/index.ts` - Webhook handler
+- `api/invite-worker.js` - Billing API endpoints
+- `admin/pages/settings.js` - Billing UI
+
+---
+
+## Partner Portal Context for HubSpot (v2.11.2)
+
+### Database Must Be Source of Truth for active_organization_id
+**Lesson**: When backend services (edge functions) need to know which org a partner is viewing, they must read `active_organization_id` from the database - not rely on frontend caches or URL context.
+
+**Problem**: Partners viewing managed client portals saw their own HubSpot properties instead of the client's. The HubSpot edge function was reading `organization_id` (partner's home org) instead of `active_organization_id` (currently viewed org).
+
+**Root cause chain**:
+1. Frontend cached `currentOrganization` matched URL org → skipped database sync
+2. `active_organization_id` in database remained stale (pointing to home org)
+3. Edge function read stale `active_organization_id` → returned wrong HubSpot connection
+4. Properties cache wasn't cleared → showed wrong portal's fields
+
+**Solution**: Three-part fix:
+
+1. **Edge function**: Always use `active_organization_id` with fallback:
+```typescript
+const { data: userData } = await supabase
+  .from('users')
+  .select('organization_id, active_organization_id')
+  .eq('auth_user_id', user.id)
+  .single()
+
+const effectiveOrgId = userData?.active_organization_id || userData?.organization_id
+```
+
+2. **URL-based org sync**: ALWAYS update database, not just when switching:
+```javascript
+// In handleUrlOrgSwitch()
+// ALWAYS update the database to ensure active_organization_id is correct
+await RevGuideDB.switchOrganization(matchingOrg.organization_id);
+
+// Clear HubSpot caches even if "already on" this org
+sessionStorage.removeItem('revguide_properties_cache');
+sessionStorage.removeItem('revguide_hubspot_connection');
+```
+
+3. **Cache invalidation**: Clear HubSpot-related caches on org switch:
+```javascript
+function clearStorageDataCache() {
+  sessionStorage.removeItem(STORAGE_CACHE_KEY);
+  sessionStorage.removeItem('revguide_properties_cache');  // HubSpot fields
+  sessionStorage.removeItem('revguide_hubspot_connection'); // HubSpot connection
+}
+```
+
+**Key insight**: The frontend's `currentOrganization` cache can be ahead of the database. When the frontend thinks "I'm already on this org" based on cache, the database may not agree. Always sync the database for partner portal context.
+
+### Partner Role vs Admin for Settings UI
+**Lesson**: Partners need access to HubSpot settings in managed portals, but `isAdmin()` only checks for 'owner'/'admin' roles.
+
+**Problem**: Settings page hid HubSpot card for non-admins, but partners (role='partner') need to see/manage client HubSpot connections.
+
+**Solution**: Check for partner role separately:
+```javascript
+this.isPartner = AdminShared.getEffectiveRole() === 'partner';
+this.canManageHubSpot = this.isAdmin || this.isPartner;
+
+if (!this.isAdmin && !this.isPartner) {
+  this.setupNonAdminMode();  // Hides everything
+} else if (this.isPartner) {
+  this.setupPartnerMode();   // Shows HubSpot, hides team management
+}
+```
+
+### Debugging Partner Portal Issues
+**Checklist** when partner sees wrong org's data:
+
+1. Check frontend thinks it's on correct org:
+```javascript
+console.log('Current org:', AdminShared.currentOrganization);
+```
+
+2. Check HubSpot connection returned by edge function:
+```javascript
+RevGuideHubSpot.getConnection().then(c => console.log('Connection:', c.portalName, c.portalId));
+```
+
+3. Check edge function logs in Supabase dashboard for:
+   - `active_organization_id` value being read
+   - Which connection is being returned
+
+4. Verify database has correct `active_organization_id`:
+   - Check `users` table for the partner's record
+   - Confirm it matches the org they're trying to view
+
+**Files**:
+- `admin/shared.js` - `handleUrlOrgSwitch()`, cache clearing
+- `admin/pages/settings.js` - Partner mode setup
+- `supabase/functions/hubspot-oauth/index.ts` - `handleGetConnection()`
 
 ---
 

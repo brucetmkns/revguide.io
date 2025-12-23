@@ -2,6 +2,109 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.11.2] - 2025-12-23 - Partner Portal HubSpot Context Fix
+
+### Fixed
+- **Partner HubSpot Settings Visibility**: Partners can now see HubSpot connection card when viewing managed client portals
+  - Added `isPartner` and `canManageHubSpot` flags to settings page
+  - Created `setupPartnerMode()` to show HubSpot but hide team management for partners
+  - Partners can view/manage HubSpot connection in client portals they have access to
+
+- **Partner Portal HubSpot Connection**: Fixed HubSpot API returning wrong portal's connection for partners
+  - Edge function now uses `active_organization_id` (not just `organization_id`) to determine which portal's connection to return
+  - Partners viewing client portals now correctly get that client's HubSpot properties/fields
+
+- **Partner Portal Context Sync**: Fixed `active_organization_id` not being updated when navigating via URL
+  - `handleUrlOrgSwitch()` now ALWAYS updates `active_organization_id` in database, not just when switching from different org
+  - This ensures HubSpot edge function reads the correct org context
+  - Also clears HubSpot connection and properties caches on every URL-based org load
+
+- **Cache Invalidation on Org Switch**: Added clearing of HubSpot-related caches when switching portals
+  - `clearStorageDataCache()` now also clears `revguide_properties_cache` and `revguide_hubspot_connection`
+  - Prevents stale properties from wrong portal persisting after switch
+
+### Technical
+- Modified `admin/pages/settings.js`: Added partner detection and `setupPartnerMode()`
+- Modified `admin/shared.js`: Enhanced `handleUrlOrgSwitch()` to always sync database and clear caches
+- Modified `supabase/functions/hubspot-oauth/index.ts`: Use `COALESCE(active_organization_id, organization_id)` pattern
+
+## [2.11.1] - 2025-12-23 - Partner Content Permissions Fix
+
+### Fixed
+- **Partner RLS Policies**: Partners can now create/edit/delete content in managed client organizations
+  - Updated `check_user_can_edit_content()` to include 'partner' role
+  - Created `check_user_can_edit_org_content()` SECURITY DEFINER function for org-specific permission checks
+  - Updated INSERT/UPDATE/DELETE policies on banners, plays, wiki_entries tables
+
+- **Portal Matching for Partners**: Extension now correctly loads client org content when viewing their HubSpot portal
+  - Fixed organizations RLS policies that blocked portal ID lookups
+  - Created `user_can_view_org()` SECURITY DEFINER function to bypass RLS circular dependencies
+  - Removed problematic policies that directly queried users table (caused "permission denied" errors)
+
+- **Added Debug Logging**: Better visibility into portal matching flow
+  - Content script logs URL parsing and portal ID extraction
+  - Background script logs incoming getContent requests with portalId
+
+### Technical
+- New migrations: `030_partner_content_permissions.sql`, `031_fix_org_rls_for_portal_matching.sql`
+- Fixed RLS policy evaluation errors caused by inline queries to users table within policies
+- Organizations SELECT policies now use SECURITY DEFINER functions to avoid permission cascade failures
+
+## [2.11.0] - 2025-12-23 - Stripe Billing Integration
+
+### Added
+- **Stripe Billing Infrastructure**: Complete billing system with Stripe Checkout and webhooks
+  - Per-seat pricing for standard accounts (Starter $5/seat, Pro $10/seat, Business $20/seat)
+  - Tiered Partner plans (Partner Starter $500/mo, Partner Pro $1,250/mo, Partner Enterprise $2,500/mo)
+  - Free seat threshold (5 users for Starter)
+  - Monthly and yearly billing intervals (17% yearly discount)
+
+- **Billing Settings UI**: New billing section in Settings page
+  - Current plan badge with usage meters (banners, wiki, plays for standard; client portals, libraries for partners)
+  - "Upgrade Plan" button opens Stripe Checkout
+  - "Manage Billing" button opens Stripe Customer Portal
+  - Monthly/Yearly toggle with prominent styling
+  - Plan selection modal with tier comparison
+
+- **Stripe Checkout Integration**: Seamless upgrade flow
+  - Create checkout sessions via Cloudflare Worker API
+  - Pass organization metadata for webhook association
+  - Success/cancel URL handling with toast notifications
+  - Automatic customer creation in Stripe
+
+- **Stripe Webhook Handler**: Supabase Edge Function for subscription lifecycle
+  - `checkout.session.completed` - Links Stripe customer to organization
+  - `customer.subscription.created` - Creates subscription record
+  - `customer.subscription.updated` - Updates plan, seats, status
+  - `customer.subscription.deleted` - Marks subscription as canceled
+  - `invoice.paid` - Clears grace period
+  - `invoice.payment_failed` - Starts 7-day grace period
+
+- **Database Schema for Billing**: New tables and functions
+  - `plan_limits` - Configuration for each plan tier (limits, pricing)
+  - `subscriptions` - Per-org subscription tracking
+  - `usage_counts` - Cached content counts for limit checks
+  - `billing_events` - Webhook event audit log
+  - `get_subscription_with_limits()` - RPC for full subscription + usage info
+  - `can_create_content()` - Boolean limit check
+  - `upsert_subscription()` - Create/update from webhook
+
+### Technical
+- Added billing API endpoints to `api/invite-worker.js`:
+  - `POST /api/billing/create-checkout-session`
+  - `POST /api/billing/create-portal-session`
+  - `POST /api/billing/subscription`
+- Created `supabase/functions/stripe-webhook/index.ts` for webhook handling
+- Added 4 billing migrations: `026_billing_tables.sql`, `027_update_billing_pricing.sql`, `028_fix_subscription_rpc.sql`, `029_fix_subscription_rpc_v2.sql`
+- Enhanced `showConfirmDialog()` with `allowHtml` and `onOpen` callback options
+- Webhook checks both price and product metadata for `plan_type`
+- Period dates fetched from subscription item level (Stripe API 2025-12-15 compatibility)
+
+### Future Enhancements
+- Feature gating (block content creation when over limits)
+- Grace period UI warnings
+- Usage analytics dashboard
+
 ## [2.10.0] - 2025-12-22 - Partner UX Improvements
 
 ### Added
