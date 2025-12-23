@@ -546,10 +546,20 @@ class IndexTagsModule {
           playData: play || null
         });
       });
-    } else if (rule.message) {
-      // Show banner content in a popup
+    } else if (rule.message || rule.fields?.length) {
+      // Show banner content in a popup (with optional editable fields)
       console.log('[RevGuide IndexTags] Showing banner popup:', rule.name);
-      this.showBannerPopup(rule, event?.target);
+
+      // Get recordId from the tag's parent container
+      const tag = event?.target;
+      const tagsContainer = tag?.closest('.hshelper-index-tags');
+      const recordId = tagsContainer?.dataset?.recordId;
+
+      // Get cached properties for this record
+      const cached = recordId ? this.propertiesCache.get(recordId) : null;
+      const properties = cached?.properties || {};
+
+      this.showBannerPopup(rule, tag, recordId, properties);
     } else {
       // No content to show
       console.log('[RevGuide IndexTags] Tag clicked, no content:', rule.name);
@@ -560,8 +570,10 @@ class IndexTagsModule {
    * Show banner content in a popup near the clicked tag
    * @param {Object} rule - The banner rule
    * @param {HTMLElement} anchorElement - Element to position popup near
+   * @param {string} recordId - The record ID for saving field updates
+   * @param {Object} properties - Current record properties for field values
    */
-  showBannerPopup(rule, anchorElement) {
+  showBannerPopup(rule, anchorElement, recordId, properties) {
     // Remove any existing popup
     this.closeBannerPopup();
 
@@ -569,6 +581,8 @@ class IndexTagsModule {
     const popup = document.createElement('div');
     popup.className = `hshelper-banner-popup hshelper-banner-popup--${rule.type || 'info'}`;
     popup.id = 'hshelper-banner-popup';
+    popup.dataset.recordId = recordId || '';
+    popup.dataset.ruleId = rule.id || '';
 
     // Create header
     const header = document.createElement('div');
@@ -579,11 +593,21 @@ class IndexTagsModule {
     `;
     popup.appendChild(header);
 
-    // Create content
-    const content = document.createElement('div');
-    content.className = 'hshelper-banner-popup__content';
-    content.innerHTML = rule.message; // Message is HTML content
-    popup.appendChild(content);
+    // Create content (message)
+    if (rule.message) {
+      const content = document.createElement('div');
+      content.className = 'hshelper-banner-popup__content';
+      content.innerHTML = rule.message; // Message is HTML content
+      popup.appendChild(content);
+    }
+
+    // Add editable fields if present and we have a recordId
+    if (rule.fields?.length && recordId) {
+      const fieldsHtml = this.renderPopupFieldsForm(rule, properties);
+      const fieldsDiv = document.createElement('div');
+      fieldsDiv.innerHTML = fieldsHtml;
+      popup.appendChild(fieldsDiv.firstElementChild);
+    }
 
     // Add close button handler
     header.querySelector('.hshelper-banner-popup__close').addEventListener('click', () => {
@@ -633,6 +657,11 @@ class IndexTagsModule {
       popup.style.left = `${left + window.scrollX}px`;
     }
 
+    // Initialize field save events if fields are present
+    if (rule.fields?.length && recordId) {
+      this.initPopupFieldEvents(popup, rule, recordId);
+    }
+
     this.currentPopup = popup;
   }
 
@@ -645,6 +674,267 @@ class IndexTagsModule {
       existing.remove();
     }
     this.currentPopup = null;
+  }
+
+  /**
+   * Render editable fields form for popup
+   * @param {Object} rule - The banner rule
+   * @param {Object} properties - Current record properties
+   * @returns {string} HTML string for fields form
+   */
+  renderPopupFieldsForm(rule, properties) {
+    const fieldsHtml = rule.fields.map(field => {
+      const currentValue = properties[field.property] || '';
+      const displayLabel = field.label || field.property.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+      return `
+        <div class="hshelper-banner-field" data-property="${this.helper.escapeHtml(field.property)}">
+          <label class="hshelper-banner-field-label">
+            ${this.helper.escapeHtml(displayLabel)}
+            ${field.required ? '<span class="hshelper-field-required">*</span>' : ''}
+          </label>
+          ${this.renderPopupFieldInput(field, currentValue)}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="hshelper-banner-fields" data-rule-id="${rule.id}">
+        ${fieldsHtml}
+        <div class="hshelper-banner-fields-actions">
+          <button type="button" class="hshelper-banner-save-btn" data-rule-id="${rule.id}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Save to HubSpot
+          </button>
+          <span class="hshelper-banner-fields-status"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render appropriate input element for a field in popup
+   * @param {Object} field - Field configuration
+   * @param {string} currentValue - Current value of the field
+   * @returns {string} HTML string for the input element
+   */
+  renderPopupFieldInput(field, currentValue) {
+    const displayLabel = field.label || field.property;
+    const fieldType = field.fieldType || '';
+    const type = field.type || 'string';
+    const options = field.options || [];
+    const escapedValue = this.helper.escapeHtml(currentValue || '');
+
+    // Select/dropdown for enumeration fields
+    if (options.length > 0 || fieldType === 'select' || fieldType === 'radio') {
+      const normalizedCurrent = String(currentValue || '').toLowerCase().trim();
+      const optionsHtml = options.map(opt => {
+        const optValue = opt.value !== undefined ? opt.value : opt;
+        const optLabel = opt.label || opt;
+        const selected = normalizedCurrent === String(optValue).toLowerCase().trim() ? 'selected' : '';
+        return `<option value="${this.helper.escapeHtml(String(optValue))}" ${selected}>${this.helper.escapeHtml(optLabel)}</option>`;
+      }).join('');
+
+      return `
+        <select class="hshelper-banner-field-input hshelper-field-select"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}">
+          <option value="">Select...</option>
+          ${optionsHtml}
+        </select>
+      `;
+    }
+
+    // Boolean checkbox
+    if (type === 'bool' || fieldType === 'booleancheckbox') {
+      const checked = currentValue === 'true' || currentValue === true ? 'checked' : '';
+      return `
+        <label class="hshelper-banner-checkbox-label">
+          <input type="checkbox" class="hshelper-banner-field-input hshelper-field-checkbox"
+            data-property="${this.helper.escapeHtml(field.property)}"
+            data-required="${field.required ? 'true' : 'false'}"
+            data-type="boolean" ${checked}>
+          <span>Yes</span>
+        </label>
+      `;
+    }
+
+    // Date field
+    if (type === 'date' || fieldType === 'date') {
+      let dateValue = '';
+      if (currentValue) {
+        try {
+          const date = new Date(isNaN(currentValue) ? currentValue : parseInt(currentValue));
+          if (!isNaN(date.getTime())) {
+            dateValue = date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          dateValue = currentValue;
+        }
+      }
+      return `
+        <input type="date" class="hshelper-banner-field-input hshelper-field-date"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}"
+          data-type="date"
+          value="${this.helper.escapeHtml(dateValue)}">
+      `;
+    }
+
+    // Number field
+    if (type === 'number' || fieldType === 'number') {
+      return `
+        <input type="number" class="hshelper-banner-field-input hshelper-field-number"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}"
+          data-type="number"
+          value="${escapedValue}"
+          placeholder="Enter value">
+      `;
+    }
+
+    // Default: text input
+    return `
+      <input type="text" class="hshelper-banner-field-input"
+        data-property="${this.helper.escapeHtml(field.property)}"
+        data-required="${field.required ? 'true' : 'false'}"
+        value="${escapedValue}"
+        placeholder="Enter ${this.helper.escapeHtml(displayLabel.toLowerCase())}">
+    `;
+  }
+
+  /**
+   * Initialize field event handlers for popup
+   * @param {HTMLElement} popup - The popup DOM element
+   * @param {Object} rule - The rule object
+   * @param {string} recordId - The record ID
+   */
+  initPopupFieldEvents(popup, rule, recordId) {
+    const saveBtn = popup.querySelector('.hshelper-banner-save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', (e) => this.handlePopupSaveFields(e, popup, rule, recordId));
+    }
+  }
+
+  /**
+   * Handle saving fields to HubSpot from popup
+   * @param {Event} e - Click event
+   * @param {HTMLElement} popup - The popup DOM element
+   * @param {Object} rule - The rule object
+   * @param {string} recordId - The record ID
+   */
+  async handlePopupSaveFields(e, popup, rule, recordId) {
+    const btn = e.target.closest('.hshelper-banner-save-btn');
+    const fieldsContainer = popup.querySelector('.hshelper-banner-fields');
+    const statusEl = fieldsContainer.querySelector('.hshelper-banner-fields-status');
+
+    // Collect field values
+    const updates = {};
+    let hasValidationError = false;
+
+    fieldsContainer.querySelectorAll('.hshelper-banner-field-input').forEach(input => {
+      const property = input.dataset.property;
+      const required = input.dataset.required === 'true';
+      const dataType = input.dataset.type || '';
+      let value;
+
+      if (input.type === 'checkbox' && dataType === 'boolean') {
+        value = input.checked ? 'true' : 'false';
+      } else if (input.tagName === 'SELECT') {
+        value = input.value;
+      } else if (dataType === 'date' && input.value) {
+        const date = new Date(input.value + 'T00:00:00Z');
+        value = date.getTime().toString();
+      } else {
+        value = input.value.trim();
+      }
+
+      if (required && !value) {
+        input.classList.add('hshelper-field-error');
+        hasValidationError = true;
+      } else {
+        input.classList.remove('hshelper-field-error');
+        updates[property] = value;
+      }
+    });
+
+    if (hasValidationError) {
+      statusEl.textContent = 'Please fill in required fields';
+      statusEl.className = 'hshelper-banner-fields-status error';
+      return;
+    }
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="hshelper-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      Saving...
+    `;
+    statusEl.textContent = '';
+    statusEl.className = 'hshelper-banner-fields-status';
+
+    try {
+      // Send update to background script
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'updateHubSpotProperties',
+          objectType: this.objectType,
+          recordId: recordId,
+          properties: updates
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(response);
+          }
+        });
+      });
+
+      if (response.success) {
+        statusEl.textContent = 'Saved!';
+        statusEl.className = 'hshelper-banner-fields-status success';
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Saved
+        `;
+
+        // Update cache with new values
+        const cached = this.propertiesCache.get(recordId);
+        if (cached) {
+          Object.assign(cached.properties, updates);
+        }
+
+        // Reset button after delay
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Save to HubSpot
+          `;
+        }, 2000);
+      } else {
+        throw new Error(response.error || 'Failed to save');
+      }
+    } catch (error) {
+      console.error('[RevGuide IndexTags] Error saving fields:', error);
+      statusEl.textContent = error.message || 'Error saving';
+      statusEl.className = 'hshelper-banner-fields-status error';
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Save to HubSpot
+      `;
+    }
   }
 
   /**
