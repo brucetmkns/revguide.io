@@ -1,5 +1,4 @@
--- Fix get_subscription_with_limits to not call sync in read path
--- The STABLE marker prevents writes, so we need to remove the sync call
+-- Fix get_subscription_with_limits - drop and recreate
 
 -- Drop existing function first (return type changed)
 DROP FUNCTION IF EXISTS get_subscription_with_limits(UUID);
