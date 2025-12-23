@@ -3,13 +3,23 @@
  * Handles authentication and database operations
  */
 
-// Supabase configuration
-const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
+// Supabase configuration - use config if available, fallback to production
+const SUPABASE_URL = (typeof RevGuideConfig !== 'undefined' && RevGuideConfig.ENV)
+  ? RevGuideConfig.ENV.supabase.url
+  : 'https://qbdhvhrowmfnacyikkbf.supabase.co';
+
+const SUPABASE_ANON_KEY = (typeof RevGuideConfig !== 'undefined' && RevGuideConfig.ENV)
+  ? RevGuideConfig.ENV.supabase.anonKey
+  : 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 
 // Expose for hubspot.js to use
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
+// Log environment in dev/staging
+if (typeof RevGuideConfig !== 'undefined' && RevGuideConfig.isStaging) {
+  console.log('[RevGuide] Running in STAGING environment:', RevGuideConfig.ENV.supabase.url);
+}
 
 // Import Supabase client
 // In extension context: use local bundle via chrome.runtime.getURL
@@ -1901,6 +1911,91 @@ const RevGuideDB = {
 
     const { data, error } = await client.rpc('get_user_organizations', { p_auth_uid: user.id });
     return { data: data || [], error };
+  },
+
+  // ===========================================
+  // SUBSCRIPTION METHODS
+  // ===========================================
+
+  /**
+   * Get subscription status with usage limits for current organization
+   * Uses the get_subscription_with_limits RPC function
+   */
+  async getSubscriptionStatus() {
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: null, error: new Error('No organization') };
+
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('get_subscription_with_limits', { p_org_id: orgId });
+
+    if (error) return { data: null, error };
+
+    // Return first row (single org)
+    return { data: data?.[0] || null, error: null };
+  },
+
+  /**
+   * Check if organization can create more of a specific content type
+   * @param {string} contentType - 'banner', 'wiki', 'play', 'member', 'client_portal', 'library'
+   * @returns {Promise<{canCreate: boolean, remaining: number|null, error: Error|null}>}
+   */
+  async canCreateContent(contentType) {
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { canCreate: false, remaining: 0, error: new Error('No organization') };
+
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('can_create_content', {
+      p_org_id: orgId,
+      p_content_type: contentType
+    });
+
+    if (error) return { canCreate: false, remaining: 0, error };
+
+    return { canCreate: data === true, remaining: null, error: null };
+  },
+
+  /**
+   * Get remaining quota for a specific content type
+   * @param {string} contentType - 'banner', 'wiki', 'play'
+   * @returns {Promise<{remaining: number, error: Error|null}>}
+   */
+  async getRemainingQuota(contentType) {
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { remaining: 0, error: new Error('No organization') };
+
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('get_remaining_quota', {
+      p_org_id: orgId,
+      p_content_type: contentType
+    });
+
+    if (error) return { remaining: 0, error };
+
+    // -1 means unlimited
+    return { remaining: data, error: null };
+  },
+
+  /**
+   * Check if organization is in restricted mode (subscription expired/canceled)
+   * @returns {Promise<boolean>}
+   */
+  async isRestricted() {
+    const { data } = await this.getSubscriptionStatus();
+    if (!data) return false;
+    return data.status === 'restricted';
+  },
+
+  /**
+   * Check if organization is in grace period
+   * @returns {Promise<{inGracePeriod: boolean, daysRemaining: number|null}>}
+   */
+  async getGracePeriodStatus() {
+    const { data } = await this.getSubscriptionStatus();
+    if (!data) return { inGracePeriod: false, daysRemaining: null };
+    return {
+      inGracePeriod: data.is_grace_period === true,
+      daysRemaining: data.grace_period_days_remaining
+    };
   }
 };
 

@@ -17,17 +17,45 @@
 // CONFIGURATION
 // ===========================================
 
-const CONFIG = {
-  fromEmail: 'RevGuide <notifications@email.revguide.io>',
-  appUrl: 'https://app.revguide.io',
-  chromeStoreUrl: 'https://chrome.google.com/webstore', // Update when published
-  supabaseUrl: 'https://qbdhvhrowmfnacyikkbf.supabase.co',
-  allowedOrigins: [
-    'chrome-extension://*',
-    'https://app.revguide.io',
-    'https://revguide.io',
-  ]
+// Environment-specific configurations
+const ENVIRONMENT_CONFIG = {
+  production: {
+    fromEmail: 'RevGuide <notifications@email.revguide.io>',
+    appUrl: 'https://app.revguide.io',
+    chromeStoreUrl: 'https://chrome.google.com/webstore',
+    supabaseUrl: 'https://qbdhvhrowmfnacyikkbf.supabase.co',
+    allowedOrigins: [
+      'chrome-extension://*',
+      'https://app.revguide.io',
+      'https://revguide.io',
+    ]
+  },
+  staging: {
+    fromEmail: 'RevGuide Staging <staging@email.revguide.io>',
+    appUrl: 'https://staging.revguide.io',
+    chromeStoreUrl: 'https://chrome.google.com/webstore',
+    // TODO: Update after creating Supabase staging project
+    supabaseUrl: 'https://STAGING_PROJECT_REF.supabase.co',
+    allowedOrigins: [
+      'chrome-extension://*',
+      'https://staging.revguide.io',
+      'https://app.revguide.io',
+      'https://revguide.io',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ]
+  }
 };
+
+// Get current environment from Cloudflare Worker env var (set via wrangler.toml)
+// Defaults to production if not set
+function getConfig(env) {
+  const envName = env?.ENVIRONMENT || 'production';
+  return ENVIRONMENT_CONFIG[envName] || ENVIRONMENT_CONFIG.production;
+}
+
+// Legacy CONFIG for backwards compatibility (uses production by default)
+const CONFIG = ENVIRONMENT_CONFIG.production;
 
 // ===========================================
 // EMAIL TEMPLATES
@@ -751,6 +779,25 @@ export default {
     // Route: POST /api/delete-user - Delete user from users table and auth.users
     if (url.pathname === '/api/delete-user') {
       return handleDeleteUser(request, env, corsHeaders);
+    }
+
+    // ===========================================
+    // BILLING ROUTES
+    // ===========================================
+
+    // Route: POST /api/billing/create-checkout-session - Create Stripe checkout session
+    if (url.pathname === '/api/billing/create-checkout-session') {
+      return handleCreateCheckoutSession(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/billing/create-portal-session - Create Stripe customer portal session
+    if (url.pathname === '/api/billing/create-portal-session') {
+      return handleCreatePortalSession(request, env, corsHeaders);
+    }
+
+    // Route: POST /api/billing/subscription - Get subscription status
+    if (url.pathname === '/api/billing/subscription') {
+      return handleGetSubscription(request, env, corsHeaders);
     }
 
     // Health check
@@ -2662,6 +2709,397 @@ async function handleDeleteUser(request, env, corsHeaders) {
 
   } catch (error) {
     console.error('Delete user error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// BILLING HANDLERS
+// ===========================================
+
+/**
+ * Stripe price IDs - configure these in Stripe Dashboard
+ * Each price should have metadata: { plan_type: 'pro|business|partner_starter|...' }
+ */
+const STRIPE_PRICES = {
+  pro_monthly: 'price_pro_monthly',      // Replace with actual Stripe price ID
+  pro_yearly: 'price_pro_yearly',
+  business_monthly: 'price_business_monthly',
+  business_yearly: 'price_business_yearly',
+  partner_starter_monthly: 'price_partner_starter_monthly',
+  partner_starter_yearly: 'price_partner_starter_yearly',
+  partner_pro_monthly: 'price_partner_pro_monthly',
+  partner_pro_yearly: 'price_partner_pro_yearly',
+  partner_enterprise_monthly: 'price_partner_enterprise_monthly',
+  partner_enterprise_yearly: 'price_partner_enterprise_yearly',
+};
+
+/**
+ * Create Stripe Checkout session for subscription upgrade
+ * POST /api/billing/create-checkout-session
+ * Body: { organizationId, planType, billingInterval, successUrl, cancelUrl }
+ */
+async function handleCreateCheckoutSession(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { organizationId, planType, billingInterval = 'month', successUrl, cancelUrl } = body;
+
+    if (!organizationId) {
+      return new Response(JSON.stringify({ error: 'organizationId is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!planType) {
+      return new Response(JSON.stringify({ error: 'planType is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const stripeKey = env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.error('STRIPE_SECRET_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Billing service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Get organization details
+    const orgResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organizations?id=eq.${organizationId}&select=id,name,stripe_customer_id`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!orgResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch organization' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const orgs = await orgResponse.json();
+    if (!orgs || orgs.length === 0) {
+      return new Response(JSON.stringify({ error: 'Organization not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const org = orgs[0];
+
+    // Determine price ID based on plan type and interval
+    const priceKey = `${planType}_${billingInterval === 'year' ? 'yearly' : 'monthly'}`;
+    const priceId = env[`STRIPE_PRICE_${priceKey.toUpperCase()}`] || STRIPE_PRICES[priceKey];
+
+    if (!priceId || priceId.startsWith('price_')) {
+      // Price ID not configured - return helpful error
+      return new Response(JSON.stringify({
+        error: 'Price not configured',
+        details: `Set STRIPE_PRICE_${priceKey.toUpperCase()} environment variable`
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Build Stripe checkout session request
+    const checkoutParams = new URLSearchParams();
+    checkoutParams.append('mode', 'subscription');
+    checkoutParams.append('line_items[0][price]', priceId);
+    checkoutParams.append('line_items[0][quantity]', '1');
+    checkoutParams.append('success_url', successUrl || `${CONFIG.appUrl}/settings?checkout=success`);
+    checkoutParams.append('cancel_url', cancelUrl || `${CONFIG.appUrl}/settings?checkout=cancelled`);
+    checkoutParams.append('metadata[organization_id]', organizationId);
+    checkoutParams.append('subscription_data[metadata][organization_id]', organizationId);
+
+    // If org already has a Stripe customer, use it
+    if (org.stripe_customer_id) {
+      checkoutParams.append('customer', org.stripe_customer_id);
+    } else {
+      // Allow Stripe to create a new customer
+      checkoutParams.append('customer_creation', 'always');
+    }
+
+    // Create checkout session via Stripe API
+    const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: checkoutParams.toString()
+    });
+
+    if (!stripeResponse.ok) {
+      const errorData = await stripeResponse.json().catch(() => ({}));
+      console.error('Stripe checkout session error:', errorData);
+      return new Response(JSON.stringify({
+        error: 'Failed to create checkout session',
+        details: errorData.error?.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const session = await stripeResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      checkoutUrl: session.url,
+      sessionId: session.id
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Create checkout session error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Create Stripe Customer Portal session for managing subscription
+ * POST /api/billing/create-portal-session
+ * Body: { organizationId, returnUrl }
+ */
+async function handleCreatePortalSession(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { organizationId, returnUrl } = body;
+
+    if (!organizationId) {
+      return new Response(JSON.stringify({ error: 'organizationId is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const stripeKey = env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.error('STRIPE_SECRET_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Billing service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Get organization's Stripe customer ID
+    const orgResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organizations?id=eq.${organizationId}&select=stripe_customer_id`,
+      {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!orgResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch organization' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const orgs = await orgResponse.json();
+    if (!orgs || orgs.length === 0) {
+      return new Response(JSON.stringify({ error: 'Organization not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const stripeCustomerId = orgs[0].stripe_customer_id;
+    if (!stripeCustomerId) {
+      return new Response(JSON.stringify({ error: 'No billing account found. Please subscribe first.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create portal session via Stripe API
+    const portalParams = new URLSearchParams();
+    portalParams.append('customer', stripeCustomerId);
+    portalParams.append('return_url', returnUrl || `${CONFIG.appUrl}/settings`);
+
+    const stripeResponse = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: portalParams.toString()
+    });
+
+    if (!stripeResponse.ok) {
+      const errorData = await stripeResponse.json().catch(() => ({}));
+      console.error('Stripe portal session error:', errorData);
+      return new Response(JSON.stringify({
+        error: 'Failed to create portal session',
+        details: errorData.error?.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const session = await stripeResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      portalUrl: session.url
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Create portal session error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Get subscription status for an organization
+ * POST /api/billing/subscription
+ * Body: { organizationId }
+ */
+async function handleGetSubscription(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { organizationId } = body;
+
+    if (!organizationId) {
+      return new Response(JSON.stringify({ error: 'organizationId is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return new Response(JSON.stringify({ error: 'Service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Call the RPC function to get subscription with limits
+    const rpcResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/rpc/get_subscription_with_limits`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_org_id: organizationId })
+      }
+    );
+
+    if (!rpcResponse.ok) {
+      const errorText = await rpcResponse.text();
+      console.error('RPC error:', errorText);
+      return new Response(JSON.stringify({ error: 'Failed to fetch subscription' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const subscriptionData = await rpcResponse.json();
+
+    // If no subscription found, return free tier defaults
+    if (!subscriptionData || subscriptionData.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        subscription: {
+          planType: 'free',
+          planDisplayName: 'Free',
+          status: 'active',
+          billingInterval: null,
+          seatCount: 1,
+          currentPeriodEnd: null,
+          bannerLimit: 5,
+          wikiLimit: 10,
+          playLimit: 3,
+          seatLimit: 2,
+          currentBannerCount: 0,
+          currentWikiCount: 0,
+          currentPlayCount: 0,
+          currentMemberCount: 1,
+          isGracePeriod: false,
+          gracePeriodDaysRemaining: null,
+          priceMonthly: 0,
+          pricePerExtraSeat: null
+        }
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const sub = subscriptionData[0];
+
+    return new Response(JSON.stringify({
+      success: true,
+      subscription: {
+        subscriptionId: sub.subscription_id,
+        planType: sub.plan_type,
+        planDisplayName: sub.plan_display_name,
+        status: sub.status,
+        billingInterval: sub.billing_interval,
+        seatCount: sub.seat_count,
+        currentPeriodEnd: sub.current_period_end,
+        bannerLimit: sub.banner_limit,
+        wikiLimit: sub.wiki_limit,
+        playLimit: sub.play_limit,
+        seatLimit: sub.seat_limit,
+        clientPortalLimit: sub.client_portal_limit,
+        libraryLimit: sub.library_limit,
+        currentBannerCount: sub.current_banner_count,
+        currentWikiCount: sub.current_wiki_count,
+        currentPlayCount: sub.current_play_count,
+        currentMemberCount: sub.current_member_count,
+        currentClientPortalCount: sub.current_client_portal_count,
+        currentLibraryCount: sub.current_library_count,
+        isGracePeriod: sub.is_grace_period,
+        gracePeriodDaysRemaining: sub.grace_period_days_remaining,
+        priceMonthly: sub.price_monthly,
+        pricePerExtraSeat: sub.price_per_extra_seat
+      }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Get subscription error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

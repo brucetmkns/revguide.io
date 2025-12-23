@@ -891,6 +891,10 @@ class WikiPage {
   }
 
   async createNewEntry() {
+    // Check limit before creating a new wiki entry
+    const canCreate = await AdminShared.checkContentLimit('wiki');
+    if (!canCreate) return;
+
     if (this.hasUnsavedChanges) {
       const result = await AdminShared.showConfirmDialog({
         title: 'Unsaved Changes',

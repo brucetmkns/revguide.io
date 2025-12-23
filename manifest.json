@@ -63,6 +63,7 @@
   "externally_connectable": {
     "matches": [
       "https://app.revguide.io/*",
+      "https://staging.revguide.io/*",
       "http://localhost:*/*"
     ]
   }

@@ -1,0 +1,4 @@
+# Disable JWT verification for this function
+# Webhook endpoint is called by Stripe (no Supabase auth header)
+# We verify the Stripe webhook signature instead
+verify_jwt = false

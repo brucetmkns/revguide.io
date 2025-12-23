@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <script src="/admin/analytics.js"></script>
   <title>RevGuide</title>
-  <script src="../supabase.js"></script>
+  <!-- Environment config (loaded first for staging support) -->
+  <script src="/config/environments.js"></script>
+  <script src="/config/current.js"></script>
+  <script src="/admin/supabase.js"></script>
   <script>
     // Check auth and redirect appropriately
     document.addEventListener('DOMContentLoaded', async () => {

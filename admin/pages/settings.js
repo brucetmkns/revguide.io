@@ -105,6 +105,11 @@ class SettingsPage {
     // Load partner status
     await this.loadPartnerStatus();
 
+    // Load billing status (web context only)
+    if (!AdminShared.isExtensionContext) {
+      await this.loadBillingStatus();
+    }
+
     // Bind events
     this.bindEvents();
     console.log('[Settings] init() completed');
@@ -460,6 +465,21 @@ class SettingsPage {
           await this.declineAccessRequest(requestId);
         }
       });
+    }
+
+    // Billing buttons (web context only)
+    const upgradePlanBtn = document.getElementById('upgradePlanBtn');
+    const manageBillingBtn = document.getElementById('manageBillingBtn');
+    const updatePaymentBtn = document.getElementById('updatePaymentBtn');
+
+    if (upgradePlanBtn) {
+      upgradePlanBtn.addEventListener('click', () => this.openUpgradeModal());
+    }
+    if (manageBillingBtn) {
+      manageBillingBtn.addEventListener('click', () => this.openBillingPortal());
+    }
+    if (updatePaymentBtn) {
+      updatePaymentBtn.addEventListener('click', () => this.openBillingPortal());
     }
 
   }
@@ -1868,6 +1888,226 @@ class SettingsPage {
     if (diffDays <= 0) return 'expired';
     if (diffDays === 1) return 'in 1 day';
     return `in ${diffDays} days`;
+  }
+
+  // ===========================================
+  // BILLING METHODS
+  // ===========================================
+
+  /**
+   * Load billing/subscription status from the API
+   */
+  async loadBillingStatus() {
+    // Only run in web context
+    if (AdminShared.isExtensionContext) return;
+
+    const billingCard = document.getElementById('billingCard');
+    if (!billingCard) return;
+
+    // Show billing card in web context
+    billingCard.style.display = 'block';
+
+    try {
+      const orgId = await RevGuideDB.getOrganizationId();
+      if (!orgId) {
+        console.warn('[Settings] No organization ID for billing');
+        return;
+      }
+
+      // Fetch subscription status from API
+      const response = await fetch('https://revguide-api.revguide.workers.dev/api/billing/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizationId: orgId })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription');
+      }
+
+      const data = await response.json();
+      if (data.success && data.subscription) {
+        this.subscription = data.subscription;
+        this.renderBillingCard();
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to load billing status:', error);
+      // Show default starter tier state
+      this.subscription = {
+        planType: 'starter',
+        planDisplayName: 'Starter',
+        status: 'active',
+        bannerLimit: 5,
+        wikiLimit: 10,
+        playLimit: 3,
+        currentBannerCount: 0,
+        currentWikiCount: 0,
+        currentPlayCount: 0,
+        currentMemberCount: 1,
+        isGracePeriod: false,
+        pricePerSeat: 500,
+        freeSeatThreshold: 5
+      };
+      this.renderBillingCard();
+    }
+  }
+
+  /**
+   * Render the billing card with current subscription data
+   */
+  renderBillingCard() {
+    const sub = this.subscription;
+    if (!sub) return;
+
+    // Update plan badge
+    const planBadge = document.getElementById('currentPlanBadge');
+    if (planBadge) {
+      planBadge.textContent = sub.planDisplayName || 'Starter';
+      planBadge.className = `plan-badge ${sub.planType || 'starter'}`;
+    }
+
+    // Update grace period warning
+    const gracePeriodWarning = document.getElementById('gracePeriodWarning');
+    if (gracePeriodWarning) {
+      if (sub.isGracePeriod && sub.gracePeriodDaysRemaining !== null) {
+        gracePeriodWarning.style.display = 'flex';
+        document.getElementById('graceDaysRemaining').textContent = sub.gracePeriodDaysRemaining;
+      } else {
+        gracePeriodWarning.style.display = 'none';
+      }
+    }
+
+    // Update usage meters
+    this.updateUsageMeter('banner', sub.currentBannerCount, sub.bannerLimit);
+    this.updateUsageMeter('wiki', sub.currentWikiCount, sub.wikiLimit);
+    this.updateUsageMeter('play', sub.currentPlayCount, sub.playLimit);
+    this.updateUsageMeter('member', sub.currentMemberCount, sub.seatLimit);
+
+    // Update button visibility
+    const upgradePlanBtn = document.getElementById('upgradePlanBtn');
+    const manageBillingBtn = document.getElementById('manageBillingBtn');
+
+    // Starter with ≤5 users is free, otherwise they're paying
+    const isFreeTier = sub.planType === 'starter' && sub.currentMemberCount <= (sub.freeSeatThreshold || 5);
+
+    if (isFreeTier) {
+      // Free tier: Show upgrade, hide manage
+      if (upgradePlanBtn) upgradePlanBtn.style.display = 'inline-flex';
+      if (manageBillingBtn) manageBillingBtn.style.display = 'none';
+    } else {
+      // Paid plan: Show both (upgrade to higher tier, manage billing)
+      if (upgradePlanBtn) {
+        upgradePlanBtn.textContent = sub.planType === 'business' ? 'Contact Sales' : 'Change Plan';
+      }
+      if (manageBillingBtn) manageBillingBtn.style.display = 'inline-flex';
+    }
+  }
+
+  /**
+   * Update a single usage meter
+   */
+  updateUsageMeter(type, current, limit) {
+    const countEl = document.getElementById(`${type}UsageCount`);
+    const barEl = document.getElementById(`${type}UsageBar`);
+
+    if (!countEl || !barEl) return;
+
+    // Handle unlimited (-1)
+    const isUnlimited = limit === -1 || limit === null;
+    const displayLimit = isUnlimited ? 'Unlimited' : limit;
+    countEl.textContent = `${current} / ${displayLimit}`;
+
+    if (isUnlimited) {
+      barEl.style.width = '20%';
+      barEl.className = 'usage-progress';
+    } else {
+      const percentage = Math.min(100, (current / limit) * 100);
+      barEl.style.width = `${percentage}%`;
+
+      // Color based on usage
+      if (percentage >= 100) {
+        barEl.className = 'usage-progress danger';
+      } else if (percentage >= 80) {
+        barEl.className = 'usage-progress warning';
+      } else {
+        barEl.className = 'usage-progress';
+      }
+    }
+  }
+
+  /**
+   * Open the upgrade modal (or redirect to Stripe Checkout)
+   */
+  async openUpgradeModal() {
+    // For now, redirect directly to Stripe Checkout for Pro plan
+    // Later: show a modal with plan options
+    try {
+      const orgId = await RevGuideDB.getOrganizationId();
+      if (!orgId) {
+        AdminShared.showToast('Unable to determine organization', 'error');
+        return;
+      }
+
+      AdminShared.showToast('Opening checkout...', 'info');
+
+      const response = await fetch('https://revguide-api.revguide.workers.dev/api/billing/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: orgId,
+          planType: 'pro',
+          billingInterval: 'month',
+          successUrl: `${window.location.origin}/settings?checkout=success`,
+          cancelUrl: `${window.location.origin}/settings?checkout=cancelled`
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+    } catch (error) {
+      console.error('[Settings] Checkout error:', error);
+      AdminShared.showToast(error.message || 'Failed to open checkout', 'error');
+    }
+  }
+
+  /**
+   * Open the Stripe Customer Portal for managing subscription
+   */
+  async openBillingPortal() {
+    try {
+      const orgId = await RevGuideDB.getOrganizationId();
+      if (!orgId) {
+        AdminShared.showToast('Unable to determine organization', 'error');
+        return;
+      }
+
+      AdminShared.showToast('Opening billing portal...', 'info');
+
+      const response = await fetch('https://revguide-api.revguide.workers.dev/api/billing/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: orgId,
+          returnUrl: window.location.href
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.portalUrl) {
+        window.location.href = data.portalUrl;
+      } else {
+        throw new Error(data.error || 'Failed to open billing portal');
+      }
+    } catch (error) {
+      console.error('[Settings] Billing portal error:', error);
+      AdminShared.showToast(error.message || 'Failed to open billing portal', 'error');
+    }
   }
 
 }

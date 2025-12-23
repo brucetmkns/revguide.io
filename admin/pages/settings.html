@@ -327,6 +327,132 @@
       font-size: var(--font-size-sm);
       color: var(--color-text-secondary);
     }
+
+    /* Billing & Plan Card */
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      border-radius: var(--radius-full);
+    }
+
+    .plan-badge.free {
+      background: var(--color-bg-subtle);
+      color: var(--color-text-secondary);
+    }
+
+    .plan-badge.pro {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+
+    .plan-badge.business {
+      background: var(--color-info);
+      color: white;
+    }
+
+    .grace-period-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background: var(--color-warning-bg);
+      border: 1px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+    }
+
+    .grace-period-warning .icon {
+      color: var(--color-warning);
+      flex-shrink: 0;
+    }
+
+    .grace-period-content {
+      flex: 1;
+    }
+
+    .grace-period-content strong {
+      display: block;
+      color: var(--color-warning-dark);
+      margin-bottom: var(--space-1);
+    }
+
+    .grace-period-content p {
+      margin: 0;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .btn-warning {
+      background: var(--color-warning);
+      color: white;
+      border: none;
+    }
+
+    .btn-warning:hover {
+      background: var(--color-warning-dark);
+    }
+
+    /* Usage Meters */
+    .usage-meters {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .usage-meter {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .usage-meter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .usage-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .usage-count {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+    }
+
+    .usage-bar {
+      height: 8px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .usage-progress {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: var(--radius-full);
+      transition: width 0.3s ease;
+    }
+
+    .usage-progress.warning {
+      background: var(--color-warning);
+    }
+
+    .usage-progress.danger {
+      background: var(--color-danger);
+    }
+
+    .billing-actions {
+      margin-top: var(--space-4);
+    }
   </style>
 </head>
 <body>
@@ -476,6 +602,75 @@
               </div>
             </div>
             <div id="securityStatus" class="status-message"></div>
+          </div>
+
+          <!-- Billing & Plan Card (Web Context Only) -->
+          <div class="settings-card" id="billingCard" style="display: none;">
+            <div class="card-header-with-action">
+              <div>
+                <h3>Your Plan</h3>
+                <p>Manage your subscription and billing</p>
+              </div>
+              <span class="plan-badge" id="currentPlanBadge">Free</span>
+            </div>
+
+            <!-- Grace Period Warning -->
+            <div id="gracePeriodWarning" class="grace-period-warning" style="display: none;">
+              <span class="icon icon-alert-triangle"></span>
+              <div class="grace-period-content">
+                <strong>Payment Issue</strong>
+                <p>Update your payment method within <span id="graceDaysRemaining">7</span> days to avoid losing access.</p>
+              </div>
+              <button class="btn btn-warning btn-sm" id="updatePaymentBtn">Update Payment</button>
+            </div>
+
+            <!-- Usage Meters -->
+            <div id="usageMeters" class="usage-meters">
+              <div class="usage-meter">
+                <div class="usage-meter-header">
+                  <span class="usage-label">Banners</span>
+                  <span class="usage-count" id="bannerUsageCount">0 / 5</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-progress" id="bannerUsageBar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="usage-meter">
+                <div class="usage-meter-header">
+                  <span class="usage-label">Wiki Entries</span>
+                  <span class="usage-count" id="wikiUsageCount">0 / 10</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-progress" id="wikiUsageBar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="usage-meter">
+                <div class="usage-meter-header">
+                  <span class="usage-label">Plays</span>
+                  <span class="usage-count" id="playUsageCount">0 / 3</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-progress" id="playUsageBar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="usage-meter">
+                <div class="usage-meter-header">
+                  <span class="usage-label">Team Members</span>
+                  <span class="usage-count" id="memberUsageCount">1 / 2</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-progress" id="memberUsageBar" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Plan Actions -->
+            <div class="form-actions billing-actions">
+              <button class="btn btn-primary" id="upgradePlanBtn">Upgrade Plan</button>
+              <button class="btn btn-secondary" id="manageBillingBtn" style="display: none;">Manage Billing</button>
+            </div>
+
+            <div id="billingStatus" class="status-message"></div>
           </div>
 
           <!-- Partner Account Card (for admins who aren't partners) -->
@@ -838,6 +1033,9 @@
   </div>
 
   <script>console.log('[Settings HTML] Scripts loading...');</script>
+  <!-- Environment config (loaded first for staging support) -->
+  <script src="/config/environments.js"></script>
+  <script src="/config/current.js"></script>
   <script src="/admin/lib/purify.min.js"></script>
   <script src="/admin/supabase.js?v=4"></script>
   <script src="/admin/hubspot.js?v=4"></script>

@@ -541,7 +541,13 @@ class BannersPage {
     });
   }
 
-  openRuleEditor(rule = null) {
+  async openRuleEditor(rule = null) {
+    // Check limit when creating a new banner
+    if (!rule) {
+      const canCreate = await AdminShared.checkContentLimit('banner');
+      if (!canCreate) return;
+    }
+
     this.editingRuleId = rule?.id || null;
     document.getElementById('ruleEditorTitle').textContent = rule ? 'Edit Banner' : 'Add Banner';
 

@@ -20,6 +20,8 @@ const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 
 const isDev = process.argv.includes('--dev');
+const isStaging = process.argv.includes('--staging');
+const targetEnv = isStaging ? 'staging' : 'production';
 
 // Files/directories to exclude from the build
 const EXCLUDE = [
@@ -249,7 +251,8 @@ function formatBytes(bytes) {
  */
 async function build() {
   console.log(`\n🔧 RevGuide Extension Build`);
-  console.log(`   Mode: ${isDev ? 'Development (no minification)' : 'Production (minified)'}\n`);
+  console.log(`   Mode: ${isDev ? 'Development (no minification)' : 'Production (minified)'}`);
+  console.log(`   Environment: ${targetEnv}\n`);
 
   // Clean dist directory
   if (fs.existsSync(DIST)) {

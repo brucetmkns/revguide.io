@@ -2244,6 +2244,192 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
 }
 
 /**
+ * Show upgrade prompt when user hits a plan limit
+ * @param {Object} options
+ * @param {string} options.title - Dialog title (e.g., "Banner Limit Reached")
+ * @param {string} options.message - Explanation message
+ * @param {string} options.feature - Which feature hit the limit (e.g., "banners", "wiki", "plays")
+ * @param {number} options.currentUsage - Current usage count
+ * @param {number} options.limit - Plan limit
+ * @returns {Promise<'upgrade'|'cancel'>} - User's choice
+ */
+function showUpgradePrompt({ title, message, feature, currentUsage, limit }) {
+  return new Promise((resolve) => {
+    // Remove existing dialog
+    const existingDialog = document.querySelector('.upgrade-prompt-overlay');
+    if (existingDialog) existingDialog.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'upgrade-prompt-overlay confirm-dialog-overlay';
+
+    const featureLabels = {
+      banner: 'banners',
+      banners: 'banners',
+      wiki: 'wiki entries',
+      play: 'plays',
+      plays: 'plays',
+      member: 'team members',
+      members: 'team members'
+    };
+    const featureLabel = featureLabels[feature] || feature;
+
+    const defaultMessage = message || `You've reached your plan's limit of ${limit} ${featureLabel}. Upgrade to Pro for more capacity.`;
+
+    overlay.innerHTML = `
+      <div class="confirm-dialog upgrade-prompt-dialog">
+        <div class="confirm-dialog-header">
+          <h3>${escapeHtml(title || 'Upgrade Required')}</h3>
+        </div>
+        <div class="confirm-dialog-body">
+          <p>${escapeHtml(defaultMessage)}</p>
+          <div class="upgrade-prompt-usage">
+            <div class="usage-bar-large">
+              <div class="usage-progress-large" style="width: 100%; background: var(--color-danger);"></div>
+            </div>
+            <span class="usage-label-large">${currentUsage || limit} / ${limit} ${featureLabel} used</span>
+          </div>
+          <div class="upgrade-prompt-features">
+            <p style="font-weight: var(--font-weight-medium); margin-bottom: var(--space-2);">Pro plan includes:</p>
+            <ul style="margin: 0; padding-left: var(--space-5); color: var(--color-text-secondary);">
+              <li>50 banners (10x more)</li>
+              <li>100 wiki entries (10x more)</li>
+              <li>30 plays (10x more)</li>
+              <li>3 team members included</li>
+            </ul>
+          </div>
+        </div>
+        <div class="confirm-dialog-footer" style="justify-content: flex-end;">
+          <button class="btn btn-secondary upgrade-prompt-cancel">Maybe Later</button>
+          <button class="btn btn-primary upgrade-prompt-upgrade">Upgrade to Pro</button>
+        </div>
+      </div>
+    `;
+
+    // Add styles for the upgrade prompt
+    const style = document.createElement('style');
+    style.textContent = `
+      .upgrade-prompt-usage {
+        margin: var(--space-4) 0;
+        padding: var(--space-3);
+        background: var(--color-danger-bg);
+        border-radius: var(--radius-md);
+      }
+      .usage-bar-large {
+        height: 10px;
+        background: var(--color-bg-subtle);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-bottom: var(--space-2);
+      }
+      .usage-progress-large {
+        height: 100%;
+        border-radius: var(--radius-full);
+      }
+      .usage-label-large {
+        font-size: var(--font-size-sm);
+        color: var(--color-danger);
+        font-weight: var(--font-weight-medium);
+      }
+      .upgrade-prompt-features {
+        margin-top: var(--space-4);
+        padding: var(--space-3);
+        background: var(--color-bg-subtle);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-sm);
+      }
+    `;
+    overlay.appendChild(style);
+
+    const cleanup = (result) => {
+      overlay.remove();
+      resolve(result);
+    };
+
+    overlay.querySelector('.upgrade-prompt-upgrade').addEventListener('click', () => cleanup('upgrade'));
+    overlay.querySelector('.upgrade-prompt-cancel').addEventListener('click', () => cleanup('cancel'));
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup('cancel');
+    });
+
+    // Close on Escape key
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', handleKeydown);
+        cleanup('cancel');
+      }
+    };
+    document.addEventListener('keydown', handleKeydown);
+
+    document.body.appendChild(overlay);
+
+    // Focus upgrade button
+    overlay.querySelector('.upgrade-prompt-upgrade').focus();
+  });
+}
+
+/**
+ * Check content limit and show upgrade prompt if exceeded
+ * @param {string} contentType - 'banner', 'wiki', 'play'
+ * @returns {Promise<boolean>} - true if can create, false if blocked
+ */
+async function checkContentLimit(contentType) {
+  // Skip check in extension context
+  if (isExtensionContext) return true;
+
+  // Skip check if RevGuideDB not available
+  if (typeof RevGuideDB === 'undefined') return true;
+
+  try {
+    const { canCreate, error } = await RevGuideDB.canCreateContent(contentType);
+
+    if (error) {
+      console.warn('[AdminShared] Failed to check content limit:', error);
+      return true; // Allow on error (fail open)
+    }
+
+    if (!canCreate) {
+      // Get current subscription status for usage info
+      const { data: sub } = await RevGuideDB.getSubscriptionStatus();
+
+      const limitMap = {
+        banner: { current: sub?.current_banner_count, limit: sub?.banner_limit },
+        wiki: { current: sub?.current_wiki_count, limit: sub?.wiki_limit },
+        play: { current: sub?.current_play_count, limit: sub?.play_limit }
+      };
+
+      const usage = limitMap[contentType] || { current: 0, limit: 0 };
+
+      const titleMap = {
+        banner: 'Banner Limit Reached',
+        wiki: 'Wiki Entry Limit Reached',
+        play: 'Play Limit Reached'
+      };
+
+      const result = await showUpgradePrompt({
+        title: titleMap[contentType] || 'Limit Reached',
+        feature: contentType,
+        currentUsage: usage.current,
+        limit: usage.limit
+      });
+
+      if (result === 'upgrade') {
+        // Redirect to settings page for upgrade
+        window.location.href = '/settings';
+      }
+
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[AdminShared] Content limit check error:', error);
+    return true; // Allow on error
+  }
+}
+
+/**
  * Get the current user's effective role for the active organization
  * Uses org-specific role from organization_members, falls back to user.role
  * @returns {string} 'owner' | 'admin' | 'editor' | 'viewer' | 'consultant' | 'member' | null
@@ -2367,6 +2553,8 @@ window.AdminShared = {
   generateId,
   showToast,
   showConfirmDialog,
+  showUpgradePrompt,
+  checkContentLimit,
   escapeHtml,
   stripHtml,
   sanitizeImportData,

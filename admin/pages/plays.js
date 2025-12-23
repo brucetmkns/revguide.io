@@ -513,7 +513,13 @@ class PlaysPage {
     });
   }
 
-  openPlayEditor(play = null) {
+  async openPlayEditor(play = null) {
+    // Check limit when creating a new play
+    if (!play) {
+      const canCreate = await AdminShared.checkContentLimit('play');
+      if (!canCreate) return;
+    }
+
     this.editingPlayId = play?.id || null;
     document.getElementById('playEditorTitle').textContent = play ? 'Edit Play' : 'Add Play';
 

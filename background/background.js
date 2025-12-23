@@ -17,8 +17,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   console.log('[RevGuide BG] External message received:', message.type, 'from:', sender.origin);
   console.log('[RevGuide BG] Full message:', JSON.stringify(message).substring(0, 200));
 
-  // Validate sender origin
-  const allowedOrigins = ['https://app.revguide.io', 'http://localhost:5173', 'http://localhost:3000'];
+  // Validate sender origin (includes staging for testing)
+  const allowedOrigins = [
+    'https://app.revguide.io',
+    'https://staging.revguide.io',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
   if (!allowedOrigins.some(origin => sender.origin?.startsWith(origin.replace('*', '')))) {
     console.warn('[RevGuide BG] Message from unauthorized origin:', sender.origin);
     sendResponse({ success: false, error: 'Unauthorized origin' });

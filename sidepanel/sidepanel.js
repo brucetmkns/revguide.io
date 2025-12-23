@@ -3,8 +3,45 @@
  * Displays plays and settings in Chrome's native side panel
  */
 
-// Web app URL for authentication
-const WEB_APP_URL = 'https://app.revguide.io';
+// Web app URL for authentication - use config if available
+const WEB_APP_URL = (typeof RevGuideConfig !== 'undefined' && RevGuideConfig.ENV)
+  ? RevGuideConfig.ENV.app.url
+  : 'https://app.revguide.io';
+
+// ============ HIDDEN DEV TOGGLE ============
+// Press Ctrl+Shift+Alt+D five times within 3 seconds to toggle staging/production
+(function initDevToggle() {
+  let devToggleCount = 0;
+  let devToggleTimer = null;
+
+  document.addEventListener('keydown', async (e) => {
+    // Check for Ctrl+Shift+Alt+D
+    if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'D' || e.key === 'd')) {
+      devToggleCount++;
+      clearTimeout(devToggleTimer);
+      devToggleTimer = setTimeout(() => { devToggleCount = 0; }, 3000);
+
+      if (devToggleCount >= 5) {
+        devToggleCount = 0;
+        await toggleDevEnvironment();
+      }
+    }
+  });
+
+  async function toggleDevEnvironment() {
+    if (typeof RevGuideConfig === 'undefined') {
+      console.warn('[RevGuide] Config not loaded, cannot toggle environment');
+      return;
+    }
+
+    const newEnv = await RevGuideConfig.toggleEnvironment();
+    const message = `Environment switched to: ${newEnv.toUpperCase()}\n\nPlease reload the extension for changes to take effect.\n\nCurrent Supabase: ${RevGuideConfig.ENV?.supabase?.url || 'unknown'}`;
+
+    // Show a simple alert (hidden from normal users)
+    alert(message);
+    console.log('[RevGuide] Environment toggled to:', newEnv, RevGuideConfig.ENV);
+  }
+})();
 
 class SidePanel {
   constructor() {
