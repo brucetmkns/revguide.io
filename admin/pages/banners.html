@@ -159,17 +159,48 @@
                       <input type="text" id="ruleName" placeholder="e.g., High Value Deal Alert">
                     </div>
                     <div class="form-group flex-1">
+                      <label>Object Type <span class="required">*</span></label>
+                      <select id="ruleObjectType">
+                        <option value="">Select object type...</option>
+                        <option value="contacts">Contacts</option>
+                        <option value="companies">Companies</option>
+                        <option value="deals">Deals</option>
+                        <option value="tickets">Tickets</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Editable Fields Section -->
+                  <div class="form-group" id="bannerFieldsGroup" style="display: none;">
+                    <label>Editable Fields</label>
+                    <div class="fields-editor" id="bannerFieldsEditor">
+                      <div class="fields-list" id="bannerFieldsList">
+                        <!-- Field rows added by JS -->
+                      </div>
+                      <button type="button" class="btn btn-secondary btn-sm add-field-btn" id="addBannerFieldBtn" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="12" y1="5" x2="12" y2="19"/>
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add Field
+                      </button>
+                    </div>
+                    <span class="form-hint">Select HubSpot properties that users can edit directly from the banner</span>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group flex-2">
+                      <label>Banner Title</label>
+                      <input type="text" id="ruleTitle" placeholder="e.g., High Value Opportunity">
+                    </div>
+                    <div class="form-group flex-1">
                       <label>Priority</label>
                       <input type="number" id="rulePriority" value="10" min="0" max="100">
-                      <span class="form-hint">Higher priority shows first</span>
+                      <span class="form-hint">Higher shows first</span>
                     </div>
                   </div>
 
                   <div class="form-row">
-                    <div class="form-group flex-1">
-                      <label>Banner Title</label>
-                      <input type="text" id="ruleTitle" placeholder="e.g., High Value Opportunity">
-                    </div>
                     <div class="form-group flex-1">
                       <label>Banner Type</label>
                       <select id="ruleType">
@@ -243,36 +274,6 @@
               <!-- Rules Tab -->
               <section id="banner-tab-rules" role="tabpanel" class="banner-tab-panel" hidden>
                 <div class="banner-rules-form">
-                  <div class="form-group">
-                    <label>Object Type <span class="required">*</span></label>
-                    <select id="ruleObjectType">
-                      <option value="">Select object type...</option>
-                      <option value="contacts">Contacts</option>
-                      <option value="companies">Companies</option>
-                      <option value="deals">Deals</option>
-                      <option value="tickets">Tickets</option>
-                    </select>
-                    <span class="form-hint">Select an object type to load available properties</span>
-                  </div>
-
-                  <!-- Editable Fields Section -->
-                  <div class="form-group" id="bannerFieldsGroup" style="display: none;">
-                    <label>Editable Fields</label>
-                    <div class="fields-editor" id="bannerFieldsEditor">
-                      <div class="fields-list" id="bannerFieldsList">
-                        <!-- Field rows added by JS -->
-                      </div>
-                      <button type="button" class="btn btn-secondary btn-sm add-field-btn" id="addBannerFieldBtn" disabled>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <line x1="12" y1="5" x2="12" y2="19"/>
-                          <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                        Add Field
-                      </button>
-                    </div>
-                    <span class="form-hint">Select HubSpot properties that users can edit directly from the banner</span>
-                  </div>
-
                   <div class="form-group">
                     <label class="checkbox-label">
                       <input type="checkbox" id="ruleDisplayOnAll">
