@@ -108,6 +108,19 @@ class SettingsPage {
     // Load billing status (web context only)
     if (!AdminShared.isExtensionContext) {
       await this.loadBillingStatus();
+
+      // Handle checkout success/cancel redirects
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('checkout') === 'success') {
+        AdminShared.showToast('Subscription activated! Your plan has been updated.', 'success');
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+        // Reload billing status after a short delay (webhook may need time to process)
+        setTimeout(() => this.loadBillingStatus(), 2000);
+      } else if (urlParams.get('checkout') === 'cancelled') {
+        AdminShared.showToast('Checkout cancelled', 'info');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     }
 
     // Bind events
@@ -1977,19 +1990,45 @@ class SettingsPage {
       }
     }
 
-    // Update usage meters
-    this.updateUsageMeter('banner', sub.currentBannerCount, sub.bannerLimit);
-    this.updateUsageMeter('wiki', sub.currentWikiCount, sub.wikiLimit);
-    this.updateUsageMeter('play', sub.currentPlayCount, sub.playLimit);
-    // Per-seat model: no hard seat limit, show as unlimited
-    this.updateUsageMeter('member', sub.currentMemberCount, -1);
+    // Determine if this is a partner plan
+    const isPartnerPlan = sub.isPartnerPlan || (sub.planType && sub.planType.startsWith('partner_'));
+
+    // Update usage meters based on plan type
+    if (isPartnerPlan) {
+      // Partner plans: show Portals and Libraries
+      this.updateUsageMeterLabel('banner', 'Client Portals');
+      this.updateUsageMeter('banner', sub.currentClientPortalCount || 0, sub.clientPortalLimit);
+      this.updateUsageMeterLabel('wiki', 'Libraries');
+      this.updateUsageMeter('wiki', sub.currentLibraryCount || 0, sub.libraryLimit);
+      // Hide plays and members for partners
+      const playMeter = document.getElementById('playUsageCount')?.closest('.usage-meter');
+      const memberMeter = document.getElementById('memberUsageCount')?.closest('.usage-meter');
+      if (playMeter) playMeter.style.display = 'none';
+      if (memberMeter) memberMeter.style.display = 'none';
+    } else {
+      // Standard plans: show Banners, Wiki, Plays, Members
+      this.updateUsageMeterLabel('banner', 'Banners');
+      this.updateUsageMeter('banner', sub.currentBannerCount, sub.bannerLimit);
+      this.updateUsageMeterLabel('wiki', 'Wiki Entries');
+      this.updateUsageMeter('wiki', sub.currentWikiCount, sub.wikiLimit);
+      this.updateUsageMeterLabel('play', 'Plays');
+      this.updateUsageMeter('play', sub.currentPlayCount, sub.playLimit);
+      // Per-seat model: no hard seat limit, show as unlimited
+      this.updateUsageMeterLabel('member', 'Team Members');
+      this.updateUsageMeter('member', sub.currentMemberCount, -1);
+      // Show all meters
+      const playMeter = document.getElementById('playUsageCount')?.closest('.usage-meter');
+      const memberMeter = document.getElementById('memberUsageCount')?.closest('.usage-meter');
+      if (playMeter) playMeter.style.display = '';
+      if (memberMeter) memberMeter.style.display = '';
+    }
 
     // Update button visibility
     const upgradePlanBtn = document.getElementById('upgradePlanBtn');
     const manageBillingBtn = document.getElementById('manageBillingBtn');
 
-    // Starter with ≤5 users is free, otherwise they're paying
-    const isFreeTier = sub.planType === 'starter' && sub.currentMemberCount <= (sub.freeSeatThreshold || 5);
+    // Check if on free tier
+    const isFreeTier = !isPartnerPlan && sub.planType === 'starter' && sub.currentMemberCount <= (sub.freeSeatThreshold || 5);
 
     if (isFreeTier) {
       // Free tier: Show upgrade, hide manage
@@ -1998,7 +2037,8 @@ class SettingsPage {
     } else {
       // Paid plan: Show both (upgrade to higher tier, manage billing)
       if (upgradePlanBtn) {
-        upgradePlanBtn.textContent = sub.planType === 'business' ? 'Contact Sales' : 'Change Plan';
+        const isTopTier = sub.planType === 'business' || sub.planType === 'partner_enterprise';
+        upgradePlanBtn.textContent = isTopTier ? 'Contact Sales' : 'Change Plan';
       }
       if (manageBillingBtn) manageBillingBtn.style.display = 'inline-flex';
     }
@@ -2033,6 +2073,17 @@ class SettingsPage {
       } else {
         barEl.className = 'usage-progress';
       }
+    }
+  }
+
+  /**
+   * Update the label of a usage meter
+   */
+  updateUsageMeterLabel(type, label) {
+    const meterEl = document.getElementById(`${type}UsageCount`)?.closest('.usage-meter');
+    if (meterEl) {
+      const labelEl = meterEl.querySelector('.usage-label');
+      if (labelEl) labelEl.textContent = label;
     }
   }
 
