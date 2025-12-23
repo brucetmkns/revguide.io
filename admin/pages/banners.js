@@ -8,7 +8,6 @@ class BannersPage {
     this.plays = [];
     this.propertiesCache = {};
     this.currentProperties = [];
-    this.fieldProperties = []; // Properties for field selection
     this.editingRuleId = null;
     this.originalData = null; // For tracking unsaved changes
     this.activeTab = 'content';
@@ -156,9 +155,6 @@ class BannersPage {
 
     // Initialize Tiptap editor
     this.initMessageEditor();
-
-    // Initialize field editor events
-    this.initFieldEditorEvents();
   }
 
   async initMessageEditor() {
@@ -185,233 +181,6 @@ class BannersPage {
       minimal: true, // No headings/tables for banners
       onChange: () => this.updatePreview()
     });
-  }
-
-  // ----------------------------------------
-  // Field Editor Methods
-  // ----------------------------------------
-
-  initFieldEditorEvents() {
-    const addBtn = document.getElementById('addBannerFieldBtn');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => this.addFieldRow());
-    }
-  }
-
-  renderFieldRow(field = {}, index = 0) {
-    const properties = this.fieldProperties;
-    const selectedProp = field?.property ? properties.find(p => p.name === field.property) : null;
-    const selectedLabel = selectedProp?.label || field?.label || 'Select property...';
-
-    const propType = selectedProp?.type || field?.type || '';
-    const propFieldType = selectedProp?.fieldType || field?.fieldType || '';
-    const propOptions = selectedProp?.options || field?.options || [];
-
-    const encodeOptions = (opts) => {
-      try {
-        return btoa(encodeURIComponent(JSON.stringify(opts || [])));
-      } catch (e) {
-        return '';
-      }
-    };
-
-    return `
-      <div class="field-row" data-index="${index}">
-        <div class="searchable-select field-property-select">
-          <button type="button" class="searchable-select-trigger"
-            data-value="${field?.property || ''}"
-            data-label="${AdminShared.escapeHtml(selectedLabel)}"
-            data-type="${propType}"
-            data-field-type="${propFieldType}"
-            data-options-encoded="${encodeOptions(propOptions)}">
-            <span class="select-label">${AdminShared.escapeHtml(selectedLabel)}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
-          <div class="searchable-select-dropdown">
-            <div class="searchable-select-search">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" placeholder="Search properties..." class="searchable-select-input">
-            </div>
-            <div class="searchable-select-options">
-              ${properties.map(p => `
-                <div class="searchable-select-option ${field?.property === p.name ? 'selected' : ''}"
-                  data-value="${p.name}"
-                  data-label="${AdminShared.escapeHtml(p.label)}"
-                  data-type="${p.type}"
-                  data-field-type="${p.fieldType || ''}"
-                  data-options-encoded="${encodeOptions(p.options)}">
-                  <span class="option-label">${AdminShared.escapeHtml(p.label)}</span>
-                  <span class="option-name">${p.name}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-        <label class="field-required-label">
-          <input type="checkbox" class="field-required-checkbox" ${field?.required ? 'checked' : ''}>
-          <span>Required</span>
-        </label>
-        <button type="button" class="btn-icon btn-icon-danger remove-field-btn" title="Remove field">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    `;
-  }
-
-  addFieldRow() {
-    const fieldsList = document.getElementById('bannerFieldsList');
-    const index = fieldsList.querySelectorAll('.field-row').length;
-
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = this.renderFieldRow({}, index);
-    const newRow = tempDiv.firstElementChild;
-
-    fieldsList.appendChild(newRow);
-    this.initFieldRowEvents(newRow);
-  }
-
-  initFieldRowEvents(row) {
-    // Initialize searchable select
-    const selectEl = row.querySelector('.searchable-select');
-    if (selectEl) {
-      this.initFieldPropertySelect(selectEl);
-    }
-
-    // Remove button
-    const removeBtn = row.querySelector('.remove-field-btn');
-    removeBtn?.addEventListener('click', () => row.remove());
-  }
-
-  initFieldPropertySelect(selectEl) {
-    const trigger = selectEl.querySelector('.searchable-select-trigger');
-    const dropdown = selectEl.querySelector('.searchable-select-dropdown');
-    const searchInput = selectEl.querySelector('.searchable-select-input');
-    const optionsContainer = selectEl.querySelector('.searchable-select-options');
-
-    // Toggle dropdown
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = selectEl.classList.contains('open');
-      // Close all other dropdowns
-      document.querySelectorAll('.searchable-select.open').forEach(el => {
-        if (el !== selectEl) el.classList.remove('open');
-      });
-      selectEl.classList.toggle('open', !wasOpen);
-      if (!wasOpen) {
-        searchInput.value = '';
-        this.filterFieldOptions(optionsContainer, '');
-        searchInput.focus();
-      }
-    });
-
-    // Search filtering
-    searchInput.addEventListener('input', () => {
-      this.filterFieldOptions(optionsContainer, searchInput.value);
-    });
-
-    // Option selection
-    optionsContainer.addEventListener('click', (e) => {
-      const option = e.target.closest('.searchable-select-option');
-      if (option) {
-        // Update trigger
-        trigger.dataset.value = option.dataset.value;
-        trigger.dataset.label = option.dataset.label;
-        trigger.dataset.type = option.dataset.type;
-        trigger.dataset.fieldType = option.dataset.fieldType;
-        trigger.dataset.optionsEncoded = option.dataset.optionsEncoded;
-        trigger.querySelector('.select-label').textContent = option.dataset.label;
-
-        // Update selected state
-        optionsContainer.querySelectorAll('.searchable-select-option').forEach(o => o.classList.remove('selected'));
-        option.classList.add('selected');
-
-        selectEl.classList.remove('open');
-      }
-    });
-
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!selectEl.contains(e.target)) {
-        selectEl.classList.remove('open');
-      }
-    });
-
-    // Close on Escape
-    selectEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        selectEl.classList.remove('open');
-      }
-    });
-  }
-
-  filterFieldOptions(container, searchTerm) {
-    const term = searchTerm.toLowerCase();
-    container.querySelectorAll('.searchable-select-option').forEach(opt => {
-      const label = (opt.dataset.label || '').toLowerCase();
-      const name = (opt.dataset.value || '').toLowerCase();
-      const matches = label.includes(term) || name.includes(term);
-      opt.style.display = matches ? '' : 'none';
-    });
-  }
-
-  getFieldsFromEditor() {
-    const fields = [];
-    document.querySelectorAll('#bannerFieldsList .field-row').forEach(row => {
-      const trigger = row.querySelector('.searchable-select-trigger');
-      const property = trigger?.dataset.value;
-      const required = row.querySelector('.field-required-checkbox')?.checked || false;
-
-      if (property) {
-        let options = [];
-        try {
-          const encoded = trigger.dataset.optionsEncoded;
-          if (encoded) {
-            options = JSON.parse(decodeURIComponent(atob(encoded)));
-          }
-        } catch (e) {
-          options = [];
-        }
-
-        fields.push({
-          property,
-          required,
-          label: trigger.dataset.label || property,
-          type: trigger.dataset.type || '',
-          fieldType: trigger.dataset.fieldType || '',
-          options
-        });
-      }
-    });
-    return fields;
-  }
-
-  async loadFieldProperties(objectType) {
-    const fieldGroup = document.getElementById('bannerFieldsGroup');
-    const addBtn = document.getElementById('addBannerFieldBtn');
-
-    if (!objectType) {
-      this.fieldProperties = [];
-      if (fieldGroup) fieldGroup.style.display = 'none';
-      return;
-    }
-
-    try {
-      const properties = await AdminShared.fetchProperties(objectType, this.propertiesCache);
-      this.fieldProperties = properties;
-      if (fieldGroup) fieldGroup.style.display = 'block';
-      if (addBtn) addBtn.disabled = false;
-    } catch (err) {
-      console.error('Failed to load field properties:', err);
-      this.fieldProperties = [];
-    }
   }
 
   toggleEmbedFields() {
@@ -826,31 +595,11 @@ class BannersPage {
     // Show on index pages
     document.getElementById('ruleShowOnIndex').checked = rule?.showOnIndex || false;
 
-    // Clear existing fields
-    const fieldsList = document.getElementById('bannerFieldsList');
-    if (fieldsList) fieldsList.innerHTML = '';
-    document.getElementById('bannerFieldsGroup').style.display = 'none';
-
     // Load properties and conditions
     if (mappedType && rule?.conditions?.length) {
       this.loadPropertiesAndConditions(mappedType, rule.conditions);
     } else if (mappedType) {
       this.onObjectTypeChange(mappedType);
-    }
-
-    // Load existing fields after properties are loaded
-    if (mappedType && rule?.fields?.length) {
-      // Wait for field properties to load, then populate fields
-      setTimeout(async () => {
-        await this.loadFieldProperties(mappedType);
-        rule.fields.forEach((field, i) => {
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = this.renderFieldRow(field, i);
-          const row = tempDiv.firstElementChild;
-          fieldsList.appendChild(row);
-          this.initFieldRowEvents(row);
-        });
-      }, 100);
     }
 
     // Set logic
@@ -883,8 +632,7 @@ class BannersPage {
       logic: AdminShared.getLogic('ruleLogicToggle'),
       conditions: AdminShared.getConditions('ruleConditions'),
       embedUrl: document.getElementById('ruleEmbedUrl').value,
-      relatedPlayId: playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : '',
-      fields: this.getFieldsFromEditor()
+      relatedPlayId: playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : ''
     });
   }
 
@@ -979,8 +727,6 @@ class BannersPage {
       this.currentProperties = [];
       addBtn.disabled = true;
       statusEl.textContent = '';
-      // Also hide field editor when no object type
-      await this.loadFieldProperties(null);
       return;
     }
 
@@ -996,9 +742,6 @@ class BannersPage {
       statusEl.className = 'status-text success';
       container.innerHTML = '';
       setTimeout(() => { statusEl.textContent = ''; }, 2000);
-
-      // Also load field properties for the field editor
-      await this.loadFieldProperties(objectType);
     } catch (err) {
       statusEl.textContent = 'Error: ' + err.message;
       statusEl.className = 'status-text error';
@@ -1076,9 +819,6 @@ class BannersPage {
     const playSelectEl = document.getElementById('ruleRelatedPlay');
     const relatedPlayId = playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : '';
 
-    // Get editable fields
-    const fields = this.getFieldsFromEditor();
-
     // Build banner data object (camelCase for local use)
     const bannerData = {
       name,
@@ -1094,7 +834,6 @@ class BannersPage {
       tabVisibility,
       showOnIndex,
       relatedPlayId: relatedPlayId || null,
-      fields,
       enabled: true
     };
 
@@ -1122,7 +861,6 @@ class BannersPage {
           tab_visibility: tabVisibility,
           show_on_index: showOnIndex,
           related_play_id: relatedPlayId || null,
-          fields,
           enabled: true
         };
 
