@@ -108,8 +108,8 @@ class SettingsPage {
       await this.loadHubSpotConnectionStatus();
     }
 
-    // Load ERP configuration (admin only, web context)
-    if (this.isAdmin && !AdminShared.isExtensionContext) {
+    // Load ERP configuration (admin or partner, web context)
+    if ((this.isAdmin || this.isPartner) && !AdminShared.isExtensionContext) {
       await this.loadErpConfig();
     }
 
@@ -1427,8 +1427,8 @@ class SettingsPage {
     const erpCard = document.getElementById('erpConnectionCard');
     if (!erpCard) return;
 
-    // Show card for admins in web context
-    if (!AdminShared.isExtensionContext && this.isAdmin) {
+    // Show card for admins or partners in web context
+    if (!AdminShared.isExtensionContext && (this.isAdmin || this.isPartner)) {
       erpCard.style.display = 'block';
     }
 
