@@ -1526,8 +1526,17 @@ class SettingsPage {
           // Fallback fields
           const fallbackFieldInput = document.querySelector(`.erp-fallback-field[data-object-type="${objectType}"]`);
           const fallbackUrlInput = document.querySelector(`.erp-fallback-url[data-object-type="${objectType}"]`);
+          const fallbackSection = document.querySelector(`.erp-fallback-section[data-object-type="${objectType}"]`);
+          const fallbackToggle = document.querySelector(`.erp-fallback-toggle[data-object-type="${objectType}"]`);
+
           if (fallbackFieldInput) fallbackFieldInput.value = mapping.fallback_field || '';
           if (fallbackUrlInput) fallbackUrlInput.value = mapping.fallback_url_template || '';
+
+          // Show fallback section if it has values
+          if (mapping.fallback_field && fallbackSection && fallbackToggle) {
+            fallbackSection.style.display = 'block';
+            fallbackToggle.querySelector('.toggle-text').textContent = '- Hide fallback field';
+          }
         }
       }
     });
@@ -1554,6 +1563,20 @@ class SettingsPage {
         const fieldsDiv = e.target.closest('.erp-object-config')?.querySelector('.erp-object-fields');
         if (fieldsDiv) {
           fieldsDiv.style.display = e.target.checked ? 'block' : 'none';
+        }
+      });
+    });
+
+    // Fallback field toggles
+    document.querySelectorAll('.erp-fallback-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const objectType = btn.dataset.objectType;
+        const section = document.querySelector(`.erp-fallback-section[data-object-type="${objectType}"]`);
+        const toggleText = btn.querySelector('.toggle-text');
+        if (section && toggleText) {
+          const isHidden = section.style.display === 'none';
+          section.style.display = isHidden ? 'block' : 'none';
+          toggleText.textContent = isHidden ? '- Hide fallback field' : '+ Add fallback field';
         }
       });
     });
