@@ -58,17 +58,22 @@ class SettingsPage {
     // Check user role
     this.isViewOnly = AdminShared.isMember(); // viewer role
     this.isAdmin = AdminShared.isAdmin(); // owner or admin role
+    this.isPartner = AdminShared.getEffectiveRole() === 'partner'; // partner in managed account
+    this.canManageHubSpot = this.isAdmin || this.isPartner; // Partners can manage HubSpot in managed accounts
 
     // Render sidebar
     AdminShared.renderSidebar('settings');
 
-    // Setup restricted UI for non-admin users
-    if (!this.isAdmin) {
+    // Setup restricted UI for non-admin users (but not partners)
+    if (!this.isAdmin && !this.isPartner) {
       this.setupNonAdminMode();
+    } else if (this.isPartner) {
+      // Partners can see HubSpot but not team management
+      this.setupPartnerMode();
     }
 
-    // Check if returning from OAuth flow (web context only, admin only)
-    if (!AdminShared.isExtensionContext && this.isAdmin) {
+    // Check if returning from OAuth flow (web context only, admin or partner)
+    if (!AdminShared.isExtensionContext && this.canManageHubSpot) {
       await this.handleOAuthCallback();
     }
 
@@ -97,8 +102,8 @@ class SettingsPage {
     console.log('[Settings] About to call loadAccountSettings()');
     await this.loadAccountSettings();
 
-    // Load HubSpot connection status (admin only)
-    if (this.isAdmin) {
+    // Load HubSpot connection status (admin or partner)
+    if (this.canManageHubSpot) {
       await this.loadHubSpotConnectionStatus();
     }
 
@@ -157,6 +162,19 @@ class SettingsPage {
       note.textContent = 'Contact your admin to change HubSpot connection or invite team members.';
       note.style.cssText = 'color: var(--color-text-tertiary); font-size: 14px; margin-top: 16px; padding: 12px; background: #f3e8ff; border-radius: 8px;';
       accountCard.appendChild(note);
+    }
+  }
+
+  setupPartnerMode() {
+    // Partners can see HubSpot but not team management
+    // Hide team members section (org's admins manage their own team)
+    const teamSection = document.querySelector('.team-members-section');
+    if (teamSection) teamSection.style.display = 'none';
+
+    // Update page description for partner context
+    const sectionDesc = document.querySelector('.section-description');
+    if (sectionDesc) {
+      sectionDesc.textContent = 'Manage HubSpot connection and settings for this portal.';
     }
   }
 

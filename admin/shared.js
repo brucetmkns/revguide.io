@@ -974,6 +974,10 @@ function clearStorageDataCache() {
   _storageDataTimestamp = 0;
   try {
     sessionStorage.removeItem(STORAGE_CACHE_KEY);
+    // Also clear properties cache when switching orgs (different portal = different fields)
+    sessionStorage.removeItem(PROPERTIES_CACHE_KEY);
+    // Clear HubSpot connection cache (different org = different connection)
+    sessionStorage.removeItem('revguide_hubspot_connection');
   } catch (e) {}
 }
 
