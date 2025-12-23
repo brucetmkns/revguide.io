@@ -3032,13 +3032,14 @@ async function handleGetSubscription(request, env, corsHeaders) {
 
     const subscriptionData = await rpcResponse.json();
 
-    // If no subscription found, return free tier defaults
+    // If no subscription found, return starter tier defaults
     if (!subscriptionData || subscriptionData.length === 0) {
+      console.log('No subscription found for org:', organizationId);
       return new Response(JSON.stringify({
         success: true,
         subscription: {
-          planType: 'free',
-          planDisplayName: 'Free',
+          planType: 'starter',
+          planDisplayName: 'Starter',
           status: 'active',
           billingInterval: null,
           seatCount: 1,
@@ -3046,15 +3047,20 @@ async function handleGetSubscription(request, env, corsHeaders) {
           bannerLimit: 5,
           wikiLimit: 10,
           playLimit: 3,
-          seatLimit: 2,
+          clientPortalLimit: null,
+          libraryLimit: null,
           currentBannerCount: 0,
           currentWikiCount: 0,
           currentPlayCount: 0,
           currentMemberCount: 1,
+          currentClientPortalCount: 0,
+          currentLibraryCount: 0,
           isGracePeriod: false,
           gracePeriodDaysRemaining: null,
+          pricePerSeat: 500,
+          freeSeatThreshold: 5,
           priceMonthly: 0,
-          pricePerExtraSeat: null
+          isPartnerPlan: false
         }
       }), {
         status: 200,
@@ -3063,6 +3069,7 @@ async function handleGetSubscription(request, env, corsHeaders) {
     }
 
     const sub = subscriptionData[0];
+    console.log('Subscription found:', sub.plan_type, 'for org');
 
     return new Response(JSON.stringify({
       success: true,
@@ -3077,7 +3084,6 @@ async function handleGetSubscription(request, env, corsHeaders) {
         bannerLimit: sub.banner_limit,
         wikiLimit: sub.wiki_limit,
         playLimit: sub.play_limit,
-        seatLimit: sub.seat_limit,
         clientPortalLimit: sub.client_portal_limit,
         libraryLimit: sub.library_limit,
         currentBannerCount: sub.current_banner_count,
@@ -3088,8 +3094,10 @@ async function handleGetSubscription(request, env, corsHeaders) {
         currentLibraryCount: sub.current_library_count,
         isGracePeriod: sub.is_grace_period,
         gracePeriodDaysRemaining: sub.grace_period_days_remaining,
+        pricePerSeat: sub.price_per_seat,
+        freeSeatThreshold: sub.free_seat_threshold,
         priceMonthly: sub.price_monthly,
-        pricePerExtraSeat: sub.price_per_extra_seat
+        isPartnerPlan: sub.is_partner_plan
       }
     }), {
       status: 200,
