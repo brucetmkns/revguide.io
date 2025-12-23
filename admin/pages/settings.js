@@ -1433,7 +1433,25 @@ class SettingsPage {
     }
 
     try {
-      const { data: org } = await RevGuideDB.getOrganizationWithConnection();
+      // Use currentOrganization for partner-managed orgs
+      const orgId = AdminShared.currentOrganization?.id;
+      if (!orgId) {
+        console.log('[Settings] No organization selected for ERP config');
+        return;
+      }
+
+      const client = await RevGuideAuth.waitForClient();
+      const { data: org, error } = await client
+        .from('organizations')
+        .select('erp_config')
+        .eq('id', orgId)
+        .single();
+
+      if (error) {
+        console.error('[Settings] Failed to load ERP config:', error);
+        return;
+      }
+
       this.erpConfig = org?.erp_config || {
         enabled: false,
         erp_name: '',
