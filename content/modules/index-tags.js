@@ -437,7 +437,12 @@ class IndexTagsModule {
       context
     );
 
-    if (matchingRules.length === 0) return;
+    // Check if we have ERP icon to show
+    const hasErpIcon = this.helper.erpModule?.isEnabled() &&
+                       this.helper.erpModule.hasErpValue(properties, this.objectType);
+
+    // Only return early if no tags AND no ERP icon
+    if (matchingRules.length === 0 && !hasErpIcon) return;
 
     // Take top N by priority (already sorted)
     const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
@@ -446,6 +451,14 @@ class IndexTagsModule {
     const tagsContainer = document.createElement('div');
     tagsContainer.className = 'hshelper-index-tags';
     tagsContainer.dataset.recordId = recordId;
+
+    // Add ERP icon first if configured and field has value
+    if (hasErpIcon) {
+      const erpTag = this.helper.erpModule.createErpTag(properties, this.objectType);
+      if (erpTag) {
+        tagsContainer.appendChild(erpTag);
+      }
+    }
 
     tagsToShow.forEach(rule => {
       const tag = this.createTag(rule);
@@ -988,7 +1001,12 @@ class IndexTagsModule {
       context
     );
 
-    if (matchingRules.length === 0) return;
+    // Check if we have ERP icon to show
+    const hasErpIcon = this.helper.erpModule?.isEnabled() &&
+                       this.helper.erpModule.hasErpValue(properties, this.objectType);
+
+    // Only return early if no tags AND no ERP icon
+    if (matchingRules.length === 0 && !hasErpIcon) return;
 
     // Take top N by priority (already sorted)
     const tagsToShow = matchingRules.slice(0, this.MAX_TAGS);
@@ -997,6 +1015,14 @@ class IndexTagsModule {
     const tagsContainer = document.createElement('div');
     tagsContainer.className = 'hshelper-index-tags hshelper-board-tags';
     tagsContainer.dataset.recordId = recordId;
+
+    // Add ERP icon first if configured and field has value
+    if (hasErpIcon) {
+      const erpTag = this.helper.erpModule.createErpTag(properties, this.objectType);
+      if (erpTag) {
+        tagsContainer.appendChild(erpTag);
+      }
+    }
 
     tagsToShow.forEach(rule => {
       const tag = this.createTag(rule);

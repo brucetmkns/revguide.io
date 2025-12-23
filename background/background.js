@@ -426,8 +426,8 @@ async function fetchCloudContent(targetOrgId = null) {
   console.log('[RevGuide] Fetching cloud content for org:', orgId);
 
   try {
-    // Fetch all content types in parallel
-    const [banners, plays, wikiEntries] = await Promise.all([
+    // Fetch all content types in parallel (including org settings for erp_config)
+    const [banners, plays, wikiEntries, orgData] = await Promise.all([
       supabaseFetch('banners', {
         filter: { 'organization_id': `eq.${orgId}` },
         order: 'priority.desc'
@@ -437,6 +437,10 @@ async function fetchCloudContent(targetOrgId = null) {
       }),
       supabaseFetch('wiki_entries', {
         filter: { 'organization_id': `eq.${orgId}` }
+      }),
+      supabaseFetch('organizations', {
+        select: 'erp_config',
+        filter: { 'id': `eq.${orgId}` }
       })
     ]);
 
@@ -456,11 +460,15 @@ async function fetchCloudContent(targetOrgId = null) {
       console.log('[RevGuide] First raw wiki entry from Supabase:', JSON.stringify(wikiEntries[0]).substring(0, 500));
     }
 
+    // Extract ERP config from org data
+    const erpConfig = orgData && orgData.length > 0 ? orgData[0].erp_config : null;
+
     // Transform to match local storage format (snake_case to camelCase)
     const content = {
       rules: (banners || []).map(mapBannerFromSupabase),
       battleCards: (plays || []).map(mapPlayFromSupabase),
-      wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase)
+      wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase),
+      erpConfig: erpConfig
     };
 
     // Log transformed banner for debugging

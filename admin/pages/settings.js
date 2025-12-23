@@ -12,6 +12,7 @@ class SettingsPage {
     this.pendingInvitations = [];
     this.accessRequests = []; // Partner access requests
     this.isViewOnly = false; // View-only mode for members
+    this.erpConfig = null; // ERP connection configuration
     this.init();
   }
 
@@ -105,6 +106,11 @@ class SettingsPage {
     // Load HubSpot connection status (admin or partner)
     if (this.canManageHubSpot) {
       await this.loadHubSpotConnectionStatus();
+    }
+
+    // Load ERP configuration (admin only, web context)
+    if (this.isAdmin && !AdminShared.isExtensionContext) {
+      await this.loadErpConfig();
     }
 
     // Load partner status
@@ -512,6 +518,9 @@ class SettingsPage {
     if (updatePaymentBtn) {
       updatePaymentBtn.addEventListener('click', () => this.openBillingPortal());
     }
+
+    // ERP Configuration events
+    this.bindErpEvents();
 
   }
 
@@ -1404,6 +1413,296 @@ class SettingsPage {
         </svg>
         Connect HubSpot
       `;
+    }
+  }
+
+  // ================================
+  // ERP Configuration Methods
+  // ================================
+
+  /**
+   * Load ERP configuration from the organization
+   */
+  async loadErpConfig() {
+    const erpCard = document.getElementById('erpConnectionCard');
+    if (!erpCard) return;
+
+    // Show card for admins in web context
+    if (!AdminShared.isExtensionContext && this.isAdmin) {
+      erpCard.style.display = 'block';
+    }
+
+    try {
+      const { data: org } = await RevGuideDB.getOrganizationWithConnection();
+      this.erpConfig = org?.erp_config || {
+        enabled: false,
+        erp_name: '',
+        icon: null,
+        field_mappings: {}
+      };
+
+      this.populateErpConfigUI();
+    } catch (error) {
+      console.error('[Settings] Failed to load ERP config:', error);
+    }
+  }
+
+  /**
+   * Populate the ERP configuration UI with current values
+   */
+  populateErpConfigUI() {
+    const config = this.erpConfig;
+    if (!config) return;
+
+    // Master toggle
+    const enabledCheckbox = document.getElementById('erpEnabled');
+    const configSection = document.getElementById('erpConfigSection');
+    if (enabledCheckbox) {
+      enabledCheckbox.checked = config.enabled || false;
+    }
+    if (configSection) {
+      configSection.style.display = config.enabled ? 'block' : 'none';
+    }
+
+    // ERP name
+    const nameInput = document.getElementById('erpName');
+    if (nameInput) {
+      nameInput.value = config.erp_name || '';
+    }
+
+    // Icon preview
+    if (config.icon) {
+      const preview = document.getElementById('erpIconPreview');
+      if (preview) {
+        preview.innerHTML = `<img src="${config.icon}" alt="ERP Icon" style="max-width: 32px; max-height: 32px; object-fit: contain;">`;
+      }
+      const removeBtn = document.getElementById('removeErpIconBtn');
+      if (removeBtn) {
+        removeBtn.style.display = 'inline-flex';
+      }
+    }
+
+    // Field mappings per object type
+    const objectTypes = ['company', 'deal', 'contact', 'ticket'];
+    objectTypes.forEach(objectType => {
+      const mapping = config.field_mappings?.[objectType];
+      const checkbox = document.querySelector(`.erp-object-enabled[data-object-type="${objectType}"]`);
+      const fieldsDiv = checkbox?.closest('.erp-object-config')?.querySelector('.erp-object-fields');
+
+      if (checkbox && fieldsDiv) {
+        const hasMapping = mapping && mapping.field;
+        checkbox.checked = hasMapping;
+        fieldsDiv.style.display = hasMapping ? 'block' : 'none';
+
+        if (hasMapping) {
+          const fieldInput = document.querySelector(`.erp-field-name[data-object-type="${objectType}"]`);
+          const urlInput = document.querySelector(`.erp-url-template[data-object-type="${objectType}"]`);
+          if (fieldInput) fieldInput.value = mapping.field || '';
+          if (urlInput) urlInput.value = mapping.url_template || '';
+        }
+      }
+    });
+  }
+
+  /**
+   * Bind event handlers for ERP configuration UI
+   */
+  bindErpEvents() {
+    // Master toggle
+    const enabledCheckbox = document.getElementById('erpEnabled');
+    if (enabledCheckbox) {
+      enabledCheckbox.addEventListener('change', (e) => {
+        const configSection = document.getElementById('erpConfigSection');
+        if (configSection) {
+          configSection.style.display = e.target.checked ? 'block' : 'none';
+        }
+      });
+    }
+
+    // Object type toggles
+    document.querySelectorAll('.erp-object-enabled').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const fieldsDiv = e.target.closest('.erp-object-config')?.querySelector('.erp-object-fields');
+        if (fieldsDiv) {
+          fieldsDiv.style.display = e.target.checked ? 'block' : 'none';
+        }
+      });
+    });
+
+    // Icon upload button
+    const uploadBtn = document.getElementById('uploadErpIconBtn');
+    const iconInput = document.getElementById('erpIconInput');
+    if (uploadBtn && iconInput) {
+      uploadBtn.addEventListener('click', () => {
+        iconInput.click();
+      });
+    }
+
+    // Icon file input
+    if (iconInput) {
+      iconInput.addEventListener('change', (e) => {
+        this.handleErpIconUpload(e);
+      });
+    }
+
+    // Remove icon button
+    const removeBtn = document.getElementById('removeErpIconBtn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        this.removeErpIcon();
+      });
+    }
+
+    // Save button
+    const saveBtn = document.getElementById('saveErpConfigBtn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        this.saveErpConfig();
+      });
+    }
+  }
+
+  /**
+   * Handle ERP icon file upload
+   */
+  async handleErpIconUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file size (100KB max)
+    if (file.size > 100 * 1024) {
+      AdminShared.showToast('Icon file must be under 100KB', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      AdminShared.showToast('Please upload an SVG, PNG, or JPG file', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const dataUri = await this.fileToDataUri(file);
+
+      // Update config (will be saved when user clicks Save)
+      if (!this.erpConfig) {
+        this.erpConfig = { enabled: false, erp_name: '', icon: null, field_mappings: {} };
+      }
+      this.erpConfig.icon = dataUri;
+
+      // Update preview
+      const preview = document.getElementById('erpIconPreview');
+      if (preview) {
+        preview.innerHTML = `<img src="${dataUri}" alt="ERP Icon" style="max-width: 32px; max-height: 32px; object-fit: contain;">`;
+      }
+
+      // Show remove button
+      const removeBtn = document.getElementById('removeErpIconBtn');
+      if (removeBtn) {
+        removeBtn.style.display = 'inline-flex';
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to process icon file:', error);
+      AdminShared.showToast('Failed to process icon file', 'error');
+    }
+
+    // Reset file input so same file can be selected again
+    event.target.value = '';
+  }
+
+  /**
+   * Convert a file to a data URI
+   */
+  fileToDataUri(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Remove the uploaded ERP icon
+   */
+  removeErpIcon() {
+    if (this.erpConfig) {
+      this.erpConfig.icon = null;
+    }
+
+    // Reset preview
+    const preview = document.getElementById('erpIconPreview');
+    if (preview) {
+      preview.innerHTML = '<span class="icon icon-image icon--lg" style="opacity: 0.5;"></span>';
+    }
+
+    // Hide remove button
+    const removeBtn = document.getElementById('removeErpIconBtn');
+    if (removeBtn) {
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  /**
+   * Save ERP configuration to the organization
+   */
+  async saveErpConfig() {
+    const saveBtn = document.getElementById('saveErpConfigBtn');
+    const originalText = saveBtn ? saveBtn.innerHTML : '';
+
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="icon icon-refresh icon--sm spinning"></span> Saving...';
+    }
+
+    try {
+      // Build config from UI
+      const config = {
+        enabled: document.getElementById('erpEnabled')?.checked || false,
+        erp_name: document.getElementById('erpName')?.value.trim() || '',
+        icon: this.erpConfig?.icon || null,
+        field_mappings: {}
+      };
+
+      // Collect field mappings for enabled object types
+      const objectTypes = ['company', 'deal', 'contact', 'ticket'];
+      objectTypes.forEach(objectType => {
+        const checkbox = document.querySelector(`.erp-object-enabled[data-object-type="${objectType}"]`);
+        if (checkbox?.checked) {
+          const fieldInput = document.querySelector(`.erp-field-name[data-object-type="${objectType}"]`);
+          const urlInput = document.querySelector(`.erp-url-template[data-object-type="${objectType}"]`);
+          const field = fieldInput?.value.trim();
+          const urlTemplate = urlInput?.value.trim();
+
+          if (field) {
+            config.field_mappings[objectType] = {
+              field: field,
+              url_template: urlTemplate || ''
+            };
+          }
+        }
+      });
+
+      // Save to database
+      const { error } = await RevGuideDB.updateOrganization({ erp_config: config });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.erpConfig = config;
+      AdminShared.showToast('ERP configuration saved', 'success');
+    } catch (error) {
+      console.error('[Settings] Failed to save ERP config:', error);
+      AdminShared.showToast(`Failed to save: ${error.message}`, 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+      }
     }
   }
 

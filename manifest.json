@@ -40,6 +40,7 @@
         "content/modules/sidepanel.js",
         "content/modules/presentations.js",
         "content/modules/index-tags.js",
+        "content/modules/erp-icon.js",
         "content/content.js"
       ],
       "css": ["content/content.css"],

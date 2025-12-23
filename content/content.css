@@ -1722,3 +1722,92 @@
   flex-shrink: 0;
 }
 
+/* ----------------------------------------
+   ERP Icon/Link Styles
+   ---------------------------------------- */
+
+/* Record page ERP link (next to record name) */
+.hshelper-erp-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 12px !important;
+  vertical-align: middle !important;
+  text-decoration: none !important;
+  transition: opacity 0.15s, transform 0.15s;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.hshelper-erp-link:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+
+.hshelper-erp-icon {
+  height: 24px !important;
+  width: auto !important;
+  max-width: 100px !important;
+  border-radius: 4px;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Fallback badge when no icon */
+.hshelper-erp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background: #e5f5f8;
+  color: #00a4bd;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hshelper-erp-badge:hover {
+  background: #d1eef3;
+}
+
+/* Index page ERP tag (in list view) */
+.hshelper-erp-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: #f5f8fa;
+  border: 1px solid #cbd6e2;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #516f90;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  margin-right: 4px;
+}
+
+.hshelper-erp-tag:hover {
+  background: #eaf0f6;
+  border-color: #00a4bd;
+  color: #00a4bd;
+}
+
+.hshelper-erp-tag-icon {
+  height: 14px;
+  width: auto;
+  max-width: 40px;
+  border-radius: 2px;
+}
+
+/* Board view ERP icon (smaller) */
+.hshelper-board-tags .hshelper-erp-tag {
+  padding: 2px 4px;
+}
+
+.hshelper-board-tags .hshelper-erp-tag-icon {
+  height: 12px;
+}
+

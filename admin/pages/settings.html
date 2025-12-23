@@ -793,6 +793,142 @@
             <div id="hubspotOAuthStatus" class="status-message"></div>
           </div>
 
+          <!-- ERP Connection Card -->
+          <div class="settings-card" id="erpConnectionCard" style="display: none;">
+            <div class="card-header-with-action">
+              <div>
+                <h3>External System Link</h3>
+                <p>Display a link icon on HubSpot records that exist in your ERP or external system</p>
+              </div>
+              <label class="toggle-label" style="margin: 0;">
+                <input type="checkbox" id="erpEnabled">
+                <span>Enable</span>
+              </label>
+            </div>
+
+            <!-- ERP Configuration (hidden when disabled) -->
+            <div id="erpConfigSection" style="display: none;">
+              <!-- ERP Name & Icon -->
+              <div class="form-group">
+                <label>System Name</label>
+                <input type="text" id="erpName" placeholder="e.g., Q360, NetSuite, SAP">
+                <span class="form-hint">This name will be shown in tooltips</span>
+              </div>
+
+              <div class="form-group">
+                <label>System Icon</label>
+                <div class="icon-upload-container" style="display: flex; align-items: center; gap: var(--space-3);">
+                  <div id="erpIconPreview" class="erp-icon-preview" style="width: 40px; height: 40px; border: 1px solid var(--color-border); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--color-bg-subtle);">
+                    <span class="icon icon-image icon--lg" style="opacity: 0.5;"></span>
+                  </div>
+                  <div class="icon-upload-actions" style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <div style="display: flex; gap: var(--space-2);">
+                      <button class="btn btn-secondary btn-sm" id="uploadErpIconBtn" type="button">
+                        <span class="icon icon-upload icon--sm"></span> Upload Icon
+                      </button>
+                      <button class="btn btn-secondary btn-sm" id="removeErpIconBtn" type="button" style="display: none;">
+                        <span class="icon icon-trash icon--sm"></span> Remove
+                      </button>
+                    </div>
+                    <span class="form-hint" style="margin: 0;">SVG or PNG, max 100KB</span>
+                  </div>
+                  <input type="file" id="erpIconInput" accept=".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg" style="display: none;">
+                </div>
+              </div>
+
+              <!-- Field Mappings per Object Type -->
+              <div class="erp-field-mappings" style="margin-top: var(--space-4);">
+                <label style="display: block; margin-bottom: var(--space-3); font-weight: var(--font-weight-medium);">Field Mappings</label>
+                <p class="form-hint" style="margin-bottom: var(--space-4);">Configure which HubSpot field indicates the record exists in your external system, and the URL to link to</p>
+
+                <!-- Companies -->
+                <div class="erp-object-config" data-object-type="company" style="padding: var(--space-3); background: var(--color-bg-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                  <label class="toggle-label" style="margin-bottom: 0;">
+                    <input type="checkbox" class="erp-object-enabled" data-object-type="company">
+                    <span>Companies</span>
+                  </label>
+                  <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-field-name" data-object-type="company" placeholder="e.g., q360_site_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-url-template" data-object-type="company" placeholder="https://erp.example.com/site/{{value}}">
+                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Deals -->
+                <div class="erp-object-config" data-object-type="deal" style="padding: var(--space-3); background: var(--color-bg-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                  <label class="toggle-label" style="margin-bottom: 0;">
+                    <input type="checkbox" class="erp-object-enabled" data-object-type="deal">
+                    <span>Deals</span>
+                  </label>
+                  <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-field-name" data-object-type="deal" placeholder="e.g., q360_opportunity_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-url-template" data-object-type="deal" placeholder="https://erp.example.com/opportunity/{{value}}">
+                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Contacts -->
+                <div class="erp-object-config" data-object-type="contact" style="padding: var(--space-3); background: var(--color-bg-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                  <label class="toggle-label" style="margin-bottom: 0;">
+                    <input type="checkbox" class="erp-object-enabled" data-object-type="contact">
+                    <span>Contacts</span>
+                  </label>
+                  <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-field-name" data-object-type="contact" placeholder="e.g., q360_contact_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-url-template" data-object-type="contact" placeholder="https://erp.example.com/contact/{{value}}">
+                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tickets -->
+                <div class="erp-object-config" data-object-type="ticket" style="padding: var(--space-3); background: var(--color-bg-subtle); border-radius: var(--radius-md);">
+                  <label class="toggle-label" style="margin-bottom: 0;">
+                    <input type="checkbox" class="erp-object-enabled" data-object-type="ticket">
+                    <span>Tickets</span>
+                  </label>
+                  <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-field-name" data-object-type="ticket" placeholder="e.g., q360_ticket_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-url-template" data-object-type="ticket" placeholder="https://erp.example.com/ticket/{{value}}">
+                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save Button -->
+              <div class="form-actions" style="margin-top: var(--space-4);">
+                <button class="btn btn-primary" id="saveErpConfigBtn" type="button">
+                  <span class="icon icon-check icon--sm"></span> Save Configuration
+                </button>
+              </div>
+            </div>
+
+            <div id="erpConfigStatus" class="status-message"></div>
+          </div>
+
           <div class="settings-card">
             <h3>Display Options</h3>
             <p>Configure how banners and cards appear in HubSpot</p>

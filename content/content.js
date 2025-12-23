@@ -70,12 +70,14 @@
       this.presentations = [];
       this.wikiEntries = [];
       this.settings = {};
+      this.erpConfig = null;
 
       // Feature modules (initialized after page load)
       this.bannersModule = null;
       this.wikiModule = null;
       this.sidePanelModule = null;
       this.presentationsModule = null;
+      this.erpModule = null;
 
       // Timeout references
       this.propertyUpdateTimeout = null;
@@ -180,13 +182,21 @@
       if (typeof IndexTagsModule !== 'undefined') {
         this.indexTagsModule = new IndexTagsModule(this);
       }
+      if (typeof ErpIconModule !== 'undefined') {
+        this.erpModule = new ErpIconModule(this);
+        // Initialize with ERP config if available
+        if (this.erpConfig) {
+          this.erpModule.init(this.erpConfig);
+        }
+      }
 
       log('Modules initialized:', {
         banners: !!this.bannersModule,
         wiki: !!this.wikiModule,
         sidePanel: !!this.sidePanelModule,
         presentations: !!this.presentationsModule,
-        indexTags: !!this.indexTagsModule
+        indexTags: !!this.indexTagsModule,
+        erp: !!this.erpModule
       });
     }
 
@@ -208,6 +218,7 @@
       if (url.includes('hubspot.com')) {
         crmType = 'hubspot';
         const portalMatch = url.match(/\/contacts\/(\d+)\//);
+        log('URL portal match:', url, '->', portalMatch);
         if (portalMatch) {
           portalId = portalMatch[1];
         }
@@ -268,6 +279,12 @@
         this.rules = content.rules || [];
         this.battleCards = content.battleCards || [];
         this.wikiEntries = content.wikiEntries || [];
+        this.erpConfig = content.erpConfig || null;
+
+        // Initialize ERP module if already created
+        if (this.erpModule && this.erpConfig) {
+          this.erpModule.init(this.erpConfig);
+        }
       } else {
         // Fall back to local storage directly
         log('Content loaded from: local storage fallback');
@@ -904,6 +921,18 @@
         setTimeout(() => this.wikiModule.apply(), 3000);
       }
 
+      // Render ERP icon on record pages
+      if (this.erpModule && this.erpModule.isEnabled()) {
+        // Initial render
+        setTimeout(() => {
+          this.erpModule.renderOnRecordPage(this.properties, this.context);
+        }, 500);
+        // Retry after DOM may have updated
+        setTimeout(() => {
+          this.erpModule.renderOnRecordPage(this.properties, this.context);
+        }, 1500);
+      }
+
       // Notify sidepanel of updated cards
       this.notifySidePanel(matchingCards);
     }
@@ -1152,6 +1181,7 @@
       if (this.presentationsModule) this.presentationsModule.cleanup();
       if (this.sidePanelModule) this.sidePanelModule.cleanup();
       if (this.indexTagsModule) this.indexTagsModule.cleanup();
+      if (this.erpModule) this.erpModule.cleanup();
 
       // Remove Q360 link
       const q360Link = document.querySelector('.hshelper-q360-link');
