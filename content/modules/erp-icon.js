@@ -143,13 +143,21 @@ class ErpIconModule {
    * @param {Object} context - { objectType, recordId }
    */
   renderOnRecordPage(properties, context) {
+    console.log('[RevGuide ERP] renderOnRecordPage called', {
+      isEnabled: this.isEnabled(),
+      objectType: context?.objectType,
+      propertyCount: Object.keys(properties || {}).length
+    });
     if (!this.isEnabled()) return;
     if (!context?.objectType) return;
 
     const mapping = this.getConfigForObjectType(context.objectType);
+    console.log('[RevGuide ERP] Mapping for', context.objectType, ':', mapping);
     if (!mapping) return;
 
+    console.log('[RevGuide ERP] Looking for field:', mapping.field, 'in properties:', Object.keys(properties || {}).slice(0, 20));
     const fieldValue = this.getPropertyValue(properties, mapping.field);
+    console.log('[RevGuide ERP] Field value result:', fieldValue);
     if (!fieldValue) {
       console.log('[RevGuide ERP] No value for field', mapping.field, 'on', context.objectType);
       return;

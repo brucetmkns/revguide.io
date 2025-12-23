@@ -280,9 +280,11 @@
         this.battleCards = content.battleCards || [];
         this.wikiEntries = content.wikiEntries || [];
         this.erpConfig = content.erpConfig || null;
+        log('ERP config loaded:', this.erpConfig ? JSON.stringify(this.erpConfig).substring(0, 200) : 'null');
 
         // Initialize ERP module if already created
         if (this.erpModule && this.erpConfig) {
+          log('Initializing ERP module with config');
           this.erpModule.init(this.erpConfig);
         }
       } else {
@@ -922,13 +924,22 @@
       }
 
       // Render ERP icon on record pages
+      log('ERP module check:', {
+        hasModule: !!this.erpModule,
+        isEnabled: this.erpModule?.isEnabled(),
+        objectType: this.context?.objectType,
+        hasProperties: Object.keys(this.properties || {}).length
+      });
       if (this.erpModule && this.erpModule.isEnabled()) {
+        log('ERP module is enabled, scheduling render');
         // Initial render
         setTimeout(() => {
+          log('ERP render attempt 1, properties:', Object.keys(this.properties || {}).slice(0, 10));
           this.erpModule.renderOnRecordPage(this.properties, this.context);
         }, 500);
         // Retry after DOM may have updated
         setTimeout(() => {
+          log('ERP render attempt 2');
           this.erpModule.renderOnRecordPage(this.properties, this.context);
         }, 1500);
       }

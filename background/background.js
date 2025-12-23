@@ -462,6 +462,7 @@ async function fetchCloudContent(targetOrgId = null) {
 
     // Extract ERP config from org data
     const erpConfig = orgData && orgData.length > 0 ? orgData[0].erp_config : null;
+    console.log('[RevGuide] ERP config from org:', erpConfig ? 'enabled=' + erpConfig.enabled : 'null');
 
     // Transform to match local storage format (snake_case to camelCase)
     const content = {
