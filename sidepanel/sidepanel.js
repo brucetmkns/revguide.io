@@ -633,6 +633,43 @@ class SidePanel {
       return;
     }
 
+    // If the card already exists but we have new context/playData, re-render it
+    // This handles opening the same play for a different record
+    if (cardElement && playData) {
+      console.log('[RevGuide] Re-rendering existing card with new context:', playId);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = this.renderCard(playData, true);
+      const newCard = tempDiv.firstElementChild;
+
+      // Replace the old card with the new one
+      cardElement.replaceWith(newCard);
+
+      // Re-attach event handlers
+      const cardHeader = newCard.querySelector('.card-header');
+      if (cardHeader) {
+        cardHeader.addEventListener('click', () => {
+          newCard.classList.toggle('expanded');
+        });
+      }
+      const editLink = newCard.querySelector('.admin-edit-link');
+      if (editLink) {
+        editLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const cardId = editLink.dataset.cardId;
+          const adminUrl = this.authState.isAuthenticated
+            ? `${WEB_APP_URL}/plays?edit=${cardId}`
+            : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
+          chrome.tabs.create({ url: adminUrl });
+        });
+      }
+      newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => this.handleSaveFields(e));
+      });
+
+      cardElement = newCard;
+    }
+
     // If the play isn't in the current list, we need to add it
     if (!cardElement && playData) {
       console.log('[RevGuide] Play not in current list, adding it:', playId);
