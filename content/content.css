@@ -1730,12 +1730,14 @@
 .hshelper-erp-link {
   display: inline-flex !important;
   align-items: center !important;
-  margin-left: 12px !important;
+  margin-left: 8px !important;
   vertical-align: middle !important;
   text-decoration: none !important;
   transition: opacity 0.15s, transform 0.15s;
   position: relative !important;
   z-index: 10 !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 .hshelper-erp-link:hover {
@@ -1744,13 +1746,14 @@
 }
 
 .hshelper-erp-icon {
-  height: 24px !important;
+  height: 20px !important;
   width: auto !important;
-  max-width: 100px !important;
-  border-radius: 4px;
+  max-width: 80px !important;
+  border-radius: 3px;
   display: inline-block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  vertical-align: middle !important;
 }
 
 /* Fallback badge when no icon */

@@ -187,14 +187,11 @@ class ErpIconModule {
     // Create icon link
     const iconLink = this.createIconLink(url, fieldValue);
 
-    // Insert after the name element
-    const parent = nameEl.parentElement;
-    if (parent) {
-      parent.insertBefore(iconLink, nameEl.nextSibling);
-      this.injectedIcons.add(nameEl);
-      this.recordPageIcon = iconLink;
-      console.log('[RevGuide ERP] Icon injected on record page');
-    }
+    // Insert inside the name element (at the end) to flow naturally with text
+    nameEl.appendChild(iconLink);
+    this.injectedIcons.add(nameEl);
+    this.recordPageIcon = iconLink;
+    console.log('[RevGuide ERP] Icon injected on record page');
   }
 
   /**
