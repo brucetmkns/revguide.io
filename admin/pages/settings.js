@@ -1440,12 +1440,16 @@ class SettingsPage {
         return;
       }
 
+      console.log('[Settings] Loading ERP config for org:', orgId);
+
       const client = await RevGuideAuth.waitForClient();
       const { data: org, error } = await client
         .from('organizations')
         .select('erp_config')
         .eq('id', orgId)
         .single();
+
+      console.log('[Settings] Load result:', { org, error });
 
       if (error) {
         console.error('[Settings] Failed to load ERP config:', error);
@@ -1459,6 +1463,7 @@ class SettingsPage {
         field_mappings: {}
       };
 
+      console.log('[Settings] Loaded ERP config:', this.erpConfig);
       this.populateErpConfigUI();
     } catch (error) {
       console.error('[Settings] Failed to load ERP config:', error);
@@ -1727,11 +1732,16 @@ class SettingsPage {
         throw new Error('No organization selected');
       }
 
+      console.log('[Settings] Saving ERP config to org:', orgId, config);
+
       const client = await RevGuideAuth.waitForClient();
-      const { error } = await client
+      const { data, error } = await client
         .from('organizations')
         .update({ erp_config: config })
-        .eq('id', orgId);
+        .eq('id', orgId)
+        .select('erp_config');
+
+      console.log('[Settings] Save result:', { data, error });
 
       if (error) {
         throw new Error(error.message);
