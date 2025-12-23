@@ -794,6 +794,7 @@ class SidePanel {
    * Interpolate {{variable}} placeholders with property values
    * Supports: {{propertyName}}, {{property_name}}, and case-insensitive matching
    * Shows placeholder with "not set" message if property not found
+   * Auto-formats dates and currency values
    */
   interpolateVariables(text) {
     if (!text || typeof text !== 'string') return text;
@@ -802,11 +803,70 @@ class SidePanel {
     return text.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, propertyName) => {
       const value = this.getPropertyValue(propertyName);
       if (value !== null && value !== undefined && value !== '') {
-        return String(value);
+        return this.formatVariableValue(value, propertyName);
       }
       // Show a styled placeholder when value is not set
       return `[${propertyName}: not set]`;
     });
+  }
+
+  /**
+   * Format a variable value based on its type/name
+   * - ISO dates → readable format (Dec 31, 2025)
+   * - Unix timestamps → readable format
+   * - Amount/currency fields → formatted number ($30,000)
+   */
+  formatVariableValue(value, propertyName) {
+    const strValue = String(value);
+    const lowerName = propertyName.toLowerCase();
+
+    // Check if it's an ISO date (e.g., 2025-12-31T23:33:15.036Z)
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(strValue)) {
+      try {
+        const date = new Date(strValue);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        }
+      } catch (e) { /* fall through to return raw value */ }
+    }
+
+    // Check if it's a Unix timestamp (13-digit milliseconds or 10-digit seconds)
+    if (/^\d{10,13}$/.test(strValue)) {
+      try {
+        const timestamp = strValue.length === 13 ? parseInt(strValue) : parseInt(strValue) * 1000;
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime()) && date.getFullYear() > 1990 && date.getFullYear() < 2100) {
+          return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        }
+      } catch (e) { /* fall through to return raw value */ }
+    }
+
+    // Check if it's an amount/currency field (by name pattern)
+    const currencyFields = ['amount', 'price', 'value', 'revenue', 'cost', 'budget', 'arr', 'mrr', 'acv', 'tcv'];
+    const isCurrencyField = currencyFields.some(f => lowerName.includes(f));
+
+    if (isCurrencyField && /^-?\d+(\.\d+)?$/.test(strValue)) {
+      const num = parseFloat(strValue);
+      if (!isNaN(num)) {
+        // Format with commas and optional decimals
+        return num.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+    }
+
+    return strValue;
   }
 
   escapeHtml(text) {
