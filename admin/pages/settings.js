@@ -1499,6 +1499,12 @@ class SettingsPage {
           const urlInput = document.querySelector(`.erp-url-template[data-object-type="${objectType}"]`);
           if (fieldInput) fieldInput.value = mapping.field || '';
           if (urlInput) urlInput.value = mapping.url_template || '';
+
+          // Fallback fields
+          const fallbackFieldInput = document.querySelector(`.erp-fallback-field[data-object-type="${objectType}"]`);
+          const fallbackUrlInput = document.querySelector(`.erp-fallback-url[data-object-type="${objectType}"]`);
+          if (fallbackFieldInput) fallbackFieldInput.value = mapping.fallback_field || '';
+          if (fallbackUrlInput) fallbackUrlInput.value = mapping.fallback_url_template || '';
         }
       }
     });
@@ -1674,14 +1680,25 @@ class SettingsPage {
         if (checkbox?.checked) {
           const fieldInput = document.querySelector(`.erp-field-name[data-object-type="${objectType}"]`);
           const urlInput = document.querySelector(`.erp-url-template[data-object-type="${objectType}"]`);
+          const fallbackFieldInput = document.querySelector(`.erp-fallback-field[data-object-type="${objectType}"]`);
+          const fallbackUrlInput = document.querySelector(`.erp-fallback-url[data-object-type="${objectType}"]`);
+
           const field = fieldInput?.value.trim();
           const urlTemplate = urlInput?.value.trim();
+          const fallbackField = fallbackFieldInput?.value.trim();
+          const fallbackUrlTemplate = fallbackUrlInput?.value.trim();
 
           if (field) {
-            config.field_mappings[objectType] = {
+            const mapping = {
               field: field,
               url_template: urlTemplate || ''
             };
+            // Only add fallback if field is specified
+            if (fallbackField) {
+              mapping.fallback_field = fallbackField;
+              mapping.fallback_url_template = fallbackUrlTemplate || '';
+            }
+            config.field_mappings[objectType] = mapping;
           }
         }
       });

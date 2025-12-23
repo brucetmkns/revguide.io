@@ -77,6 +77,7 @@ class ErpIconModule {
 
   /**
    * Check if the ERP field has a value for given properties and object type
+   * Checks primary field first, then fallback
    * @param {Object} properties - Record properties
    * @param {string} objectType - The object type
    * @returns {boolean}
@@ -85,8 +86,19 @@ class ErpIconModule {
     const mapping = this.getConfigForObjectType(objectType);
     if (!mapping) return false;
 
-    const value = this.getPropertyValue(properties, mapping.field);
-    return value !== null && value !== undefined && value !== '';
+    // Check primary field
+    const primaryValue = this.getPropertyValue(properties, mapping.field);
+    if (primaryValue !== null && primaryValue !== undefined && primaryValue !== '') {
+      return true;
+    }
+
+    // Check fallback field if configured
+    if (mapping.fallback_field) {
+      const fallbackValue = this.getPropertyValue(properties, mapping.fallback_field);
+      return fallbackValue !== null && fallbackValue !== undefined && fallbackValue !== '';
+    }
+
+    return false;
   }
 
   /**
@@ -120,6 +132,7 @@ class ErpIconModule {
 
   /**
    * Build the ERP URL for a record
+   * Uses primary field if available, otherwise falls back to fallback field
    * @param {Object} properties - Record properties
    * @param {string} objectType - The object type
    * @returns {string|null} The URL or null
@@ -128,17 +141,27 @@ class ErpIconModule {
     const mapping = this.getConfigForObjectType(objectType);
     if (!mapping?.field) return null;
 
-    const value = this.getPropertyValue(properties, mapping.field);
-    if (!value) return null;
+    // Try primary field first
+    const primaryValue = this.getPropertyValue(properties, mapping.field);
+    if (primaryValue && mapping.url_template) {
+      const encodedValue = encodeURIComponent(primaryValue);
+      let url = mapping.url_template.replace(/\{\{value\}\}/g, encodedValue);
+      url = url.replace(new RegExp(`\\{\\{${mapping.field}\\}\\}`, 'g'), encodedValue);
+      return url;
+    }
 
-    if (!mapping.url_template) return null;
+    // Try fallback field if primary is empty
+    if (mapping.fallback_field && mapping.fallback_url_template) {
+      const fallbackValue = this.getPropertyValue(properties, mapping.fallback_field);
+      if (fallbackValue) {
+        const encodedValue = encodeURIComponent(fallbackValue);
+        let url = mapping.fallback_url_template.replace(/\{\{value\}\}/g, encodedValue);
+        url = url.replace(new RegExp(`\\{\\{${mapping.fallback_field}\\}\\}`, 'g'), encodedValue);
+        return url;
+      }
+    }
 
-    // Replace {{value}} or {{fieldname}} with the field value (URL encoded)
-    const encodedValue = encodeURIComponent(value);
-    let url = mapping.url_template.replace(/\{\{value\}\}/g, encodedValue);
-    // Also replace the specific field name if used (e.g., {{q360_site_id}})
-    url = url.replace(new RegExp(`\\{\\{${mapping.field}\\}\\}`, 'g'), encodedValue);
-    return url;
+    return null;
   }
 
   /**
@@ -159,11 +182,20 @@ class ErpIconModule {
     console.log('[RevGuide ERP] Mapping for', context.objectType, ':', mapping);
     if (!mapping) return;
 
+    // Try primary field first, then fallback
     console.log('[RevGuide ERP] Looking for field:', mapping.field, 'in properties:', Object.keys(properties || {}).slice(0, 20));
-    const fieldValue = this.getPropertyValue(properties, mapping.field);
-    console.log('[RevGuide ERP] Field value result:', fieldValue);
+    let fieldValue = this.getPropertyValue(properties, mapping.field);
+    let usedFallback = false;
+
+    if (!fieldValue && mapping.fallback_field) {
+      console.log('[RevGuide ERP] Primary empty, trying fallback:', mapping.fallback_field);
+      fieldValue = this.getPropertyValue(properties, mapping.fallback_field);
+      usedFallback = true;
+    }
+
+    console.log('[RevGuide ERP] Field value result:', fieldValue, usedFallback ? '(fallback)' : '(primary)');
     if (!fieldValue) {
-      console.log('[RevGuide ERP] No value for field', mapping.field, 'on', context.objectType);
+      console.log('[RevGuide ERP] No value for field', mapping.field, 'or fallback on', context.objectType);
       return;
     }
 

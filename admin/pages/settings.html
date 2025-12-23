@@ -848,14 +848,25 @@
                     <span>Companies</span>
                   </label>
                   <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Primary Field</p>
                     <div class="form-group" style="margin-bottom: var(--space-3);">
                       <label>HubSpot Property (internal name)</label>
-                      <input type="text" class="erp-field-name" data-object-type="company" placeholder="e.g., q360_site_id">
+                      <input type="text" class="erp-field-name" data-object-type="company" placeholder="e.g., q360_company_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: var(--space-4);">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-url-template" data-object-type="company" placeholder="https://erp.example.com/company/{{value}}">
+                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Fallback Field (optional)</p>
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-fallback-field" data-object-type="company" placeholder="e.g., q360_site_id">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                       <label>URL Template</label>
-                      <input type="text" class="erp-url-template" data-object-type="company" placeholder="https://erp.example.com/site/{{value}}">
-                      <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                      <input type="text" class="erp-fallback-url" data-object-type="company" placeholder="https://erp.example.com/site/{{value}}">
+                      <span class="form-hint">Used when primary field is empty</span>
                     </div>
                   </div>
                 </div>
@@ -867,14 +878,25 @@
                     <span>Deals</span>
                   </label>
                   <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Primary Field</p>
                     <div class="form-group" style="margin-bottom: var(--space-3);">
                       <label>HubSpot Property (internal name)</label>
                       <input type="text" class="erp-field-name" data-object-type="deal" placeholder="e.g., q360_opportunity_id">
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: var(--space-4);">
                       <label>URL Template</label>
                       <input type="text" class="erp-url-template" data-object-type="deal" placeholder="https://erp.example.com/opportunity/{{value}}">
                       <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Fallback Field (optional)</p>
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-fallback-field" data-object-type="deal" placeholder="e.g., q360_project_id">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-fallback-url" data-object-type="deal" placeholder="https://erp.example.com/project/{{value}}">
+                      <span class="form-hint">Used when primary field is empty</span>
                     </div>
                   </div>
                 </div>
@@ -886,14 +908,25 @@
                     <span>Contacts</span>
                   </label>
                   <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Primary Field</p>
                     <div class="form-group" style="margin-bottom: var(--space-3);">
                       <label>HubSpot Property (internal name)</label>
                       <input type="text" class="erp-field-name" data-object-type="contact" placeholder="e.g., q360_contact_id">
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: var(--space-4);">
                       <label>URL Template</label>
                       <input type="text" class="erp-url-template" data-object-type="contact" placeholder="https://erp.example.com/contact/{{value}}">
                       <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Fallback Field (optional)</p>
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-fallback-field" data-object-type="contact" placeholder="">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-fallback-url" data-object-type="contact" placeholder="">
+                      <span class="form-hint">Used when primary field is empty</span>
                     </div>
                   </div>
                 </div>
@@ -905,14 +938,25 @@
                     <span>Tickets</span>
                   </label>
                   <div class="erp-object-fields" style="display: none; margin-top: var(--space-3); padding-left: var(--space-4);">
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Primary Field</p>
                     <div class="form-group" style="margin-bottom: var(--space-3);">
                       <label>HubSpot Property (internal name)</label>
                       <input type="text" class="erp-field-name" data-object-type="ticket" placeholder="e.g., q360_ticket_id">
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: var(--space-4);">
                       <label>URL Template</label>
                       <input type="text" class="erp-url-template" data-object-type="ticket" placeholder="https://erp.example.com/ticket/{{value}}">
                       <span class="form-hint">Use <code>{{value}}</code> where the field value should appear</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: var(--space-3);">Fallback Field (optional)</p>
+                    <div class="form-group" style="margin-bottom: var(--space-3);">
+                      <label>HubSpot Property (internal name)</label>
+                      <input type="text" class="erp-fallback-field" data-object-type="ticket" placeholder="">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label>URL Template</label>
+                      <input type="text" class="erp-fallback-url" data-object-type="ticket" placeholder="">
+                      <span class="form-hint">Used when primary field is empty</span>
                     </div>
                   </div>
                 </div>
