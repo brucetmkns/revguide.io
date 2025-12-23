@@ -1703,8 +1703,17 @@ class SettingsPage {
         }
       });
 
-      // Save to database
-      const { error } = await RevGuideDB.updateOrganization({ erp_config: config });
+      // Save to database - use currentOrganization for partner-managed orgs
+      const orgId = AdminShared.currentOrganization?.id;
+      if (!orgId) {
+        throw new Error('No organization selected');
+      }
+
+      const client = await RevGuideAuth.waitForClient();
+      const { error } = await client
+        .from('organizations')
+        .update({ erp_config: config })
+        .eq('id', orgId);
 
       if (error) {
         throw new Error(error.message);
