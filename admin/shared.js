@@ -133,7 +133,13 @@ async function handleUrlOrgSwitch() {
     // This fixes partner portal context for HubSpot connection lookups
     if (typeof RevGuideDB !== 'undefined') {
       try {
-        await RevGuideDB.switchOrganization(matchingOrg.organization_id);
+        console.log('[Auth] Setting active_organization_id to:', matchingOrg.organization_id);
+        const switchResult = await RevGuideDB.switchOrganization(matchingOrg.organization_id);
+        if (!switchResult.success) {
+          console.error('[Auth] Switch org failed:', switchResult.error);
+        } else {
+          console.log('[Auth] active_organization_id updated successfully');
+        }
       } catch (e) {
         console.warn('[Auth] Failed to persist org switch:', e);
       }
