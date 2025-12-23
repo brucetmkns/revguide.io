@@ -222,24 +222,6 @@
                     <span class="form-hint">Link a play to this banner. When triggered by rules, viewers can open the play in the sidepanel.</span>
                   </div>
 
-                  <!-- Editable Fields Section -->
-                  <div class="form-group" id="bannerFieldsGroup" style="display: none;">
-                    <label>Editable Fields</label>
-                    <div class="fields-editor" id="bannerFieldsEditor">
-                      <div class="fields-list" id="bannerFieldsList">
-                        <!-- Field rows added by JS -->
-                      </div>
-                      <button type="button" class="btn btn-secondary btn-sm add-field-btn" id="addBannerFieldBtn" disabled>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <line x1="12" y1="5" x2="12" y2="19"/>
-                          <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                        Add Field
-                      </button>
-                    </div>
-                    <span class="form-hint">Select HubSpot properties that users can edit directly from the banner</span>
-                  </div>
-
                   <div class="form-group" id="messageGroup">
                     <label>Message</label>
                     <div id="ruleMessageEditor"></div>
@@ -271,6 +253,24 @@
                       <option value="tickets">Tickets</option>
                     </select>
                     <span class="form-hint">Select an object type to load available properties</span>
+                  </div>
+
+                  <!-- Editable Fields Section -->
+                  <div class="form-group" id="bannerFieldsGroup" style="display: none;">
+                    <label>Editable Fields</label>
+                    <div class="fields-editor" id="bannerFieldsEditor">
+                      <div class="fields-list" id="bannerFieldsList">
+                        <!-- Field rows added by JS -->
+                      </div>
+                      <button type="button" class="btn btn-secondary btn-sm add-field-btn" id="addBannerFieldBtn" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="12" y1="5" x2="12" y2="19"/>
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add Field
+                      </button>
+                    </div>
+                    <span class="form-hint">Select HubSpot properties that users can edit directly from the banner</span>
                   </div>
 
                   <div class="form-group">
