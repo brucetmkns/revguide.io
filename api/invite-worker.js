@@ -2805,7 +2805,7 @@ async function handleCreateCheckoutSession(request, env, corsHeaders) {
     const priceKey = `${planType}_${billingInterval === 'year' ? 'yearly' : 'monthly'}`;
     const priceId = env[`STRIPE_PRICE_${priceKey.toUpperCase()}`] || STRIPE_PRICES[priceKey];
 
-    if (!priceId || priceId.startsWith('price_')) {
+    if (!priceId || !priceId.startsWith('price_')) {
       // Price ID not configured - return helpful error
       return new Response(JSON.stringify({
         error: 'Price not configured',

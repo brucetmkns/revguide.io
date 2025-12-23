@@ -1981,7 +1981,8 @@ class SettingsPage {
     this.updateUsageMeter('banner', sub.currentBannerCount, sub.bannerLimit);
     this.updateUsageMeter('wiki', sub.currentWikiCount, sub.wikiLimit);
     this.updateUsageMeter('play', sub.currentPlayCount, sub.playLimit);
-    this.updateUsageMeter('member', sub.currentMemberCount, sub.seatLimit);
+    // Per-seat model: no hard seat limit, show as unlimited
+    this.updateUsageMeter('member', sub.currentMemberCount, -1);
 
     // Update button visibility
     const upgradePlanBtn = document.getElementById('upgradePlanBtn');
