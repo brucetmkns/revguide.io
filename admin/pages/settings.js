@@ -2037,11 +2037,80 @@ class SettingsPage {
   }
 
   /**
-   * Open the upgrade modal (or redirect to Stripe Checkout)
+   * Open the upgrade modal with plan options
    */
   async openUpgradeModal() {
-    // For now, redirect directly to Stripe Checkout for Pro plan
-    // Later: show a modal with plan options
+    const isPartner = AdminShared.isPartner();
+    const currentPlan = this.subscription?.planType || 'starter';
+
+    // Define plans based on user type
+    const standardPlans = [
+      { id: 'starter', name: 'Starter', price: '$5/seat/month', desc: '5 banners, 10 wiki, 3 plays' },
+      { id: 'pro', name: 'Pro', price: '$10/seat/month', desc: 'Unlimited content' },
+      { id: 'business', name: 'Business', price: '$20/seat/month', desc: 'Unlimited + priority support' }
+    ];
+
+    const partnerPlans = [
+      { id: 'partner_starter', name: 'Partner Starter', price: '$500/month', desc: '5 client portals' },
+      { id: 'partner_pro', name: 'Partner Pro', price: '$1,250/month', desc: '20 client portals' },
+      { id: 'partner_enterprise', name: 'Partner Enterprise', price: '$2,500/month', desc: 'Unlimited portals' }
+    ];
+
+    const plans = isPartner ? partnerPlans : standardPlans;
+
+    // Build plan options HTML
+    const planOptionsHtml = plans.map(plan => {
+      const isCurrent = plan.id === currentPlan;
+      return `
+        <label class="plan-option ${isCurrent ? 'current' : ''}" data-plan="${plan.id}">
+          <input type="radio" name="plan" value="${plan.id}" ${isCurrent ? 'disabled' : ''}>
+          <div class="plan-option-content">
+            <div class="plan-option-header">
+              <span class="plan-option-name">${plan.name}</span>
+              ${isCurrent ? '<span class="plan-current-badge">Current</span>' : ''}
+            </div>
+            <div class="plan-option-price">${plan.price}</div>
+            <div class="plan-option-desc">${plan.desc}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    const result = await AdminShared.showConfirmDialog({
+      title: 'Choose a Plan',
+      message: `
+        <div class="plan-options">
+          ${planOptionsHtml}
+        </div>
+        <style>
+          .plan-options { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+          .plan-option { display: flex; align-items: flex-start; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+          .plan-option:hover:not(.current) { border-color: var(--accent-primary); background: var(--bg-secondary); }
+          .plan-option.current { opacity: 0.6; cursor: default; }
+          .plan-option input { margin-right: 12px; margin-top: 4px; }
+          .plan-option-content { flex: 1; }
+          .plan-option-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+          .plan-option-name { font-weight: 600; color: var(--text-primary); }
+          .plan-current-badge { font-size: 11px; padding: 2px 6px; background: var(--bg-tertiary); border-radius: 4px; color: var(--text-secondary); }
+          .plan-option-price { font-size: 14px; color: var(--accent-primary); margin-bottom: 4px; }
+          .plan-option-desc { font-size: 13px; color: var(--text-secondary); }
+        </style>
+      `,
+      primaryLabel: 'Continue to Checkout',
+      secondaryLabel: 'Cancel',
+      dangerous: false
+    });
+
+    if (!result) return;
+
+    // Get selected plan
+    const selectedPlan = document.querySelector('input[name="plan"]:checked')?.value;
+    if (!selectedPlan) {
+      AdminShared.showToast('Please select a plan', 'error');
+      return;
+    }
+
+    // Redirect to Stripe Checkout
     try {
       const orgId = await RevGuideDB.getOrganizationId();
       if (!orgId) {
@@ -2056,7 +2125,7 @@ class SettingsPage {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           organizationId: orgId,
-          planType: 'pro',
+          planType: selectedPlan,
           billingInterval: 'month',
           successUrl: `${window.location.origin}/settings?checkout=success`,
           cancelUrl: `${window.location.origin}/settings?checkout=cancelled`
