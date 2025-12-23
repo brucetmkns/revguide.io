@@ -4,9 +4,9 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.9.0 (Partner Library Creation)
+## Current State: v2.11.0 (Stripe Billing)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, and **partner-created content libraries that can be deployed across client organizations**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, and **Stripe billing integration with per-seat and tiered partner pricing**.
 
 ### Index Page Tags (v2.5.0 + v2.5.1)
 - **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages
@@ -35,6 +35,22 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Auto-invite acceptance**: OAuth users with pending invitations are automatically added to teams
 - **Streamlined onboarding**: Install extension → Click SSO → Ready to use
 
+### Stripe Billing (v2.11.0)
+- **Per-Seat Pricing**: Standard plans with per-seat billing (Starter $5, Pro $10, Business $20)
+- **Partner Tiered Plans**: Flat monthly pricing (Starter $500, Pro $1,250, Enterprise $2,500)
+- **Free Seat Threshold**: First 5 seats free on Starter plan
+- **Yearly Discount**: 17% savings on annual billing
+- **Stripe Checkout**: Hosted checkout page for secure payment collection
+- **Customer Portal**: Self-service billing management via Stripe Portal
+- **Webhook Integration**: Supabase Edge Function handles subscription lifecycle events
+- **Plan Detection**: Reads `plan_type` from Stripe product metadata
+- **Settings Page**: Displays current plan, usage meters (partner: portals/libraries, standard: banners/wiki/plays)
+
+**Future Enhancements:**
+- [ ] Feature gating (block content creation when over limits)
+- [ ] Grace period UI warnings
+- [ ] Usage analytics dashboard
+
 ### Partner Account System (v2.8.0+)
 - **Partner Account Type**: New `account_type` column (`standard` or `partner`) with dedicated `partner` role
 - **Partner Dashboard**: Dedicated `/partner` page for managing clients, libraries, and access requests
@@ -44,6 +60,8 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Database Migrations**: `021_partner_accounts.sql` and `023_rename_consultant_to_partner.sql`
 - **Terminology Rename** (v2.2.0): All "Consultant" terminology renamed to "Partner" throughout codebase
 - **Partner Join Notification** (v2.2.0): Email sent to admins when partner accepts invitation
+- **Partner Content Permissions** (v2.11.1): Partners can create/edit/delete content in managed client orgs
+- **Portal Matching** (v2.11.1): Extension auto-detects client HubSpot portal and loads correct org's content
 
 ### Role-Based Access Control (v2.5.3)
 - **Complete role hierarchy**: Owner > Admin > Editor > Viewer > Partner (external)
@@ -430,7 +448,7 @@ content-library/
 | Web Dashboard | Static HTML on Vercel | **Complete** |
 | Domain | app.revguide.io | **Complete** |
 | HubSpot OAuth | Supabase Edge Functions | **Complete** |
-| Payments | Stripe | Planned |
+| Payments | Stripe | **Complete** (v2.11.0) |
 
 ### 2.1.1 Completed: Web App Deployment (December 2025)
 
@@ -546,11 +564,18 @@ presentations
 - [ ] Activity log (who changed what)
 - [ ] Organization settings
 
-#### Billing
-- [ ] Stripe integration
-- [ ] Single plan: $29/org/month
-- [ ] 14-day free trial
-- [ ] Billing portal for self-service
+#### Billing (v2.11.0 - Complete)
+- [x] Stripe integration
+- [x] Per-seat pricing: Starter $5, Pro $10, Business $20 per seat
+- [x] Partner tiered plans: $500, $1,250, $2,500/month
+- [x] Free seat threshold (5 users on Starter)
+- [x] Yearly billing option (17% discount)
+- [x] Stripe Checkout for payment collection
+- [x] Billing portal for self-service
+- [x] Webhook endpoint and subscription creation
+- [x] Plan detection from product metadata
+- [ ] Feature gating (content limits)
+- [ ] Grace period warnings
 
 ### 2.4 Technical Changes to Extension
 
@@ -891,7 +916,7 @@ Would you like me to suggest values?"
 - [x] **Board/Kanban view support** - Tags now display on board view cards (v2.5.1)
 - [x] **Clickable tags** - Open related play or show banner popup (v2.5.1)
 - [x] **Board scroll loading** - Tags load as new cards scroll into view (v2.5.1)
-- [ ] **Improve tag UI contrast** - Current low contrast makes tags hard to read; increase color contrast for better readability
+- [x] **Improve tag UI contrast** - Darkened text colors and slightly richer backgrounds for better readability (v2.5.2)
 - [ ] **Improve tag placement on board cards** - Move tags to bottom of card next to action buttons (currently positioned higher)
 - [ ] **Default "Show as Tag on Index" to ON** - New banners should have tag display enabled by default; users can toggle off if desired
 - [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
@@ -961,7 +986,7 @@ Design mockups created in `website/admin-redesign.html` (Admin view) and `websit
 
 ### Account & Settings
 - [x] **User Profile section** - View/edit profile info (name, email display, company name)
-- [ ] **Billing management** - View subscription, update payment method, download invoices
+- [x] **Billing management** - View subscription, upgrade plan, manage via Stripe Portal (v2.11.0)
 - [ ] Account deletion/data export (GDPR compliance)
 
 ### Integrations
