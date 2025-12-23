@@ -1732,19 +1732,35 @@ class SettingsPage {
         throw new Error('No organization selected');
       }
 
-      console.log('[Settings] Saving ERP config to org:', orgId, config);
+      console.log('[Settings] Saving ERP config to org:', orgId, JSON.stringify(config.field_mappings));
 
       const client = await RevGuideAuth.waitForClient();
-      const { data, error } = await client
-        .from('organizations')
-        .update({ erp_config: config })
-        .eq('id', orgId)
-        .select('erp_config');
+
+      // Use RPC function to update org as partner (bypasses RLS)
+      const { data, error } = await client.rpc('update_org_erp_config', {
+        p_org_id: orgId,
+        p_erp_config: config
+      });
 
       console.log('[Settings] Save result:', { data, error });
 
       if (error) {
-        throw new Error(error.message);
+        // Fallback to direct update for non-partner users
+        console.log('[Settings] RPC failed, trying direct update...');
+        const { data: directData, error: directError } = await client
+          .from('organizations')
+          .update({ erp_config: config })
+          .eq('id', orgId)
+          .select('erp_config');
+
+        console.log('[Settings] Direct update result:', { directData, directError });
+
+        if (directError) {
+          throw new Error(directError.message);
+        }
+        if (!directData || directData.length === 0) {
+          throw new Error('Update failed - no rows modified (check permissions)');
+        }
       }
 
       this.erpConfig = config;
