@@ -133,8 +133,12 @@ class ErpIconModule {
 
     if (!mapping.url_template) return null;
 
-    // Replace {{value}} with the field value (URL encoded)
-    return mapping.url_template.replace(/\{\{value\}\}/g, encodeURIComponent(value));
+    // Replace {{value}} or {{fieldname}} with the field value (URL encoded)
+    const encodedValue = encodeURIComponent(value);
+    let url = mapping.url_template.replace(/\{\{value\}\}/g, encodedValue);
+    // Also replace the specific field name if used (e.g., {{q360_site_id}})
+    url = url.replace(new RegExp(`\\{\\{${mapping.field}\\}\\}`, 'g'), encodedValue);
+    return url;
   }
 
   /**
