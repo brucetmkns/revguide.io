@@ -666,6 +666,7 @@ class SidePanel {
       newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
         btn.addEventListener('click', (e) => this.handleSaveFields(e));
       });
+      this.initFieldKeyboardShortcuts(newCard);
 
       cardElement = newCard;
     }
@@ -732,6 +733,7 @@ class SidePanel {
         newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
           btn.addEventListener('click', (e) => this.handleSaveFields(e));
         });
+        this.initFieldKeyboardShortcuts(newCard);
 
         cardElement = newCard;
       }
@@ -1224,6 +1226,29 @@ class SidePanel {
     // Set up click handlers for save buttons in field sections
     document.querySelectorAll('.save-fields-btn').forEach(btn => {
       btn.addEventListener('click', (e) => this.handleSaveFields(e));
+    });
+
+    // Set up Cmd/Ctrl+Enter to save on field inputs
+    this.initFieldKeyboardShortcuts(document);
+  }
+
+  /**
+   * Add Cmd/Ctrl+Enter keyboard shortcut to save fields
+   * @param {Element} container - Container element to search for field inputs
+   */
+  initFieldKeyboardShortcuts(container) {
+    container.querySelectorAll('.field-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          const section = input.closest('.card-section-fields');
+          const saveBtn = section?.querySelector('.save-fields-btn');
+          if (saveBtn) {
+            saveBtn.click();
+          }
+        }
+      });
     });
   }
 
