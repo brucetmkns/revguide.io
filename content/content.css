@@ -1427,9 +1427,8 @@
   flex-wrap: wrap;
   gap: 4px;
   margin: 0;
-  padding: 8px 16px;
+  padding: 6px 0 6px 0;
   max-width: 100%;
-  border-top: 1px solid #eaf0f6;
 }
 
 .hshelper-board-tags .hshelper-index-tag {
