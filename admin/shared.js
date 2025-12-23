@@ -109,27 +109,28 @@ async function handleUrlOrgSwitch() {
     return false;
   }
 
-  // Already on the correct org (compare short IDs)
-  if (getShortOrgId(currentOrganization?.id) === urlShortId) {
-    return false;
-  }
-
   // Find matching org in user's organizations (by short ID prefix)
   const matchingOrg = userOrganizations.find(
     org => getShortOrgId(org.organization_id) === urlShortId
   );
 
   if (matchingOrg) {
-    console.log('[Auth] URL specifies org:', matchingOrg.organization_name, '- switching silently');
+    // Check if already on the correct org (compare short IDs)
+    const alreadyOnOrg = getShortOrgId(currentOrganization?.id) === urlShortId;
 
-    // Update current organization without API call (org is in user's list)
+    if (!alreadyOnOrg) {
+      console.log('[Auth] URL specifies org:', matchingOrg.organization_name, '- switching silently');
+    }
+
+    // Update current organization in memory
     currentOrganization = {
       id: matchingOrg.organization_id,
       name: matchingOrg.organization_name,
       hubspot_portal_id: matchingOrg.portal_id
     };
 
-    // Update the database to reflect the new active org
+    // ALWAYS update the database to ensure active_organization_id is correct
+    // This fixes partner portal context for HubSpot connection lookups
     if (typeof RevGuideDB !== 'undefined') {
       try {
         await RevGuideDB.switchOrganization(matchingOrg.organization_id);
@@ -141,7 +142,15 @@ async function handleUrlOrgSwitch() {
     // Update cache
     saveUserToCache();
 
-    return true;
+    // Clear HubSpot-related caches to ensure we get data for the correct portal
+    // Do this even if alreadyOnOrg, in case database was out of sync
+    try {
+      sessionStorage.removeItem('revguide_properties_cache');
+      sessionStorage.removeItem('revguide_hubspot_connection');
+    } catch (e) {}
+
+    // Return true only if we actually switched (for full cache clearing)
+    return !alreadyOnOrg;
   } else {
     // User doesn't have access to this org
     console.warn('[Auth] User does not have access to org:', urlShortId);
