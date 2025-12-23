@@ -215,12 +215,19 @@ class ErpIconModule {
       '.main-content-wrapper h2'
     ];
 
+    console.log('[RevGuide ERP] Searching for record name element...');
     for (const selector of selectors) {
       const el = document.querySelector(selector);
+      console.log('[RevGuide ERP] Selector:', selector, '-> found:', !!el, el?.textContent?.substring(0, 30));
       if (el && el.textContent?.trim()) {
         return el;
       }
     }
+
+    console.log('[RevGuide ERP] No selector matched. Dumping page h1/h2 elements:');
+    document.querySelectorAll('h1, h2').forEach((el, i) => {
+      console.log(`[RevGuide ERP] h1/h2[${i}]:`, el.tagName, el.className, el.getAttribute('data-test-id'), el.textContent?.substring(0, 50));
+    });
 
     return null;
   }
