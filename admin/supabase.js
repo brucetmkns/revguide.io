@@ -377,18 +377,37 @@ const RevGuideDB = {
     const orgId = await this.getOrganizationId();
     if (!orgId) return { error: new Error('No organization') };
 
+    // Exclude id field - let Supabase generate UUID
+    // Also exclude any non-UUID parent_id (e.g., wiki_* format)
+    const { id, ...entryWithoutId } = entry;
+    if (entryWithoutId.parent_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entryWithoutId.parent_id)) {
+      entryWithoutId.parent_id = null;
+    }
+
     return client
       .from('wiki_entries')
-      .insert({ ...entry, organization_id: orgId })
+      .insert({ ...entryWithoutId, organization_id: orgId })
       .select()
       .single();
   },
 
   async updateWikiEntry(id, updates) {
     const client = await RevGuideAuth.waitForClient();
+
+    // Validate ID is a proper UUID
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return { error: new Error('Invalid entry ID - please refresh and try again') };
+    }
+
+    // Exclude any non-UUID parent_id from updates
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.parent_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUpdates.parent_id)) {
+      cleanUpdates.parent_id = null;
+    }
+
     return client
       .from('wiki_entries')
-      .update(updates)
+      .update(cleanUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -396,6 +415,12 @@ const RevGuideDB = {
 
   async deleteWikiEntry(id) {
     const client = await RevGuideAuth.waitForClient();
+
+    // Validate ID is a proper UUID
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return { error: new Error('Invalid entry ID') };
+    }
+
     return client
       .from('wiki_entries')
       .delete()
