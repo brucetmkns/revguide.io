@@ -2076,10 +2076,13 @@ class SettingsPage {
       `;
     }).join('');
 
+    // Track selected plan
+    let selectedPlan = null;
+
     const result = await AdminShared.showConfirmDialog({
       title: 'Choose a Plan',
       message: `
-        <div class="plan-options">
+        <div class="plan-options" id="planOptions">
           ${planOptionsHtml}
         </div>
         <style>
@@ -2087,6 +2090,7 @@ class SettingsPage {
           .plan-option { display: flex; align-items: flex-start; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
           .plan-option:hover:not(.current) { border-color: var(--accent-primary); background: var(--bg-secondary); }
           .plan-option.current { opacity: 0.6; cursor: default; }
+          .plan-option.selected { border-color: var(--accent-primary); background: var(--bg-secondary); }
           .plan-option input { margin-right: 12px; margin-top: 4px; }
           .plan-option-content { flex: 1; }
           .plan-option-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
@@ -2099,13 +2103,23 @@ class SettingsPage {
       primaryLabel: 'Continue to Checkout',
       secondaryLabel: 'Cancel',
       showCancel: false,
-      allowHtml: true
+      allowHtml: true,
+      onOpen: () => {
+        // Add click handlers to capture selection
+        document.querySelectorAll('.plan-option').forEach(option => {
+          option.addEventListener('click', () => {
+            if (option.classList.contains('current')) return;
+            document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            option.querySelector('input').checked = true;
+            selectedPlan = option.dataset.plan;
+          });
+        });
+      }
     });
 
-    if (!result) return;
+    if (!result || result === 'secondary') return;
 
-    // Get selected plan
-    const selectedPlan = document.querySelector('input[name="plan"]:checked')?.value;
     if (!selectedPlan) {
       AdminShared.showToast('Please select a plan', 'error');
       return;

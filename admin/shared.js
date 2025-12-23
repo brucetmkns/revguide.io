@@ -2184,7 +2184,7 @@ function convertToEmbedUrl(url) {
  * @param {boolean} options.showCancel - Whether to show cancel button (default: true)
  * @returns {Promise<'primary'|'secondary'|'cancel'>}
  */
-function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLabel = 'Discard', cancelLabel = 'Cancel', showCancel = true, allowHtml = false }) {
+function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLabel = 'Discard', cancelLabel = 'Cancel', showCancel = true, allowHtml = false, onOpen = null }) {
   return new Promise((resolve) => {
     // Remove existing dialog
     const existingDialog = document.querySelector('.confirm-dialog-overlay');
@@ -2239,6 +2239,11 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
     document.addEventListener('keydown', handleKeydown);
 
     document.body.appendChild(overlay);
+
+    // Call onOpen callback if provided (after dialog is in DOM)
+    if (onOpen && typeof onOpen === 'function') {
+      onOpen();
+    }
 
     // Focus primary button
     overlay.querySelector('.confirm-dialog-primary').focus();
