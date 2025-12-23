@@ -295,6 +295,156 @@
 
 
 /* ----------------------------------------
+   Banner Inline Fields
+   ---------------------------------------- */
+.hshelper-banner-fields {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hshelper-banner-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hshelper-banner-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #516f90;
+}
+
+.hshelper-field-required {
+  color: #f2545b;
+  margin-left: 2px;
+}
+
+.hshelper-banner-field-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd6e2;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #33475b;
+  background: #ffffff;
+  font-family: "Lexend Deca", Helvetica, Arial, sans-serif;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hshelper-banner-field-input:focus {
+  outline: none;
+  border-color: #b2ef63;
+  box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
+}
+
+.hshelper-banner-field-input.hshelper-field-error {
+  border-color: #f2545b;
+  box-shadow: 0 0 0 2px rgba(242, 84, 91, 0.2);
+}
+
+/* Select dropdown */
+.hshelper-field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c98b6' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+/* Checkbox */
+.hshelper-banner-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #33475b;
+  cursor: pointer;
+}
+
+.hshelper-field-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Date/Number fields */
+.hshelper-field-date,
+.hshelper-field-number {
+  cursor: pointer;
+}
+
+.hshelper-field-number {
+  -moz-appearance: textfield;
+}
+
+.hshelper-field-number::-webkit-outer-spin-button,
+.hshelper-field-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Actions row */
+.hshelper-banner-fields-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.hshelper-banner-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #b2ef63;
+  color: #1a2e05;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: "Lexend Deca", Helvetica, Arial, sans-serif;
+  transition: background-color 0.15s ease;
+}
+
+.hshelper-banner-save-btn:hover {
+  background: #9ed654;
+}
+
+.hshelper-banner-save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.hshelper-banner-fields-status {
+  font-size: 12px;
+  color: #516f90;
+}
+
+.hshelper-banner-fields-status.success {
+  color: #00bda5;
+}
+
+.hshelper-banner-fields-status.error {
+  color: #f2545b;
+}
+
+/* Spinning animation */
+@keyframes hshelper-spin {
+  to { transform: rotate(360deg); }
+}
+
+.hshelper-spin {
+  animation: hshelper-spin 1s linear infinite;
+}
+
+
+/* ----------------------------------------
    Play Sidebar
    ---------------------------------------- */
 .hshelper-sidebar-backdrop {

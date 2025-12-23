@@ -122,11 +122,15 @@ class BannersModule {
       </button>
     ` : '';
 
+    // Render inline fields form if fields exist
+    const fieldsHtml = rule.fields?.length ? this.renderFieldsForm(rule) : '';
+
     banner.innerHTML = `
       <div class="hshelper-banner-icon">${this.icons[rule.type] || this.icons.info}</div>
       <div class="hshelper-banner-content">
         <div class="hshelper-banner-title">${this.helper.escapeHtml(rule.title || rule.name)}${adminEditLink}</div>
         <div class="hshelper-banner-message">${this.helper.sanitizeRichText(rule.message || '')}</div>
+        ${fieldsHtml}
         ${rule.actions ? this.renderActions(rule.actions) : ''}
         ${relatedPlayBtn}
       </div>
@@ -163,6 +167,11 @@ class BannersModule {
         e.stopPropagation();
         this.openPlayInSidepanel(rule.relatedPlayId);
       });
+    }
+
+    // Initialize field events if fields exist
+    if (rule.fields?.length) {
+      this.initFieldEvents(banner, rule);
     }
 
     return banner;
@@ -378,6 +387,268 @@ class BannersModule {
       default:
         console.log('[RevGuide] Unknown action type:', action.type);
     }
+  }
+
+  // ----------------------------------------
+  // Field Rendering and Handling Methods
+  // ----------------------------------------
+
+  /**
+   * Render inline fields form for a banner
+   * @param {Object} rule - Rule object containing fields configuration
+   * @returns {string} HTML string for the fields form
+   */
+  renderFieldsForm(rule) {
+    const fieldsHtml = rule.fields.map(field => {
+      const currentValue = this.helper.properties[field.property] || '';
+      const displayLabel = field.label || field.property.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+      return `
+        <div class="hshelper-banner-field" data-property="${this.helper.escapeHtml(field.property)}">
+          <label class="hshelper-banner-field-label">
+            ${this.helper.escapeHtml(displayLabel)}
+            ${field.required ? '<span class="hshelper-field-required">*</span>' : ''}
+          </label>
+          ${this.renderFieldInput(field, currentValue)}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="hshelper-banner-fields" data-rule-id="${rule.id}">
+        ${fieldsHtml}
+        <div class="hshelper-banner-fields-actions">
+          <button type="button" class="hshelper-banner-save-btn" data-rule-id="${rule.id}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Save to HubSpot
+          </button>
+          <span class="hshelper-banner-fields-status"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render appropriate input element for a field
+   * @param {Object} field - Field configuration
+   * @param {string} currentValue - Current value of the field
+   * @returns {string} HTML string for the input element
+   */
+  renderFieldInput(field, currentValue) {
+    const displayLabel = field.label || field.property;
+    const fieldType = field.fieldType || '';
+    const type = field.type || 'string';
+    const options = field.options || [];
+    const escapedValue = this.helper.escapeHtml(currentValue || '');
+
+    // Select/dropdown for enumeration fields
+    if (options.length > 0 || fieldType === 'select' || fieldType === 'radio') {
+      const normalizedCurrent = String(currentValue || '').toLowerCase().trim();
+      const optionsHtml = options.map(opt => {
+        const optValue = opt.value !== undefined ? opt.value : opt;
+        const optLabel = opt.label || opt;
+        const selected = normalizedCurrent === String(optValue).toLowerCase().trim() ? 'selected' : '';
+        return `<option value="${this.helper.escapeHtml(String(optValue))}" ${selected}>${this.helper.escapeHtml(optLabel)}</option>`;
+      }).join('');
+
+      return `
+        <select class="hshelper-banner-field-input hshelper-field-select"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}">
+          <option value="">Select...</option>
+          ${optionsHtml}
+        </select>
+      `;
+    }
+
+    // Boolean checkbox
+    if (type === 'bool' || fieldType === 'booleancheckbox') {
+      const checked = currentValue === 'true' || currentValue === true ? 'checked' : '';
+      return `
+        <label class="hshelper-banner-checkbox-label">
+          <input type="checkbox" class="hshelper-banner-field-input hshelper-field-checkbox"
+            data-property="${this.helper.escapeHtml(field.property)}"
+            data-required="${field.required ? 'true' : 'false'}"
+            data-type="boolean" ${checked}>
+          <span>Yes</span>
+        </label>
+      `;
+    }
+
+    // Date field
+    if (type === 'date' || fieldType === 'date') {
+      let dateValue = '';
+      if (currentValue) {
+        try {
+          const date = new Date(isNaN(currentValue) ? currentValue : parseInt(currentValue));
+          if (!isNaN(date.getTime())) {
+            dateValue = date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          dateValue = currentValue;
+        }
+      }
+      return `
+        <input type="date" class="hshelper-banner-field-input hshelper-field-date"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}"
+          data-type="date"
+          value="${this.helper.escapeHtml(dateValue)}">
+      `;
+    }
+
+    // Number field
+    if (type === 'number' || fieldType === 'number') {
+      return `
+        <input type="number" class="hshelper-banner-field-input hshelper-field-number"
+          data-property="${this.helper.escapeHtml(field.property)}"
+          data-required="${field.required ? 'true' : 'false'}"
+          data-type="number"
+          value="${escapedValue}"
+          placeholder="Enter value">
+      `;
+    }
+
+    // Default: text input
+    return `
+      <input type="text" class="hshelper-banner-field-input"
+        data-property="${this.helper.escapeHtml(field.property)}"
+        data-required="${field.required ? 'true' : 'false'}"
+        value="${escapedValue}"
+        placeholder="Enter ${this.helper.escapeHtml(displayLabel.toLowerCase())}">
+    `;
+  }
+
+  /**
+   * Initialize field event handlers
+   * @param {HTMLElement} banner - The banner DOM element
+   * @param {Object} rule - The rule object
+   */
+  initFieldEvents(banner, rule) {
+    const saveBtn = banner.querySelector('.hshelper-banner-save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', (e) => this.handleSaveFields(e, banner, rule));
+    }
+  }
+
+  /**
+   * Handle saving fields to HubSpot
+   * @param {Event} e - Click event
+   * @param {HTMLElement} banner - The banner DOM element
+   * @param {Object} rule - The rule object
+   */
+  async handleSaveFields(e, banner, rule) {
+    const btn = e.target.closest('.hshelper-banner-save-btn');
+    const fieldsContainer = banner.querySelector('.hshelper-banner-fields');
+    const statusEl = fieldsContainer.querySelector('.hshelper-banner-fields-status');
+
+    // Collect field values
+    const updates = {};
+    let hasValidationError = false;
+
+    fieldsContainer.querySelectorAll('.hshelper-banner-field-input').forEach(input => {
+      const property = input.dataset.property;
+      const required = input.dataset.required === 'true';
+      const dataType = input.dataset.type || '';
+      let value;
+
+      if (input.type === 'checkbox' && dataType === 'boolean') {
+        value = input.checked ? 'true' : 'false';
+      } else if (input.tagName === 'SELECT') {
+        value = input.value;
+      } else if (dataType === 'date' && input.value) {
+        const date = new Date(input.value + 'T00:00:00Z');
+        value = date.getTime().toString();
+      } else {
+        value = input.value.trim();
+      }
+
+      if (required && !value) {
+        input.classList.add('hshelper-field-error');
+        hasValidationError = true;
+      } else {
+        input.classList.remove('hshelper-field-error');
+        updates[property] = value;
+      }
+    });
+
+    if (hasValidationError) {
+      statusEl.textContent = 'Please fill in required fields';
+      statusEl.className = 'hshelper-banner-fields-status error';
+      return;
+    }
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="hshelper-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      Saving...
+    `;
+    statusEl.textContent = '';
+    statusEl.className = 'hshelper-banner-fields-status';
+
+    try {
+      // Send update to background script
+      const response = await this.updateHubSpotProperties(updates);
+
+      if (response.success) {
+        // Update local properties cache
+        Object.assign(this.helper.properties, updates);
+
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Saved!
+        `;
+        statusEl.textContent = 'Changes saved';
+        statusEl.className = 'hshelper-banner-fields-status success';
+
+        // Refresh page after delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error(response.error || 'Failed to save');
+      }
+    } catch (error) {
+      console.error('[RevGuide] Error saving banner fields:', error);
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Save to HubSpot
+      `;
+      statusEl.textContent = error.message || 'Error saving';
+      statusEl.className = 'hshelper-banner-fields-status error';
+    }
+  }
+
+  /**
+   * Update HubSpot properties via background script
+   * @param {Object} properties - Object of property name/value pairs to update
+   * @returns {Promise<Object>} Response with success status
+   */
+  updateHubSpotProperties(properties) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: 'updateHubSpotProperties',
+        objectType: this.helper.context.objectType,
+        recordId: this.helper.context.recordId,
+        properties: properties
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          resolve(response || { success: false, error: 'No response' });
+        }
+      });
+    });
   }
 
   /**
