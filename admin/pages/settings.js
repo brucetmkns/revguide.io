@@ -2094,11 +2094,12 @@ class SettingsPage {
           ${planOptionsHtml}
         </div>
         <style>
-          .billing-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
-          .billing-btn { flex: 1; padding: 10px 16px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 14px; transition: all 0.2s; }
-          .billing-btn:hover { border-color: var(--accent-primary); }
-          .billing-btn.active { background: var(--accent-primary); color: var(--bg-primary); border-color: var(--accent-primary); }
-          .savings-text { font-size: 11px; opacity: 0.8; }
+          .billing-toggle { display: flex; gap: 0; margin-bottom: 16px; background: var(--bg-tertiary); padding: 4px; border-radius: 8px; }
+          .billing-btn { flex: 1; padding: 10px 16px; border: none; border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+          .billing-btn:hover:not(.active) { color: var(--text-primary); background: var(--bg-secondary); }
+          .billing-btn.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+          .savings-text { font-size: 11px; color: var(--accent-primary); font-weight: 600; }
+          .billing-btn.active .savings-text { color: var(--accent-primary); }
           .savings-badge { font-size: 11px; padding: 2px 6px; background: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border-radius: 4px; margin-left: 4px; }
           .plan-options { display: flex; flex-direction: column; gap: 12px; }
           .plan-option { display: flex; align-items: flex-start; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
