@@ -1371,82 +1371,54 @@
 
 /* Tag type colors - high contrast for readability */
 .hshelper-index-tag--info {
-  background: #cce9ef;
-  color: #005a66;
+  background: #cce9ef !important;
+  color: #005a66 !important;
 }
 
 .hshelper-index-tag--success {
-  background: #c8eddf;
-  color: #00665a;
+  background: #c8eddf !important;
+  color: #00665a !important;
 }
 
 .hshelper-index-tag--warning {
-  background: #fcddb8;
-  color: #7a4f16;
+  background: #fcddb8 !important;
+  color: #7a4f16 !important;
 }
 
 .hshelper-index-tag--error {
-  background: #f5c6c6;
-  color: #a3242b;
+  background: #f5c6c6 !important;
+  color: #a3242b !important;
 }
 
 .hshelper-index-tag--embed {
-  background: #ddc8ff;
-  color: #4c1d95;
+  background: #ddc8ff !important;
+  color: #4c1d95 !important;
 }
 
 .hshelper-index-tag--battle-card {
-  background: #cce9ef;
-  color: #005a66;
+  background: #cce9ef !important;
+  color: #005a66 !important;
 }
 
 /* Hover states with slightly darker backgrounds */
 .hshelper-index-tag--info:hover {
-  background: #b8dfe6;
+  background: #b8dfe6 !important;
 }
 
 .hshelper-index-tag--success:hover {
-  background: #b4e3d2;
+  background: #b4e3d2 !important;
 }
 
 .hshelper-index-tag--warning:hover {
-  background: #f5d0a0;
+  background: #f5d0a0 !important;
 }
 
 .hshelper-index-tag--error:hover {
-  background: #f0b5b5;
+  background: #f0b5b5 !important;
 }
 
 .hshelper-index-tag--embed:hover {
-  background: #d0b8ff;
-}
-
-/* Dark mode support - high contrast on dark backgrounds */
-@media (prefers-color-scheme: dark) {
-  .hshelper-index-tag--info {
-    background: rgba(0, 164, 189, 0.25);
-    color: #7de8f8;
-  }
-
-  .hshelper-index-tag--success {
-    background: rgba(0, 189, 165, 0.25);
-    color: #7df5e4;
-  }
-
-  .hshelper-index-tag--warning {
-    background: rgba(245, 194, 107, 0.25);
-    color: #fad48a;
-  }
-
-  .hshelper-index-tag--error {
-    background: rgba(242, 84, 91, 0.25);
-    color: #faa0a4;
-  }
-
-  .hshelper-index-tag--embed {
-    background: rgba(124, 58, 237, 0.25);
-    color: #c4a8ff;
-  }
+  background: #d0b8ff !important;
 }
 
 /* Board view specific styles */
