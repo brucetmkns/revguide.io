@@ -40,6 +40,13 @@ if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
 - Supabase/PostgreSQL: snake_case (`object_type`, `display_on_all`)
 - Always map when saving to/loading from database
 
+### Client-Side IDs vs Database UUIDs
+- Client-side creates temporary IDs like `wiki_${Date.now()}` for local array management
+- Supabase uses UUID for `id` and `parent_id` columns
+- Never pass client-side IDs to database - exclude `id` field on insert, let Supabase generate
+- Validate UUID format before update/delete: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
+- If entry ID is not a valid UUID, treat as new entry (call create, not update)
+
 ### SVG Attributes
 Use `element.setAttribute()` for SVG attributes, not `.style`:
 ```javascript
@@ -63,3 +70,4 @@ element.style.strokeDashoffset = value;
 2. **Chrome storage**: Always disconnect MutationObserver before DOM changes to avoid loops
 3. **HubSpot DOM**: Target innermost text containers, not structural elements like `<th>`
 4. **Cache invalidation**: After fixing data transformations, clear cached data
+5. **UUID validation**: Client-side `wiki_*` IDs must never reach Supabase UUID columns - validate and exclude

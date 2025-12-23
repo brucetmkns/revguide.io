@@ -2,6 +2,21 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.11.6] - 2025-12-23 - Wiki UUID Validation Fix
+
+### Fixed
+- **Wiki Entry Save Error in Partner Accounts**: Fixed "invalid input syntax for type uuid" error when saving wiki entries
+  - Root cause: Client-side wiki entries used `wiki_*` format IDs which failed when passed to Supabase UUID columns
+  - Added UUID validation in `mapWikiToSupabase()` to filter out non-UUID `parent_id` values
+  - Added `parentId` mapping in `mapWikiFromSupabase()` to preserve parent-child relationships
+  - Added defensive UUID validation in `createWikiEntry()`, `updateWikiEntry()`, and `deleteWikiEntry()`
+  - Entries with non-UUID IDs are now treated as new entries and properly saved to Supabase
+
+### Technical
+- `admin/shared.js`: UUID validation in `mapWikiToSupabase()`, added `parentId` to `mapWikiFromSupabase()`
+- `admin/supabase.js`: Explicit `id` exclusion and `parent_id` validation in CRUD operations
+- `admin/pages/wiki.js`: Smart detection of entries needing creation vs update based on ID format
+
 ## [2.11.5] - 2025-12-23 - Variable Formatting & UX Improvements
 
 ### Added

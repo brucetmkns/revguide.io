@@ -3123,4 +3123,52 @@ focusOnPlay(playId, playData) {
 
 ---
 
+## Client-Side IDs vs Database UUIDs (v2.11.6)
+
+### Wiki Entry ID Format Mismatch
+**Lesson**: When client-side code generates temporary IDs (e.g., `wiki_1234567890`), ensure they are never passed to database UUID columns.
+
+**Problem**: Wiki entries created locally used `wiki_` + timestamp format IDs. When these entries were saved to Supabase, the `parent_id` and `id` columns (UUID type) received non-UUID strings, causing PostgreSQL errors: `invalid input syntax for type uuid: "wiki_1766522825268"`.
+
+**Root causes**:
+1. `mapWikiToSupabase()` passed `parent_id` without validating UUID format
+2. `createWikiEntry()` spread the entry object which could include an `id` field
+3. Entries in local array with `wiki_*` IDs were treated as "existing" entries, triggering update instead of create
+
+**Pattern - Validate UUIDs before database operations**:
+```javascript
+const isValidUuid = (id) => id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+// In mapping function
+function mapWikiToSupabase(data) {
+  const parentId = data.parentId || data.parent_id || null;
+  return {
+    // ... other fields
+    parent_id: isValidUuid(parentId) ? parentId : null,  // Filter non-UUIDs
+  };
+}
+
+// In CRUD operations - strip client-side IDs
+async createWikiEntry(entry) {
+  const { id, ...entryWithoutId } = entry;  // Let Supabase generate UUID
+  // ... insert entryWithoutId
+}
+
+// In save logic - detect entries needing creation vs update
+if (!isValidUuid(entry.id)) {
+  isNew = true;  // Treat as new entry even if in local array
+}
+```
+
+**Key points**:
+- Client-side temporary IDs should NEVER reach the database
+- Use regex validation: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
+- Explicitly destructure to exclude `id` before insert
+- Check ID format to determine create vs update operation
+- Add validation at multiple layers (mapping, CRUD functions, save logic)
+
+**Files affected**: `admin/shared.js`, `admin/supabase.js`, `admin/pages/wiki.js`
+
+---
+
 *Last updated: December 2025*
