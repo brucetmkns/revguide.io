@@ -2043,17 +2043,17 @@ class SettingsPage {
     const isPartner = AdminShared.isPartner();
     const currentPlan = this.subscription?.planType || 'starter';
 
-    // Define plans based on user type
+    // Define plans based on user type (with monthly and yearly prices)
     const standardPlans = [
-      { id: 'starter', name: 'Starter', price: '$5/seat/month', desc: '5 banners, 10 wiki, 3 plays' },
-      { id: 'pro', name: 'Pro', price: '$10/seat/month', desc: 'Unlimited content' },
-      { id: 'business', name: 'Business', price: '$20/seat/month', desc: 'Unlimited + priority support' }
+      { id: 'starter', name: 'Starter', monthlyPrice: '$5', yearlyPrice: '$50', unit: '/seat', desc: '5 banners, 10 wiki, 3 plays' },
+      { id: 'pro', name: 'Pro', monthlyPrice: '$10', yearlyPrice: '$100', unit: '/seat', desc: 'Unlimited content' },
+      { id: 'business', name: 'Business', monthlyPrice: '$20', yearlyPrice: '$200', unit: '/seat', desc: 'Unlimited + priority support' }
     ];
 
     const partnerPlans = [
-      { id: 'partner_starter', name: 'Partner Starter', price: '$500/month', desc: '5 client portals' },
-      { id: 'partner_pro', name: 'Partner Pro', price: '$1,250/month', desc: '20 client portals' },
-      { id: 'partner_enterprise', name: 'Partner Enterprise', price: '$2,500/month', desc: 'Unlimited portals' }
+      { id: 'partner_starter', name: 'Partner Starter', monthlyPrice: '$500', yearlyPrice: '$5,000', unit: '', desc: '5 client portals' },
+      { id: 'partner_pro', name: 'Partner Pro', monthlyPrice: '$1,250', yearlyPrice: '$12,500', unit: '', desc: '20 client portals' },
+      { id: 'partner_enterprise', name: 'Partner Enterprise', monthlyPrice: '$2,500', yearlyPrice: '$25,000', unit: '', desc: 'Unlimited portals' }
     ];
 
     const plans = isPartner ? partnerPlans : standardPlans;
@@ -2069,24 +2069,38 @@ class SettingsPage {
               <span class="plan-option-name">${plan.name}</span>
               ${isCurrent ? '<span class="plan-current-badge">Current</span>' : ''}
             </div>
-            <div class="plan-option-price">${plan.price}</div>
+            <div class="plan-option-price">
+              <span class="price-monthly">${plan.monthlyPrice}${plan.unit}/mo</span>
+              <span class="price-yearly" style="display:none;">${plan.yearlyPrice}${plan.unit}/yr <span class="savings-badge">Save 17%</span></span>
+            </div>
             <div class="plan-option-desc">${plan.desc}</div>
           </div>
         </label>
       `;
     }).join('');
 
-    // Track selected plan
+    // Track selected plan and interval
     let selectedPlan = null;
+    let billingInterval = 'month';
 
     const result = await AdminShared.showConfirmDialog({
       title: 'Choose a Plan',
       message: `
+        <div class="billing-toggle">
+          <button type="button" class="billing-btn active" data-interval="month">Monthly</button>
+          <button type="button" class="billing-btn" data-interval="year">Yearly <span class="savings-text">Save 17%</span></button>
+        </div>
         <div class="plan-options" id="planOptions">
           ${planOptionsHtml}
         </div>
         <style>
-          .plan-options { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+          .billing-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+          .billing-btn { flex: 1; padding: 10px 16px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 14px; transition: all 0.2s; }
+          .billing-btn:hover { border-color: var(--accent-primary); }
+          .billing-btn.active { background: var(--accent-primary); color: var(--bg-primary); border-color: var(--accent-primary); }
+          .savings-text { font-size: 11px; opacity: 0.8; }
+          .savings-badge { font-size: 11px; padding: 2px 6px; background: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border-radius: 4px; margin-left: 4px; }
+          .plan-options { display: flex; flex-direction: column; gap: 12px; }
           .plan-option { display: flex; align-items: flex-start; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
           .plan-option:hover:not(.current) { border-color: var(--accent-primary); background: var(--bg-secondary); }
           .plan-option.current { opacity: 0.6; cursor: default; }
@@ -2105,7 +2119,21 @@ class SettingsPage {
       showCancel: false,
       allowHtml: true,
       onOpen: () => {
-        // Add click handlers to capture selection
+        // Billing toggle handlers
+        document.querySelectorAll('.billing-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.billing-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            billingInterval = btn.dataset.interval;
+
+            // Toggle price display
+            const showMonthly = billingInterval === 'month';
+            document.querySelectorAll('.price-monthly').forEach(el => el.style.display = showMonthly ? 'inline' : 'none');
+            document.querySelectorAll('.price-yearly').forEach(el => el.style.display = showMonthly ? 'none' : 'inline');
+          });
+        });
+
+        // Plan selection handlers
         document.querySelectorAll('.plan-option').forEach(option => {
           option.addEventListener('click', () => {
             if (option.classList.contains('current')) return;
@@ -2141,7 +2169,7 @@ class SettingsPage {
         body: JSON.stringify({
           organizationId: orgId,
           planType: selectedPlan,
-          billingInterval: 'month',
+          billingInterval: billingInterval,
           successUrl: `${window.location.origin}/settings?checkout=success`,
           cancelUrl: `${window.location.origin}/settings?checkout=cancelled`
         })
