@@ -1692,3 +1692,33 @@
   text-decoration: underline;
 }
 
+.hshelper-banner-popup__footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hshelper-banner-popup__action-btn {
+  background: #b2ef63;
+  color: #1a1a1a;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.hshelper-banner-popup__action-btn:hover {
+  background: #9ed654;
+}
+
+.hshelper-banner-popup__action-btn svg {
+  flex-shrink: 0;
+}
+

@@ -435,3 +435,34 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
+
+/* ----------------------------------------
+   Variables Hint
+   ---------------------------------------- */
+.section-variables-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-2);
+}
+
+.section-variables-hint .hint-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.section-variables-hint code {
+  background: var(--color-bg-secondary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}

@@ -329,11 +329,16 @@ class BannersModule {
         return;
       }
 
-      // Send the play data along with the open request
+      // Send the play data along with the open request, including record context
       chrome.runtime.sendMessage({
         action: 'openSidePanelToPlay',
         playId: playId,
-        playData: play
+        playData: play,
+        recordContext: {
+          recordId: this.helper.context?.recordId,
+          objectType: this.helper.context?.objectType,
+          properties: this.helper.properties || {}
+        }
       }, (resp) => {
         if (chrome.runtime.lastError) {
           console.log('[RevGuide] Error opening sidepanel to play:', chrome.runtime.lastError.message);

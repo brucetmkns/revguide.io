@@ -522,34 +522,26 @@ class IndexTagsModule {
   }
 
   /**
-   * Handle tag click - open related play in sidepanel or show banner popup
+   * Handle tag click - show banner popup or open play directly
    * @param {Object} rule - The banner rule
    * @param {Event} event - The click event
    */
   handleTagClick(rule, event) {
-    if (rule.relatedPlayId) {
-      console.log('[RevGuide IndexTags] Opening play:', rule.relatedPlayId);
+    // Extract record context from the tag's parent container
+    const tag = event?.target;
+    const tagsContainer = tag?.closest('.hshelper-index-tags');
+    const recordId = tagsContainer?.dataset?.recordId;
+    const cached = recordId ? this.propertiesCache.get(recordId) : null;
+    const properties = cached?.properties || {};
 
-      // Fetch play data and open sidepanel
-      chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('[RevGuide IndexTags] Error getting content:', chrome.runtime.lastError.message);
-          return;
-        }
-
-        const battleCards = response?.content?.battleCards || [];
-        const play = battleCards.find(p => p.id === rule.relatedPlayId);
-
-        chrome.runtime.sendMessage({
-          action: 'openSidePanelToPlay',
-          playId: rule.relatedPlayId,
-          playData: play || null
-        });
-      });
-    } else if (rule.message) {
-      // Show banner content in a popup
+    if (rule.message) {
+      // Show popup with message (and optional Open Play button if relatedPlayId exists)
       console.log('[RevGuide IndexTags] Showing banner popup:', rule.name);
-      this.showBannerPopup(rule, event?.target);
+      this.showBannerPopup(rule, tag, recordId, properties);
+    } else if (rule.relatedPlayId) {
+      // No message, just play - open directly with record context
+      console.log('[RevGuide IndexTags] Opening play directly:', rule.relatedPlayId);
+      this.openPlayFromTag(rule, recordId, properties);
     } else {
       // No content to show
       console.log('[RevGuide IndexTags] Tag clicked, no content:', rule.name);
@@ -557,11 +549,42 @@ class IndexTagsModule {
   }
 
   /**
+   * Open play from tag click (when no message to show)
+   * @param {Object} rule - The banner rule
+   * @param {string} recordId - The record ID
+   * @param {Object} properties - The record properties
+   */
+  openPlayFromTag(rule, recordId, properties) {
+    chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('[RevGuide IndexTags] Error getting content:', chrome.runtime.lastError.message);
+        return;
+      }
+
+      const battleCards = response?.content?.battleCards || [];
+      const play = battleCards.find(p => p.id === rule.relatedPlayId);
+
+      chrome.runtime.sendMessage({
+        action: 'openSidePanelToPlay',
+        playId: rule.relatedPlayId,
+        playData: play || null,
+        recordContext: {
+          recordId: recordId,
+          objectType: this.objectType,
+          properties: properties
+        }
+      });
+    });
+  }
+
+  /**
    * Show banner content in a popup near the clicked tag
    * @param {Object} rule - The banner rule
    * @param {HTMLElement} anchorElement - Element to position popup near
+   * @param {string} recordId - The record ID for play context
+   * @param {Object} properties - The record properties for play context
    */
-  showBannerPopup(rule, anchorElement) {
+  showBannerPopup(rule, anchorElement, recordId, properties) {
     // Remove any existing popup
     this.closeBannerPopup();
 
@@ -584,6 +607,31 @@ class IndexTagsModule {
     content.className = 'hshelper-banner-popup__content';
     content.innerHTML = rule.message; // Message is HTML content
     popup.appendChild(content);
+
+    // Add footer with Open Play button if relatedPlayId exists
+    if (rule.relatedPlayId) {
+      const footer = document.createElement('div');
+      footer.className = 'hshelper-banner-popup__footer';
+
+      const openPlayBtn = document.createElement('button');
+      openPlayBtn.className = 'hshelper-banner-popup__action-btn';
+      openPlayBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+        </svg>
+        Open Play
+      `;
+      openPlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeBannerPopup();
+        this.openPlayFromPopup(rule, recordId, properties);
+      });
+
+      footer.appendChild(openPlayBtn);
+      popup.appendChild(footer);
+    }
 
     // Add close button handler
     header.querySelector('.hshelper-banner-popup__close').addEventListener('click', () => {
@@ -634,6 +682,35 @@ class IndexTagsModule {
     }
 
     this.currentPopup = popup;
+  }
+
+  /**
+   * Open play from popup button click
+   * @param {Object} rule - The banner rule
+   * @param {string} recordId - The record ID
+   * @param {Object} properties - The record properties
+   */
+  openPlayFromPopup(rule, recordId, properties) {
+    chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('[RevGuide IndexTags] Error getting content:', chrome.runtime.lastError.message);
+        return;
+      }
+
+      const battleCards = response?.content?.battleCards || [];
+      const play = battleCards.find(p => p.id === rule.relatedPlayId);
+
+      chrome.runtime.sendMessage({
+        action: 'openSidePanelToPlay',
+        playId: rule.relatedPlayId,
+        playData: play || null,
+        recordContext: {
+          recordId: recordId,
+          objectType: this.objectType,
+          properties: properties
+        }
+      });
+    });
   }
 
   /**

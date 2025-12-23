@@ -89,6 +89,32 @@ class SidePanel {
         // Re-check auth state when it changes
         this.checkAuthState();
       }
+      if (message.action === 'focusOnPlay') {
+        console.log('[RevGuide] Received focusOnPlay message:', message.playId, 'playData:', !!message.playData);
+        // Apply record context if provided
+        if (message.recordContext) {
+          this.context = {
+            objectType: message.recordContext.objectType,
+            recordId: message.recordContext.recordId
+          };
+          this.properties = message.recordContext.properties || {};
+        }
+        // Switch to plays tab
+        this.switchTab('plays');
+
+        // If playData wasn't provided, try to fetch it
+        if (!message.playData && message.playId) {
+          console.log('[RevGuide] No playData provided, fetching from content...');
+          chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+            const battleCards = response?.content?.battleCards || [];
+            const play = battleCards.find(p => p.id === message.playId);
+            console.log('[RevGuide] Fetched play:', play?.name || 'not found');
+            this.focusOnPlay(message.playId, play || null);
+          });
+        } else {
+          this.focusOnPlay(message.playId, message.playData);
+        }
+      }
     });
 
     // Listen for tab URL changes to refresh cards when navigating
@@ -137,7 +163,7 @@ class SidePanel {
 
   async checkOpenTab() {
     // Check if we should open to a specific tab
-    const { sidepanelOpenTab, sidepanelFocusPlayId, sidepanelFocusPlayData } = await chrome.storage.local.get(['sidepanelOpenTab', 'sidepanelFocusPlayId', 'sidepanelFocusPlayData']);
+    const { sidepanelOpenTab, sidepanelFocusPlayId, sidepanelFocusPlayData, sidepanelRecordContext } = await chrome.storage.local.get(['sidepanelOpenTab', 'sidepanelFocusPlayId', 'sidepanelFocusPlayData', 'sidepanelRecordContext']);
     if (sidepanelOpenTab) {
       this.switchTab(sidepanelOpenTab);
       // Clear the flag
@@ -148,7 +174,9 @@ class SidePanel {
     if (sidepanelFocusPlayId) {
       this.pendingFocusPlayId = sidepanelFocusPlayId;
       this.pendingFocusPlayData = sidepanelFocusPlayData || null;
-      await chrome.storage.local.remove(['sidepanelFocusPlayId', 'sidepanelFocusPlayData']);
+      // Store record context so editable fields work with the correct record
+      this.pendingRecordContext = sidepanelRecordContext || null;
+      await chrome.storage.local.remove(['sidepanelFocusPlayId', 'sidepanelFocusPlayData', 'sidepanelRecordContext']);
     }
   }
 
@@ -532,6 +560,17 @@ class SidePanel {
    * @param {Object} playData - Optional play data if not in current cards
    */
   focusOnPlay(playId, playData = null) {
+    // Apply pending record context if available (from banner/tag click)
+    if (this.pendingRecordContext) {
+      console.log('[RevGuide] Applying record context for play:', playId, this.pendingRecordContext);
+      this.context = {
+        objectType: this.pendingRecordContext.objectType,
+        recordId: this.pendingRecordContext.recordId
+      };
+      this.properties = this.pendingRecordContext.properties || {};
+      this.pendingRecordContext = null;
+    }
+
     let cardElement = document.querySelector(`.battle-card[data-card-id="${playId}"]`);
 
     // If the play isn't in the current list, we need to add it
@@ -559,6 +598,8 @@ class SidePanel {
 
       if (container) {
         if (isOnlyCard) {
+          // Clear any loading state or other content
+          container.innerHTML = '';
           // Add a section header for related plays
           const header = document.createElement('div');
           header.className = 'related-play-header';
@@ -589,6 +630,11 @@ class SidePanel {
             chrome.tabs.create({ url: adminUrl });
           });
         }
+
+        // Add click handler for save buttons in editable field sections
+        newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => this.handleSaveFields(e));
+        });
 
         cardElement = newCard;
       }
@@ -632,13 +678,16 @@ class SidePanel {
     };
 
     const sectionsHtml = card.sections ? card.sections.map(section => {
+      // Interpolate variables in section title
+      const sectionTitle = section.title ? this.escapeHtml(this.interpolateVariables(section.title)) : '';
+
       if (section.type === 'media' && section.mediaUrl) {
         const embedUrl = this.convertToEmbedUrl(section.mediaUrl);
         // Get the original URL for opening in new tab (not the embed URL)
         const originalUrl = section.mediaUrl;
         return `
           <div class="card-section card-section-media">
-            ${section.title ? `<div class="section-title">${this.escapeHtml(section.title)}</div>` : ''}
+            ${sectionTitle ? `<div class="section-title">${sectionTitle}</div>` : ''}
             <div class="section-media">
               <button class="media-open-btn" data-original-url="${this.escapeHtml(originalUrl)}" title="Open in new tab">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -656,7 +705,7 @@ class SidePanel {
       } else {
         return `
           <div class="card-section">
-            ${section.title ? `<div class="section-title">${this.escapeHtml(section.title)}</div>` : ''}
+            ${sectionTitle ? `<div class="section-title">${sectionTitle}</div>` : ''}
             <div class="section-content">${this.formatContent(section.content)}</div>
           </div>
         `;
@@ -719,7 +768,10 @@ class SidePanel {
 
   formatContent(content) {
     if (!content) return '';
-    let html = this.escapeHtml(content);
+
+    // First interpolate variables before escaping
+    let text = this.interpolateVariables(content);
+    let html = this.escapeHtml(text);
 
     // Convert bullet points to list items
     html = html.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
@@ -736,6 +788,25 @@ class SidePanel {
     html = html.replace(/\n/g, '<br>');
 
     return html;
+  }
+
+  /**
+   * Interpolate {{variable}} placeholders with property values
+   * Supports: {{propertyName}}, {{property_name}}, and case-insensitive matching
+   * Shows placeholder with "not set" message if property not found
+   */
+  interpolateVariables(text) {
+    if (!text || typeof text !== 'string') return text;
+
+    // Match {{variableName}} pattern - allows letters, numbers, underscores
+    return text.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, propertyName) => {
+      const value = this.getPropertyValue(propertyName);
+      if (value !== null && value !== undefined && value !== '') {
+        return String(value);
+      }
+      // Show a styled placeholder when value is not set
+      return `[${propertyName}: not set]`;
+    });
   }
 
   escapeHtml(text) {
@@ -811,6 +882,8 @@ class SidePanel {
 
   renderFieldsSection(section, card) {
     const sectionId = `fields-section-${card.id}-${Math.random().toString(36).substr(2, 9)}`;
+    // Interpolate variables in section title
+    const sectionTitle = section.title ? this.escapeHtml(this.interpolateVariables(section.title)) : '';
 
     const fieldsHtml = section.fields.map(field => {
       const currentValue = this.getPropertyValue(field.property);
@@ -829,7 +902,7 @@ class SidePanel {
 
     return `
       <div class="card-section card-section-fields" data-section-id="${sectionId}">
-        ${section.title ? `<div class="section-title">${this.escapeHtml(section.title)}</div>` : ''}
+        ${sectionTitle ? `<div class="section-title">${sectionTitle}</div>` : ''}
         <div class="fields-form">
           ${fieldsHtml}
           <div class="fields-actions">

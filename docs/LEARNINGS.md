@@ -2844,4 +2844,123 @@ RevGuideHubSpot.getConnection().then(c => console.log('Connection:', c.portalNam
 
 ---
 
+## Chrome Extension Cross-Context Communication (v2.11.3)
+
+### Passing Data to Sidepanel
+**Lesson**: Content scripts and sidepanel run in separate contexts. Use `chrome.storage.local` as a bridge for complex data.
+
+**Context**: When opening plays from banners, we need to pass record context (recordId, objectType, properties) so editable fields work correctly in the sidepanel.
+
+**Problem**: `chrome.runtime.sendMessage` to sidepanel is unreliable - the sidepanel may not be open yet when the message is sent.
+
+**Solution**: Store data in `chrome.storage.local` before opening sidepanel, then retrieve it on sidepanel load:
+
+```javascript
+// Content script / module - store data before opening sidepanel
+chrome.runtime.sendMessage({
+  action: 'openSidePanelToPlay',
+  playId: 'play_123',
+  playData: { /* play object */ },
+  recordContext: {
+    recordId: '12345',
+    objectType: 'deals',
+    properties: { /* fetched HubSpot properties */ }
+  }
+});
+
+// Background script - store in chrome.storage.local
+if (request.action === 'openSidePanelToPlay') {
+  const storageData = {
+    sidepanelOpenTab: 'plays',
+    sidepanelFocusPlayId: request.playId,
+    sidepanelFocusPlayData: request.playData,
+    sidepanelRecordContext: request.recordContext || null
+  };
+  chrome.storage.local.set(storageData);
+  chrome.sidePanel.open({ tabId: sender.tab.id });
+}
+
+// Sidepanel - retrieve on load
+async checkOpenTab() {
+  const { sidepanelRecordContext } = await chrome.storage.local.get(['sidepanelRecordContext']);
+  if (sidepanelRecordContext) {
+    this.pendingRecordContext = sidepanelRecordContext;
+    await chrome.storage.local.remove('sidepanelRecordContext');
+  }
+}
+```
+
+**Key points**:
+- Always clean up storage after reading to prevent stale data
+- Store data BEFORE calling `chrome.sidePanel.open()`
+- Use `pending*` pattern for data that needs to be applied after async initialization
+
+### Index Page Record Context
+**Lesson**: On HubSpot index pages (table/board views), record IDs are stored in DOM data attributes, not in the URL.
+
+**Pattern**: Store recordId in data attribute when rendering, retrieve when handling clicks:
+```javascript
+// When rendering tags on index page
+tagsContainer.dataset.recordId = recordId;
+
+// When handling tag click
+const tagsContainer = tag?.closest('.hshelper-index-tags');
+const recordId = tagsContainer?.dataset?.recordId;
+```
+
+**Files**:
+- `content/modules/index-tags.js` - Record context extraction
+- `background/background.js` - Storage bridge
+- `sidepanel/sidepanel.js` - Context application
+
+---
+
+## Variable Interpolation in Plays (v2.11.4)
+
+### Dynamic Content with {{variables}}
+**Feature**: Play sections support `{{propertyName}}` syntax to display HubSpot record values.
+
+**Syntax**: `{{propertyName}}` - replaced with the current record's property value.
+
+**Examples**:
+- `{{dealname}}` → "Acme Corp Renewal"
+- `{{amount}}` → "50000"
+- `{{dealstage}}` → "contractsent"
+
+**Pattern**: Variables work in both section titles and section content:
+```javascript
+// Section with title "Update {{dealname}}" and content with variables
+{
+  title: "Next steps for {{dealname}}",
+  content: "Deal value: {{amount}}\nClose date: {{closedate}}"
+}
+```
+
+**Implementation**:
+```javascript
+interpolateVariables(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, propertyName) => {
+    const value = this.getPropertyValue(propertyName);
+    if (value !== null && value !== undefined && value !== '') {
+      return String(value);
+    }
+    return `[${propertyName}: not set]`;
+  });
+}
+```
+
+**Key points**:
+- Variables are case-insensitive and support both camelCase and snake_case
+- Missing/empty values show `[propertyName: not set]` placeholder
+- Admin UI shows hint: "Use {{propertyName}} to display record data"
+- Interpolation happens BEFORE HTML escaping for security
+
+**Files**:
+- `sidepanel/sidepanel.js` - `interpolateVariables()` method
+- `admin/pages/plays.js` - Variables hint in section editor
+- `admin/pages/plays.css` - Hint styling
+
+---
+
 *Last updated: December 2025*

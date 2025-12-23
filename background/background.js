@@ -857,6 +857,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'getContent') {
+    console.log('[RevGuide BG] getContent request:', JSON.stringify({
+      forceRefresh: request.forceRefresh,
+      portalId: request.portalId,
+      crmType: request.crmType
+    }));
     getContent({
       forceRefresh: !!request.forceRefresh,
       portalId: request.portalId || null,
@@ -924,6 +929,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('[RevGuide] Received openSidePanelToPlay request, playId:', request.playId);
     // Set flags to open plays tab and scroll to specific play
     // Also store the play data in case it's not in the current matching cards
+    // Store record context so editable fields in the play work correctly
     const storageData = {
       sidepanelOpenTab: 'plays',
       sidepanelFocusPlayId: request.playId
@@ -931,11 +937,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.playData) {
       storageData.sidepanelFocusPlayData = request.playData;
     }
+    if (request.recordContext) {
+      storageData.sidepanelRecordContext = request.recordContext;
+    }
     chrome.storage.local.set(storageData);
-    // Open side panel
+
+    // Open side panel and send message to focus on play
     if (sender.tab?.id) {
       chrome.sidePanel.open({ tabId: sender.tab.id })
-        .then(() => console.log('[RevGuide] Side panel opened to play successfully'))
+        .then(() => {
+          console.log('[RevGuide] Side panel opened to play successfully');
+          // Give sidepanel time to initialize before sending message
+          setTimeout(() => {
+            chrome.runtime.sendMessage({
+              action: 'focusOnPlay',
+              playId: request.playId,
+              playData: request.playData || null,
+              recordContext: request.recordContext || null
+            }).catch(() => {
+              // Sidepanel may not be listening yet, data is in storage as fallback
+              console.log('[RevGuide] focusOnPlay message failed, relying on storage fallback');
+            });
+          }, 500);
+        })
         .catch(err => console.error('[RevGuide] Error opening side panel:', err));
     }
     return false;

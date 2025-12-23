@@ -2,6 +2,57 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.11.4] - 2025-12-23 - Variable Interpolation in Plays
+
+### Added
+- **Dynamic Variables in Play Sections**: Use `{{propertyName}}` syntax to display record data
+  - Supported in both section titles and section content
+  - Example: "Next steps for {{dealname}}" displays actual deal name
+  - Example: "Deal value: {{amount}}" shows the current amount
+  - Variables are case-insensitive and support camelCase/snake_case
+  - Missing values display as `[propertyName: not set]`
+
+- **Admin UI Hint**: Text sections now show a hint about variable syntax
+  - Displayed below the rich text editor
+  - Shows example syntax: `{{dealname}}`, `{{amount}}`
+
+### Technical
+- Added `interpolateVariables()` method in `sidepanel/sidepanel.js`
+- Updated `formatContent()` to call variable interpolation before HTML escaping
+- Updated section rendering to interpolate variables in titles
+- Added CSS for variables hint in `admin/pages/plays.css`
+
+## [2.11.3] - 2025-12-23 - Open Plays from Banners with Record Context
+
+### Added
+- **Open Play Button**: Banners with a linked play now show an "Open Play" button
+  - Center section banners on record pages display button in banner content
+  - Index page tag popups display button in footer when banner has message + linked play
+  - Tags without message but with linked play open the play directly on click
+
+- **Record Context Passing**: Plays opened from banners receive full record context
+  - `recordId`, `objectType`, and `properties` are passed to the sidepanel
+  - Editable fields in plays now work correctly when opened from banners
+  - Works from both record pages and index pages (table/board views)
+
+### Changed
+- **Index Tag Click Behavior**: Updated logic for tags with both message and related play
+  - If message exists: show popup with "Open Play" button in footer
+  - If only related play (no message): open play directly
+
+### Removed
+- **Editable Fields in Banners**: Removed experimental editable HubSpot field feature from banners
+  - Editable fields should be added to Plays instead for a better UX
+  - Removed field editor UI from admin panel
+  - Removed field rendering from banner display
+
+### Technical
+- Modified `content/modules/index-tags.js`: Added record context extraction, popup footer, and `openPlayFromTag`/`openPlayFromPopup` methods
+- Modified `content/modules/banners.js`: Updated `openPlayInSidepanel` to include `recordContext`
+- Modified `background/background.js`: Store `sidepanelRecordContext` in `openSidePanelToPlay` handler
+- Modified `sidepanel/sidepanel.js`: Retrieve and apply record context in `checkOpenTab` and `focusOnPlay`
+- Added CSS for popup footer and "Open Play" button styles
+
 ## [2.11.2] - 2025-12-23 - Partner Portal HubSpot Context Fix
 
 ### Fixed

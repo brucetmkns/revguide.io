@@ -706,6 +706,10 @@ class PlaysPage {
 
     const textContentHtml = `
       <div class="section-editor-container"></div>
+      <div class="section-variables-hint">
+        <span class="hint-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+        Use <code>{{propertyName}}</code> to display record data. Example: <code>{{dealname}}</code>, <code>{{amount}}</code>
+      </div>
     `;
 
     const mediaContentHtml = `
