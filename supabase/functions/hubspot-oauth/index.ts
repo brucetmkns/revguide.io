@@ -401,14 +401,24 @@ async function handleGetConnection(req: Request): Promise<Response> {
     )
   }
 
-  // Get user's organization
-  const { data: userData } = await supabase
+  // Get user's active organization (use active_organization_id for partners, fallback to organization_id)
+  const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, active_organization_id')
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!userData?.organization_id) {
+  console.log('[getConnection] User data:', {
+    auth_user_id: user.id,
+    organization_id: userData?.organization_id,
+    active_organization_id: userData?.active_organization_id,
+    error: userError
+  })
+
+  const effectiveOrgId = userData?.active_organization_id || userData?.organization_id
+  console.log('[getConnection] Effective org ID:', effectiveOrgId)
+
+  if (!effectiveOrgId) {
     return new Response(
       JSON.stringify({ isConnected: false }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -416,12 +426,18 @@ async function handleGetConnection(req: Request): Promise<Response> {
   }
 
   // Get active connection for organization
-  const { data: connection } = await supabase
+  const { data: connection, error: connError } = await supabase
     .from('hubspot_connections')
     .select('id, portal_id, portal_domain, portal_name, token_expires_at, scopes, connected_at')
-    .eq('organization_id', userData.organization_id)
+    .eq('organization_id', effectiveOrgId)
     .eq('is_active', true)
     .single()
+
+  console.log('[getConnection] Connection query result:', {
+    effectiveOrgId,
+    connection: connection ? { id: connection.id, portal_id: connection.portal_id, portal_name: connection.portal_name } : null,
+    error: connError
+  })
 
   if (!connection) {
     return new Response(
