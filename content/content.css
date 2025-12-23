@@ -1371,54 +1371,54 @@
 
 /* Tag type colors - high contrast for readability */
 .hshelper-index-tag--info {
-  background: #d6eef2;
-  color: #006d7a;
+  background: #cce9ef;
+  color: #005a66;
 }
 
 .hshelper-index-tag--success {
-  background: #d6f2e8;
-  color: #007a69;
+  background: #c8eddf;
+  color: #00665a;
 }
 
 .hshelper-index-tag--warning {
-  background: #fde8d0;
-  color: #8a5a1e;
+  background: #fcddb8;
+  color: #7a4f16;
 }
 
 .hshelper-index-tag--error {
-  background: #f8d6d6;
-  color: #c23038;
+  background: #f5c6c6;
+  color: #a3242b;
 }
 
 .hshelper-index-tag--embed {
-  background: #e8d6ff;
-  color: #5b21b6;
+  background: #ddc8ff;
+  color: #4c1d95;
 }
 
 .hshelper-index-tag--battle-card {
-  background: #d6eef2;
-  color: #006d7a;
+  background: #cce9ef;
+  color: #005a66;
 }
 
 /* Hover states with slightly darker backgrounds */
 .hshelper-index-tag--info:hover {
-  background: #c4e4ea;
+  background: #b8dfe6;
 }
 
 .hshelper-index-tag--success:hover {
-  background: #c4e8dc;
+  background: #b4e3d2;
 }
 
 .hshelper-index-tag--warning:hover {
-  background: #f8dbb8;
+  background: #f5d0a0;
 }
 
 .hshelper-index-tag--error:hover {
-  background: #f2c4c4;
+  background: #f0b5b5;
 }
 
 .hshelper-index-tag--embed:hover {
-  background: #dcc4ff;
+  background: #d0b8ff;
 }
 
 /* Dark mode support - high contrast on dark backgrounds */
