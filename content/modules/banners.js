@@ -399,8 +399,9 @@ class BannersModule {
    * @returns {string} HTML string for the fields form
    */
   renderFieldsForm(rule) {
+    const properties = this.helper.properties || {};
     const fieldsHtml = rule.fields.map(field => {
-      const currentValue = this.helper.properties[field.property] || '';
+      const currentValue = properties[field.property] || '';
       const displayLabel = field.label || field.property.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
       return `
