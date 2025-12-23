@@ -2963,4 +2963,164 @@ interpolateVariables(text) {
 
 ---
 
+## Smart Value Formatting (v2.11.5)
+
+### Auto-Detecting Value Types
+**Lesson**: When displaying dynamic values, detect the type and format appropriately for human readability.
+
+**Pattern**: Check value format and property name to determine formatting:
+```javascript
+formatVariableValue(value, propertyName) {
+  const strValue = String(value);
+  const lowerName = propertyName.toLowerCase();
+
+  // ISO date detection (2025-12-31T23:33:15.036Z)
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(strValue)) {
+    const date = new Date(strValue);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Unix timestamp detection (10 or 13 digits)
+  if (/^\d{10,13}$/.test(strValue)) {
+    const timestamp = strValue.length === 13 ? parseInt(strValue) : parseInt(strValue) * 1000;
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Currency by property name (amount, price, revenue, etc.)
+  const currencyFields = ['amount', 'price', 'value', 'revenue', 'cost', 'budget', 'arr', 'mrr'];
+  if (currencyFields.some(f => lowerName.includes(f)) && /^-?\d+(\.\d+)?$/.test(strValue)) {
+    return parseFloat(strValue).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
+
+  return strValue;
+}
+```
+
+**Key points**:
+- Detect by value format first (ISO dates, timestamps)
+- Detect by property name for semantic types (currency)
+- Always fall back to raw string value
+
+---
+
+## HTML vs Plain Text Content (v2.11.5)
+
+### Handling Rich Text from Editors
+**Lesson**: Content from rich text editors (like Tiptap) contains HTML tags. Don't escape the HTML structure, only escape interpolated values.
+
+**Problem**: Calling `escapeHtml()` on content with `<p>` tags shows literal `&lt;p&gt;` instead of paragraphs.
+
+**Pattern**: Detect and handle HTML content differently:
+```javascript
+formatContent(content) {
+  // Check if content is already HTML (from Tiptap)
+  const isHtml = /<[a-z][\s\S]*>/i.test(content);
+
+  if (isHtml) {
+    // Preserve HTML structure, only escape interpolated values
+    return this.interpolateVariablesInHtml(content);
+  }
+
+  // Plain text: escape everything and convert formatting
+  let text = this.interpolateVariables(content);
+  let html = this.escapeHtml(text);
+  // ... convert bullets to <li>, newlines to <br>
+  return html;
+}
+
+interpolateVariablesInHtml(html) {
+  return html.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, propertyName) => {
+    const value = this.getPropertyValue(propertyName);
+    const formatted = this.formatVariableValue(value, propertyName);
+    return this.escapeHtml(formatted); // Escape the VALUE, not the HTML
+  });
+}
+```
+
+**Key points**:
+- Simple regex `/<[a-z][\s\S]*>/i` detects HTML content
+- Interpolated values must still be escaped for XSS prevention
+- Plain text conversion (bullets, newlines) only applies to non-HTML
+
+---
+
+## Message Delivery Fallbacks (v2.11.5)
+
+### Reliable Cross-Context Communication
+**Lesson**: `chrome.runtime.sendMessage` can fail silently when the target context isn't ready. Use storage as a fallback with polling.
+
+**Problem**: Opening a play via message when sidepanel is already open sometimes fails - "message port closed" error.
+
+**Pattern**: Store data in chrome.storage AND send message, then poll storage as fallback:
+```javascript
+// Background: Store and send
+chrome.storage.local.set({ sidepanelFocusPlayId: playId, ... });
+chrome.runtime.sendMessage({ action: 'focusOnPlay', playId, ... }).catch(() => {
+  // Message failed, data is in storage as fallback
+});
+
+// Sidepanel: Listen for message AND poll storage
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === 'focusOnPlay') {
+    this.focusOnPlay(message.playId, message.playData);
+  }
+});
+
+// Polling fallback (every 1 second)
+setInterval(() => this.checkPendingPlayFocus(), 1000);
+
+async checkPendingPlayFocus() {
+  const { sidepanelFocusPlayId } = await chrome.storage.local.get(['sidepanelFocusPlayId']);
+  if (sidepanelFocusPlayId) {
+    await chrome.storage.local.remove(['sidepanelFocusPlayId']);
+    this.focusOnPlay(sidepanelFocusPlayId, ...);
+  }
+}
+```
+
+**Key points**:
+- Always store data BEFORE sending message
+- Clear storage after processing to prevent duplicate handling
+- Polling interval of 1 second balances responsiveness and performance
+
+---
+
+## Re-rendering DOM with New Context (v2.11.5)
+
+### Updating Existing Elements
+**Lesson**: When the same element needs to display different data (e.g., same play for different record), re-render it completely.
+
+**Problem**: Opening a play that's already in DOM for a different record showed stale variable values.
+
+**Pattern**: Replace the element with a freshly rendered version:
+```javascript
+focusOnPlay(playId, playData) {
+  let cardElement = document.querySelector(`.battle-card[data-card-id="${playId}"]`);
+
+  // If card exists AND we have new data, re-render it
+  if (cardElement && playData) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = this.renderCard(playData, true);
+    const newCard = tempDiv.firstElementChild;
+
+    // Replace old with new
+    cardElement.replaceWith(newCard);
+
+    // Re-attach event handlers (they don't transfer with replaceWith)
+    newCard.querySelector('.card-header').addEventListener('click', ...);
+    newCard.querySelectorAll('.save-fields-btn').forEach(btn => ...);
+
+    cardElement = newCard;
+  }
+}
+```
+
+**Key points**:
+- `element.replaceWith(newElement)` is cleaner than removing and appending
+- Event handlers must be re-attached after replacement
+- Check for both element existence AND new data before replacing
+
+---
+
 *Last updated: December 2025*

@@ -2,6 +2,38 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.11.5] - 2025-12-23 - Variable Formatting & UX Improvements
+
+### Added
+- **Smart Variable Formatting**: Variables now auto-format based on value type
+  - ISO dates (`2025-12-31T23:33:15.036Z`) display as "Dec 31, 2025"
+  - Unix timestamps (10 or 13 digit) auto-detect and format as dates
+  - Currency fields (amount, price, revenue, etc.) display as "$30,000"
+
+- **Keyboard Shortcut**: Press **Cmd+Enter** (Mac) or **Ctrl+Enter** (Windows) to save HubSpot field values
+  - Works on all field inputs (text, textarea, select, number, date)
+  - Triggers the same action as clicking "Save to HubSpot" button
+
+### Fixed
+- **HTML Content Rendering**: Rich text content from Tiptap editor now renders correctly
+  - HTML tags (`<p>`, `<ul>`, etc.) are preserved instead of showing as literal text
+  - Variables are safely escaped within HTML content
+
+- **Open Play When Sidepanel Already Open**: Fixed play not loading when sidepanel was already open
+  - Added 1-second polling fallback to check storage for pending plays
+  - Multiple fallback layers ensure play loads even if message delivery fails
+
+- **Play Context for Different Records**: Fixed play not updating when opened for a different record
+  - Card is now re-rendered with new record context when same play is opened
+  - Variables display the correct values for the new record
+
+### Technical
+- Added `formatVariableValue()` method for smart date/currency formatting
+- Added `interpolateVariablesInHtml()` for safe HTML content handling
+- Added `checkPendingPlayFocus()` polling method in sidepanel
+- Added `initFieldKeyboardShortcuts()` for Cmd/Ctrl+Enter handling
+- Updated `focusOnPlay()` to re-render existing cards with new context
+
 ## [2.11.4] - 2025-12-23 - Variable Interpolation in Plays
 
 ### Added

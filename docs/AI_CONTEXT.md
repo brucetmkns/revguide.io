@@ -73,7 +73,7 @@ plugin/
 │   └── migrations/        # Database schema
 │
 ├── api/
-│   └── invite-worker.js   # Cloudflare Worker for email invitations
+│   └── invite-worker.js   # Cloudflare Worker for email invitations + billing API
 │
 ├── website/               # Marketing site (revguide.io)
 │
@@ -240,7 +240,7 @@ Build script: `scripts/build.js`
 ## Database (Supabase)
 
 **Key tables:**
-- `organizations` - Multi-tenant orgs
+- `organizations` - Multi-tenant orgs (includes `stripe_customer_id`)
 - `users` - Team members (role-based, with `active_organization_id` for portal switching)
 - `organization_members` - Many-to-many user↔org with per-org roles (v2.7.0+)
 - `banners` - Banner rules
@@ -249,6 +249,18 @@ Build script: `scripts/build.js`
 - `hubspot_connections` - OAuth tokens (encrypted)
 - `partner_libraries` - Reusable content packages (v2.7.0+)
 - `library_installations` - Track installed libraries per org (v2.7.0+)
+
+**Billing tables (v2.11.0+):**
+- `plan_limits` - Plan tier configuration (limits, pricing per plan_type)
+- `subscriptions` - Per-org subscription tracking (stripe_subscription_id, plan_type, status, seat_count)
+- `usage_counts` - Cached content counts for limit checks
+- `billing_events` - Webhook event audit log
+
+**Billing RPC functions:**
+- `get_subscription_with_limits(org_id)` - Full subscription + usage + limits info
+- `can_create_content(org_id, content_type)` - Boolean limit check
+- `upsert_subscription(...)` - Create/update subscription from webhook
+- `start_grace_period(org_id)` / `clear_grace_period(org_id)` - Grace period management
 
 **RLS:** Row-level security enforced for all tables.
 
@@ -287,6 +299,35 @@ See: [HUBSPOT_DOM.md](HUBSPOT_DOM.md)
 
 ---
 
+## Plays Features (v2.11.4+)
+
+### Variable Interpolation
+Use `{{propertyName}}` syntax in play section titles and content to display HubSpot record data:
+
+```
+Section title: "Next steps for {{dealname}}"
+Section content: "Deal value: {{amount}} | Close: {{closedate}}"
+```
+
+**Auto-formatting:**
+- ISO dates → "Dec 31, 2025"
+- Unix timestamps → "Dec 31, 2025"
+- Currency fields (amount, price, revenue) → "$30,000"
+
+**Implementation:** `sidepanel/sidepanel.js` - `interpolateVariables()`, `formatVariableValue()`
+
+### Opening Plays from Banners
+Banners with linked plays show "Open Play" button. Clicking opens the play in sidepanel with full record context.
+
+**Context passed:** `recordId`, `objectType`, `properties` (for editable fields + variables)
+
+**Files:** `content/modules/banners.js`, `content/modules/index-tags.js`, `background/background.js`
+
+### Keyboard Shortcuts
+- **Cmd/Ctrl+Enter**: Save HubSpot field values in editable field sections
+
+---
+
 ## Known Issues / Tech Debt
 
 1. **Terminology inconsistency** - "plays" vs "battleCards" vs "presentations"
@@ -313,4 +354,38 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2025 (v2.5.1)*
+## Billing Integration (v2.11.0+)
+
+**Architecture:**
+- Stripe Checkout for subscription upgrades (hosted checkout page)
+- Stripe Customer Portal for billing management
+- Supabase Edge Function for webhook handling
+- Cloudflare Worker for API endpoints
+
+**Billing API Endpoints** (`api/invite-worker.js`):
+- `POST /api/billing/create-checkout-session` - Create Stripe Checkout session
+- `POST /api/billing/create-portal-session` - Create Stripe Customer Portal session
+- `POST /api/billing/subscription` - Get subscription status via RPC
+
+**Webhook Handler** (`supabase/functions/stripe-webhook/index.ts`):
+- Deployed with `--no-verify-jwt` (external webhook calls)
+- Events: `checkout.session.completed`, `customer.subscription.*`, `invoice.paid/payment_failed`
+- Uses subscription metadata for organization association (race condition fix)
+
+**Environment Variables:**
+- Cloudflare Worker: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_*` (price IDs per plan)
+- Supabase: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+
+**Pricing Model:**
+| Plan | Monthly | Limits |
+|------|---------|--------|
+| Starter | $5/seat (free ≤5) | 5 banners, 10 wiki, 3 plays |
+| Pro | $10/seat | Unlimited |
+| Business | $20/seat | Unlimited |
+| Partner Starter | $500 | 5 client portals, 3 libraries |
+| Partner Pro | $1,250 | 20 client portals, 10 libraries |
+| Partner Enterprise | $2,500 | Unlimited |
+
+---
+
+*Last updated: December 2025 (v2.11.0)*
