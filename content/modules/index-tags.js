@@ -927,32 +927,26 @@ class IndexTagsModule {
     });
 
     // Find best insertion point in the card
-    // HubSpot structure: TitleSection__StyledTitleContainer contains the title link
-    const titleContainer = card.querySelector('[class*="TitleSection__StyledTitleContainer"]') ||
-                           card.querySelector('[class*="TitleSection"]');
-    if (titleContainer) {
-      // Insert after the title container
-      titleContainer.parentNode.insertBefore(tagsContainer, titleContainer.nextSibling);
+    // Preferred: Insert after PROPERTIES section (before PRIORITY section)
+    const propertiesSection = card.querySelector('[data-section-key="PROPERTIES"]');
+    if (propertiesSection) {
+      propertiesSection.parentNode.insertBefore(tagsContainer, propertiesSection.nextSibling);
       this.taggedRecords.set(recordId, tagsContainer);
       return;
     }
 
-    // Alternative: find the title link and insert after its container
-    const titleLink = card.querySelector('a[data-test-id="board-card-section-title-link"]');
-    if (titleLink) {
-      const titleParent = titleLink.closest('[class*="TitleSection"]') || titleLink.parentElement;
-      if (titleParent) {
-        titleParent.parentNode.insertBefore(tagsContainer, titleParent.nextSibling);
-        this.taggedRecords.set(recordId, tagsContainer);
-        return;
-      }
+    // Alternative: Insert just before the quick actions container (bottom of card)
+    const quickActions = card.querySelector('[data-test-id="board-card-quick-actions-container"]');
+    if (quickActions) {
+      quickActions.parentNode.insertBefore(tagsContainer, quickActions);
+      this.taggedRecords.set(recordId, tagsContainer);
+      return;
     }
 
-    // Fallback: insert after the first link in the card
-    const firstLink = card.querySelector('a[href*="/record/"]');
-    if (firstLink) {
-      const linkContainer = firstLink.closest('div') || firstLink.parentElement;
-      linkContainer.parentNode.insertBefore(tagsContainer, linkContainer.nextSibling);
+    // Fallback: Insert inside the content wrapper at the end
+    const contentWrapper = card.querySelector('[data-test-id="content-wrapper-container"]');
+    if (contentWrapper) {
+      contentWrapper.appendChild(tagsContainer);
       this.taggedRecords.set(recordId, tagsContainer);
       return;
     }

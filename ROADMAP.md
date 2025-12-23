@@ -917,7 +917,7 @@ Would you like me to suggest values?"
 - [x] **Clickable tags** - Open related play or show banner popup (v2.5.1)
 - [x] **Board scroll loading** - Tags load as new cards scroll into view (v2.5.1)
 - [x] **Improve tag UI contrast** - Darkened text colors and slightly richer backgrounds for better readability (v2.5.2)
-- [ ] **Improve tag placement on board cards** - Move tags to bottom of card next to action buttons (currently positioned higher)
+- [x] **Improve tag placement on board cards** - Tags now positioned after properties section, before quick actions (v2.5.2)
 - [ ] **Default "Show as Tag on Index" to ON** - New banners should have tag display enabled by default; users can toggle off if desired
 - [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
 - [ ] **Investigate HubSpot's React reconciliation** - Tags are removed during HubSpot re-renders; current workaround uses MutationObserver to restore them
