@@ -769,7 +769,16 @@ class SidePanel {
   formatContent(content) {
     if (!content) return '';
 
-    // First interpolate variables before escaping
+    // Check if content is already HTML (from Tiptap rich text editor)
+    const isHtml = /<[a-z][\s\S]*>/i.test(content);
+
+    if (isHtml) {
+      // For HTML content: interpolate variables within the HTML
+      // The variable values are escaped, but the HTML structure is preserved
+      return this.interpolateVariablesInHtml(content);
+    }
+
+    // For plain text content: escape and format
     let text = this.interpolateVariables(content);
     let html = this.escapeHtml(text);
 
@@ -788,6 +797,24 @@ class SidePanel {
     html = html.replace(/\n/g, '<br>');
 
     return html;
+  }
+
+  /**
+   * Interpolate variables within HTML content
+   * Preserves HTML structure while escaping variable values
+   */
+  interpolateVariablesInHtml(html) {
+    if (!html || typeof html !== 'string') return html;
+
+    // Replace {{variableName}} with escaped, formatted values
+    return html.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, propertyName) => {
+      const value = this.getPropertyValue(propertyName);
+      if (value !== null && value !== undefined && value !== '') {
+        const formatted = this.formatVariableValue(value, propertyName);
+        return this.escapeHtml(formatted); // Escape the value for safety
+      }
+      return this.escapeHtml(`[${propertyName}: not set]`);
+    });
   }
 
   /**
