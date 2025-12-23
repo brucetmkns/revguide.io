@@ -2098,7 +2098,8 @@ class SettingsPage {
       `,
       primaryLabel: 'Continue to Checkout',
       secondaryLabel: 'Cancel',
-      dangerous: false
+      showCancel: false,
+      allowHtml: true
     });
 
     if (!result) return;

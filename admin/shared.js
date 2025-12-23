@@ -2184,7 +2184,7 @@ function convertToEmbedUrl(url) {
  * @param {boolean} options.showCancel - Whether to show cancel button (default: true)
  * @returns {Promise<'primary'|'secondary'|'cancel'>}
  */
-function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLabel = 'Discard', cancelLabel = 'Cancel', showCancel = true }) {
+function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLabel = 'Discard', cancelLabel = 'Cancel', showCancel = true, allowHtml = false }) {
   return new Promise((resolve) => {
     // Remove existing dialog
     const existingDialog = document.querySelector('.confirm-dialog-overlay');
@@ -2193,13 +2193,15 @@ function showConfirmDialog({ title, message, primaryLabel = 'Save', secondaryLab
     const overlay = document.createElement('div');
     overlay.className = 'confirm-dialog-overlay';
 
+    const messageContent = allowHtml ? message : escapeHtml(message);
+
     overlay.innerHTML = `
       <div class="confirm-dialog">
         <div class="confirm-dialog-header">
           <h3>${escapeHtml(title)}</h3>
         </div>
         <div class="confirm-dialog-body">
-          <p>${escapeHtml(message)}</p>
+          ${allowHtml ? messageContent : `<p>${messageContent}</p>`}
         </div>
         <div class="confirm-dialog-footer">
           <button class="btn btn-secondary confirm-dialog-secondary">${escapeHtml(secondaryLabel)}</button>
