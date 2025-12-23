@@ -1107,6 +1107,9 @@ class WikiPage {
     let entry;
     let isNew = false;
 
+    // Helper to check if ID is a valid UUID (entries from Supabase have UUIDs)
+    const isValidUuid = (id) => id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     if (this.isCreatingNew) {
       isNew = true;
       entry = {
@@ -1119,6 +1122,11 @@ class WikiPage {
       if (!entry) {
         alert('Entry not found');
         return;
+      }
+      // If entry has a non-UUID id (e.g., wiki_* format), it was never saved to Supabase
+      // Treat it as a new entry
+      if (!isValidUuid(entry.id)) {
+        isNew = true;
       }
     }
 
@@ -1173,7 +1181,14 @@ class WikiPage {
 
           // Map response back to camelCase and use the server-generated entry
           const mappedData = this.mapWikiFromSupabase(data);
-          this.wikiEntries.push(mappedData);
+
+          // If entry existed with a wiki_* ID, replace it; otherwise add new
+          const existingIndex = this.wikiEntries.findIndex(e => e.id === this.selectedEntryId);
+          if (existingIndex !== -1) {
+            this.wikiEntries[existingIndex] = mappedData;
+          } else {
+            this.wikiEntries.push(mappedData);
+          }
           this.selectedEntryId = mappedData.id;
           this.isCreatingNew = false;
         } else {
