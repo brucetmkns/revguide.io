@@ -102,20 +102,35 @@ class SidePanel {
         // Switch to plays tab
         this.switchTab('plays');
 
-        // If playData wasn't provided, try to fetch it
-        if (!message.playData && message.playId) {
-          console.log('[RevGuide] No playData provided, fetching from content...');
-          chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
-            const battleCards = response?.content?.battleCards || [];
-            const play = battleCards.find(p => p.id === message.playId);
-            console.log('[RevGuide] Fetched play:', play?.name || 'not found');
-            this.focusOnPlay(message.playId, play || null);
-          });
-        } else {
+        // If playData was provided, use it directly
+        if (message.playData) {
           this.focusOnPlay(message.playId, message.playData);
+        } else if (message.playId) {
+          // Try to fetch play data, with storage fallback
+          console.log('[RevGuide] No playData provided, checking storage then content...');
+          chrome.storage.local.get(['sidepanelFocusPlayData'], (result) => {
+            if (result.sidepanelFocusPlayData) {
+              console.log('[RevGuide] Using play data from storage');
+              this.focusOnPlay(message.playId, result.sidepanelFocusPlayData);
+              chrome.storage.local.remove('sidepanelFocusPlayData');
+            } else {
+              // Fetch from content as last resort
+              chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+                const battleCards = response?.content?.battleCards || [];
+                const play = battleCards.find(p => p.id === message.playId);
+                console.log('[RevGuide] Fetched play from content:', play?.name || 'not found');
+                this.focusOnPlay(message.playId, play || null);
+              });
+            }
+          });
         }
+        // Send acknowledgment so background knows message was received
+        sendResponse && sendResponse({ received: true });
       }
     });
+
+    // Poll for pending play focus (fallback when messages don't arrive)
+    setInterval(() => this.checkPendingPlayFocus(), 1000);
 
     // Listen for tab URL changes to refresh cards when navigating
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -177,6 +192,35 @@ class SidePanel {
       // Store record context so editable fields work with the correct record
       this.pendingRecordContext = sidepanelRecordContext || null;
       await chrome.storage.local.remove(['sidepanelFocusPlayId', 'sidepanelFocusPlayData', 'sidepanelRecordContext']);
+    }
+  }
+
+  /**
+   * Poll for pending play focus requests (fallback for when messages don't arrive)
+   * This handles the case when sidepanel is already open and message delivery fails
+   */
+  async checkPendingPlayFocus() {
+    const { sidepanelFocusPlayId, sidepanelFocusPlayData, sidepanelRecordContext } =
+      await chrome.storage.local.get(['sidepanelFocusPlayId', 'sidepanelFocusPlayData', 'sidepanelRecordContext']);
+
+    if (sidepanelFocusPlayId) {
+      console.log('[RevGuide] Found pending play focus in storage:', sidepanelFocusPlayId);
+
+      // Apply record context if provided
+      if (sidepanelRecordContext) {
+        this.context = {
+          objectType: sidepanelRecordContext.objectType,
+          recordId: sidepanelRecordContext.recordId
+        };
+        this.properties = sidepanelRecordContext.properties || {};
+      }
+
+      // Clear storage before processing
+      await chrome.storage.local.remove(['sidepanelFocusPlayId', 'sidepanelFocusPlayData', 'sidepanelRecordContext']);
+
+      // Switch to plays tab and focus
+      this.switchTab('plays');
+      this.focusOnPlay(sidepanelFocusPlayId, sidepanelFocusPlayData || null);
     }
   }
 
@@ -572,6 +616,22 @@ class SidePanel {
     }
 
     let cardElement = document.querySelector(`.battle-card[data-card-id="${playId}"]`);
+
+    // If the play isn't in the current list and we don't have playData, try fetching it
+    if (!cardElement && !playData) {
+      console.log('[RevGuide] Play not found and no data, fetching from content...');
+      chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+        const battleCards = response?.content?.battleCards || [];
+        const play = battleCards.find(p => p.id === playId);
+        if (play) {
+          console.log('[RevGuide] Found play in content, adding it');
+          this.focusOnPlay(playId, play); // Recursive call with data
+        } else {
+          console.log('[RevGuide] Play not found in content either');
+        }
+      });
+      return;
+    }
 
     // If the play isn't in the current list, we need to add it
     if (!cardElement && playData) {
