@@ -192,13 +192,19 @@ class ErpIconModule {
   findRecordNameElement() {
     // Try multiple selectors for different HubSpot UI versions
     const selectors = [
+      // Current HubSpot UI (2024+) - highlight record label
+      '[data-test-id="highlight-record-label"]',
+      '[data-selenium-test="highlightTitle"]',
+      'h2[data-test-id="highlight-record-label"]',
+      // Older HubSpot UI patterns
       '[data-test-id="record-title"] h1',
       '[data-test-id="record-header"] h1',
       '[class*="RecordTitle"] h1',
       '[class*="RecordTitle"]',
       'h1[class*="Title"]',
-      // Fallback: look in the main content area for an h1
-      '.main-content-wrapper h1'
+      // Fallback: look in the main content area
+      '.main-content-wrapper h1',
+      '.main-content-wrapper h2'
     ];
 
     for (const selector of selectors) {
