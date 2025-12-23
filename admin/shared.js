@@ -467,40 +467,16 @@ function renderSidebar(activePage) {
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar) return;
 
-  // Update only the text content of pre-rendered elements (no innerHTML replacement)
-  // This prevents the distracting flash on page navigation
+  // Update user profile in sidebar footer (simplified: just avatar + name)
   if (!isExtensionContext && currentUser) {
     const avatarEl = document.getElementById('sidebarUserAvatar');
     const nameEl = document.getElementById('sidebarUserName');
-    const orgEl = document.getElementById('sidebarUserOrg');
 
     if (avatarEl) {
       avatarEl.textContent = (currentUser.name || currentUser.email || '?')[0].toUpperCase();
     }
     if (nameEl) {
       nameEl.textContent = currentUser.name || currentUser.email?.split('@')[0] || 'User';
-    }
-
-    // Show home org for partners, otherwise current org
-    const isViewingClient = homeOrganization &&
-      currentOrganization?.id &&
-      currentOrganization.id !== homeOrganization.organization_id;
-
-    if (orgEl) {
-      if (isViewingClient && homeOrganization) {
-        // Partner viewing client: show home org name
-        orgEl.textContent = homeOrganization.organization_name || '';
-      } else {
-        // Regular user or partner in home org: show current org
-        orgEl.textContent = currentOrganization?.name || '';
-      }
-    }
-
-    // Role badge is now shown in the portal selector, not here
-    // Remove any existing old role indicator
-    const oldRoleIndicator = document.getElementById('sidebarRoleIndicator');
-    if (oldRoleIndicator) {
-      oldRoleIndicator.remove();
     }
   }
 

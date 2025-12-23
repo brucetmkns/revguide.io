@@ -304,6 +304,12 @@ class SettingsPage {
       saveAccountBtn.addEventListener('click', () => this.saveAccountSettings());
     }
 
+    // Password reset button
+    const sendPasswordResetBtn = document.getElementById('sendPasswordResetBtn');
+    if (sendPasswordResetBtn) {
+      sendPasswordResetBtn.addEventListener('click', () => this.sendPasswordReset());
+    }
+
     // HubSpot OAuth buttons (web context)
     const connectHubSpotBtn = document.getElementById('connectHubSpotSettingsBtn');
     const disconnectHubSpotBtn = document.getElementById('disconnectHubSpotBtn');
@@ -647,6 +653,54 @@ class SettingsPage {
       setTimeout(() => {
         statusEl.style.display = 'none';
       }, 3000);
+    }
+  }
+
+  showSecurityStatus(message, type) {
+    const statusEl = document.getElementById('securityStatus');
+    if (!statusEl) return;
+
+    statusEl.textContent = message;
+    statusEl.className = 'status-message' + (type ? ` ${type}` : '');
+    statusEl.style.display = message ? 'block' : 'none';
+
+    // Auto-hide success/info messages after 5 seconds
+    if (type === 'success' || type === 'info') {
+      setTimeout(() => {
+        statusEl.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  async sendPasswordReset() {
+    const btn = document.getElementById('sendPasswordResetBtn');
+    const email = AdminShared.currentUser?.email;
+
+    if (!email) {
+      this.showSecurityStatus('Unable to get your email address', 'error');
+      return;
+    }
+
+    // Show loading state
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Sending...';
+
+    try {
+      const { error } = await RevGuideDB.resetPassword(email);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.showSecurityStatus(`Password reset link sent to ${email}. Check your inbox.`, 'success');
+      AdminShared.showToast('Password reset email sent', 'success');
+    } catch (error) {
+      console.error('Failed to send password reset:', error);
+      this.showSecurityStatus(`Failed to send reset email: ${error.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
     }
   }
 

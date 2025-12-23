@@ -155,6 +155,38 @@
   color: var(--color-text-inverse);
 }
 
+/* Simplified User Profile Link */
+.user-profile-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.user-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.user-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-profile-btn .user-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: var(--font-size-xs);
+}
+
+.user-profile-btn .user-name {
+  flex: 1;
+}
+
 /* Role Indicator Badge */
 .role-indicator {
   display: inline-block;
