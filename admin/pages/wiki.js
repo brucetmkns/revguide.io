@@ -2106,6 +2106,7 @@ class WikiPage {
     if (!data) return null;
     return {
       id: data.id,
+      parentId: data.parent_id,
       title: data.title,
       trigger: data.trigger,
       aliases: data.aliases,

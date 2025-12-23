@@ -1049,6 +1049,7 @@ function mapWikiFromSupabase(data) {
   if (!data) return null;
   return {
     id: data.id,
+    parentId: data.parent_id,
     title: data.title,
     trigger: data.trigger,
     aliases: data.aliases,
@@ -1120,6 +1121,10 @@ function mapPlayToSupabase(data) {
 
 function mapWikiToSupabase(data) {
   if (!data) return null;
+  // Helper to check if a string is a valid UUID format
+  const isUuid = (str) => str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  // Only include parent_id if it's a valid UUID (not a wiki_* format string)
+  const parentId = data.parentId || data.parent_id || null;
   const mapped = {
     title: data.title || data.name, // fallback to name for library imports
     trigger: data.trigger || null,
@@ -1129,7 +1134,7 @@ function mapWikiToSupabase(data) {
     property_group: data.propertyGroup || null,
     definition: data.definition || null,
     link: data.link || null,
-    parent_id: data.parentId || data.parent_id || null,
+    parent_id: isUuid(parentId) ? parentId : null,
     match_type: data.matchType || 'exact',
     frequency: data.frequency || 'first',
     include_aliases: data.includeAliases ?? true,
