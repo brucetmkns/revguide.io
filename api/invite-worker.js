@@ -2827,11 +2827,9 @@ async function handleCreateCheckoutSession(request, env, corsHeaders) {
     checkoutParams.append('subscription_data[metadata][organization_id]', organizationId);
 
     // If org already has a Stripe customer, use it
+    // Otherwise Stripe will create one automatically in subscription mode
     if (org.stripe_customer_id) {
       checkoutParams.append('customer', org.stripe_customer_id);
-    } else {
-      // Allow Stripe to create a new customer
-      checkoutParams.append('customer_creation', 'always');
     }
 
     // Create checkout session via Stripe API
