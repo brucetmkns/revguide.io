@@ -1018,6 +1018,7 @@ function mapBannerFromSupabase(data) {
     displayOnAll: data.display_on_all,
     tabVisibility: data.tab_visibility,
     relatedPlayId: data.related_play_id,
+    fields: data.fields || [],
     enabled: data.enabled,
     url: data.url,
     embedUrl: data.embed_url,
