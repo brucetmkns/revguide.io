@@ -2094,13 +2094,13 @@ class SettingsPage {
           ${planOptionsHtml}
         </div>
         <style>
-          .billing-toggle { display: flex; gap: 0; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 12px; border: 1px solid var(--border-primary); }
-          .billing-btn { flex: 1; padding: 14px 20px; border: none; border-radius: 8px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1; }
-          .billing-btn:hover:not(.active) { color: var(--text-primary); }
-          .billing-btn.active { background: var(--accent-primary); color: #1a1a1a; box-shadow: 0 2px 8px rgba(178, 239, 99, 0.3), 0 1px 2px rgba(0,0,0,0.2); }
-          .savings-text { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 20px; margin-left: 8px; background: rgba(178, 239, 99, 0.15); color: var(--accent-primary); border: 1px solid rgba(178, 239, 99, 0.3); transition: all 0.25s ease; }
-          .billing-btn.active .savings-text { background: rgba(0,0,0,0.2); color: #1a1a1a; border-color: rgba(0,0,0,0.1); }
-          .savings-badge { font-size: 11px; padding: 2px 6px; background: rgba(178, 239, 99, 0.15); color: var(--accent-primary); border-radius: 4px; margin-left: 4px; }
+          .billing-toggle { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg-tertiary); padding: 6px; border-radius: 12px; border: 1px solid var(--border-primary); }
+          .billing-btn { flex: 1; padding: 12px 20px; border: 1px solid transparent; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease; }
+          .billing-btn:hover:not(.active) { border-color: var(--border-primary); background: var(--bg-primary); }
+          .billing-btn.active { background: #b2ef63; color: #111; border-color: #b2ef63; box-shadow: 0 2px 8px rgba(178, 239, 99, 0.4); }
+          .savings-text { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 6px; border-radius: 10px; margin-left: 6px; background: #b2ef63; color: #111; }
+          .billing-btn:not(.active) .savings-text { background: rgba(178, 239, 99, 0.2); color: #b2ef63; }
+          .savings-badge { font-size: 10px; padding: 2px 6px; background: #b2ef63; color: #111; border-radius: 10px; margin-left: 4px; font-weight: 600; }
           .plan-options { display: flex; flex-direction: column; gap: 12px; }
           .plan-option { display: flex; align-items: flex-start; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
           .plan-option:hover:not(.current) { border-color: var(--accent-primary); background: var(--bg-secondary); }
