@@ -2263,7 +2263,7 @@ function updateConditionGroupsUI(containerId) {
  */
 function addConditionToGroup(container, condition = null, properties = []) {
   const div = document.createElement('div');
-  div.className = 'condition-row flex gap-2 items-start p-2 bg-bg-subtle rounded-md';
+  div.className = 'condition-row';
 
   const selectedProp = condition?.property ? properties.find(p => p.name === condition.property) : null;
   const selectedLabel = selectedProp ? selectedProp.label : 'Select property...';
