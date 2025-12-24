@@ -1109,72 +1109,36 @@ class SidePanel {
       return;
     }
 
-    // If the card already exists but we have new context/playData, re-render it
-    // This handles opening the same play for a different record
+    // If the card already exists but we have new context/playData, update and open it
     if (cardElement && playData) {
-      console.log('[RevGuide] Re-rendering existing card with new context:', playId);
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = this.renderCard(playData, true);
-      const newCard = tempDiv.firstElementChild;
-
-      // Replace the old card with the new one
-      cardElement.replaceWith(newCard);
-
-      // Re-attach event handlers
-      const cardHeader = newCard.querySelector('.card-header');
-      if (cardHeader) {
-        cardHeader.addEventListener('click', () => {
-          newCard.classList.toggle('expanded');
-        });
-      }
-      const editLink = newCard.querySelector('.admin-edit-link');
-      if (editLink) {
-        editLink.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const cardId = editLink.dataset.cardId;
-          const adminUrl = this.authState.isAuthenticated
-            ? `${WEB_APP_URL}/plays?edit=${cardId}`
-            : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
-          chrome.tabs.create({ url: adminUrl });
-        });
-      }
-      newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => this.handleSaveFields(e));
-      });
-      this.initFieldKeyboardShortcuts(newCard);
-
-      cardElement = newCard;
+      console.log('[RevGuide] Opening existing card with context:', playId);
+      // Open the slide-in panel with the play data
+      this.openPlayDetail(playData);
+      return;
     }
 
-    // If the play isn't in the current list, we need to add it
+    // If the play isn't in the current list, add it to our cards array and open it
     if (!cardElement && playData) {
-      console.log('[RevGuide] Play not in current list, adding it:', playId);
+      console.log('[RevGuide] Play not in current list, adding and opening:', playId);
 
       const container = document.getElementById('cardsContainer');
       const emptyState = document.getElementById('emptyState');
 
       // Hide empty state if showing
-      if (emptyState) {
-        emptyState.style.display = 'none';
-      }
-      if (container) {
-        container.style.display = 'block';
-      }
+      if (emptyState) emptyState.style.display = 'none';
+      if (container) container.style.display = 'block';
 
       // Add a "Related Play" header if this is the first/only card
       const isOnlyCard = container && container.querySelectorAll('.battle-card').length === 0;
 
-      // Create the card HTML and add it
+      // Create and add the card to the list
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = this.renderCard(playData, true); // true = fromBanner flag
+      tempDiv.innerHTML = this.renderCard(playData, true);
       const newCard = tempDiv.firstElementChild;
 
       if (container) {
         if (isOnlyCard) {
-          // Clear any loading state or other content
           container.innerHTML = '';
-          // Add a section header for related plays
           const header = document.createElement('div');
           header.className = 'related-play-header';
           header.innerHTML = '<span class="related-play-label">Related Play from Banner</span>';
@@ -1182,48 +1146,30 @@ class SidePanel {
         }
         container.appendChild(newCard);
 
-        // Add click handler for expand/collapse
+        // Add click handler for the new card
         const cardHeader = newCard.querySelector('.card-header');
         if (cardHeader) {
           cardHeader.addEventListener('click', () => {
-            newCard.classList.toggle('expanded');
+            this.openPlayDetail(playData);
           });
         }
-
-        // Add click handler for admin edit link
-        const editLink = newCard.querySelector('.admin-edit-link');
-        if (editLink) {
-          editLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const cardId = editLink.dataset.cardId;
-            // Use web app if authenticated, otherwise local extension
-            const adminUrl = this.authState.isAuthenticated
-              ? `${WEB_APP_URL}/plays?edit=${cardId}`
-              : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
-            chrome.tabs.create({ url: adminUrl });
-          });
-        }
-
-        // Add click handler for save buttons in editable field sections
-        newCard.querySelectorAll('.save-fields-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => this.handleSaveFields(e));
-        });
-        this.initFieldKeyboardShortcuts(newCard);
-
-        cardElement = newCard;
       }
+
+      // Open the slide-in panel with the play
+      this.openPlayDetail(playData);
+      return;
     }
 
-    if (cardElement) {
-      // Expand the card
-      cardElement.classList.add('expanded');
-
-      // Scroll it into view with some offset
+    // If we have a card element but no playData, try to find it in this.cards
+    if (cardElement && !playData) {
+      const card = this.cards.find(c => c.id === playId);
+      if (card) {
+        this.openPlayDetail(card);
+        return;
+      }
+      // Highlight the card in the list if we can't open it
       setTimeout(() => {
         cardElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        // Add a highlight animation
         cardElement.classList.add('highlight');
         setTimeout(() => cardElement.classList.remove('highlight'), 2000);
       }, 100);
