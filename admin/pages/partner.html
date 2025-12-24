@@ -354,6 +354,168 @@
       color: var(--color-text-primary);
       margin: 0 0 var(--space-4);
     }
+
+    /* Add Portal Section */
+    .add-portal-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .add-portal-success {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+      padding: var(--space-4);
+      background: var(--color-success-bg);
+      border: 1px solid var(--color-success);
+      border-radius: var(--radius-md);
+    }
+
+    .add-portal-success .success-icon {
+      flex-shrink: 0;
+      color: var(--color-success-dark);
+    }
+
+    .add-portal-success .success-text {
+      flex: 1;
+    }
+
+    .add-portal-success .success-text strong {
+      display: block;
+      color: var(--color-success-dark);
+      margin-bottom: var(--space-1);
+    }
+
+    .add-portal-success .success-text p {
+      margin: 0;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    /* Invite Owner Modal */
+    .invite-owner-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: fadeIn 0.15s ease;
+    }
+
+    .invite-owner-modal {
+      background: var(--color-bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      width: 100%;
+      max-width: 440px;
+      animation: slideUp 0.2s ease;
+    }
+
+    .invite-owner-modal-header {
+      padding: var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .invite-owner-modal-header h3 {
+      margin: 0;
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .invite-owner-modal-header p {
+      margin: var(--space-2) 0 0;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .invite-owner-modal-body {
+      padding: var(--space-5);
+    }
+
+    .invite-owner-modal-body .form-group {
+      margin-bottom: var(--space-4);
+    }
+
+    .invite-owner-modal-body .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .invite-owner-modal-body label {
+      display: block;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+      font-size: var(--font-size-sm);
+    }
+
+    .invite-owner-modal-body .form-control {
+      width: 100%;
+    }
+
+    .invite-owner-modal-body .form-hint {
+      display: block;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-1);
+    }
+
+    .invite-owner-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-bg-subtle);
+      border-top: 1px solid var(--color-border);
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+
+    /* Invite Owner Button in Card */
+    .btn-invite-owner {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+    }
+
+    .btn-invite-owner:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* Ownership Status Badge */
+    .ownership-status {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .ownership-status.has-owner {
+      color: var(--color-success-dark);
+    }
+
+    .ownership-status.pending-invite {
+      color: var(--color-warning);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -463,12 +625,55 @@
 
           <!-- Tab Content: My Clients -->
           <div class="tab-content active" id="clientsTab">
+            <!-- Add Client Portal Section -->
+            <div class="add-portal-section" id="addPortalSection">
+              <div class="request-access-header">
+                <h3>Add Client Portal</h3>
+                <button class="btn btn-primary btn-sm" id="toggleAddPortalBtn" aria-expanded="false">
+                  Add Portal
+                </button>
+              </div>
+
+              <div class="request-access-form" id="addPortalForm" style="display: none;">
+                <div class="form-group">
+                  <label for="newPortalName">Organization Name</label>
+                  <input
+                    type="text"
+                    id="newPortalName"
+                    class="form-control"
+                    placeholder="Acme Corporation"
+                    autocomplete="organization"
+                  >
+                  <span class="form-hint">The name of your client's company or portal.</span>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-secondary" id="cancelAddPortalBtn">Cancel</button>
+                  <button class="btn btn-primary" id="submitAddPortalBtn">Create Portal</button>
+                </div>
+              </div>
+
+              <!-- Success Message -->
+              <div class="add-portal-success" id="addPortalSuccess" style="display: none;">
+                <div class="success-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                </div>
+                <div class="success-text">
+                  <strong>Portal Created</strong>
+                  <p>You can now manage this portal and invite the customer to claim ownership when ready.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="dismissAddPortalSuccessBtn">Dismiss</button>
+              </div>
+            </div>
+
             <div class="clients-grid" id="clientsGrid">
               <!-- Client cards populated by JS -->
             </div>
             <div class="empty-state" id="clientsEmptyState" style="display: none;">
               <h3>No client portals yet</h3>
-              <p>You'll see client portals here when organizations invite you as a partner.</p>
+              <p>Create a new portal or wait for organizations to invite you as a partner.</p>
             </div>
           </div>
 
@@ -567,6 +772,33 @@
     </main>
   </div>
 
+  <!-- Invite Owner Modal (hidden by default) -->
+  <div class="invite-owner-modal-overlay" id="inviteOwnerModal" style="display: none;">
+    <div class="invite-owner-modal">
+      <div class="invite-owner-modal-header">
+        <h3>Invite Portal Owner</h3>
+        <p id="inviteOwnerOrgName">Send an invitation to claim ownership of this portal.</p>
+      </div>
+      <div class="invite-owner-modal-body">
+        <div class="form-group">
+          <label for="ownerEmail">Customer Email</label>
+          <input
+            type="email"
+            id="ownerEmail"
+            class="form-control"
+            placeholder="customer@company.com"
+            autocomplete="email"
+          >
+          <span class="form-hint">They'll receive an email to create their account and become the portal owner.</span>
+        </div>
+      </div>
+      <div class="invite-owner-modal-footer">
+        <button class="btn btn-secondary" id="cancelInviteOwnerBtn">Cancel</button>
+        <button class="btn btn-primary" id="sendInviteOwnerBtn">Send Invitation</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Environment config (loaded first for staging support) -->
   <script src="/config/environments.js"></script>
   <script src="/config/current.js"></script>
@@ -575,6 +807,6 @@
   <script src="/admin/hubspot.js?v=4"></script>
   <script src="/lib/wiki-cache.js"></script>
   <script src="/admin/shared.js?v=4"></script>
-  <script src="/admin/pages/partner.js?v=1"></script>
+  <script src="/admin/pages/partner.js?v=2"></script>
 </body>
 </html>

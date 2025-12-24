@@ -685,8 +685,95 @@ const RevGuideDB = {
     // Determine the name to use: provided fullName > metadata > email prefix
     const userName = fullName || user.user_metadata?.full_name || user.email.split('@')[0];
 
-    // Check if this is a partner invitation
+    // Check invitation type
     const isPartnerInvitation = invitation.invitation_type === 'partner' || invitation.role === 'partner';
+    const isOwnershipClaim = invitation.invitation_type === 'ownership_claim';
+
+    if (isOwnershipClaim) {
+      // OWNERSHIP CLAIM FLOW
+      // Customer claims ownership of a partner-created organization
+
+      let userProfile = existingProfile;
+
+      // If user doesn't have a profile yet, create one
+      if (!existingProfile) {
+        const { data, error } = await client
+          .from('users')
+          .insert({
+            auth_user_id: user.id,
+            email: user.email,
+            name: userName,
+            organization_id: invitation.organization_id,
+            role: 'owner'
+          })
+          .select()
+          .single();
+
+        if (error) return { error };
+        userProfile = data;
+      } else {
+        // User exists - update their organization_id if they don't have one,
+        // or set active_organization_id if they do
+        if (!existingProfile.organization_id) {
+          const { data, error } = await client
+            .from('users')
+            .update({
+              organization_id: invitation.organization_id,
+              role: 'owner',
+              name: userName || existingProfile.name,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProfile.id)
+            .select()
+            .single();
+
+          if (error) return { error };
+          userProfile = data;
+        } else {
+          // User already has an org - set this as their active org
+          const { data, error } = await client
+            .from('users')
+            .update({
+              active_organization_id: invitation.organization_id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProfile.id)
+            .select()
+            .single();
+
+          if (error) return { error };
+          userProfile = data;
+        }
+      }
+
+      // Add to organization_members as owner
+      const { error: memberError } = await client
+        .from('organization_members')
+        .upsert({
+          user_id: userProfile.id,
+          organization_id: invitation.organization_id,
+          role: 'owner',
+          joined_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,organization_id'
+        });
+
+      if (memberError) {
+        console.error('Failed to add owner to organization_members:', memberError);
+        return { error: memberError };
+      }
+
+      // Mark invitation as accepted
+      await client
+        .from('invitations')
+        .update({ accepted_at: new Date().toISOString() })
+        .eq('id', invitationId);
+
+      // Cache the organization ID
+      this.setCachedOrgId(invitation.organization_id);
+
+      return { data: userProfile, error: null };
+    }
 
     if (isPartnerInvitation) {
       // PARTNER INVITATION FLOW
@@ -1924,6 +2011,119 @@ const RevGuideDB = {
       },
       error: null
     };
+  },
+
+  /**
+   * Create a new client organization on behalf of a customer (partner only)
+   * @param {string} orgName - Name for the new organization
+   * @returns {Promise<{success: boolean, organizationId: string|null, error: Error|null}>}
+   */
+  async createClientOrganization(orgName) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { success: false, organizationId: null, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('create_client_organization', {
+      p_auth_uid: user.id,
+      p_org_name: orgName
+    });
+
+    if (error) return { success: false, organizationId: null, error };
+
+    // Result is an array with one row
+    const result = data && data.length > 0 ? data[0] : null;
+    if (result && result.success) {
+      return { success: true, organizationId: result.organization_id, error: null };
+    } else {
+      return { success: false, organizationId: null, error: new Error(result?.error_message || 'Failed to create organization') };
+    }
+  },
+
+  /**
+   * Invite a customer to become the owner of an organization (partner only)
+   * @param {string} organizationId - The organization ID
+   * @param {string} customerEmail - Email of the customer to invite
+   * @returns {Promise<{success: boolean, invitationToken: string|null, error: Error|null}>}
+   */
+  async inviteOrgOwner(organizationId, customerEmail) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { success: false, invitationToken: null, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('invite_org_owner', {
+      p_auth_uid: user.id,
+      p_organization_id: organizationId,
+      p_customer_email: customerEmail
+    });
+
+    if (error) return { success: false, invitationToken: null, error };
+
+    // Result is an array with one row
+    const result = data && data.length > 0 ? data[0] : null;
+    if (result && result.success) {
+      return { success: true, invitationToken: result.invitation_token, error: null };
+    } else {
+      return { success: false, invitationToken: null, error: new Error(result?.error_message || 'Failed to create invitation') };
+    }
+  },
+
+  /**
+   * Check if an organization has an owner
+   * @param {string} organizationId - The organization ID
+   * @returns {Promise<{hasOwner: boolean, error: Error|null}>}
+   */
+  async orgHasOwner(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('org_has_owner', {
+      p_organization_id: organizationId
+    });
+
+    if (error) return { hasOwner: false, error };
+    return { hasOwner: data === true, error: null };
+  },
+
+  /**
+   * Get pending ownership invitation for an organization
+   * @param {string} organizationId - The organization ID
+   * @returns {Promise<{invitation: object|null, error: Error|null}>}
+   */
+  async getPendingOwnershipInvitation(organizationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data, error } = await client.rpc('get_pending_ownership_invitation', {
+      p_organization_id: organizationId
+    });
+
+    if (error) return { invitation: null, error };
+
+    // Result is an array with zero or one row
+    const result = data && data.length > 0 ? data[0] : null;
+    return { invitation: result, error: null };
+  },
+
+  /**
+   * Cancel a pending ownership invitation (partner only)
+   * @param {string} invitationId - The invitation ID to cancel
+   * @returns {Promise<{success: boolean, error: Error|null}>}
+   */
+  async cancelOwnershipInvitation(invitationId) {
+    const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return { success: false, error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('cancel_ownership_invitation', {
+      p_auth_uid: user.id,
+      p_invitation_id: invitationId
+    });
+
+    if (error) return { success: false, error };
+
+    // Result is an array with one row
+    const result = data && data.length > 0 ? data[0] : null;
+    if (result && result.success) {
+      return { success: true, error: null };
+    } else {
+      return { success: false, error: new Error(result?.error_message || 'Failed to cancel invitation') };
+    }
   },
 
   /**

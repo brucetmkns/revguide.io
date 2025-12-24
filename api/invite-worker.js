@@ -771,6 +771,11 @@ export default {
       return handleNotifyPartnerAutoConnect(request, env, corsHeaders);
     }
 
+    // Route: POST /api/send-ownership-invite - Send ownership claim invitation email
+    if (url.pathname === '/api/send-ownership-invite') {
+      return handleSendOwnershipInvite(request, env, corsHeaders);
+    }
+
     // Route: POST /api/request-partner-access - Partner requests access to a client org
     if (url.pathname === '/api/request-partner-access') {
       return handleRequestPartnerAccess(request, env, corsHeaders);
@@ -2317,6 +2322,209 @@ async function handleNotifyPartnerAutoConnect(request, env, corsHeaders) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
+}
+
+// ===========================================
+// OWNERSHIP INVITATION HANDLER
+// ===========================================
+
+async function handleSendOwnershipInvite(request, env, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { recipientEmail, invitationToken, organizationName, partnerName } = body;
+
+    if (!recipientEmail || !isValidEmail(recipientEmail)) {
+      return new Response(JSON.stringify({ error: 'Valid email is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!invitationToken) {
+      return new Response(JSON.stringify({ error: 'Invitation token is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('RESEND_API_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Send ownership invitation email
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.fromEmail,
+        to: [recipientEmail],
+        subject: `Your RevGuide portal is ready - ${organizationName || 'Claim Your Account'}`,
+        html: buildOwnershipInviteEmailHtml(invitationToken, organizationName, partnerName),
+        text: buildOwnershipInviteEmailText(invitationToken, organizationName, partnerName)
+      })
+    });
+
+    if (!resendResponse.ok) {
+      const errorData = await resendResponse.json().catch(() => ({}));
+      console.error('Resend error:', errorData);
+      return new Response(JSON.stringify({
+        error: errorData.message || 'Failed to send email'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const result = await resendResponse.json();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Ownership invitation sent',
+      id: result.id
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Send ownership invite error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+function buildOwnershipInviteEmailHtml(token, orgName, partnerName) {
+  const inviteUrl = `${CONFIG.appUrl}/invite?token=${token}`;
+  const orgDisplay = orgName || 'your organization';
+  const partnerDisplay = partnerName || 'Your partner';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your RevGuide Portal is Ready</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+              <div style="display: inline-flex; align-items: center; gap: 8px;">
+                <span style="font-size: 24px; font-weight: 700; color: #0f172a;">RevGuide</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h1 style="font-size: 24px; font-weight: 600; color: #0f172a; margin: 0 0 16px;">
+                Your Portal is Ready
+              </h1>
+
+              <p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 24px;">
+                ${partnerDisplay} has set up a RevGuide portal for <strong>${orgDisplay}</strong> and invited you to become the owner.
+              </p>
+
+              <p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 32px;">
+                Click the button below to create your account and take ownership of your portal. Your partner has already configured content to help your team get started.
+              </p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${inviteUrl}" style="display: inline-block; background-color: #b2ef63; color: #0f172a; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
+                      Claim Your Portal
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Link fallback -->
+              <p style="font-size: 14px; color: #94a3b8; margin: 24px 0 0; text-align: center;">
+                Or copy and paste this link:<br>
+                <a href="${inviteUrl}" style="color: #3b82f6; word-break: break-all;">${inviteUrl}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- What's included section -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <div style="background-color: #f8fafc; border-radius: 8px; padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  What You Get
+                </h3>
+                <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.8;">
+                  <li>Full ownership and admin access to your portal</li>
+                  <li>Content already configured by your partner</li>
+                  <li>Ability to invite your team members</li>
+                  <li>Access to RevGuide features in HubSpot</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+              <p style="font-size: 12px; color: #94a3b8; margin: 0; text-align: center;">
+                This invitation expires in 7 days.<br>
+                If you didn't expect this email, you can safely ignore it.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+}
+
+function buildOwnershipInviteEmailText(token, orgName, partnerName) {
+  const inviteUrl = `${CONFIG.appUrl}/invite?token=${token}`;
+  const orgDisplay = orgName || 'your organization';
+  const partnerDisplay = partnerName || 'Your partner';
+
+  return `Your RevGuide Portal is Ready
+
+${partnerDisplay} has set up a RevGuide portal for ${orgDisplay} and invited you to become the owner.
+
+Click the link below to create your account and take ownership of your portal:
+
+${inviteUrl}
+
+What You Get:
+- Full ownership and admin access to your portal
+- Content already configured by your partner
+- Ability to invite your team members
+- Access to RevGuide features in HubSpot
+
+This invitation expires in 7 days.
+
+If you didn't expect this email, you can safely ignore it.
+
+---
+RevGuide - Better HubSpot, Together
+`;
 }
 
 // ===========================================
