@@ -2,6 +2,28 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.14.0] - 2025-12-24 - Condition Groups
+
+### Added
+- **Grouped Conditions**: Create multiple condition groups with AND/OR logic for complex rule building
+  - Each group can contain multiple conditions with its own internal AND/OR logic
+  - Groups are combined with a clickable AND/OR connector between them
+  - Visual card-based UI with numbered groups (Group 1, Group 2, etc.)
+  - "Add condition group" button to create additional groups
+- **Rules Engine Support**: Backend evaluation of grouped conditions
+  - `evaluateGroup()` and `evaluateGroups()` methods in rules-engine.js
+  - Backward compatible with flat conditions (migrated on load)
+
+### Technical
+- Database migration: Added `condition_groups` (JSONB) and `group_logic` (TEXT) columns to banners and plays tables
+- `admin/shared.js`: New functions `addConditionGroup()`, `getConditionGroups()`, `setConditionGroups()`, `updateConditionGroupsUI()`
+- `admin/shared.css`: New CSS classes for condition groups UI (`.condition-group-card`, `.condition-group-header`, etc.)
+- `lib/rules-engine.js`: Added group evaluation logic with fallback to flat conditions
+
+### Migration
+- Existing banners/plays with flat conditions are automatically migrated to single-group format on load
+- Both formats supported for backward compatibility with older extension versions
+
 ## [2.13.1] - 2025-12-24 - Index Tags Default & Tailwind Infrastructure
 
 ### Changed

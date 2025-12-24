@@ -4,9 +4,17 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.12.1 (Performance Optimization)
+## Current State: v2.14.0 (Condition Groups)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, and **ERP icon integration for linking HubSpot records to external systems like Q360**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, and **grouped conditions for complex rule building with nested AND/OR logic**.
+
+### Condition Groups (v2.14.0)
+- **Grouped Conditions**: Create multiple condition groups for complex rule logic
+- **Nested AND/OR Logic**: Each group has its own internal logic (AND/OR between conditions)
+- **Between-Group Logic**: Groups combined with clickable AND/OR connector badge
+- **Visual Card UI**: Numbered groups (Group 1, Group 2) in card-based interface
+- **Backward Compatible**: Existing flat conditions auto-migrate to single-group format
+- **Works for Banners + Plays**: Same UI and logic for both content types
 
 ### Index Page Tags (v2.5.0 + v2.5.1)
 - **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages
@@ -916,9 +924,17 @@ Would you like me to suggest values?"
 - [ ] File attachments
 - [ ] Version history with rollback
 
+### AI-Assisted Play Generation
+- [ ] **Play templates** - Pre-built play structures users can start from (e.g., "Competitor Battlecard", "Objection Handler", "Product Overview")
+- [ ] **AI build assist** - Generate play content from prompts (e.g., "Create a battlecard for competing against [X]")
+- [ ] **Hybrid workflow** - Start from template, then use AI to fill/refine content
+- [ ] **AI section suggestions** - AI recommends additional sections based on play type
+- [ ] **Content refinement** - AI helps improve existing play content (rewrite, expand, summarize)
+
 ### Admin Panel Improvements
 - [ ] **Duplicate trigger word validation** - Warn when saving a wiki entry with a trigger word that already exists
 - [ ] Bulk entry management (select multiple, delete, enable/disable)
+- [ ] **Wiki bulk editing** - Select multiple entries across different folders/categories, then bulk update their folder/category assignment
 - [ ] Entry merge tool for consolidating duplicates
 - [ ] **Review "Edit" button linking** - Verify edit links work correctly for banners, wiki popups, and plays after adding shortened organization UUID to admin panel URLs
 

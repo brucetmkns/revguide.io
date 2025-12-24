@@ -34,6 +34,28 @@ const value = entry.newField || entry.legacyField || '';
 4. Update save logic to include new field
 5. Update UI to read/write the field
 
+### CSS Classes vs Tailwind Utilities for Dynamic Content
+**Lesson**: For JavaScript-generated HTML, prefer explicit CSS classes in shared.css over Tailwind utility classes.
+
+**Context**: Condition groups UI was built using Tailwind utility classes (`border`, `rounded-lg`, `bg-surface`, etc.), but styling wasn't appearing. Root cause: admin pages (banners.html, plays.html) weren't loading `tailwind-output.css`, only `shared.css` and page-specific CSS.
+
+**Pattern**: For dynamically generated UI components:
+```javascript
+// Fragile - requires Tailwind CSS to be loaded
+div.innerHTML = `<div class="border rounded-lg bg-surface">...</div>`;
+
+// Robust - works as long as shared.css is loaded
+div.innerHTML = `<div class="condition-group-card">...</div>`;
+```
+
+**Best practice**:
+1. Define component CSS classes in `shared.css` using CSS variables from `base.css`
+2. Use these classes in JavaScript-generated HTML
+3. Tailwind utilities are fine for static HTML that explicitly loads `tailwind-output.css`
+4. Check `<link>` tags in HTML pages to verify which CSS files are loaded
+
+**Files affected**: `admin/shared.js` - `addConditionGroup()` function, `admin/shared.css` - condition group classes
+
 ---
 
 ## Event Handling
