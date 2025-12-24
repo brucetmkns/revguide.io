@@ -2221,6 +2221,147 @@ const RevGuideDB = {
       inGracePeriod: data.is_grace_period === true,
       daysRemaining: data.grace_period_days_remaining
     };
+  },
+
+  // ============================================
+  // Content Tags (Recommendations Feature)
+  // ============================================
+
+  async getContentTags() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('content_tags')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('name');
+  },
+
+  async createContentTag(tag) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    const { id, ...tagWithoutId } = tag;
+    return client
+      .from('content_tags')
+      .insert({ ...tagWithoutId, organization_id: orgId })
+      .select()
+      .single();
+  },
+
+  async updateContentTag(id, updates) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('content_tags')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+  },
+
+  async deleteContentTag(id) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('content_tags')
+      .delete()
+      .eq('id', id);
+  },
+
+  // ============================================
+  // Tag Rules (Recommendations Feature)
+  // ============================================
+
+  async getTagRules() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('tag_rules')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('priority', { ascending: false });
+  },
+
+  async createTagRule(rule) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    const { id, ...ruleWithoutId } = rule;
+    return client
+      .from('tag_rules')
+      .insert({ ...ruleWithoutId, organization_id: orgId })
+      .select()
+      .single();
+  },
+
+  async updateTagRule(id, updates) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('tag_rules')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+  },
+
+  async deleteTagRule(id) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('tag_rules')
+      .delete()
+      .eq('id', id);
+  },
+
+  // ============================================
+  // Recommended Content (Recommendations Feature)
+  // ============================================
+
+  async getRecommendedContent() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    return client
+      .from('recommended_content')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('priority', { ascending: false });
+  },
+
+  async createRecommendedContent(content) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    const { id, ...contentWithoutId } = content;
+    return client
+      .from('recommended_content')
+      .insert({ ...contentWithoutId, organization_id: orgId })
+      .select()
+      .single();
+  },
+
+  async updateRecommendedContent(id, updates) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('recommended_content')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+  },
+
+  async deleteRecommendedContent(id) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('recommended_content')
+      .delete()
+      .eq('id', id);
   }
 };
 

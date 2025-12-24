@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/admin/analytics.js"></script>
+  <title>Content Tags - RevGuide</title>
+  <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/icons.css">
+  <link rel="stylesheet" href="/styles/tailwind-output.css">
+  <link rel="stylesheet" href="/admin/shared.css">
+</head>
+<body class="bg-bg">
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <div class="nav-group" data-section="partner" id="partnerNavGroup" style="display: none;">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-group-menu">
+            <a href="/partner/home" class="nav-item" data-section="partner-home">Home</a>
+            <a href="/partner/accounts" class="nav-item" data-section="partner-accounts">Managed Accounts</a>
+          </div>
+        </div>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/recommendations" class="nav-item" data-section="recommendations">
+          <span class="nav-icon"><span class="icon icon-link-white"></span></span>
+          Recommendations
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/tags" class="nav-item active" data-section="tags">
+          <span class="nav-icon"><span class="icon icon-tag-white"></span></span>
+          Tags
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-profile-link">
+          <a href="/settings" class="user-profile-btn" id="sidebarUserProfile">
+            <span class="user-avatar" id="sidebarUserAvatar">...</span>
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+          </a>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content p-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold text-text-primary">Content Tags</h1>
+          <p class="text-text-secondary mt-1">Create tags to categorize and match recommended content</p>
+        </div>
+        <button class="btn btn-primary" id="addTagBtn">
+          <span class="icon icon-plus icon--sm"></span> Add Tag
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="flex flex-col items-center justify-center py-16">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-text-secondary">Loading tags...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden flex flex-col items-center justify-center py-16 text-center">
+        <span class="icon icon-tag icon--3xl text-text-muted mb-4"></span>
+        <h3 class="text-lg font-medium text-text-primary mb-2">No tags yet</h3>
+        <p class="text-text-secondary mb-4">Create your first tag to start organizing content</p>
+        <button class="btn btn-primary" id="createFirstTagBtn">
+          <span class="icon icon-plus icon--sm"></span> Create Tag
+        </button>
+      </div>
+
+      <!-- Tags Grid -->
+      <div id="tagsGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Tags populated by JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Tag Modal -->
+  <div class="modal" id="tagModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 id="tagModalTitle">Add Tag</h2>
+        <button class="modal-close" id="closeTagModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="space-y-4">
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1" for="tagName">
+              Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" id="tagName" class="input w-full" placeholder="e.g., Enterprise">
+          </div>
+
+          <!-- Slug (auto-generated) -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1" for="tagSlug">
+              Slug
+            </label>
+            <input type="text" id="tagSlug" class="input w-full" placeholder="auto-generated" readonly>
+            <p class="text-xs text-text-muted mt-1">Auto-generated from name</p>
+          </div>
+
+          <!-- Color -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1">Color</label>
+            <div class="flex gap-2 flex-wrap" id="colorPicker">
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#6366f1" style="background: #6366f1;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#8b5cf6" style="background: #8b5cf6;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#ec4899" style="background: #ec4899;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#ef4444" style="background: #ef4444;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#f97316" style="background: #f97316;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#eab308" style="background: #eab308;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#22c55e" style="background: #22c55e;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#14b8a6" style="background: #14b8a6;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#0ea5e9" style="background: #0ea5e9;"></button>
+              <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent" data-color="#64748b" style="background: #64748b;"></button>
+            </div>
+            <input type="hidden" id="tagColor" value="#6366f1">
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1" for="tagDescription">
+              Description
+            </label>
+            <textarea id="tagDescription" class="input w-full" rows="2" placeholder="Optional description..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelTagBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveTagBtn">Save Tag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2>Delete Tag</h2>
+        <button class="modal-close" id="closeDeleteModal">
+          <span class="icon icon-x"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-text-secondary">Are you sure you want to delete "<span id="deleteTagName" class="font-medium text-text-primary"></span>"?</p>
+        <p class="text-sm text-text-muted mt-2">This will remove the tag from all associated content and rules.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/config/environments.js"></script>
+  <script src="/config/current.js"></script>
+  <script src="/admin/supabase.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/tags.js"></script>
+</body>
+</html>
