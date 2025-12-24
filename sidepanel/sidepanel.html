@@ -32,10 +32,35 @@
 
     <!-- Plays Tab Content -->
     <div class="sidepanel-tab-content active" id="playsTab">
+      <!-- Play List View -->
       <div class="sidepanel-content" id="cardsContainer">
         <div class="loading-state">
           <div class="loading-spinner"></div>
           <p>Loading plays...</p>
+        </div>
+      </div>
+
+      <!-- Slide-in Play Detail Panel -->
+      <div class="play-detail-panel" id="playDetailPanel">
+        <div class="play-detail-header">
+          <button class="play-detail-back" id="playDetailBack">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <div class="play-detail-title">
+            <div class="play-detail-name" id="playDetailName">Play Name</div>
+            <div class="play-detail-subtitle" id="playDetailSubtitle"></div>
+          </div>
+          <button class="play-detail-edit" id="playDetailEdit" title="Edit play" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="play-detail-body" id="playDetailBody">
+          <!-- Card content will be inserted here -->
         </div>
       </div>
 

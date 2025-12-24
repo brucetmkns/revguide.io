@@ -52,6 +52,7 @@ class SidePanel {
     this.context = {};     // Current record context (objectType, recordId, etc.)
     this.propertyMetadata = {}; // Property definitions from HubSpot API
     this.authState = { isAuthenticated: false };
+    this.currentDetailCard = null;  // Currently displayed card in detail panel
     this.init();
   }
 
@@ -70,6 +71,9 @@ class SidePanel {
 
     // Set up auth handlers
     this.setupAuthHandlers();
+
+    // Set up play detail panel handlers
+    this.setupPlayDetailHandlers();
 
     // Check if we should open to settings tab (from extension icon click)
     await this.checkOpenTab();
@@ -357,6 +361,332 @@ class SidePanel {
     if (loggedOutState) loggedOutState.style.display = 'flex';
   }
 
+  // ============ PLAY DETAIL PANEL ============
+
+  setupPlayDetailHandlers() {
+    // Back button to close detail panel
+    document.getElementById('playDetailBack')?.addEventListener('click', () => {
+      this.closePlayDetail();
+    });
+
+    // Edit button in detail panel
+    document.getElementById('playDetailEdit')?.addEventListener('click', () => {
+      if (this.currentDetailCard) {
+        const cardId = this.currentDetailCard.id;
+        const adminUrl = this.authState.isAuthenticated
+          ? `${WEB_APP_URL}/plays?edit=${cardId}`
+          : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
+        chrome.tabs.create({ url: adminUrl });
+      }
+    });
+  }
+
+  openPlayDetail(card) {
+    const panel = document.getElementById('playDetailPanel');
+    const nameEl = document.getElementById('playDetailName');
+    const subtitleEl = document.getElementById('playDetailSubtitle');
+    const bodyEl = document.getElementById('playDetailBody');
+    const editBtn = document.getElementById('playDetailEdit');
+
+    if (!panel || !bodyEl) return;
+
+    // Store current card
+    this.currentDetailCard = card;
+
+    // Update header
+    nameEl.textContent = card.name || 'Untitled Play';
+    subtitleEl.textContent = card.subtitle || '';
+    subtitleEl.style.display = card.subtitle ? 'block' : 'none';
+
+    // Show/hide edit button based on permissions
+    const role = this.authState.profile?.role;
+    const canEdit = role === 'owner' || role === 'admin' || role === 'editor';
+    const showAdminLinks = this.settings.showAdminLinks !== false && canEdit;
+    editBtn.style.display = showAdminLinks ? 'flex' : 'none';
+
+    // Render card body content
+    const bodyContent = this.renderCardBodyContent(card);
+    bodyEl.innerHTML = bodyContent;
+
+    // Attach event handlers for the body content
+    this.attachDetailBodyHandlers(bodyEl, card);
+
+    // Show panel with animation
+    requestAnimationFrame(() => {
+      panel.classList.add('active');
+    });
+  }
+
+  closePlayDetail() {
+    const panel = document.getElementById('playDetailPanel');
+    if (panel) {
+      panel.classList.remove('active');
+      this.currentDetailCard = null;
+    }
+  }
+
+  renderCardBodyContent(card) {
+    // For recommended_content type with assets, render timeline
+    if (card.cardType === 'recommended_content' && card.resolvedAssets?.length > 0) {
+      return this.renderRecommendedContentBody(card);
+    }
+
+    // For regular plays, render sections
+    return this.renderRegularCardBody(card);
+  }
+
+  renderRecommendedContentBody(card) {
+    // Content type configuration
+    const contentTypeConfig = {
+      pdf: { label: 'Documents', color: '#ef4444', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>' },
+      doc: { label: 'Documents', color: '#3b82f6', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>' },
+      hubspot_document: { label: 'Documents', color: '#3b82f6', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>' },
+      ppt: { label: 'Presentations', color: '#f97316', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/></svg>' },
+      video: { label: 'Videos', color: '#ec4899', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' },
+      blog: { label: 'Blog Articles', color: '#8b5cf6', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2"/></svg>' },
+      external_link: { label: 'Links', color: '#06b6d4', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>' },
+      link: { label: 'Links', color: '#06b6d4', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>' }
+    };
+
+    // Group assets by type
+    const groupedAssets = {};
+    const groupOrder = ['pdf', 'doc', 'hubspot_document', 'ppt', 'video', 'blog', 'external_link', 'link'];
+
+    card.resolvedAssets.forEach(asset => {
+      const contentType = asset.content_type || asset.contentType || 'external_link';
+      if (!groupedAssets[contentType]) groupedAssets[contentType] = [];
+      groupedAssets[contentType].push(asset);
+    });
+
+    // Merge similar groups
+    const mergedGroups = [];
+    const processedTypes = new Set();
+
+    groupOrder.forEach(type => {
+      if (processedTypes.has(type) || !groupedAssets[type]) return;
+      const config = contentTypeConfig[type] || contentTypeConfig.external_link;
+      const label = config.label;
+      const mergedAssets = [];
+
+      groupOrder.forEach(t => {
+        const tConfig = contentTypeConfig[t] || contentTypeConfig.external_link;
+        if (tConfig.label === label && groupedAssets[t]) {
+          mergedAssets.push(...groupedAssets[t].map(a => ({ ...a, resolvedType: t })));
+          processedTypes.add(t);
+        }
+      });
+
+      if (mergedAssets.length > 0) {
+        mergedGroups.push({ label, color: config.color, assets: mergedAssets });
+      }
+    });
+
+    // Build match criteria
+    const matchCriteria = [];
+    if (card.conditions?.length > 0) {
+      card.conditions.forEach(c => {
+        if (c.property) {
+          const propName = c.property.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          if (!matchCriteria.includes(propName)) matchCriteria.push(propName);
+        }
+      });
+    }
+    const matchText = matchCriteria.length > 0 ? matchCriteria.slice(0, 3).join(', ') : 'Content recommendations';
+
+    // Render timeline
+    const groupsHtml = mergedGroups.map(group => {
+      const itemsHtml = group.assets.map(asset => {
+        const url = asset.url || '';
+        const title = asset.title || 'Untitled';
+        const type = asset.resolvedType || asset.content_type || asset.contentType || 'external_link';
+        const config = contentTypeConfig[type] || contentTypeConfig.external_link;
+
+        return `
+          <div class="rec-timeline-item" data-url="${this.escapeHtml(url)}">
+            <div class="rec-timeline-item-icon" style="background: ${config.color}10; color: ${config.color};">
+              ${config.icon}
+            </div>
+            <div class="rec-timeline-item-content">
+              <div class="rec-timeline-item-title">${this.escapeHtml(title)}</div>
+            </div>
+            <div class="rec-timeline-item-actions">
+              ${url ? `
+                <button class="rec-timeline-action-btn rec-copy-link-btn" data-url="${this.escapeHtml(url)}" title="Copy link">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+                <button class="rec-timeline-action-btn rec-open-link-btn" data-url="${this.escapeHtml(url)}" title="Open">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="rec-timeline-group">
+          <div class="rec-timeline-group-header">
+            <div class="rec-timeline-node" style="border-color: ${group.color}20;">
+              <div class="rec-timeline-node-dot" style="background: ${group.color};"></div>
+            </div>
+            <span class="rec-timeline-group-label">${group.label}</span>
+            <span class="rec-timeline-group-count">(${group.assets.length})</span>
+          </div>
+          <div class="rec-timeline-group-items">${itemsHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="rec-timeline-match-banner">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span>Matched: ${this.escapeHtml(matchText)}</span>
+      </div>
+      <div class="rec-timeline-container">
+        <div class="rec-timeline-line"></div>
+        <div class="rec-timeline-groups">${groupsHtml}</div>
+      </div>
+      <div class="rec-timeline-chat-hint">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Need help finding something?</span>
+      </div>
+    `;
+  }
+
+  renderRegularCardBody(card) {
+    let html = '';
+
+    // Render sections
+    if (card.sections) {
+      html += card.sections.map(section => {
+        const sectionTitle = section.title ? this.escapeHtml(this.interpolateVariables(section.title)) : '';
+
+        if (section.type === 'media' && section.mediaUrl) {
+          const embedUrl = this.convertToEmbedUrl(section.mediaUrl);
+          return `
+            <div class="card-section card-section-media">
+              ${sectionTitle ? `<div class="section-title">${sectionTitle}</div>` : ''}
+              <div class="section-media">
+                <button class="media-open-btn" data-original-url="${this.escapeHtml(section.mediaUrl)}" title="Open in new tab">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </button>
+                <iframe src="${this.escapeHtml(embedUrl || section.mediaUrl)}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+              </div>
+            </div>
+          `;
+        }
+
+        if (section.type === 'fields' && section.fields?.length > 0) {
+          return this.renderFieldsSection(section, card);
+        }
+
+        return `
+          <div class="card-section">
+            ${sectionTitle ? `<div class="section-title">${sectionTitle}</div>` : ''}
+            <div class="section-content">${this.formatContent(section.content)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Add link if present
+    if (card.link) {
+      html += `
+        <div class="card-link">
+          <a href="${this.escapeHtml(card.link)}" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            View Full Play
+          </a>
+        </div>
+      `;
+    }
+
+    return html;
+  }
+
+  attachDetailBodyHandlers(bodyEl, card) {
+    // Timeline item clicks
+    bodyEl.querySelectorAll('.rec-timeline-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.rec-timeline-action-btn')) return;
+        const url = item.dataset.url;
+        if (url) chrome.tabs.create({ url });
+      });
+    });
+
+    // Copy link buttons
+    bodyEl.querySelectorAll('.rec-copy-link-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          try {
+            await navigator.clipboard.writeText(url);
+            btn.classList.add('copied');
+            btn.title = 'Copied!';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.title = 'Copy link';
+            }, 1500);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+          }
+        }
+      });
+    });
+
+    // Open link buttons
+    bodyEl.querySelectorAll('.rec-open-link-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) chrome.tabs.create({ url });
+      });
+    });
+
+    // Media open buttons
+    bodyEl.querySelectorAll('.media-open-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.originalUrl;
+        const iframe = btn.closest('.section-media')?.querySelector('iframe');
+        if (iframe) {
+          const src = iframe.src;
+          iframe.src = '';
+          iframe.src = src;
+        }
+        if (url) chrome.tabs.create({ url });
+      });
+    });
+
+    // Save fields buttons
+    bodyEl.querySelectorAll('.save-fields-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.handleSaveFields(e));
+    });
+
+    // Initialize keyboard shortcuts for fields
+    this.initFieldKeyboardShortcuts(bodyEl);
+  }
+
   // ============ SETTINGS ============
 
   async loadSettings() {
@@ -561,10 +891,17 @@ class SidePanel {
 
     container.innerHTML = html;
 
-    // Add click handlers for expand/collapse
+    // Add click handlers to open slide-in detail panel
     container.querySelectorAll('.card-header').forEach(header => {
       header.addEventListener('click', () => {
-        header.closest('.battle-card').classList.toggle('expanded');
+        const cardEl = header.closest('.battle-card');
+        const cardId = cardEl?.dataset.cardId;
+
+        // Find the card data
+        const card = this.cards.find(c => c.id === cardId);
+        if (card) {
+          this.openPlayDetail(card);
+        }
       });
     });
 
@@ -917,11 +1254,8 @@ class SidePanel {
     };
 
     // For recommended_content type, render asset list instead of sections
-    if (card.cardType === 'recommended_content') {
-      console.log('[RevGuide] Recommended Content play:', card.name, 'resolvedAssets:', card.resolvedAssets?.length || 0);
-      if (card.resolvedAssets?.length > 0) {
-        return this.renderRecommendedContentCard(card, typeIcons);
-      }
+    if (card.cardType === 'recommended_content' && card.resolvedAssets?.length > 0) {
+      return this.renderRecommendedContentCard(card, typeIcons);
     }
 
     const sectionsHtml = card.sections ? card.sections.map(section => {

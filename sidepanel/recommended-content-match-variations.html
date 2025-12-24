@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommended Content - Match Reasoning Variations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: '#b2ef63',
+              dark: '#9ed655',
+              light: '#c5f58a',
+              subtle: 'rgba(178, 239, 99, 0.12)',
+              muted: 'rgba(178, 239, 99, 0.08)',
+            },
+            surface: {
+              DEFAULT: '#ffffff',
+              hover: '#f9fafb',
+              active: '#f3f4f6',
+            },
+            bg: {
+              DEFAULT: '#f7f8fa',
+              elevated: '#ffffff',
+              subtle: '#f3f4f6',
+              muted: '#e5e7eb',
+              dark: '#1a1d21',
+              darker: '#131619',
+            },
+            border: {
+              DEFAULT: '#e1e3e8',
+              subtle: '#f0f1f3',
+              strong: '#d1d5db',
+            },
+            text: {
+              primary: '#111827',
+              secondary: '#374151',
+              tertiary: '#6b7280',
+              muted: '#9ca3af',
+            },
+            'type-blog': '#8b5cf6',
+            'type-pdf': '#ef4444',
+            'type-doc': '#3b82f6',
+            'type-ppt': '#f97316',
+            'type-video': '#ec4899',
+            'type-link': '#06b6d4',
+            // Match reason colors
+            'match-stage': '#10b981',
+            'match-industry': '#6366f1',
+            'match-size': '#f59e0b',
+            'match-tag': '#ec4899',
+          },
+          fontFamily: {
+            sans: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-fade-up { animation: fadeUp 0.3s ease-out forwards; }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+    .animate-scale-in { animation: scaleIn 0.25s ease-out forwards; }
+    .animate-slide-up { animation: slideUp 0.35s ease-out forwards; }
+    .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+    .stagger > * { opacity: 0; animation: fadeUp 0.3s ease-out forwards; }
+    .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+    .stagger > *:nth-child(2) { animation-delay: 0.1s; }
+    .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+    .stagger > *:nth-child(4) { animation-delay: 0.2s; }
+    .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+    .stagger > *:nth-child(6) { animation-delay: 0.3s; }
+    .stagger > *:nth-child(7) { animation-delay: 0.35s; }
+
+    /* Tooltip */
+    .match-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.15s ease;
+      z-index: 50;
+    }
+    .match-trigger:hover .match-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(-8px);
+    }
+
+    /* Expand animation for why sections */
+    .why-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease-out, opacity 0.2s ease;
+      opacity: 0;
+    }
+    .why-expanded .why-content {
+      max-height: 200px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-bg font-sans text-sm text-text-primary p-6">
+
+  <div class="max-w-[1400px] mx-auto">
+    <header class="mb-8">
+      <h1 class="text-2xl font-bold text-text-primary mb-2">Match Reasoning Variations</h1>
+      <p class="text-text-tertiary">Exploring how to show WHY content was recommended in a conversational way.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- ============================================
+           B1: Inline Why Chips
+           Subtle match indicators on each item
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>B1: Inline Match Chips</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[620px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <div class="h-full flex flex-col" id="listB1">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3">
+              <button onclick="showPanel('B1')" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel B1 -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 flex flex-col" id="panelB1">
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanel('B1')" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+              <span class="text-xs font-medium text-text-muted bg-bg-subtle px-2 py-1 rounded">8 items</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4">
+              <!-- Assistant message -->
+              <div class="flex gap-3 mb-4">
+                <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <svg class="w-3.5 h-3.5 text-bg-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                    <p class="text-text-secondary leading-relaxed">Found <span class="font-semibold text-text-primary">8 resources</span> for this deal. Each shows why it matched.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Content items with inline match chips -->
+              <div class="space-y-2 stagger">
+                <!-- Item 1 -->
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-blog/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg class="w-4 h-4 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Getting Started Guide</div>
+                      <div class="text-xs text-text-muted mb-2">Blog article</div>
+                      <!-- Match chips -->
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-stage/10 text-match-stage">
+                          <span class="w-1 h-1 rounded-full bg-match-stage"></span>
+                          Qualification
+                          <div class="match-tooltip whitespace-nowrap bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg">
+                            Matched deal stage
+                          </div>
+                        </span>
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-industry/10 text-match-industry">
+                          <span class="w-1 h-1 rounded-full bg-match-industry"></span>
+                          SaaS
+                          <div class="match-tooltip whitespace-nowrap bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg">
+                            Matched industry
+                          </div>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-pdf/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg class="w-4 h-4 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Implementation Checklist</div>
+                      <div class="text-xs text-text-muted mb-2">PDF document</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-size/10 text-match-size">
+                          <span class="w-1 h-1 rounded-full bg-match-size"></span>
+                          Enterprise
+                          <div class="match-tooltip whitespace-nowrap bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg">
+                            Matched company size
+                          </div>
+                        </span>
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-tag/10 text-match-tag">
+                          <span class="w-1 h-1 rounded-full bg-match-tag"></span>
+                          onboarding
+                          <div class="match-tooltip whitespace-nowrap bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg">
+                            Matched tag
+                          </div>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-video/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg class="w-4 h-4 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Product Walkthrough</div>
+                      <div class="text-xs text-text-muted mb-2">Video (12:34)</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-stage/10 text-match-stage">
+                          <span class="w-1 h-1 rounded-full bg-match-stage"></span>
+                          Qualification
+                        </span>
+                        <span class="match-trigger relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-match-size/10 text-match-size">
+                          <span class="w-1 h-1 rounded-full bg-match-size"></span>
+                          Enterprise
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 border-t border-border bg-surface">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-bg-subtle rounded-xl text-text-muted text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span>Ask about these resources...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           B2: Conversational Groupings
+           Natural language section headers
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>B2: Conversational Groupings</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[620px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <div class="h-full flex flex-col" id="listB2">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3">
+              <button onclick="showPanel('B2')" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel B2 -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 flex flex-col" id="panelB2">
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanel('B2')" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4 stagger">
+              <!-- Opening context -->
+              <div class="flex gap-3">
+                <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <svg class="w-3.5 h-3.5 text-bg-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                    <p class="text-text-secondary leading-relaxed">I've organized these based on what I know about <span class="font-medium text-text-primary">Acme Corp</span>.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Group 1: Stage-based -->
+              <div>
+                <div class="flex gap-3 mb-3">
+                  <div class="w-7 h-7 rounded-full bg-match-stage/10 flex items-center justify-center flex-shrink-0">
+                    <div class="w-2 h-2 rounded-full bg-match-stage"></div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm text-text-secondary">Since they're in <span class="font-semibold text-match-stage">Qualification</span>, these will help move things forward:</p>
+                  </div>
+                </div>
+                <div class="ml-10 space-y-1.5">
+                  <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-match-stage/30 transition-all cursor-pointer">
+                    <div class="w-7 h-7 rounded bg-type-blog/10 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <span class="flex-1 text-[13px] text-text-primary truncate">Getting Started Guide</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-match-stage/30 transition-all cursor-pointer">
+                    <div class="w-7 h-7 rounded bg-type-video/10 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                    </div>
+                    <span class="flex-1 text-[13px] text-text-primary truncate">Product Walkthrough</span>
+                    <span class="text-[10px] text-text-muted">12:34</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Group 2: Size-based -->
+              <div>
+                <div class="flex gap-3 mb-3">
+                  <div class="w-7 h-7 rounded-full bg-match-size/10 flex items-center justify-center flex-shrink-0">
+                    <div class="w-2 h-2 rounded-full bg-match-size"></div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm text-text-secondary">For <span class="font-semibold text-match-size">Enterprise</span> companies like this:</p>
+                  </div>
+                </div>
+                <div class="ml-10 space-y-1.5">
+                  <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-match-size/30 transition-all cursor-pointer">
+                    <div class="w-7 h-7 rounded bg-type-pdf/10 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <span class="flex-1 text-[13px] text-text-primary truncate">Implementation Checklist</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-match-size/30 transition-all cursor-pointer">
+                    <div class="w-7 h-7 rounded bg-type-ppt/10 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-type-ppt" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/></svg>
+                    </div>
+                    <span class="flex-1 text-[13px] text-text-primary truncate">Executive Overview Deck</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Group 3: Industry -->
+              <div>
+                <div class="flex gap-3 mb-3">
+                  <div class="w-7 h-7 rounded-full bg-match-industry/10 flex items-center justify-center flex-shrink-0">
+                    <div class="w-2 h-2 rounded-full bg-match-industry"></div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm text-text-secondary">Specifically for the <span class="font-semibold text-match-industry">SaaS</span> industry:</p>
+                  </div>
+                </div>
+                <div class="ml-10 space-y-1.5">
+                  <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-match-industry/30 transition-all cursor-pointer">
+                    <div class="w-7 h-7 rounded bg-type-doc/10 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-type-doc" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <span class="flex-1 text-[13px] text-text-primary truncate">SaaS Integration Patterns</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-6 h-6 rounded hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 border-t border-border bg-surface">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-bg-subtle rounded-xl text-text-muted text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span>Why these? Ask me...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           B3: Relevance Score with Expandable Why
+           Visual relevance + tap to see details
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>B3: Relevance + Expandable Why</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[620px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <div class="h-full flex flex-col" id="listB3">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3">
+              <button onclick="showPanel('B3')" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel B3 -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 flex flex-col" id="panelB3">
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanel('B3')" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 stagger">
+              <!-- Context bar -->
+              <div class="flex gap-3 mb-4">
+                <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <svg class="w-3.5 h-3.5 text-bg-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                    <p class="text-text-secondary text-sm leading-relaxed">Sorted by relevance. Tap <span class="inline-flex items-center gap-1 text-primary-dark font-medium"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> why</span> to see match details.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Items with relevance and expandable why -->
+              <div class="space-y-2">
+                <!-- High relevance item -->
+                <div class="bg-surface border border-border rounded-xl overflow-hidden" id="item-b3-1">
+                  <div class="p-3 cursor-pointer" onclick="toggleWhy('b3-1')">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-type-blog/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-text-primary text-[13px]">Getting Started Guide</span>
+                          <!-- Relevance dots -->
+                          <div class="flex gap-0.5" title="High relevance">
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                          </div>
+                        </div>
+                        <div class="text-xs text-text-muted">Blog article</div>
+                      </div>
+                      <button class="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-primary-dark bg-primary/10 hover:bg-primary/20 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        why
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Expandable why section -->
+                  <div class="why-content border-t border-border bg-bg-subtle/50">
+                    <div class="px-3 py-2.5">
+                      <div class="text-xs text-text-tertiary mb-2">Matched because:</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-stage/10 text-match-stage">Deal in Qualification</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-industry/10 text-match-industry">SaaS industry</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-tag/10 text-match-tag">Tagged: onboarding</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Medium relevance item -->
+                <div class="bg-surface border border-border rounded-xl overflow-hidden" id="item-b3-2">
+                  <div class="p-3 cursor-pointer" onclick="toggleWhy('b3-2')">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-type-pdf/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-text-primary text-[13px]">Implementation Checklist</span>
+                          <div class="flex gap-0.5" title="Medium relevance">
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-border-strong"></div>
+                          </div>
+                        </div>
+                        <div class="text-xs text-text-muted">PDF document</div>
+                      </div>
+                      <button class="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-primary-dark bg-primary/10 hover:bg-primary/20 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        why
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="why-content border-t border-border bg-bg-subtle/50">
+                    <div class="px-3 py-2.5">
+                      <div class="text-xs text-text-tertiary mb-2">Matched because:</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-size/10 text-match-size">Enterprise company</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-tag/10 text-match-tag">Tagged: implementation</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Another item -->
+                <div class="bg-surface border border-border rounded-xl overflow-hidden" id="item-b3-3">
+                  <div class="p-3 cursor-pointer" onclick="toggleWhy('b3-3')">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-type-video/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-text-primary text-[13px]">Product Walkthrough</span>
+                          <div class="flex gap-0.5" title="High relevance">
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                          </div>
+                        </div>
+                        <div class="text-xs text-text-muted">Video (12:34)</div>
+                      </div>
+                      <button class="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-primary-dark bg-primary/10 hover:bg-primary/20 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        why
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="why-content border-t border-border bg-bg-subtle/50">
+                    <div class="px-3 py-2.5">
+                      <div class="text-xs text-text-tertiary mb-2">Matched because:</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-stage/10 text-match-stage">Deal in Qualification</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-size/10 text-match-size">Enterprise company</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-match-industry/10 text-match-industry">SaaS industry</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 border-t border-border bg-surface">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-bg-subtle rounded-xl text-text-muted text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span>Find something specific...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           B4: Context Summary Banner
+           Top banner showing deal context
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>B4: Context Summary Banner</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[620px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <div class="h-full flex flex-col" id="listB4">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3">
+              <button onclick="showPanel('B4')" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel B4 -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 flex flex-col" id="panelB4">
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanel('B4')" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+              <span class="text-xs font-medium text-text-muted bg-bg-subtle px-2 py-1 rounded">8 items</span>
+            </div>
+
+            <!-- Context summary banner -->
+            <div class="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/20">
+              <div class="px-4 py-3">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <span class="text-xs font-semibold text-text-secondary">Matched for this context:</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded-lg border border-border shadow-sm">
+                    <div class="w-2 h-2 rounded-full bg-match-stage"></div>
+                    <span class="text-xs font-medium text-text-primary">Qualification</span>
+                    <span class="text-[10px] text-text-muted">stage</span>
+                  </div>
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded-lg border border-border shadow-sm">
+                    <div class="w-2 h-2 rounded-full bg-match-size"></div>
+                    <span class="text-xs font-medium text-text-primary">Enterprise</span>
+                    <span class="text-[10px] text-text-muted">size</span>
+                  </div>
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded-lg border border-border shadow-sm">
+                    <div class="w-2 h-2 rounded-full bg-match-industry"></div>
+                    <span class="text-xs font-medium text-text-primary">SaaS</span>
+                    <span class="text-[10px] text-text-muted">industry</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 stagger">
+              <!-- Simple flat list since context is shown above -->
+              <div class="space-y-2">
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-blog/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Getting Started Guide</div>
+                      <div class="text-xs text-text-muted">Blog article</div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-pdf/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Implementation Checklist</div>
+                      <div class="text-xs text-text-muted">PDF document</div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-ppt/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-type-ppt" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Executive Overview Deck</div>
+                      <div class="text-xs text-text-muted">PowerPoint</div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-video/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">Product Walkthrough</div>
+                      <div class="text-xs text-text-muted">Video (12:34)</div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-surface border border-border rounded-xl p-3 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-type-doc/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-type-doc" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-text-primary text-[13px]">API Integration Guide</div>
+                      <div class="text-xs text-text-muted">Google Doc</div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
+                      <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 border-t border-border bg-surface">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 flex items-center gap-2 px-3 py-2.5 bg-bg-subtle rounded-xl text-text-muted text-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  <span>Ask about this deal...</span>
+                </div>
+                <button class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-bg-dark hover:bg-primary-dark transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function showPanel(id) {
+      document.getElementById('panel' + id).classList.remove('translate-x-full');
+    }
+    function hidePanel(id) {
+      document.getElementById('panel' + id).classList.add('translate-x-full');
+    }
+    function toggleWhy(id) {
+      const item = document.getElementById('item-' + id);
+      item.classList.toggle('why-expanded');
+    }
+  </script>
+</body>
+</html>

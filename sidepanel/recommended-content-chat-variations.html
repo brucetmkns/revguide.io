@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommended Content - Chat Variations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: '#b2ef63',
+              dark: '#9ed655',
+              light: '#c5f58a',
+              subtle: 'rgba(178, 239, 99, 0.12)',
+            },
+            surface: {
+              DEFAULT: '#ffffff',
+              hover: '#f9fafb',
+              active: '#f3f4f6',
+            },
+            bg: {
+              DEFAULT: '#f7f8fa',
+              elevated: '#ffffff',
+              subtle: '#f3f4f6',
+              muted: '#e5e7eb',
+              dark: '#1a1d21',
+              darker: '#131619',
+            },
+            border: {
+              DEFAULT: '#e1e3e8',
+              subtle: '#f0f1f3',
+              strong: '#d1d5db',
+            },
+            text: {
+              primary: '#111827',
+              secondary: '#374151',
+              tertiary: '#6b7280',
+              muted: '#9ca3af',
+            },
+            // Content type colors
+            'type-blog': '#8b5cf6',
+            'type-pdf': '#ef4444',
+            'type-doc': '#3b82f6',
+            'type-ppt': '#f97316',
+            'type-video': '#ec4899',
+            'type-link': '#06b6d4',
+          },
+          fontFamily: {
+            sans: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Dark scrollbar */
+    .dark-scroll::-webkit-scrollbar-thumb {
+      background: #374151;
+    }
+    .dark-scroll::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .animate-slide-in {
+      animation: slideIn 0.25s ease-out forwards;
+    }
+    .animate-fade-up {
+      animation: fadeUp 0.3s ease-out forwards;
+    }
+    .typing-dot {
+      animation: pulse-dot 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Staggered children */
+    .stagger-children > * {
+      opacity: 0;
+      animation: fadeUp 0.3s ease-out forwards;
+    }
+    .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+    .stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+    .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+    .stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+    .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+    .stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+    .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+    .stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body class="bg-bg font-sans text-sm text-text-primary p-6">
+
+  <div class="max-w-[1400px] mx-auto">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-2xl font-bold text-text-primary mb-2">Chat-Style Variations</h1>
+      <p class="text-text-tertiary">Exploring conversational UI patterns for recommended content. Click play cards to interact.</p>
+    </header>
+
+    <!-- Variations Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- ============================================
+           VARIATION A1: Assistant Bubble Style
+           Light theme, message bubbles from assistant
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>A1: Assistant Bubbles</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[600px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <!-- Play List View -->
+          <div class="h-full flex flex-col" id="listA1">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-2">
+              <button onclick="showPanelA1()" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary hover:shadow-sm transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary truncate">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </button>
+              <button class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary hover:shadow-sm transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-white flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary truncate">Competitor Battlecard</div>
+                    <div class="text-xs text-text-muted">5 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide-in Panel -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 ease-out flex flex-col" id="panelA1">
+            <!-- Header -->
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanelA1()" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+              <span class="text-xs font-medium text-text-muted bg-bg-subtle px-2 py-1 rounded">8 items</span>
+            </div>
+
+            <!-- Chat-style content -->
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4 stagger-children" id="chatA1">
+              <!-- Assistant intro message -->
+              <div class="flex gap-3">
+                <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <svg class="w-3.5 h-3.5 text-bg-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                </div>
+                <div class="flex-1 space-y-3">
+                  <div class="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                    <p class="text-text-secondary leading-relaxed">Here are the resources for onboarding enterprise customers. I've organized them by what's most relevant for this deal stage.</p>
+                  </div>
+
+                  <!-- Content bubbles -->
+                  <div class="space-y-2">
+                    <!-- Blog -->
+                    <div class="group bg-surface border border-border rounded-xl px-3 py-2.5 hover:border-type-blog/50 hover:shadow-sm transition-all cursor-pointer">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-type-blog/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-text-primary truncate text-[13px]">Getting Started Guide</div>
+                          <div class="text-xs text-text-muted">Blog article</div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Copy link">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Open">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- PDF -->
+                    <div class="group bg-surface border border-border rounded-xl px-3 py-2.5 hover:border-type-pdf/50 hover:shadow-sm transition-all cursor-pointer">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-type-pdf/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-text-primary truncate text-[13px]">Implementation Checklist</div>
+                          <div class="text-xs text-text-muted">PDF document</div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Copy link">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Open">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- PPT -->
+                    <div class="group bg-surface border border-border rounded-xl px-3 py-2.5 hover:border-type-ppt/50 hover:shadow-sm transition-all cursor-pointer">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-type-ppt/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-ppt" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-text-primary truncate text-[13px]">Executive Overview Deck</div>
+                          <div class="text-xs text-text-muted">PowerPoint</div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Copy link">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Open">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Video -->
+                    <div class="group bg-surface border border-border rounded-xl px-3 py-2.5 hover:border-type-video/50 hover:shadow-sm transition-all cursor-pointer">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-type-video/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-text-primary truncate text-[13px]">Product Walkthrough</div>
+                          <div class="text-xs text-text-muted">Video (12:34)</div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Copy link">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-7 h-7 rounded-md hover:bg-bg-subtle flex items-center justify-center text-text-muted hover:text-text-secondary" title="Open">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Future chat input hint -->
+            <div class="p-3 border-t border-border bg-surface">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-bg-subtle rounded-xl text-text-muted text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span>Ask about this content...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           VARIATION A2: Dark Theme Minimal
+           Clean dark UI with subtle accents
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>A2: Dark Minimal</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[600px] bg-bg-dark rounded-xl border border-gray-800 shadow-lg overflow-hidden relative">
+          <!-- Play List View -->
+          <div class="h-full flex flex-col" id="listA2">
+            <div class="p-3 border-b border-gray-800">
+              <h2 class="font-semibold text-gray-100">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto dark-scroll p-3 space-y-2">
+              <button onclick="showPanelA2()" class="w-full text-left p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:border-primary/50 hover:bg-gray-800 transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-gray-100 truncate">Enterprise Onboarding</div>
+                    <div class="text-xs text-gray-500">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-gray-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide-in Panel -->
+          <div class="absolute inset-0 bg-bg-dark translate-x-full transition-transform duration-300 ease-out flex flex-col" id="panelA2">
+            <!-- Header -->
+            <div class="flex items-center gap-3 p-3 border-b border-gray-800">
+              <button onclick="hidePanelA2()" class="w-8 h-8 rounded-lg hover:bg-gray-800 flex items-center justify-center text-gray-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-gray-100">Enterprise Onboarding</div>
+              </div>
+            </div>
+
+            <!-- Conversational content -->
+            <div class="flex-1 overflow-y-auto dark-scroll p-4 stagger-children">
+              <!-- Context message -->
+              <div class="mb-4 flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-bg-dark" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                <div class="text-sm text-gray-400 leading-relaxed">
+                  <span class="text-gray-300">8 resources</span> matched for this enterprise deal. These are curated for the qualification stage.
+                </div>
+              </div>
+
+              <!-- Content items - ultra minimal -->
+              <div class="space-y-1">
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-blog flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">Getting Started Guide</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">Blog</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-pdf flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">Implementation Checklist</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">PDF</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-ppt flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">Executive Overview Deck</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">PPT</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-video flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">Product Walkthrough Video</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">Video</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-doc flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">API Integration Guide</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">Doc</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/70 transition-colors cursor-pointer">
+                  <div class="w-1.5 h-1.5 rounded-full bg-type-link flex-shrink-0"></div>
+                  <span class="flex-1 text-gray-300 text-[13px] truncate group-hover:text-gray-100">Customer Success Portal</span>
+                  <span class="text-[10px] text-gray-600 uppercase tracking-wide">Link</span>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                    <button class="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-700/50">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat input -->
+            <div class="p-3 border-t border-gray-800">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 flex items-center gap-2 px-3 py-2 bg-gray-800 rounded-lg text-gray-500 text-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <span>Search or ask...</span>
+                </div>
+                <button class="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           VARIATION A3: Thread/Timeline Style
+           Vertical thread with timestamps
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>A3: Thread Timeline</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[600px] bg-bg rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <!-- Play List View -->
+          <div class="h-full flex flex-col" id="listA3">
+            <div class="p-3 border-b border-border bg-surface">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-2">
+              <button onclick="showPanelA3()" class="w-full text-left p-3 bg-surface rounded-lg border border-border hover:border-primary hover:shadow-sm transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary truncate">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-muted">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide-in Panel -->
+          <div class="absolute inset-0 bg-bg translate-x-full transition-transform duration-300 ease-out flex flex-col" id="panelA3">
+            <!-- Header -->
+            <div class="flex items-center gap-3 p-3 border-b border-border bg-surface">
+              <button onclick="hidePanelA3()" class="w-8 h-8 rounded-lg hover:bg-bg-subtle flex items-center justify-center text-text-secondary transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="flex-1">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+                <div class="text-xs text-text-muted">Content recommendations</div>
+              </div>
+            </div>
+
+            <!-- Timeline content -->
+            <div class="flex-1 overflow-y-auto custom-scroll stagger-children">
+              <!-- Thread start -->
+              <div class="px-4 py-3 bg-primary/5 border-b border-primary/10">
+                <div class="flex items-center gap-2 text-xs text-primary-dark font-medium">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  Matched based on: Deal Stage, Industry, Company Size
+                </div>
+              </div>
+
+              <!-- Timeline items -->
+              <div class="relative">
+                <!-- Timeline line -->
+                <div class="absolute left-6 top-0 bottom-0 w-px bg-border"></div>
+
+                <div class="p-4 space-y-4">
+                  <!-- Grouped by type -->
+                  <div class="relative">
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="w-5 h-5 rounded-full bg-surface border-2 border-border flex items-center justify-center z-10">
+                        <div class="w-1.5 h-1.5 rounded-full bg-type-pdf"></div>
+                      </div>
+                      <span class="text-xs font-semibold text-text-tertiary uppercase tracking-wide">Documents</span>
+                    </div>
+                    <div class="ml-8 space-y-2">
+                      <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-type-pdf/30 hover:shadow-sm transition-all cursor-pointer">
+                        <div class="w-8 h-8 rounded bg-type-pdf/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="text-[13px] font-medium text-text-primary truncate">Implementation Checklist</div>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-pdf hover:bg-type-pdf/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-pdf hover:bg-type-pdf/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-type-doc/30 hover:shadow-sm transition-all cursor-pointer">
+                        <div class="w-8 h-8 rounded bg-type-doc/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-doc" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="text-[13px] font-medium text-text-primary truncate">API Integration Guide</div>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-doc hover:bg-type-doc/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-doc hover:bg-type-doc/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="w-5 h-5 rounded-full bg-surface border-2 border-border flex items-center justify-center z-10">
+                        <div class="w-1.5 h-1.5 rounded-full bg-type-ppt"></div>
+                      </div>
+                      <span class="text-xs font-semibold text-text-tertiary uppercase tracking-wide">Presentations</span>
+                    </div>
+                    <div class="ml-8 space-y-2">
+                      <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-type-ppt/30 hover:shadow-sm transition-all cursor-pointer">
+                        <div class="w-8 h-8 rounded bg-type-ppt/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-ppt" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="text-[13px] font-medium text-text-primary truncate">Executive Overview Deck</div>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-ppt hover:bg-type-ppt/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-ppt hover:bg-type-ppt/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="w-5 h-5 rounded-full bg-surface border-2 border-border flex items-center justify-center z-10">
+                        <div class="w-1.5 h-1.5 rounded-full bg-type-video"></div>
+                      </div>
+                      <span class="text-xs font-semibold text-text-tertiary uppercase tracking-wide">Videos</span>
+                    </div>
+                    <div class="ml-8 space-y-2">
+                      <div class="group flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border hover:border-type-video/30 hover:shadow-sm transition-all cursor-pointer">
+                        <div class="w-8 h-8 rounded bg-type-video/10 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="text-[13px] font-medium text-text-primary truncate">Product Walkthrough</div>
+                          <div class="text-[11px] text-text-muted">12:34</div>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-video hover:bg-type-video/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                          </button>
+                          <button class="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-type-video hover:bg-type-video/10">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom action -->
+            <div class="p-3 border-t border-border bg-surface">
+              <button class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-text-tertiary hover:text-text-secondary hover:bg-bg-subtle rounded-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Need help finding something?
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================
+           VARIATION A4: Rich Link Preview Style
+           iMessage-inspired link previews
+           ============================================ -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+          <span>A4: Rich Previews</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div class="w-[380px] h-[600px] bg-[#f2f2f7] rounded-xl border border-border shadow-lg overflow-hidden relative">
+          <!-- Play List View -->
+          <div class="h-full flex flex-col" id="listA4">
+            <div class="p-3 border-b border-border/50 bg-white/80 backdrop-blur-sm">
+              <h2 class="font-semibold text-text-primary">Plays</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-2">
+              <button onclick="showPanelA4()" class="w-full text-left p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all group">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-text-primary truncate">Enterprise Onboarding</div>
+                    <div class="text-xs text-text-tertiary">8 resources</div>
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide-in Panel -->
+          <div class="absolute inset-0 bg-[#f2f2f7] translate-x-full transition-transform duration-300 ease-out flex flex-col" id="panelA4">
+            <!-- Header -->
+            <div class="flex items-center gap-3 p-3 bg-white/80 backdrop-blur-sm border-b border-border/50">
+              <button onclick="hidePanelA4()" class="text-primary-dark font-medium text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back
+              </button>
+              <div class="flex-1 text-center">
+                <div class="font-semibold text-text-primary">Enterprise Onboarding</div>
+              </div>
+              <div class="w-12"></div>
+            </div>
+
+            <!-- Content as rich link previews -->
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 stagger-children">
+              <!-- AI message bubble -->
+              <div class="flex justify-start mb-4">
+                <div class="max-w-[85%] bg-white rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                  <p class="text-text-secondary text-[15px] leading-relaxed">Here's what I found for this enterprise deal. Tap any resource to open it.</p>
+                </div>
+              </div>
+
+              <!-- Rich link previews -->
+              <div class="space-y-3">
+                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  <div class="h-1.5 bg-gradient-to-r from-type-blog to-purple-400"></div>
+                  <div class="p-3">
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-type-blog/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-type-blog" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-[10px] font-semibold text-type-blog uppercase tracking-wide mb-0.5">Blog Article</div>
+                        <div class="font-semibold text-text-primary text-[15px] leading-tight">Getting Started Guide</div>
+                        <div class="text-xs text-text-muted mt-1">Everything you need to start using RevGuide</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border-subtle">
+                      <button class="text-xs font-medium text-text-tertiary hover:text-text-secondary px-2 py-1 rounded hover:bg-bg-subtle transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy
+                      </button>
+                      <button class="text-xs font-medium text-white bg-primary-dark hover:bg-primary px-3 py-1 rounded-full transition-colors flex items-center gap-1">
+                        Open
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  <div class="h-1.5 bg-gradient-to-r from-type-pdf to-rose-400"></div>
+                  <div class="p-3">
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-type-pdf/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-type-pdf" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-[10px] font-semibold text-type-pdf uppercase tracking-wide mb-0.5">PDF Document</div>
+                        <div class="font-semibold text-text-primary text-[15px] leading-tight">Implementation Checklist</div>
+                        <div class="text-xs text-text-muted mt-1">Step-by-step onboarding tasks</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border-subtle">
+                      <button class="text-xs font-medium text-text-tertiary hover:text-text-secondary px-2 py-1 rounded hover:bg-bg-subtle transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy
+                      </button>
+                      <button class="text-xs font-medium text-white bg-primary-dark hover:bg-primary px-3 py-1 rounded-full transition-colors flex items-center gap-1">
+                        Open
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  <div class="h-1.5 bg-gradient-to-r from-type-video to-pink-400"></div>
+                  <div class="p-3">
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-type-video/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-type-video" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-[10px] font-semibold text-type-video uppercase tracking-wide mb-0.5">Video</div>
+                        <div class="font-semibold text-text-primary text-[15px] leading-tight">Product Walkthrough</div>
+                        <div class="text-xs text-text-muted mt-1">12:34 runtime</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border-subtle">
+                      <button class="text-xs font-medium text-text-tertiary hover:text-text-secondary px-2 py-1 rounded hover:bg-bg-subtle transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy
+                      </button>
+                      <button class="text-xs font-medium text-white bg-primary-dark hover:bg-primary px-3 py-1 rounded-full transition-colors flex items-center gap-1">
+                        Open
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Typing indicator / chat input -->
+            <div class="p-3 bg-white/80 backdrop-blur-sm border-t border-border/50">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 bg-[#e5e5ea] rounded-full px-4 py-2 text-text-tertiary text-sm">
+                  Ask RevGuide...
+                </div>
+                <button class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-bg-dark">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Panel toggle functions
+    function showPanelA1() {
+      document.getElementById('panelA1').classList.remove('translate-x-full');
+    }
+    function hidePanelA1() {
+      document.getElementById('panelA1').classList.add('translate-x-full');
+    }
+
+    function showPanelA2() {
+      document.getElementById('panelA2').classList.remove('translate-x-full');
+    }
+    function hidePanelA2() {
+      document.getElementById('panelA2').classList.add('translate-x-full');
+    }
+
+    function showPanelA3() {
+      document.getElementById('panelA3').classList.remove('translate-x-full');
+    }
+    function hidePanelA3() {
+      document.getElementById('panelA3').classList.add('translate-x-full');
+    }
+
+    function showPanelA4() {
+      document.getElementById('panelA4').classList.remove('translate-x-full');
+    }
+    function hidePanelA4() {
+      document.getElementById('panelA4').classList.add('translate-x-full');
+    }
+
+    // Copy button feedback
+    document.querySelectorAll('button[title="Copy"], button[title="Copy link"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+        }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
