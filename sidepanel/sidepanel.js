@@ -676,6 +676,55 @@ class SidePanel {
       });
     });
 
+    // Add click handlers for timeline content items (click on row to open)
+    container.querySelectorAll('.rec-timeline-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        // Don't trigger if clicking on action buttons
+        if (e.target.closest('.rec-timeline-action-btn')) {
+          return;
+        }
+        const url = item.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
+    // Add click handlers for timeline copy link buttons
+    container.querySelectorAll('.rec-copy-link-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          try {
+            await navigator.clipboard.writeText(url);
+            // Show brief feedback
+            btn.classList.add('copied');
+            btn.title = 'Copied!';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.title = 'Copy link';
+            }, 1500);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+          }
+        }
+      });
+    });
+
+    // Add click handlers for timeline open link buttons
+    container.querySelectorAll('.rec-open-link-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
     // Initialize editable field section events
     this.initFieldSectionEvents();
 
@@ -963,74 +1012,181 @@ class SidePanel {
 
   /**
    * Render a Recommended Content play card with its linked assets
+   * Uses A3 Thread Timeline design with grouped content types
    */
   renderRecommendedContentCard(card, typeIcons) {
-    // Content type icons for assets
-    const assetTypeIcons = {
-      external_link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
-      hubspot_document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-      hubspot_sequence: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    // Content type configuration with colors and icons
+    const contentTypeConfig = {
+      pdf: {
+        label: 'Documents',
+        color: '#ef4444',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>'
+      },
+      doc: {
+        label: 'Documents',
+        color: '#3b82f6',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>'
+      },
+      hubspot_document: {
+        label: 'Documents',
+        color: '#3b82f6',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>'
+      },
+      ppt: {
+        label: 'Presentations',
+        color: '#f97316',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"/></svg>'
+      },
+      video: {
+        label: 'Videos',
+        color: '#ec4899',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      },
+      blog: {
+        label: 'Blog Articles',
+        color: '#8b5cf6',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2"/></svg>'
+      },
+      external_link: {
+        label: 'Links',
+        color: '#06b6d4',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>'
+      },
+      link: {
+        label: 'Links',
+        color: '#06b6d4',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>'
+      }
     };
 
-    // Render asset list
-    const assetsHtml = card.resolvedAssets.map(asset => {
+    // Group assets by content type
+    const groupedAssets = {};
+    const groupOrder = ['pdf', 'doc', 'hubspot_document', 'ppt', 'video', 'blog', 'external_link', 'link'];
+
+    card.resolvedAssets.forEach(asset => {
       const contentType = asset.content_type || asset.contentType || 'external_link';
-      const assetIcon = assetTypeIcons[contentType] || assetTypeIcons.external_link;
-      const assetUrl = asset.url || '';
-      const assetTitle = asset.title || 'Untitled';
-      const assetDescription = asset.description || '';
+      if (!groupedAssets[contentType]) {
+        groupedAssets[contentType] = [];
+      }
+      groupedAssets[contentType].push(asset);
+    });
+
+    // Merge similar groups (pdf+doc -> Documents, external_link+link -> Links)
+    const mergedGroups = [];
+    const processedTypes = new Set();
+
+    groupOrder.forEach(type => {
+      if (processedTypes.has(type) || !groupedAssets[type]) return;
+
+      const config = contentTypeConfig[type] || contentTypeConfig.external_link;
+      const label = config.label;
+
+      // Find all types with the same label and merge them
+      const mergedAssets = [];
+      groupOrder.forEach(t => {
+        const tConfig = contentTypeConfig[t] || contentTypeConfig.external_link;
+        if (tConfig.label === label && groupedAssets[t]) {
+          mergedAssets.push(...groupedAssets[t].map(a => ({ ...a, resolvedType: t })));
+          processedTypes.add(t);
+        }
+      });
+
+      if (mergedAssets.length > 0) {
+        mergedGroups.push({
+          label,
+          color: config.color,
+          assets: mergedAssets
+        });
+      }
+    });
+
+    // Render timeline groups
+    const timelineGroupsHtml = mergedGroups.map(group => {
+      const assetsHtml = group.assets.map(asset => {
+        const assetUrl = asset.url || '';
+        const assetTitle = asset.title || 'Untitled';
+        const assetType = asset.resolvedType || asset.content_type || asset.contentType || 'external_link';
+        const config = contentTypeConfig[assetType] || contentTypeConfig.external_link;
+
+        return `
+          <div class="rec-timeline-item group" data-url="${this.escapeHtml(assetUrl)}">
+            <div class="rec-timeline-item-icon" style="background: ${config.color}10; color: ${config.color};">
+              ${config.icon}
+            </div>
+            <div class="rec-timeline-item-content">
+              <div class="rec-timeline-item-title">${this.escapeHtml(assetTitle)}</div>
+            </div>
+            <div class="rec-timeline-item-actions">
+              ${assetUrl ? `
+                <button class="rec-timeline-action-btn rec-copy-link-btn" data-url="${this.escapeHtml(assetUrl)}" title="Copy link">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+                <button class="rec-timeline-action-btn rec-open-link-btn" data-url="${this.escapeHtml(assetUrl)}" title="Open in new tab">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
 
       return `
-        <div class="rec-content-item" data-url="${this.escapeHtml(assetUrl)}">
-          <div class="rec-content-icon">${assetIcon}</div>
-          <div class="rec-content-details">
-            <div class="rec-content-title">${this.escapeHtml(assetTitle)}</div>
-            ${assetDescription ? `<div class="rec-content-description">${this.escapeHtml(assetDescription)}</div>` : ''}
+        <div class="rec-timeline-group">
+          <div class="rec-timeline-group-header">
+            <div class="rec-timeline-node" style="border-color: ${group.color}20;">
+              <div class="rec-timeline-node-dot" style="background: ${group.color};"></div>
+            </div>
+            <span class="rec-timeline-group-label">${group.label}</span>
+            <span class="rec-timeline-group-count">(${group.assets.length})</span>
           </div>
-          ${assetUrl ? `
-            <button class="rec-content-open-btn" data-url="${this.escapeHtml(assetUrl)}" title="Open in new tab">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-            </button>
-          ` : ''}
+          <div class="rec-timeline-group-items">
+            ${assetsHtml}
+          </div>
         </div>
       `;
     }).join('');
 
-    const linkHtml = card.link ? `
-      <div class="card-link">
-        <a href="${this.escapeHtml(card.link)}" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          View Full Play
-        </a>
-      </div>
-    ` : '';
+    // Build match criteria from conditions (if available)
+    const matchCriteria = [];
+    if (card.conditions && card.conditions.length > 0) {
+      card.conditions.forEach(condition => {
+        if (condition.property) {
+          // Extract human-readable property name
+          const propName = condition.property
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+          if (!matchCriteria.includes(propName)) {
+            matchCriteria.push(propName);
+          }
+        }
+      });
+    }
+    const matchCriteriaText = matchCriteria.length > 0
+      ? matchCriteria.slice(0, 3).join(', ')
+      : 'Content recommendations';
 
     // Admin edit link
     const role = this.authState.profile?.role;
     const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
     const showAdminLinks = this.settings.showAdminLinks !== false && canEditContent;
     const adminEditHtml = showAdminLinks ? `
-      <div class="card-admin-edit">
+      <div class="rec-timeline-admin-edit">
         <a href="#" class="admin-edit-link" data-card-id="${card.id}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
-          Edit in Admin Panel
+          Edit
         </a>
       </div>
     ` : '';
 
     return `
-      <div class="battle-card recommended-content-card" data-card-id="${card.id}">
+      <div class="battle-card recommended-content-card rec-timeline-card" data-card-id="${card.id}">
         <div class="card-header">
           <div class="card-icon recommended_content">
             ${typeIcons.recommended_content}
@@ -1045,11 +1201,31 @@ class SidePanel {
             </svg>
           </span>
         </div>
-        <div class="card-body">
-          <div class="rec-content-list">
-            ${assetsHtml}
+        <div class="card-body rec-timeline-body">
+          <!-- Match Criteria Banner -->
+          <div class="rec-timeline-match-banner">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span>Matched: ${this.escapeHtml(matchCriteriaText)}</span>
           </div>
-          ${linkHtml}
+
+          <!-- Timeline Content -->
+          <div class="rec-timeline-container">
+            <div class="rec-timeline-line"></div>
+            <div class="rec-timeline-groups">
+              ${timelineGroupsHtml}
+            </div>
+          </div>
+
+          <!-- Chat Input Placeholder -->
+          <div class="rec-timeline-chat-hint">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Need help finding something?</span>
+          </div>
+
           ${adminEditHtml}
         </div>
       </div>
