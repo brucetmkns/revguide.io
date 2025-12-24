@@ -647,7 +647,7 @@ async function getValidAccessToken(supabase: any, connectionId: string): Promise
 
 /**
  * Fetch HubSpot portal info using access token
- * Uses account-info API for portal details
+ * Tries multiple APIs to get the best portal name and domain
  */
 async function fetchPortalInfo(accessToken: string): Promise<{
   portalId: string
@@ -655,31 +655,74 @@ async function fetchPortalInfo(accessToken: string): Promise<{
   portalName: string
 } | null> {
   try {
-    const response = await fetch(`${HUBSPOT_API_BASE}/account-info/v3/details`, {
+    // First, get basic account info
+    const accountResponse = await fetch(`${HUBSPOT_API_BASE}/account-info/v3/details`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'X-HubSpot-API-Version': HUBSPOT_API_VERSION
       }
     })
 
-    if (!response.ok) {
-      console.error('Failed to fetch portal info:', response.status)
+    if (!accountResponse.ok) {
+      console.error('Failed to fetch account info:', accountResponse.status)
       return null
     }
 
-    const data = await response.json()
-    console.log('HubSpot account-info response:', JSON.stringify(data))
+    const accountData = await accountResponse.json()
+    console.log('HubSpot account-info response:', JSON.stringify(accountData))
 
-    const portalId = data.portalId?.toString()
+    const portalId = accountData.portalId?.toString()
 
-    // uiDomain is typically "app.hubspot.com" which isn't useful
-    // Use the portal ID as a more meaningful domain identifier
-    // Format: {portalId}.hubspot.com
-    const portalDomain = portalId ? `${portalId}.hubspot.com` : 'hubspot.com'
+    // Try to get hub domain from token info (has hub_domain field)
+    let hubDomain = null
+    try {
+      const tokenResponse = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`)
+      if (tokenResponse.ok) {
+        const tokenData = await tokenResponse.json()
+        console.log('HubSpot token-info response:', JSON.stringify(tokenData))
+        hubDomain = tokenData.hub_domain
+      }
+    } catch (e) {
+      console.log('Could not fetch token info:', e)
+    }
 
-    // companyName is the actual HubSpot account/company name
-    // Fall back to a descriptive name with portal ID
-    const portalName = data.companyName || `HubSpot Portal ${portalId}`
+    // Try to get account name from CRM owner info
+    let accountName = null
+    try {
+      const ownerResponse = await fetch(`${HUBSPOT_API_BASE}/crm/v3/owners?limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'X-HubSpot-API-Version': HUBSPOT_API_VERSION
+        }
+      })
+      if (ownerResponse.ok) {
+        const ownerData = await ownerResponse.json()
+        console.log('HubSpot owners response (first):', JSON.stringify(ownerData.results?.[0]))
+        // Sometimes the owner's teams field has the company name
+      }
+    } catch (e) {
+      console.log('Could not fetch owner info:', e)
+    }
+
+    // Build the best domain we can
+    // Prefer hub_domain (e.g., "teamofi-com-ar-6292307") over generic format
+    const portalDomain = hubDomain || (portalId ? `${portalId}.hubspot.com` : 'hubspot.com')
+
+    // Build the best name we can
+    // Priority: companyName > formatted hub_domain > portal ID fallback
+    let portalName = accountData.companyName
+    if (!portalName && hubDomain) {
+      // Convert hub_domain like "teamofi-com-ar-6292307" to "Teamofi Com Ar"
+      // Remove the portal ID suffix and convert dashes to spaces
+      const domainWithoutId = hubDomain.replace(/-\d+$/, '')
+      portalName = domainWithoutId
+        .split('-')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    }
+    if (!portalName) {
+      portalName = `HubSpot Portal ${portalId}`
+    }
 
     return {
       portalId,
