@@ -1189,6 +1189,7 @@ body {
    ============================================ */
 
 .rec-timeline-card.battle-card .card-body {
+  display: none;
   padding: 0;
   background: #ffffff;
 }
