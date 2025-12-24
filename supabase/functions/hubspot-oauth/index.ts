@@ -46,7 +46,8 @@ const HUBSPOT_SCOPES = [
   'crm.objects.deals.read',
   'crm.schemas.contacts.read',
   'crm.schemas.companies.read',
-  'crm.schemas.deals.read'
+  'crm.schemas.deals.read',
+  'crm.lists.read'
 ]
 
 serve(async (req) => {
