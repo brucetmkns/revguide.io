@@ -287,20 +287,20 @@
                       <span class="form-hint">Define when this banner should appear based on record properties</span>
 
                       <!-- Group Logic Toggle (between groups) - hidden when < 2 groups -->
-                      <div class="group-logic-wrapper" id="ruleConditionGroupsLogicWrapper" style="display: none;">
-                        <span class="logic-label" style="margin-right: var(--space-2);">Combine groups with:</span>
-                        <div class="logic-toggle group-logic-toggle" id="ruleGroupLogicToggle">
+                      <div class="flex items-center justify-center py-3" id="ruleConditionGroupsLogicWrapper" style="display: none;">
+                        <span class="text-sm text-text-secondary mr-2">Combine groups with:</span>
+                        <div class="logic-toggle" id="ruleGroupLogicToggle">
                           <button type="button" class="logic-btn active" data-value="AND">AND</button>
                           <button type="button" class="logic-btn" data-value="OR">OR</button>
                         </div>
                       </div>
 
                       <!-- Condition Groups Container -->
-                      <div class="condition-groups-container" id="ruleConditionGroups">
+                      <div class="flex flex-col" id="ruleConditionGroups">
                         <!-- Groups added by JS -->
                       </div>
 
-                      <button type="button" class="add-group-btn" id="addRuleGroupBtn" disabled>
+                      <button type="button" class="inline-flex items-center gap-2 mt-4 py-2 px-3 text-sm font-medium text-primary-dark border border-dashed border-primary rounded-md bg-primary-subtle cursor-pointer transition-all duration-fast hover:bg-primary hover:border-solid hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed" id="addRuleGroupBtn" disabled>
                         <span class="icon icon-plus icon--sm"></span> Add Filter Group
                       </button>
                     </div>

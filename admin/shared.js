@@ -2124,16 +2124,17 @@ function addConditionGroup(containerId, group = null, properties = []) {
   const container = document.getElementById(containerId);
   const groupId = group?.id || `group_${Date.now()}`;
   const groupLogic = group?.logic || 'AND';
+  const isFirstGroup = container.querySelectorAll('[data-group-id]').length === 0;
 
   const div = document.createElement('div');
-  div.className = 'condition-group-card';
+  div.className = `border border-border rounded-lg bg-surface overflow-hidden${isFirstGroup ? '' : ' mt-4'}`;
   div.dataset.groupId = groupId;
 
   div.innerHTML = `
-    <div class="condition-group-header">
-      <div class="condition-group-header-left">
-        <span class="condition-group-label">Filter Group</span>
-        <div class="logic-toggle condition-group-logic" data-group-id="${groupId}">
+    <div class="flex items-center justify-between py-3 px-4 bg-bg-subtle border-b border-border-subtle">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-text-secondary">Filter Group</span>
+        <div class="logic-toggle" data-group-id="${groupId}">
           <button type="button" class="logic-btn ${groupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
           <button type="button" class="logic-btn ${groupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
         </div>
@@ -2144,8 +2145,8 @@ function addConditionGroup(containerId, group = null, properties = []) {
         </svg>
       </button>
     </div>
-    <div class="condition-group-body">
-      <div class="conditions-builder" data-group-conditions="${groupId}"></div>
+    <div class="p-4">
+      <div class="conditions-builder mb-3 empty:mb-0" data-group-conditions="${groupId}"></div>
       <button type="button" class="btn btn-secondary btn-sm add-group-condition-btn">
         <span class="icon icon-plus icon--sm"></span> Add Condition
       </button>
@@ -2153,7 +2154,7 @@ function addConditionGroup(containerId, group = null, properties = []) {
   `;
 
   // Set up group logic toggle
-  const logicToggle = div.querySelector('.condition-group-logic');
+  const logicToggle = div.querySelector('.logic-toggle[data-group-id]');
   logicToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.logic-btn');
     if (btn) {
@@ -2166,7 +2167,7 @@ function addConditionGroup(containerId, group = null, properties = []) {
   const removeBtn = div.querySelector('.remove-group-btn');
   removeBtn.addEventListener('click', () => {
     // Don't allow removing the last group
-    if (container.querySelectorAll('.condition-group-card').length > 1) {
+    if (container.querySelectorAll('[data-group-id]').length > 1) {
       div.remove();
       updateGroupLogicVisibility(containerId);
     } else {
@@ -2286,9 +2287,9 @@ function getConditionGroups(containerId) {
   const container = document.getElementById(containerId);
   const groups = [];
 
-  container.querySelectorAll('.condition-group-card').forEach(groupCard => {
+  container.querySelectorAll('[data-group-id]').forEach(groupCard => {
     const groupId = groupCard.dataset.groupId;
-    const logicToggle = groupCard.querySelector('.condition-group-logic');
+    const logicToggle = groupCard.querySelector('.logic-toggle[data-group-id]');
     const activeBtn = logicToggle?.querySelector('.logic-btn.active');
     const logic = activeBtn ? activeBtn.dataset.value : 'AND';
 
@@ -2350,7 +2351,7 @@ function clearConditionGroups(containerId) {
  */
 function updateGroupLogicVisibility(containerId) {
   const container = document.getElementById(containerId);
-  const groupCount = container.querySelectorAll('.condition-group-card').length;
+  const groupCount = container.querySelectorAll('[data-group-id]').length;
   const groupLogicWrapper = document.getElementById(containerId + 'LogicWrapper');
 
   if (groupLogicWrapper) {
