@@ -647,6 +647,7 @@ async function getValidAccessToken(supabase: any, connectionId: string): Promise
 
 /**
  * Fetch HubSpot portal info using access token
+ * Uses account-info API for portal details
  */
 async function fetchPortalInfo(accessToken: string): Promise<{
   portalId: string
@@ -667,10 +668,23 @@ async function fetchPortalInfo(accessToken: string): Promise<{
     }
 
     const data = await response.json()
+    console.log('HubSpot account-info response:', JSON.stringify(data))
+
+    const portalId = data.portalId?.toString()
+
+    // uiDomain is typically "app.hubspot.com" which isn't useful
+    // Use the portal ID as a more meaningful domain identifier
+    // Format: {portalId}.hubspot.com
+    const portalDomain = portalId ? `${portalId}.hubspot.com` : 'hubspot.com'
+
+    // companyName is the actual HubSpot account/company name
+    // Fall back to a descriptive name with portal ID
+    const portalName = data.companyName || `HubSpot Portal ${portalId}`
+
     return {
-      portalId: data.portalId?.toString(),
-      portalDomain: data.uiDomain,
-      portalName: data.companyName || data.uiDomain
+      portalId,
+      portalDomain,
+      portalName
     }
   } catch (error) {
     console.error('Portal info fetch error:', error)
