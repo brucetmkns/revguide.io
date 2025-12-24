@@ -991,6 +991,12 @@
      * @returns {Object} { recommendations: Array, activeTags: Array }
      */
     getMatchingRecommendations() {
+      log('getMatchingRecommendations called');
+      log('recommendationEngine:', !!this.recommendationEngine);
+      log('recommendedContent count:', this.recommendedContent?.length || 0);
+      log('tagRules count:', this.tagRules?.length || 0);
+      log('contentTags count:', this.contentTags?.length || 0);
+
       if (!this.recommendationEngine) {
         log('Recommendation engine not initialized');
         return { recommendations: [], activeTags: [] };
@@ -1000,6 +1006,8 @@
         log('No recommended content configured');
         return { recommendations: [], activeTags: [] };
       }
+
+      log('Calling recommendationEngine.getRecommendations with context:', JSON.stringify(this.context));
 
       const result = this.recommendationEngine.getRecommendations(
         {
@@ -1012,6 +1020,9 @@
       );
 
       log('Matching recommendations:', result.recommendations.length);
+      if (result.recommendations.length > 0) {
+        log('First recommendation:', JSON.stringify(result.recommendations[0]).substring(0, 200));
+      }
       return result;
     }
 
