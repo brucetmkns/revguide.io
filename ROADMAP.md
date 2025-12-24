@@ -4,9 +4,18 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.15.0 (Content Recommendations)
+## Current State: v2.15.1 (Sidepanel Slide-in Panels)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, and **content recommendations with tag-based matching for contextual content delivery in the sidepanel**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, and **slide-in detail panels for viewing play content**.
+
+### Sidepanel Slide-in Panels (v2.15.1)
+- **Full-Height Detail Panel**: Plays open in a slide-in panel from the right edge
+- **Clean Header**: Back button, play name, subtitle, and edit button (permission-based)
+- **Smooth Animation**: CSS transform-based slide animation for native feel
+- **Universal Behavior**: All play types use the same slide-in pattern
+- **Recommended Content Plays**: New `recommended_content` card type with A3 Thread Timeline design
+- **Content Grouping**: Assets grouped by type (Documents, Presentations, Videos, Links)
+- **Banner Integration**: "Open Play" from banners correctly opens the slide-in panel
 
 ### Content Recommendations (v2.15.0)
 - **Tag-Based Matching**: Define tags and assign them to content assets
@@ -278,6 +287,18 @@ The extension is feature-complete and prepared for beta testers with full infras
 1. **Chrome/Edge only** - No Firefox support yet
 2. **HubSpot OAuth required** - For property access and field editing
 3. **Desktop only** - Mobile/tablet not optimized
+
+### Known Bugs (To Fix)
+
+1. **Editable Fields Context Lost After Page Refresh** (v2.15.1)
+   - **Scenario**: Open a play with editable fields from an object index page via banner → Update field → Page refreshes → Try to update field again
+   - **Error**: "Missing object type or record ID" when attempting second save
+   - **Root Cause**: After page refresh on index page, the sidepanel play remains open but loses the record context (objectType, recordId, properties)
+   - **Proposed Fix Options**:
+     - Auto-close the play detail panel when navigating away from a record page
+     - Show a meaningful error message: "Record context lost. Click a banner to re-open this play for another record."
+     - Detect navigation and re-fetch context if still on a valid record page
+   - **Files Involved**: `sidepanel/sidepanel.js` - `focusOnPlay()`, editable fields save handler
 
 ---
 

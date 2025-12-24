@@ -2,6 +2,79 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.15.1] - 2025-12-24 - Sidepanel Slide-in Panels & Recommended Content Plays
+
+### Added
+- **Slide-in Play Detail Panel**: Plays now open in a full-height slide-in panel instead of accordion expand
+  - Clean header with back button, play name, subtitle, and edit button
+  - Smooth slide-in animation from right edge
+  - Consistent behavior for all play types (regular plays, recommended content)
+  - Back button returns to play list view
+  - Edit button opens admin panel for the play (permission-based visibility)
+- **Recommended Content Play Type**: New `recommended_content` card type for plays
+  - Links assets from the Content library to plays
+  - A3 Thread Timeline design with grouped content types
+  - Content grouped by type (Documents, Presentations, Videos, Links)
+  - Match criteria banner shows which conditions matched
+  - Copy link and open link buttons on each content item
+  - Database migration `041_add_recommended_content_card_type.sql`
+
+### Changed
+- **Play Cards UI**: Cards now display as clickable list items with right chevron indicator
+  - Hover effect with primary color border highlight
+  - Card body hidden in list view, content shown only in detail panel
+  - Improved visual hierarchy in play list
+
+### Fixed
+- **focusOnPlay for Banner Links**: "Open Play" button from banners now correctly opens the slide-in panel
+  - Previously used accordion expand logic, now uses `openPlayDetail()`
+  - Context (properties, record type) properly passed for editable fields
+
+### Technical
+- `sidepanel/sidepanel.js`: New methods `openPlayDetail()`, `closePlayDetail()`, `renderCardBodyContent()`, `renderRecommendedContentBody()`, `renderRegularCardBody()`, `attachDetailBodyHandlers()`
+- `sidepanel/sidepanel.html`: Added slide-in panel container with header and body elements
+- `sidepanel/sidepanel.css`: New `.play-detail-panel` styles with transform-based slide animation
+- `supabase/migrations/041_add_recommended_content_card_type.sql`: Added `recommended_content` to plays card_type CHECK constraint
+
+## [2.15.0] - 2025-12-24 - Content Recommendations
+
+### Added
+- **Content Recommendations**: New system for recommending contextual content in the sidepanel
+  - Tag-based matching: Define tags and assign them to content assets
+  - Direct conditions: Content can have its own conditions for display (independent of tags)
+  - Hybrid matching: Content shows if EITHER tags match OR direct conditions match (OR logic)
+  - "Display on all records" option for universal content
+- **Content Admin Page** (`/content`): Consolidated management for content assets and tags
+  - **Assets Tab**: Create/edit content with title, URL, description, tags, and conditions
+  - **Tags Tab**: Simple inline tag creation with color picker
+  - Search and filter by tags
+- **Sidepanel Recommendations Section**: Matched content appears as a collapsible "Recommended Content" card
+  - Click anywhere on item to open link in new tab
+  - Copy button to copy link URL to clipboard (with visual feedback)
+  - Content type icons (external link, HubSpot document, HubSpot sequence)
+  - Tag badges on each item
+
+### Technical
+- **Database migration**: `038_content_recommendations.sql`
+  - `content_tags` - Tag definitions with name, slug, color
+  - `tag_rules` - Rules that output tags when conditions match (for Phase 2)
+  - `recommended_content` - Content assets with tag_ids, conditions, display options
+- **New library**: `lib/content-recommendations.js` - ContentRecommendationEngine class
+  - `getActiveTags()` - Evaluate tag rules against record properties
+  - `matchesTags()` / `matchesDirectConditions()` - Dual matching logic
+  - `getMatchingContent()` - Filter and sort recommendations
+- **Background.js**: Fetches `tag_rules`, `content_tags`, `recommended_content` tables
+- **Sidepanel.js**: Renders recommendations section with click/copy handlers
+- **Content.js**: Stores recommendation data, responds to sidepanel requests
+
+### Fixed
+- **Recommendation engine initialization**: Fixed constructor bug where `recommendationEngine` was nullified after creation
+- **Sidepanel click handlers**: Replaced inline `onclick` (blocked by CSP) with event delegation
+
+### Notes
+- Phase 1 complete: External links with tag assignment and "display on all" support
+- Tag Rules admin page deferred to Phase 2 (for conditional tag activation based on properties)
+
 ## [2.14.0] - 2025-12-24 - Condition Groups
 
 ### Added

@@ -3379,4 +3379,50 @@ GET /crm/v3/lists/records/0-1/{recordId}/memberships
 
 ---
 
+## Slide-in Panel Record Context (v2.15.1)
+
+### Context Preservation After Page Navigation
+**Lesson**: When a slide-in panel contains record-specific functionality (like editable fields), the panel must handle navigation events that invalidate its context.
+
+**Context**: User opens a play with editable fields from an object index page via a banner. After saving a field, HubSpot refreshes the page. The sidepanel stays open but the record context (objectType, recordId, properties) is now invalid because the user is on an index page, not a record page.
+
+**Problem**: User tries to save another field and gets "Missing object type or record ID" error because the context was cleared during page navigation.
+
+**Solutions** (not yet implemented):
+1. **Auto-close on navigation**: Listen for URL changes and close the detail panel if navigating away from a record page
+2. **Better error messaging**: Show "Record context lost. Click a banner to re-open this play for another record."
+3. **Context refresh**: Attempt to re-fetch context if still on a valid record page
+
+**Pattern for context-dependent panels**:
+```javascript
+// Track context validity
+this.hasValidContext = () => {
+  return this.context?.objectType && this.context?.recordId;
+};
+
+// Before performing context-dependent action
+if (!this.hasValidContext()) {
+  this.showError('This play was opened for a different record. Click a banner to re-open.');
+  return;
+}
+```
+
+**Files affected**: `sidepanel/sidepanel.js` - `focusOnPlay()`, editable fields save handler
+
+### Slide-in vs Accordion Pattern
+**Lesson**: When converting from accordion-style expand to slide-in panels, ensure all entry points are updated.
+
+**Context**: Changed plays from accordion expand (toggle card body visibility) to slide-in panel (`openPlayDetail()`). But `focusOnPlay()` still used the old accordion logic, causing "Open Play" from banners to fail.
+
+**Pattern**: When changing UI paradigms, grep for all functions that interact with the old pattern:
+```bash
+grep -r "expanded" sidepanel/
+grep -r "scrollIntoView" sidepanel/
+grep -r "closest.*battle-card" sidepanel/
+```
+
+**Files affected**: `sidepanel/sidepanel.js` - `focusOnPlay()`, `updateCards()` click handlers
+
+---
+
 *Last updated: December 2025*

@@ -341,6 +341,38 @@ Banners with linked plays show "Open Play" button. Clicking opens the play in si
 
 **Files:** `content/modules/banners.js`, `content/modules/index-tags.js`, `background/background.js`
 
+### Slide-in Detail Panel (v2.15.1+)
+
+Plays now open in a full-height slide-in panel instead of accordion-style expand:
+
+**UI Flow:**
+1. User clicks play card in list → Slide-in panel animates from right
+2. Panel shows header (back button, name, subtitle, edit) + body content
+3. Back button returns to play list view
+
+**Key Methods (sidepanel.js):**
+- `openPlayDetail(card)` - Opens slide-in panel with card data
+- `closePlayDetail()` - Closes panel with animation
+- `renderCardBodyContent(card)` - Routes to appropriate renderer
+- `renderRecommendedContentBody(card)` - Timeline view for recommended_content type
+- `renderRegularCardBody(card)` - Standard sections view
+- `attachDetailBodyHandlers(bodyEl, card)` - Event delegation for body content
+
+**CSS (sidepanel.css):**
+- `.play-detail-panel` - Absolute positioned, transform-based slide animation
+- `.play-detail-panel.active` - `translateX(0)` to show panel
+
+### Recommended Content Play Type (v2.15.1+)
+
+New `recommended_content` card type for plays that link to Content library assets.
+
+**Rendering:** A3 Thread Timeline design with:
+- Match criteria banner showing which conditions matched
+- Content grouped by type (Documents, Presentations, Videos, Links)
+- Copy link and open link buttons per item
+
+**Database:** Migration `041_add_recommended_content_card_type.sql` adds `recommended_content` to `plays.card_type` CHECK constraint.
+
 ### Keyboard Shortcuts
 - **Cmd/Ctrl+Enter**: Save HubSpot field values in editable field sections
 
@@ -554,4 +586,4 @@ Enables conditions based on HubSpot list/segment membership (e.g., "Show when co
 
 ---
 
-*Last updated: December 2025 (v2.16.0)*
+*Last updated: December 2025 (v2.15.1)*
