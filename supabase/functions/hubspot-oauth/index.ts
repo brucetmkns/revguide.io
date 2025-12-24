@@ -217,14 +217,20 @@ async function handleCallback(req: Request): Promise<Response> {
 
     if (!organizationId) {
       // First check if user already has an organization (from onboarding)
+      // For partners, use active_organization_id (the client org they're managing)
       if (oauthState.user_id) {
         const { data: existingUserProfile } = await supabase
           .from('users')
-          .select('organization_id')
+          .select('organization_id, active_organization_id')
           .eq('auth_user_id', oauthState.user_id)
           .single()
 
-        if (existingUserProfile?.organization_id) {
+        // Prefer active_organization_id (for partners viewing client orgs)
+        // Fall back to organization_id (primary org)
+        if (existingUserProfile?.active_organization_id) {
+          organizationId = existingUserProfile.active_organization_id
+          console.log('Using active_organization_id for partner:', organizationId)
+        } else if (existingUserProfile?.organization_id) {
           organizationId = existingUserProfile.organization_id
         }
       }

@@ -390,8 +390,12 @@ class HomePage {
     }
 
     try {
+      // Get the current organization ID to pass to OAuth flow
+      // This is important for partners who may be managing a client org
+      const orgId = await RevGuideDB.getOrganizationId();
+
       // Start HubSpot OAuth flow - this will redirect to HubSpot
-      await RevGuideHubSpot.connect(window.location.href);
+      await RevGuideHubSpot.connect(window.location.href, orgId);
 
       // Note: Page will redirect, so code below won't execute
     } catch (error) {

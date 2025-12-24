@@ -1343,8 +1343,12 @@ class SettingsPage {
     }
 
     try {
+      // Get the current organization ID to pass to OAuth flow
+      // This is important for partners who may be managing a client org
+      const orgId = await RevGuideDB.getOrganizationId();
+
       // Start OAuth flow - this will redirect to HubSpot
-      await RevGuideHubSpot.connect(window.location.href);
+      await RevGuideHubSpot.connect(window.location.href, orgId);
 
       // Note: Page will redirect, so code below won't execute
     } catch (error) {
@@ -1436,11 +1440,8 @@ class SettingsPage {
       // Use currentOrganization for partner-managed orgs
       const orgId = AdminShared.currentOrganization?.id;
       if (!orgId) {
-        console.log('[Settings] No organization selected for ERP config');
         return;
       }
-
-      console.log('[Settings] Loading ERP config for org:', orgId);
 
       const client = await RevGuideAuth.waitForClient();
       const { data: org, error } = await client
@@ -1448,8 +1449,6 @@ class SettingsPage {
         .select('erp_config')
         .eq('id', orgId)
         .single();
-
-      console.log('[Settings] Load result:', { org, error });
 
       if (error) {
         console.error('[Settings] Failed to load ERP config:', error);
@@ -1463,7 +1462,6 @@ class SettingsPage {
         field_mappings: {}
       };
 
-      console.log('[Settings] Loaded ERP config:', this.erpConfig);
       this.populateErpConfigUI();
     } catch (error) {
       console.error('[Settings] Failed to load ERP config:', error);
@@ -1755,8 +1753,6 @@ class SettingsPage {
         throw new Error('No organization selected');
       }
 
-      console.log('[Settings] Saving ERP config to org:', orgId, JSON.stringify(config.field_mappings));
-
       const client = await RevGuideAuth.waitForClient();
 
       // Use RPC function to update org as partner (bypasses RLS)
@@ -1765,18 +1761,13 @@ class SettingsPage {
         p_erp_config: config
       });
 
-      console.log('[Settings] Save result:', { data, error });
-
       if (error) {
         // Fallback to direct update for non-partner users
-        console.log('[Settings] RPC failed, trying direct update...');
         const { data: directData, error: directError } = await client
           .from('organizations')
           .update({ erp_config: config })
           .eq('id', orgId)
           .select('erp_config');
-
-        console.log('[Settings] Direct update result:', { directData, directError });
 
         if (directError) {
           throw new Error(directError.message);
