@@ -156,7 +156,7 @@
 
       if (error) {
         console.error('Error loading tags:', error);
-        AdminShared.showNotification('Failed to load tags', 'error');
+        AdminShared.showToast('Failed to load tags', 'error');
         return;
       }
 
@@ -164,7 +164,7 @@
       renderTags();
     } catch (err) {
       console.error('Error loading tags:', err);
-      AdminShared.showNotification('Failed to load tags', 'error');
+      AdminShared.showToast('Failed to load tags', 'error');
     }
   }
 
@@ -253,13 +253,13 @@
     const description = elements.tagDescription.value.trim();
 
     if (!name) {
-      AdminShared.showNotification('Name is required', 'error');
+      AdminShared.showToast('Name is required', 'error');
       elements.tagName.focus();
       return;
     }
 
     if (!slug) {
-      AdminShared.showNotification('Invalid name - cannot generate slug', 'error');
+      AdminShared.showToast('Invalid name - cannot generate slug', 'error');
       return;
     }
 
@@ -268,7 +268,7 @@
       t.slug === slug && (!editingTag || t.id !== editingTag.id)
     );
     if (duplicate) {
-      AdminShared.showNotification('A tag with this slug already exists', 'error');
+      AdminShared.showToast('A tag with this slug already exists', 'error');
       return;
     }
 
@@ -289,7 +289,7 @@
         throw result.error;
       }
 
-      AdminShared.showNotification(
+      AdminShared.showToast(
         editingTag ? 'Tag updated' : 'Tag created',
         'success'
       );
@@ -298,7 +298,7 @@
       await loadTags();
     } catch (err) {
       console.error('Error saving tag:', err);
-      AdminShared.showNotification(err.message || 'Failed to save tag', 'error');
+      AdminShared.showToast(err.message || 'Failed to save tag', 'error');
     } finally {
       elements.saveTagBtn.disabled = false;
       elements.saveTagBtn.innerHTML = 'Save Tag';
@@ -341,12 +341,12 @@
         throw result.error;
       }
 
-      AdminShared.showNotification('Tag deleted', 'success');
+      AdminShared.showToast('Tag deleted', 'success');
       closeDeleteModal();
       await loadTags();
     } catch (err) {
       console.error('Error deleting tag:', err);
-      AdminShared.showNotification(err.message || 'Failed to delete tag', 'error');
+      AdminShared.showToast(err.message || 'Failed to delete tag', 'error');
     } finally {
       elements.confirmDeleteBtn.disabled = false;
       elements.confirmDeleteBtn.innerHTML = 'Delete';

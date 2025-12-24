@@ -17,9 +17,7 @@
     { "source": "/:orgId([0-9a-f]{8})/banners", "destination": "/admin/pages/banners.html" },
     { "source": "/:orgId([0-9a-f]{8})/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/:orgId([0-9a-f]{8})/libraries", "destination": "/admin/pages/libraries.html" },
-    { "source": "/:orgId([0-9a-f]{8})/tags", "destination": "/admin/pages/tags.html" },
-    { "source": "/:orgId([0-9a-f]{8})/tag-rules", "destination": "/admin/pages/tag-rules.html" },
-    { "source": "/:orgId([0-9a-f]{8})/recommendations", "destination": "/admin/pages/recommendations.html" },
+    { "source": "/:orgId([0-9a-f]{8})/content", "destination": "/admin/pages/content.html" },
     { "source": "/:orgId([0-9a-f]{8})/settings", "destination": "/admin/pages/settings.html" },
     { "source": "/:orgId([0-9a-f]{8})", "destination": "/admin/pages/home.html" },
 
@@ -28,9 +26,7 @@
     { "source": "/banners", "destination": "/admin/pages/banners.html" },
     { "source": "/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
-    { "source": "/tags", "destination": "/admin/pages/tags.html" },
-    { "source": "/tag-rules", "destination": "/admin/pages/tag-rules.html" },
-    { "source": "/recommendations", "destination": "/admin/pages/recommendations.html" },
+    { "source": "/content", "destination": "/admin/pages/content.html" },
     { "source": "/settings", "destination": "/admin/pages/settings.html" }
   ],
   "headers": [
