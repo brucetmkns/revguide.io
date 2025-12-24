@@ -1188,13 +1188,20 @@ body {
    Recommended Content - A3 Thread Timeline
    ============================================ */
 
-.rec-timeline-card .card-body {
+.rec-timeline-card.battle-card .card-body {
   padding: 0;
+  background: #ffffff;
+}
+
+.rec-timeline-card.battle-card.expanded .card-body {
+  display: flex;
+  flex-direction: column;
 }
 
 .rec-timeline-body {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 /* Match Criteria Banner */

@@ -917,8 +917,11 @@ class SidePanel {
     };
 
     // For recommended_content type, render asset list instead of sections
-    if (card.cardType === 'recommended_content' && card.resolvedAssets?.length > 0) {
-      return this.renderRecommendedContentCard(card, typeIcons);
+    if (card.cardType === 'recommended_content') {
+      console.log('[RevGuide] Recommended Content play:', card.name, 'resolvedAssets:', card.resolvedAssets?.length || 0);
+      if (card.resolvedAssets?.length > 0) {
+        return this.renderRecommendedContentCard(card, typeIcons);
+      }
     }
 
     const sectionsHtml = card.sections ? card.sections.map(section => {
