@@ -897,10 +897,15 @@ class SidePanel {
         const cardEl = header.closest('.battle-card');
         const cardId = cardEl?.dataset.cardId;
 
+        // Skip the recommendations card
+        if (cardId === 'recommendations') return;
+
         // Find the card data
         const card = this.cards.find(c => c.id === cardId);
         if (card) {
           this.openPlayDetail(card);
+        } else {
+          console.warn('[RevGuide] Card not found in cards array:', cardId, 'Available:', this.cards.map(c => c.id));
         }
       });
     });
