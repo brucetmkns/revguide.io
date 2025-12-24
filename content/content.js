@@ -161,6 +161,9 @@
       if (this.context.objectType && this.context.recordId) {
         log(`Fetching ${this.context.objectType} from API...`);
         await this.fetchRecordFromAPI();
+
+        // Fetch list memberships and inject as virtual property
+        await this.fetchListMemberships();
       }
 
       log('About to call render()...');
@@ -404,6 +407,47 @@
               log('API properties merged, total properties:', Object.keys(this.properties).length);
             } else if (response?.error) {
               log('API error:', response.error);
+            }
+            resolve();
+          }
+        );
+      });
+    }
+
+    /**
+     * Fetch list memberships from HubSpot and inject as virtual property
+     * Used for list membership conditions in rules
+     */
+    async fetchListMemberships() {
+      // Get portal ID from URL
+      const url = window.location.href;
+      const portalMatch = url.match(/\/contacts\/(\d+)\//);
+      const portalId = portalMatch ? portalMatch[1] : null;
+
+      if (!portalId || !this.context.objectType || !this.context.recordId) {
+        log('Skipping list membership fetch - missing context');
+        return;
+      }
+
+      log(`Fetching list memberships for ${this.context.objectType} ${this.context.recordId}`);
+
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            action: 'getListMemberships',
+            objectType: this.context.objectType,
+            recordId: this.context.recordId,
+            portalId: portalId
+          },
+          (response) => {
+            if (response?.success && response.listIds?.length > 0) {
+              // Inject as comma-separated list IDs for "contains" operator matching
+              this.properties['_list_memberships'] = response.listIds.join(',');
+              log('List memberships injected:', response.listIds.length, 'lists');
+            } else {
+              // Set empty value so "is_not_member_of_list" works correctly
+              this.properties['_list_memberships'] = '';
+              log('No list memberships found');
             }
             resolve();
           }

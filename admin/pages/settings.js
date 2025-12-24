@@ -313,6 +313,9 @@ class SettingsPage {
         portal_domain: connection.portalDomain,
         portal_id: connection.portalId
       };
+
+      // Load list sync status
+      this.loadListSyncStatus();
     } else {
       // Show disconnected state
       connectedState.style.display = 'none';
@@ -361,6 +364,12 @@ class SettingsPage {
     }
     if (disconnectHubSpotBtn) {
       disconnectHubSpotBtn.addEventListener('click', () => this.disconnectHubSpot());
+    }
+
+    // HubSpot Lists Sync button
+    const syncListsBtn = document.getElementById('syncListsBtn');
+    if (syncListsBtn) {
+      syncListsBtn.addEventListener('click', () => this.syncHubSpotLists());
     }
 
     // Display options - auto-save on change
@@ -1417,6 +1426,87 @@ class SettingsPage {
         </svg>
         Connect HubSpot
       `;
+    }
+  }
+
+  // ================================
+  // HubSpot Lists Sync
+  // ================================
+
+  async syncHubSpotLists() {
+    if (!this.currentConnection) {
+      AdminShared.showToast('No HubSpot connection', 'error');
+      return;
+    }
+
+    const syncBtn = document.getElementById('syncListsBtn');
+    const statusEl = document.getElementById('listSyncStatus');
+    const originalBtnContent = syncBtn ? syncBtn.innerHTML : '';
+
+    try {
+      // Update button to loading state
+      if (syncBtn) {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<span class="icon icon-refresh-cw icon--sm" style="animation: spin 1s linear infinite;"></span> Syncing...';
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Fetching lists from HubSpot...';
+      }
+
+      // Fetch lists from HubSpot
+      const lists = await RevGuideHubSpot.getLists(this.currentConnection.id);
+
+      if (statusEl) {
+        statusEl.textContent = `Saving ${lists.length} lists...`;
+      }
+
+      // Save to database
+      const { data, error } = await RevGuideDB.saveHubSpotLists(lists, this.currentConnection.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update status display
+      this.updateListSyncStatus(lists.length);
+      AdminShared.showToast(`Synced ${lists.length} lists from HubSpot`, 'success');
+
+    } catch (error) {
+      console.error('[Settings] Failed to sync HubSpot lists:', error);
+      AdminShared.showToast('Failed to sync lists. Please try again.', 'error');
+      if (statusEl) {
+        statusEl.textContent = 'Sync failed';
+      }
+    } finally {
+      // Reset button state
+      if (syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalBtnContent || '<span class="icon icon-refresh-cw icon--sm"></span> Sync Lists';
+      }
+    }
+  }
+
+  updateListSyncStatus(count) {
+    const statusEl = document.getElementById('listSyncStatus');
+    if (statusEl) {
+      if (count > 0) {
+        statusEl.textContent = `${count} lists synced`;
+        statusEl.style.color = 'var(--color-success)';
+      } else {
+        statusEl.textContent = 'No lists synced';
+        statusEl.style.color = 'var(--color-text-secondary)';
+      }
+    }
+  }
+
+  async loadListSyncStatus() {
+    try {
+      const { data: lists, error } = await RevGuideDB.getHubSpotLists();
+      if (!error && lists) {
+        this.updateListSyncStatus(lists.length);
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to load list sync status:', error);
     }
   }
 

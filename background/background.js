@@ -1055,6 +1055,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
+
+  // Get list memberships for a record (with caching)
+  if (request.action === 'getListMemberships') {
+    getListMemberships(request.objectType, request.recordId, request.portalId)
+      .then(data => sendResponse({ success: true, listIds: data }))
+      .catch(err => sendResponse({ success: false, error: err.message, listIds: [] }));
+    return true;
+  }
 });
 
 async function getCachedHubSpotProperties(apiObjectType) {
@@ -1360,6 +1368,112 @@ async function updateHubSpotRecord(objectType, recordId, properties) {
   const data = await response.json();
   console.log('[RevGuide BG] Success, updated properties');
   return data;
+}
+
+// ============================================
+// List Memberships (for list condition evaluation)
+// ============================================
+
+const LIST_MEMBERSHIPS_CACHE_KEY = 'listMembershipsCache';
+const LIST_MEMBERSHIPS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get HubSpot object type ID from object type name
+ * @param {string} objectType - 'contact', 'company', 'deal', 'ticket'
+ * @returns {string} Object type ID (e.g., '0-1')
+ */
+function getHubSpotObjectTypeId(objectType) {
+  const typeMap = {
+    'contact': '0-1',
+    'contacts': '0-1',
+    'company': '0-2',
+    'companies': '0-2',
+    'deal': '0-3',
+    'deals': '0-3',
+    'ticket': '0-5',
+    'tickets': '0-5'
+  };
+  return typeMap[objectType?.toLowerCase()] || '0-1';
+}
+
+/**
+ * Get list memberships for a record (with caching)
+ * @param {string} objectType - Object type (contact, company, deal)
+ * @param {string} recordId - HubSpot record ID
+ * @param {string} portalId - Portal ID for cache key
+ * @returns {Promise<Array>} Array of list IDs the record belongs to
+ */
+async function getListMemberships(objectType, recordId, portalId) {
+  const cacheKey = `${portalId}_${objectType}_${recordId}`;
+
+  // Check cache first
+  const { [LIST_MEMBERSHIPS_CACHE_KEY]: cache } = await chrome.storage.local.get({
+    [LIST_MEMBERSHIPS_CACHE_KEY]: {}
+  });
+
+  const cached = cache[cacheKey];
+  if (cached && cached.timestamp && (Date.now() - cached.timestamp < LIST_MEMBERSHIPS_CACHE_TTL_MS)) {
+    console.log('[RevGuide BG] List memberships from cache:', cached.listIds?.length || 0);
+    return cached.listIds || [];
+  }
+
+  // Fetch from HubSpot API
+  const { settings } = await chrome.storage.local.get({ settings: {} });
+  const apiToken = settings.hubspotApiToken;
+
+  if (!apiToken) {
+    console.warn('[RevGuide BG] No HubSpot API token, cannot fetch list memberships');
+    return [];
+  }
+
+  try {
+    const objectTypeId = getHubSpotObjectTypeId(objectType);
+    const url = `https://api.hubapi.com/crm/v3/lists/records/${objectTypeId}/${recordId}/memberships`;
+
+    console.log('[RevGuide BG] Fetching list memberships:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn('[RevGuide BG] List memberships API error:', response.status, errText);
+      return [];
+    }
+
+    const data = await response.json();
+    const listIds = data.listIds || [];
+
+    console.log('[RevGuide BG] Got list memberships:', listIds.length);
+
+    // Cache the result
+    const updatedCache = {
+      ...cache,
+      [cacheKey]: {
+        listIds,
+        timestamp: Date.now()
+      }
+    };
+
+    // Prune old cache entries (older than 1 hour)
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    for (const key in updatedCache) {
+      if (updatedCache[key].timestamp && updatedCache[key].timestamp < oneHourAgo) {
+        delete updatedCache[key];
+      }
+    }
+
+    await chrome.storage.local.set({ [LIST_MEMBERSHIPS_CACHE_KEY]: updatedCache });
+
+    return listIds;
+  } catch (error) {
+    console.error('[RevGuide BG] Error fetching list memberships:', error);
+    return [];
+  }
 }
 
 // Badge update when rules match

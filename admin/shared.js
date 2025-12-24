@@ -1476,7 +1476,9 @@ const OPERATORS = [
   { value: 'greater_than', label: 'Greater than' },
   { value: 'less_than', label: 'Less than' },
   { value: 'is_empty', label: 'Is empty' },
-  { value: 'is_not_empty', label: 'Is not empty' }
+  { value: 'is_not_empty', label: 'Is not empty' },
+  { value: 'is_member_of_list', label: 'Is member of list', listSelector: true },
+  { value: 'is_not_member_of_list', label: 'Is not member of list', listSelector: true }
 ];
 
 /**
@@ -1998,6 +2000,9 @@ function addCondition(containerId, condition = null, properties = []) {
       `).join('')}
     </select>
     <input type="text" class="condition-value" placeholder="Value" value="${escapeHtml(condition?.value || '')}">
+    <select class="condition-list-value" style="display: none;">
+      <option value="">Select a list...</option>
+    </select>
     <button class="btn-icon btn-icon-danger remove-condition-btn" title="Remove">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -2014,10 +2019,27 @@ function addCondition(containerId, condition = null, properties = []) {
 
   const operatorSelect = div.querySelector('.condition-operator');
   const valueInput = div.querySelector('.condition-value');
+  const listSelect = div.querySelector('.condition-list-value');
 
-  const updateValueVisibility = () => {
+  const updateValueVisibility = async () => {
     const op = operatorSelect.value;
-    valueInput.style.display = (op === 'is_empty' || op === 'is_not_empty') ? 'none' : 'block';
+    const isListOperator = op === 'is_member_of_list' || op === 'is_not_member_of_list';
+    const isEmptyOperator = op === 'is_empty' || op === 'is_not_empty';
+
+    if (isEmptyOperator) {
+      valueInput.style.display = 'none';
+      listSelect.style.display = 'none';
+    } else if (isListOperator) {
+      valueInput.style.display = 'none';
+      listSelect.style.display = 'block';
+      // Load lists if not already loaded
+      if (listSelect.options.length <= 1) {
+        await loadListOptions(listSelect, condition?.value);
+      }
+    } else {
+      valueInput.style.display = 'block';
+      listSelect.style.display = 'none';
+    }
   };
 
   operatorSelect.addEventListener('change', updateValueVisibility);
@@ -2047,8 +2069,17 @@ function getConditions(containerId) {
     const trigger = item.querySelector('.searchable-select-trigger');
     const property = trigger ? trigger.dataset.value : '';
     const operator = item.querySelector('.condition-operator').value;
-    const valueEl = item.querySelector('.condition-value');
-    const value = valueEl?.value?.trim() || '';
+
+    // Get value from either text input or list selector
+    const isListOperator = operator === 'is_member_of_list' || operator === 'is_not_member_of_list';
+    let value = '';
+    if (isListOperator) {
+      const listSelect = item.querySelector('.condition-list-value');
+      value = listSelect?.value || '';
+    } else {
+      const valueEl = item.querySelector('.condition-value');
+      value = valueEl?.value?.trim() || '';
+    }
 
     if (property) {
       conditions.push({ property, operator, value });
@@ -2301,6 +2332,9 @@ function addConditionToGroup(container, condition = null, properties = []) {
       `).join('')}
     </select>
     <input type="text" class="condition-value" placeholder="Value" value="${escapeHtml(condition?.value || '')}">
+    <select class="condition-list-value" style="display: none;">
+      <option value="">Select a list...</option>
+    </select>
     <button class="btn-icon btn-icon-danger remove-condition-btn" title="Remove">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -2317,10 +2351,27 @@ function addConditionToGroup(container, condition = null, properties = []) {
 
   const operatorSelect = div.querySelector('.condition-operator');
   const valueInput = div.querySelector('.condition-value');
+  const listSelect = div.querySelector('.condition-list-value');
 
-  const updateValueVisibility = () => {
+  const updateValueVisibility = async () => {
     const op = operatorSelect.value;
-    valueInput.style.display = (op === 'is_empty' || op === 'is_not_empty') ? 'none' : 'block';
+    const isListOperator = op === 'is_member_of_list' || op === 'is_not_member_of_list';
+    const isEmptyOperator = op === 'is_empty' || op === 'is_not_empty';
+
+    if (isEmptyOperator) {
+      valueInput.style.display = 'none';
+      listSelect.style.display = 'none';
+    } else if (isListOperator) {
+      valueInput.style.display = 'none';
+      listSelect.style.display = 'block';
+      // Load lists if not already loaded
+      if (listSelect.options.length <= 1) {
+        await loadListOptions(listSelect, condition?.value);
+      }
+    } else {
+      valueInput.style.display = 'block';
+      listSelect.style.display = 'none';
+    }
   };
 
   operatorSelect.addEventListener('change', updateValueVisibility);
@@ -2334,6 +2385,48 @@ function addConditionToGroup(container, condition = null, properties = []) {
       const valInput = div.querySelector('.condition-value');
       if (valInput) valInput.value = condition.value;
     }, 0);
+  }
+}
+
+/**
+ * Load HubSpot lists into a select element
+ * @param {HTMLSelectElement} selectEl - The select element to populate
+ * @param {string} selectedValue - The currently selected list ID
+ */
+async function loadListOptions(selectEl, selectedValue = null) {
+  if (typeof RevGuideDB === 'undefined') return;
+
+  try {
+    const { data: lists, error } = await RevGuideDB.getHubSpotLists();
+    if (error || !lists) {
+      console.warn('[Shared] Failed to load HubSpot lists:', error);
+      return;
+    }
+
+    // Clear existing options except the placeholder
+    selectEl.innerHTML = '<option value="">Select a list...</option>';
+
+    // Add list options
+    lists.forEach(list => {
+      const option = document.createElement('option');
+      option.value = list.list_id;
+      option.textContent = `${list.name} (${list.object_type})`;
+      if (list.list_id === selectedValue) {
+        option.selected = true;
+      }
+      selectEl.appendChild(option);
+    });
+
+    // If no lists, show message
+    if (lists.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No lists synced - sync in Settings';
+      option.disabled = true;
+      selectEl.appendChild(option);
+    }
+  } catch (error) {
+    console.error('[Shared] Error loading list options:', error);
   }
 }
 
@@ -2359,8 +2452,17 @@ function getConditionGroups(containerId) {
       const trigger = item.querySelector('.searchable-select-trigger');
       const property = trigger ? trigger.dataset.value : '';
       const operator = item.querySelector('.condition-operator').value;
-      const valueEl = item.querySelector('.condition-value');
-      const value = valueEl?.value?.trim() || '';
+
+      // Get value from either text input or list selector
+      const isListOperator = operator === 'is_member_of_list' || operator === 'is_not_member_of_list';
+      let value = '';
+      if (isListOperator) {
+        const listSelect = item.querySelector('.condition-list-value');
+        value = listSelect?.value || '';
+      } else {
+        const valueEl = item.querySelector('.condition-value');
+        value = valueEl?.value?.trim() || '';
+      }
 
       if (property) {
         conditions.push({ property, operator, value });

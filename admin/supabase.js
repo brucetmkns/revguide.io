@@ -2441,6 +2441,64 @@ const RevGuideDB = {
       },
       error: null
     };
+  },
+
+  // ============================================
+  // HubSpot Lists (for List Membership Conditions)
+  // ============================================
+
+  async getHubSpotLists(objectType = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { data: [], error: new Error('No organization') };
+
+    let query = client
+      .from('hubspot_lists')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('name');
+
+    if (objectType) {
+      query = query.eq('object_type', objectType);
+    }
+
+    return query;
+  },
+
+  async saveHubSpotLists(lists, connectionId = null) {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    // Upsert each list (insert or update on conflict)
+    const upsertData = lists.map(list => ({
+      organization_id: orgId,
+      connection_id: connectionId,
+      list_id: list.listId,
+      name: list.name,
+      object_type: list.objectType || 'CONTACT',
+      list_type: list.listType || null,
+      size: list.size || 0,
+      synced_at: new Date().toISOString()
+    }));
+
+    return client
+      .from('hubspot_lists')
+      .upsert(upsertData, {
+        onConflict: 'organization_id,list_id'
+      })
+      .select();
+  },
+
+  async deleteHubSpotLists() {
+    const client = await RevGuideAuth.waitForClient();
+    const orgId = await this.getOrganizationId();
+    if (!orgId) return { error: new Error('No organization') };
+
+    return client
+      .from('hubspot_lists')
+      .delete()
+      .eq('organization_id', orgId);
   }
 };
 

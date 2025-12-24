@@ -767,7 +767,23 @@
                   <span id="connectedPortalDomain">portal.hubspot.com</span>
                 </div>
               </div>
-              <div class="form-actions">
+
+              <!-- List Sync Section -->
+              <div class="list-sync-section" style="margin-top: var(--space-4); padding: var(--space-4); background: var(--color-bg-subtle); border-radius: var(--radius-md);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong style="display: block; margin-bottom: var(--space-1);">HubSpot Lists</strong>
+                    <span id="listSyncStatus" style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                      No lists synced
+                    </span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="syncListsBtn">
+                    <span class="icon icon-refresh-cw icon--sm"></span> Sync Lists
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: var(--space-4);">
                 <button class="btn btn-secondary btn-danger-outline" id="disconnectHubSpotBtn">
                   <span class="icon icon-x icon--sm"></span> Disconnect
                 </button>
