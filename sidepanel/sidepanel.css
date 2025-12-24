@@ -75,7 +75,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden; /* Hide slide-in panel when off-screen */
 }
 
 /* ============================================
