@@ -427,7 +427,7 @@ async function fetchCloudContent(targetOrgId = null) {
 
   try {
     // Fetch all content types in parallel (including org settings for erp_config)
-    const [banners, plays, wikiEntries, orgData] = await Promise.all([
+    const [banners, plays, wikiEntries, orgData, tagRules, contentTags, recommendedContent] = await Promise.all([
       supabaseFetch('banners', {
         filter: { 'organization_id': `eq.${orgId}` },
         order: 'priority.desc'
@@ -441,13 +441,28 @@ async function fetchCloudContent(targetOrgId = null) {
       supabaseFetch('organizations', {
         select: 'erp_config',
         filter: { 'id': `eq.${orgId}` }
+      }),
+      // Content Recommendations tables
+      supabaseFetch('tag_rules', {
+        filter: { 'organization_id': `eq.${orgId}`, 'enabled': 'eq.true' },
+        order: 'priority.desc'
+      }),
+      supabaseFetch('content_tags', {
+        filter: { 'organization_id': `eq.${orgId}` }
+      }),
+      supabaseFetch('recommended_content', {
+        filter: { 'organization_id': `eq.${orgId}`, 'enabled': 'eq.true' },
+        order: 'priority.desc'
       })
     ]);
 
     console.log('[RevGuide] Cloud content fetched:', {
       banners: banners?.length || 0,
       plays: plays?.length || 0,
-      wikiEntries: wikiEntries?.length || 0
+      wikiEntries: wikiEntries?.length || 0,
+      tagRules: tagRules?.length || 0,
+      contentTags: contentTags?.length || 0,
+      recommendedContent: recommendedContent?.length || 0
     });
 
     // Log raw banner data for debugging
@@ -462,14 +477,17 @@ async function fetchCloudContent(targetOrgId = null) {
 
     // Extract ERP config from org data
     const erpConfig = orgData && orgData.length > 0 ? orgData[0].erp_config : null;
-    console.log('[RevGuide] ERP config from org:', erpConfig ? 'enabled=' + erpConfig.enabled : 'null');
 
     // Transform to match local storage format (snake_case to camelCase)
     const content = {
       rules: (banners || []).map(mapBannerFromSupabase),
       battleCards: (plays || []).map(mapPlayFromSupabase),
       wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase),
-      erpConfig: erpConfig
+      erpConfig: erpConfig,
+      // Content Recommendations (keep snake_case for now, transform in sidepanel)
+      tagRules: tagRules || [],
+      contentTags: contentTags || [],
+      recommendedContent: recommendedContent || []
     };
 
     // Log transformed banner for debugging

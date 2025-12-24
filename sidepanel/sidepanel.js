@@ -46,6 +46,7 @@ const WEB_APP_URL = (typeof RevGuideConfig !== 'undefined' && RevGuideConfig.ENV
 class SidePanel {
   constructor() {
     this.cards = [];
+    this.recommendations = [];  // Matched content recommendations
     this.settings = {};
     this.properties = {};  // Current record properties
     this.context = {};     // Current record context (objectType, recordId, etc.)
@@ -76,10 +77,11 @@ class SidePanel {
     // Listen for messages from content script or background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === 'updateSidePanel' || message.action === 'updateSidePanelCards') {
-        console.log('[RevGuide] Received card update:', message.cards?.length, 'cards');
+        console.log('[RevGuide] Received card update:', message.cards?.length, 'cards,', message.recommendations?.length || 0, 'recommendations');
         // Store properties and context for field editing
         if (message.properties) this.properties = message.properties;
         if (message.context) this.context = message.context;
+        if (message.recommendations) this.recommendations = message.recommendations;
         this.updateCards(message.cards);
       }
       if (message.action === 'showNotHubspot') {
@@ -514,6 +516,7 @@ class SidePanel {
           // Store properties and context for field editing
           if (response.properties) this.properties = response.properties;
           if (response.context) this.context = response.context;
+          if (response.recommendations) this.recommendations = response.recommendations;
           this.updateCards(response.cards);
         } else {
           this.showEmptyState();
@@ -536,7 +539,10 @@ class SidePanel {
     notHubspotState.style.display = 'none';
     loggedOutState.style.display = 'none';
 
-    if (this.cards.length === 0) {
+    const hasCards = this.cards.length > 0;
+    const hasRecommendations = this.recommendations && this.recommendations.length > 0;
+
+    if (!hasCards && !hasRecommendations) {
       container.style.display = 'none';
       emptyState.style.display = 'flex';
       return;
@@ -544,7 +550,16 @@ class SidePanel {
 
     emptyState.style.display = 'none';
     container.style.display = 'block';
-    container.innerHTML = this.cards.map(card => this.renderCard(card)).join('');
+
+    // Render plays first, then recommendations
+    let html = this.cards.map(card => this.renderCard(card)).join('');
+
+    // Add recommendations section if there are any
+    if (hasRecommendations) {
+      html += this.renderRecommendationsSection();
+    }
+
+    container.innerHTML = html;
 
     // Add click handlers for expand/collapse
     container.querySelectorAll('.card-header').forEach(header => {
@@ -999,6 +1014,102 @@ class SidePanel {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ============ RECOMMENDATIONS ============
+
+  /**
+   * Render the recommendations section as a collapsible card
+   */
+  renderRecommendationsSection() {
+    if (!this.recommendations || this.recommendations.length === 0) {
+      return '';
+    }
+
+    const itemsHtml = this.recommendations.map(item => this.renderRecommendationItem(item)).join('');
+
+    return `
+      <div class="battle-card recommendations-card expanded" data-card-id="recommendations">
+        <div class="card-header">
+          <div class="card-icon recommendation">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+              <polyline points="10 2 10 10 13 7 16 10 16 2"/>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Recommended Content</div>
+            <div class="card-subtitle">${this.recommendations.length} item${this.recommendations.length !== 1 ? 's' : ''}</div>
+          </div>
+          <span class="card-expand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="recommendations-list">
+            ${itemsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render a single recommendation item
+   */
+  renderRecommendationItem(item) {
+    const typeIcons = {
+      external_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rec-icon">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>`,
+      hubspot_document: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rec-icon">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>`,
+      hubspot_sequence: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rec-icon">
+        <polyline points="17 1 21 5 17 9"/>
+        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+        <polyline points="7 23 3 19 7 15"/>
+        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg>`
+    };
+
+    const icon = typeIcons[item.contentType] || typeIcons.external_link;
+    const tags = item.tags || [];
+    const tagsHtml = tags.map(tag =>
+      `<span class="rec-tag" style="background: ${this.escapeHtml(tag.color || '#6366f1')}">${this.escapeHtml(tag.name)}</span>`
+    ).join('');
+
+    // Make the item clickable if it has a URL
+    const isClickable = item.url ? 'clickable' : '';
+    const onClick = item.url ? `onclick="window.open('${this.escapeHtml(item.url)}', '_blank')"` : '';
+
+    return `
+      <div class="recommendation-item ${isClickable}" ${onClick}>
+        <div class="rec-icon-wrapper">
+          ${icon}
+        </div>
+        <div class="rec-content">
+          <div class="rec-title">${this.escapeHtml(item.title)}</div>
+          ${item.description ? `<div class="rec-description">${this.escapeHtml(item.description)}</div>` : ''}
+          ${tags.length > 0 ? `<div class="rec-tags">${tagsHtml}</div>` : ''}
+        </div>
+        ${item.url ? `
+          <div class="rec-action">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        ` : ''}
+      </div>
+    `;
   }
 
   convertToEmbedUrl(url) {

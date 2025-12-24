@@ -38,8 +38,8 @@
   'use strict';
 
   // ============ DEBUG CONFIGURATION ============
-  // Set to true for verbose logging during development
-  const DEBUG = true;
+  // Set to false for production, true for verbose logging during development
+  const DEBUG = false;
   const log = (...args) => DEBUG && console.log('[RevGuide]', ...args);
 
   // ============ RULES ENGINE ============
@@ -58,6 +58,7 @@
     constructor() {
       // Core components
       this.rulesEngine = new RulesEngine();
+      this.recommendationEngine = new RevGuideContentRecommendations(this.rulesEngine);
 
       // Page state
       this.currentUrl = window.location.href;
@@ -71,6 +72,12 @@
       this.wikiEntries = [];
       this.settings = {};
       this.erpConfig = null;
+
+      // Recommendation data
+      this.tagRules = [];
+      this.contentTags = [];
+      this.recommendedContent = [];
+      this.recommendationEngine = null;
 
       // Feature modules (initialized after page load)
       this.bannersModule = null;
@@ -229,22 +236,54 @@
 
       log('Detected CRM context:', { crmType, portalId });
 
-      // Get content via background script (handles cloud vs local with portal matching)
-      const contentResult = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          action: 'getContent',
-          portalId: portalId,
-          crmType: crmType,
-          forceRefresh: forceRefresh
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            log('Error getting content:', chrome.runtime.lastError.message);
-            resolve(null);
-          } else {
-            resolve(response);
-          }
-        });
-      });
+      // Fetch all data in parallel for better performance
+      const [contentResult, localData, authState] = await Promise.all([
+        // Get content via background script (handles cloud vs local with portal matching)
+        new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            action: 'getContent',
+            portalId: portalId,
+            crmType: crmType,
+            forceRefresh: forceRefresh
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              log('Error getting content:', chrome.runtime.lastError.message);
+              resolve(null);
+            } else {
+              resolve(response);
+            }
+          });
+        }),
+        // Get settings and wiki cache from local storage
+        new Promise((resolve) => {
+          chrome.storage.local.get({
+            presentations: [],
+            wikiTermMapCache: null,
+            wikiEntriesById: null,
+            wikiCacheVersion: 0,
+            settings: {
+              enabled: true,
+              showBanners: true,
+              showBattleCards: true,
+              showPresentations: true,
+              showWiki: true,
+              bannerPosition: 'top',
+              theme: 'light'
+            }
+          }, resolve);
+        }),
+        // Get auth state to determine if user can edit content
+        new Promise((resolve) => {
+          chrome.runtime.sendMessage({ action: 'getAuthState' }, (response) => {
+            if (chrome.runtime.lastError) {
+              log('Error getting auth state:', chrome.runtime.lastError.message);
+              resolve({ isAuthenticated: false });
+            } else {
+              resolve(response || { isAuthenticated: false });
+            }
+          });
+        })
+      ]);
 
       // Log portal matching result
       if (contentResult?.matchedOrg) {
@@ -252,25 +291,6 @@
       } else if (contentResult?.usingFallback) {
         log('No org matched portal, using default org');
       }
-
-      // Get settings and wiki cache from local storage
-      const localData = await new Promise((resolve) => {
-        chrome.storage.local.get({
-          presentations: [],
-          wikiTermMapCache: null,
-          wikiEntriesById: null,
-          wikiCacheVersion: 0,
-          settings: {
-            enabled: true,
-            showBanners: true,
-            showBattleCards: true,
-            showPresentations: true,
-            showWiki: true,
-            bannerPosition: 'top',
-            theme: 'light'
-          }
-        }, resolve);
-      });
 
       // Use content from background script if available
       if (contentResult && contentResult.content) {
@@ -280,11 +300,14 @@
         this.battleCards = content.battleCards || [];
         this.wikiEntries = content.wikiEntries || [];
         this.erpConfig = content.erpConfig || null;
-        log('ERP config loaded:', this.erpConfig ? JSON.stringify(this.erpConfig).substring(0, 200) : 'null');
+
+        // Recommendation data
+        this.tagRules = content.tagRules || [];
+        this.contentTags = content.contentTags || [];
+        this.recommendedContent = content.recommendedContent || [];
 
         // Initialize ERP module if already created
         if (this.erpModule && this.erpConfig) {
-          log('Initializing ERP module with config');
           this.erpModule.init(this.erpConfig);
         }
       } else {
@@ -305,18 +328,6 @@
       // Always use local data for presentations and settings
       this.presentations = localData.presentations;
       this.settings = localData.settings;
-
-      // Get auth state to determine if user can edit content
-      const authState = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'getAuthState' }, (response) => {
-          if (chrome.runtime.lastError) {
-            log('Error getting auth state:', chrome.runtime.lastError.message);
-            resolve({ isAuthenticated: false });
-          } else {
-            resolve(response || { isAuthenticated: false });
-          }
-        });
-      });
 
       // Determine if user can edit content (owner, admin, or editor roles)
       const role = authState.profile?.role;
@@ -631,39 +642,9 @@
         }
       });
 
-      // Method 9: Parse "Label: Value" patterns from page text
-      const pageText = document.body.innerText;
-      const lines = pageText.split('\n').map(l => l.trim()).filter(l => l);
-
-      for (let i = 0; i < lines.length - 1; i++) {
-        const line = lines[i];
-        if (line.endsWith(': ') || line.endsWith(':')) {
-          const label = line.replace(/:$/, '').trim();
-          const value = lines[i + 1];
-          if (value && !value.endsWith(':') && value !== '​') {
-            const normalizedLabel = this.normalizePropertyName(label);
-            if (!this.properties[normalizedLabel]) {
-              this.properties[normalizedLabel] = value;
-            }
-          }
-        }
-      }
-
-      // Method 10: Same line "Label: Value" patterns
-      const sameLinePattern = /^([A-Za-z][A-Za-z\s]+):\s*(.+)$/;
-      lines.forEach(line => {
-        const match = line.match(sameLinePattern);
-        if (match) {
-          const label = match[1].trim();
-          const value = match[2].trim();
-          if (label && value) {
-            const normalizedLabel = this.normalizePropertyName(label);
-            if (!this.properties[normalizedLabel]) {
-              this.properties[normalizedLabel] = value;
-            }
-          }
-        }
-      });
+      // Note: Removed Methods 9 & 10 (document.body.innerText parsing) for performance.
+      // These caused 200-800ms reflow on every page load. The API fetch provides
+      // definitive property values, making text parsing fallbacks unnecessary.
 
       this.normalizePropertyAliases();
       log('Extracted properties:', this.properties);
@@ -917,31 +898,30 @@
 
       // Apply wiki highlighting via module
       if (this.wikiModule && this.settings.showWiki !== false && this.wikiEntries.length > 0) {
-        // Apply with delays for lazy-loaded content
+        // Initial pass after HubSpot DOM settles
         setTimeout(() => this.wikiModule.apply(), 500);
-        setTimeout(() => this.wikiModule.apply(), 1500);
-        setTimeout(() => this.wikiModule.apply(), 3000);
+        // Follow-up pass using requestIdleCallback for lazy-loaded content
+        // This runs when the browser is idle, avoiding UI jank
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => this.wikiModule.apply(), { timeout: 3000 });
+        } else {
+          // Fallback for browsers without requestIdleCallback
+          setTimeout(() => this.wikiModule.apply(), 2000);
+        }
       }
 
       // Render ERP icon on record pages
-      log('ERP module check:', {
-        hasModule: !!this.erpModule,
-        isEnabled: this.erpModule?.isEnabled(),
-        objectType: this.context?.objectType,
-        hasProperties: Object.keys(this.properties || {}).length
-      });
       if (this.erpModule && this.erpModule.isEnabled()) {
-        log('ERP module is enabled, scheduling render');
-        // Initial render
+        // Initial render after DOM settles
         setTimeout(() => {
-          log('ERP render attempt 1, properties:', Object.keys(this.properties || {}).slice(0, 10));
           this.erpModule.renderOnRecordPage(this.properties, this.context);
         }, 500);
-        // Retry after DOM may have updated
-        setTimeout(() => {
-          log('ERP render attempt 2');
-          this.erpModule.renderOnRecordPage(this.properties, this.context);
-        }, 1500);
+        // Follow-up using requestIdleCallback for lazy-loaded content
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => {
+            this.erpModule.renderOnRecordPage(this.properties, this.context);
+          }, { timeout: 2000 });
+        }
       }
 
       // Notify sidepanel of updated cards
@@ -1004,6 +984,35 @@
           this.properties
         );
       });
+    }
+
+    /**
+     * Get matching content recommendations based on tags and conditions
+     * @returns {Object} { recommendations: Array, activeTags: Array }
+     */
+    getMatchingRecommendations() {
+      if (!this.recommendationEngine) {
+        log('Recommendation engine not initialized');
+        return { recommendations: [], activeTags: [] };
+      }
+
+      if (this.recommendedContent.length === 0) {
+        log('No recommended content configured');
+        return { recommendations: [], activeTags: [] };
+      }
+
+      const result = this.recommendationEngine.getRecommendations(
+        {
+          tagRules: this.tagRules,
+          recommendedContent: this.recommendedContent,
+          contentTags: this.contentTags
+        },
+        this.properties,
+        this.context
+      );
+
+      log('Matching recommendations:', result.recommendations.length);
+      return result;
     }
 
     /**
@@ -1156,9 +1165,12 @@
         if (message.action === 'getMatchingCards') {
           log('Side panel requested cards');
           const matchingCards = this.getMatchingBattleCards();
-          log('Sending', matchingCards.length, 'cards to side panel');
+          const recommendationsResult = this.getMatchingRecommendations();
+          log('Sending', matchingCards.length, 'cards and', recommendationsResult.recommendations.length, 'recommendations to side panel');
           sendResponse({
             cards: matchingCards,
+            recommendations: recommendationsResult.recommendations,
+            activeTags: recommendationsResult.activeTags,
             properties: this.properties,
             context: this.context
           });
