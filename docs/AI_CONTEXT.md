@@ -38,6 +38,7 @@ plugin/
 │       ├── settings.js    # Settings & team management
 │       ├── partner.js     # Managed Accounts page (v2.8.0+)
 │       ├── partner-home.js # Partner Home page (v2.8.2+)
+│       ├── content.js     # Content library + tags CRUD (v2.15.0+)
 │       └── login.js       # Web authentication
 │
 ├── background/
@@ -59,6 +60,7 @@ plugin/
 │
 ├── lib/                   # Shared libraries
 │   ├── rules-engine.js    # Condition evaluation (RevGuideRulesEngine)
+│   ├── content-recommendations.js # Content matching engine (ContentRecommendationEngine)
 │   ├── storage.js         # Chrome storage wrapper (StorageManager)
 │   ├── wiki-cache.js      # Wiki term caching (RevGuideWikiCache)
 │   └── icons.js           # SVG icon definitions
@@ -96,6 +98,7 @@ plugin/
 | `RevGuideDB` | admin/supabase.js | Database operations |
 | `RevGuideHubSpot` | admin/hubspot.js | HubSpot OAuth |
 | `RevGuideRulesEngine` | lib/rules-engine.js | Condition evaluation |
+| `RevGuideContentRecommendations` | lib/content-recommendations.js | Content recommendation matching |
 | `RevGuideWikiCache` | lib/wiki-cache.js | Wiki term caching |
 | `StorageManager` | lib/storage.js | Chrome storage wrapper |
 | `AdminPanel` | admin/admin.js | Admin UI controller |
@@ -137,6 +140,9 @@ The codebase uses mixed terminology due to evolution:
 | Banners | `rules`, `banners` | `banners` | Conditional banners |
 | Wiki | `wikiEntries` | `wiki_entries` | Field glossary |
 | Media Embeds | `presentations` | (via banners) | Part of banner system |
+| Content | `recommendedContent` | `recommended_content` | Recommended content assets |
+| Tags | `contentTags` | `content_tags` | Content categorization tags |
+| Tag Rules | `tagRules` | `tag_rules` | Rules that output tags |
 
 ---
 
@@ -258,6 +264,9 @@ Build script: `scripts/build.js`
 - `hubspot_connections` - OAuth tokens (encrypted)
 - `partner_libraries` - Reusable content packages (v2.7.0+)
 - `library_installations` - Track installed libraries per org (v2.7.0+)
+- `content_tags` - Tag definitions for content categorization (v2.15.0+)
+- `tag_rules` - Rules that output tags when conditions match (v2.15.0+)
+- `recommended_content` - Content assets with tags and conditions (v2.15.0+)
 
 **Billing tables (v2.11.0+):**
 - `plan_limits` - Plan tier configuration (limits, pricing per plan_type)
@@ -449,4 +458,100 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2025 (v2.12.0)*
+---
+
+## Content Recommendations (v2.15.0+)
+
+A hybrid content recommendation system that shows contextual content in the sidepanel.
+
+### Dual Matching System
+
+Content can match via **either or both**:
+
+1. **Tag-Based Matching**: Tag rules evaluate conditions and output tags. Content with matching tags is shown.
+2. **Direct Conditions**: Each content item can have its own conditions, evaluated directly against record properties.
+
+Content shows if EITHER method matches (OR logic between them).
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/content-recommendations.js` | ContentRecommendationEngine class |
+| `admin/pages/content.html` | Admin page (Assets + Tags tabs) |
+| `admin/pages/content.js` | Admin logic for content/tag CRUD |
+| `supabase/migrations/038_content_recommendations.sql` | Database schema |
+
+### Data Flow
+
+```
+Page Load
+    ↓
+background.js fetches tag_rules, content_tags, recommended_content
+    ↓
+content.js stores data, initializes ContentRecommendationEngine
+    ↓
+Sidepanel sends getMatchingCards message
+    ↓
+content.js evaluates tag rules + direct conditions
+    ↓
+Returns matching recommendations to sidepanel
+    ↓
+Sidepanel renders "Recommended Content" card
+```
+
+### ContentRecommendationEngine Methods
+
+- `getActiveTags(tagRules, properties, context)` - Evaluate tag rules, return active tag IDs
+- `matchesTags(content, activeTags)` - Check if content has any matching tags
+- `matchesDirectConditions(content, properties, context)` - Evaluate content's own conditions
+- `getMatchingContent(content, activeTags, properties, context)` - Filter and sort recommendations
+- `getRecommendations(data, properties, context)` - Main entry point
+
+---
+
+## HubSpot List Membership Conditions (v2.16.0+)
+
+Enables conditions based on HubSpot list/segment membership (e.g., "Show when contact is member of VIP Customers list").
+
+### How It Works
+
+1. **Sync Lists**: Admin syncs lists from HubSpot via Settings page → "Sync Lists" button
+2. **Create Condition**: In play/banner rules, select "Is member of list" operator and pick a list from dropdown
+3. **Runtime Evaluation**: On page load, extension fetches record's list memberships and injects as `_list_memberships` virtual property
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/040_hubspot_lists.sql` | Database table for synced list metadata |
+| `admin/hubspot.js` | `getLists()`, `getRecordListMemberships()` API methods |
+| `admin/supabase.js` | `getHubSpotLists()`, `saveHubSpotLists()` CRUD |
+| `admin/pages/settings.js` | `syncHubSpotLists()` sync flow |
+| `admin/shared.js` | List operators + list selector dropdown UI |
+| `background/background.js` | `getListMemberships` handler with 5-min cache |
+| `content/content.js` | `fetchListMemberships()` injection |
+| `lib/rules-engine.js` | `is_member_of_list`, `is_not_member_of_list` operators |
+
+### HubSpot API Endpoints
+
+- `POST /crm/v3/lists/search` - Fetch all lists (requires `crm.lists.read` scope)
+- `GET /crm/v3/lists/records/{objectTypeId}/{recordId}/memberships` - Get record's list memberships
+
+### Object Type IDs
+
+| Type | ID |
+|------|-----|
+| Contact | `0-1` |
+| Company | `0-2` |
+| Deal | `0-3` |
+| Ticket | `0-5` |
+
+### Caching Strategy
+
+- **List metadata**: Stored in `hubspot_lists` table, refreshed on-demand via Settings
+- **Record memberships**: Cached in `chrome.storage.local` with 5-minute TTL
+
+---
+
+*Last updated: December 2025 (v2.16.0)*

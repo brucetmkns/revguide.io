@@ -56,6 +56,68 @@ div.innerHTML = `<div class="condition-group-card">...</div>`;
 
 **Files affected**: `admin/shared.js` - `addConditionGroup()` function, `admin/shared.css` - condition group classes
 
+### Constructor Property Initialization Order
+**Lesson**: When initializing class properties in a constructor, ensure you don't accidentally overwrite values set earlier in the constructor.
+
+**Context**: The `HubSpotHelper` constructor initialized `this.recommendationEngine = new RevGuideContentRecommendations(...)` on line 61, but then set `this.recommendationEngine = null;` on line 80 when listing "Recommendation data" properties. This caused recommendations to never work.
+
+**Pattern**: Group related initialization together and avoid resetting:
+```javascript
+constructor() {
+  // Initialize engines once
+  this.rulesEngine = new RulesEngine();
+  this.recommendationEngine = new ContentRecommendationEngine(this.rulesEngine);
+
+  // Data arrays - don't re-declare engine here
+  this.tagRules = [];
+  this.recommendedContent = [];
+  // Note: recommendationEngine already initialized above
+}
+```
+
+**Files affected**: `content/content.js` - HubSpotHelper constructor
+
+### Chrome Extension CSP and Inline Event Handlers
+**Lesson**: Chrome extensions block inline `onclick` handlers due to Content Security Policy (CSP). Use event delegation instead.
+
+**Context**: Recommendation items had `onclick="window.open('...')"` attributes, but clicks did nothing. Chrome extensions have strict CSP that blocks inline JavaScript.
+
+**Pattern**: Use data attributes and event delegation:
+```javascript
+// BAD - blocked by CSP in Chrome extensions
+const html = `<div onclick="window.open('${url}')">Click me</div>`;
+
+// GOOD - use data attributes + event delegation
+const html = `<div class="clickable" data-url="${url}">Click me</div>`;
+
+// Then add listener after rendering
+container.querySelectorAll('.clickable').forEach(el => {
+  el.addEventListener('click', () => {
+    const url = el.dataset.url;
+    chrome.tabs.create({ url });
+  });
+});
+```
+
+**Files affected**: `sidepanel/sidepanel.js` - recommendation item rendering and click handlers
+
+### Supabase snake_case vs JavaScript camelCase
+**Lesson**: Supabase returns column names in snake_case. When checking fields that might come from the database, check both naming conventions.
+
+**Context**: Content items had `display_on_all` from Supabase, but code only checked `displayOnAll`. Items with "Display on all records" enabled weren't showing.
+
+**Pattern**: Check both naming conventions for fields that might not be transformed:
+```javascript
+// Check both camelCase (transformed) and snake_case (raw from DB)
+if (content.displayOnAll || content.display_on_all) {
+  return true;
+}
+
+const tagIds = content.tagIds || content.tag_ids || [];
+```
+
+**Files affected**: `lib/content-recommendations.js` - field name handling
+
 ---
 
 ## Event Handling
@@ -3235,6 +3297,85 @@ if (!isValidUuid(entry.id)) {
 - Add validation at multiple layers (mapping, CRUD functions, save logic)
 
 **Files affected**: `admin/shared.js`, `admin/supabase.js`, `admin/pages/wiki.js`
+
+---
+
+## HubSpot Lists API v3 (v2.16.0)
+
+### Lists API Requires Search Endpoint
+**Lesson**: The HubSpot Lists API v3 does NOT support `GET /crm/v3/lists` to fetch all lists. You must use `POST /crm/v3/lists/search`.
+
+**Problem**: Initial implementation used `GET /crm/v3/lists?count=250&offset=0` which returned errors or empty results.
+
+**Solution**:
+```javascript
+// WRONG - doesn't work for fetching all lists
+const data = await this.proxy(connectionId, `/crm/v3/lists?count=250&offset=${offset}`);
+
+// CORRECT - use the search endpoint with POST
+const data = await this.proxy(connectionId, '/crm/v3/lists/search', {
+  method: 'POST',
+  body: {
+    offset: offset,
+    count: pageSize,
+    processingTypes: ['DYNAMIC', 'MANUAL', 'SNAPSHOT']
+  }
+});
+```
+
+**Key points**:
+- Use `POST /crm/v3/lists/search` to get all lists
+- Include `processingTypes` array to filter by list type
+- Pagination via `offset` and `count` in request body
+- Response contains `lists` array with `listId`, `name`, `objectTypeId`, `processingType`, `size`
+
+### OAuth Scope Requirements
+**Lesson**: Adding new HubSpot API features requires updating OAuth scopes in BOTH places.
+
+**Problem**: After adding lists functionality, got 403 errors because `crm.lists.read` scope was missing.
+
+**Fix required in two places**:
+1. **Supabase Edge Function** (`supabase/functions/hubspot-oauth/index.ts`):
+   ```typescript
+   const HUBSPOT_SCOPES = [
+     'oauth',
+     'crm.objects.contacts.read',
+     // ... other scopes
+     'crm.lists.read'  // Add new scope
+   ];
+   ```
+
+2. **HubSpot App Config** (`RevGuide/src/app/app-hsmeta.json`):
+   ```json
+   "requiredScopes": [
+     "oauth",
+     "crm.objects.contacts.read",
+     // ... other scopes
+     "crm.lists.read"
+   ]
+   ```
+
+**After updating both**:
+- Deploy edge function: `npx supabase functions deploy hubspot-oauth --no-verify-jwt`
+- Upload HubSpot app: `cd RevGuide && hs project upload`
+- User must **reconnect HubSpot** to get new permissions
+
+### Object Type ID Mapping
+**Lesson**: HubSpot uses numeric object type IDs, not string names.
+
+| Object Type | ID |
+|-------------|-----|
+| Contact | `0-1` |
+| Company | `0-2` |
+| Deal | `0-3` |
+| Ticket | `0-5` |
+
+**Example**: To get list memberships for a contact:
+```
+GET /crm/v3/lists/records/0-1/{recordId}/memberships
+```
+
+**Files affected**: `admin/hubspot.js`, `background/background.js`
 
 ---
 

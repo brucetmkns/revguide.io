@@ -4,9 +4,18 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.14.0 (Condition Groups)
+## Current State: v2.15.0 (Content Recommendations)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, and **grouped conditions for complex rule building with nested AND/OR logic**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, and **content recommendations with tag-based matching for contextual content delivery in the sidepanel**.
+
+### Content Recommendations (v2.15.0)
+- **Tag-Based Matching**: Define tags and assign them to content assets
+- **Direct Conditions**: Content can have its own display conditions (independent of tags)
+- **Hybrid Matching**: Content shows if EITHER tags match OR direct conditions match
+- **Display on All Records**: Option to show content universally without conditions
+- **Content Admin Page**: Consolidated `/content` page with Assets and Tags tabs
+- **Sidepanel Integration**: Recommendations appear as collapsible card with copy/open buttons
+- **Content Types**: External links (Phase 1), HubSpot Documents and Sequences (Phase 2+)
 
 ### Condition Groups (v2.14.0)
 - **Grouped Conditions**: Create multiple condition groups for complex rule logic
@@ -915,6 +924,21 @@ Would you like me to suggest values?"
 - [ ] Property value suggestions from HubSpot picklists
 - [ ] Nested condition groups (complex AND/OR)
 - [ ] Custom formula conditions
+
+### List Membership Conditions UX (v2.16.0+)
+**Current State**: List membership conditions work but UX needs improvement.
+
+**Improvements Planned**:
+- [ ] **"Add List Membership" button** - Separate button alongside "Add Condition" that directly creates a list membership condition (no property selection needed)
+- [ ] **Filter lists by object type** - Only show Deal lists when play is set to display on Deals, Contact lists for Contacts, etc.
+- [ ] **Searchable list dropdown** - Add search/filter input to the list selector for organizations with many lists
+- [ ] **Auto-hide property selector** - When list operator is selected, hide the property dropdown since it's not used
+- [ ] **List preview count** - Show member count next to each list name in dropdown (e.g., "VIP Customers (1,234 contacts)")
+
+**Technical Notes**:
+- Lists are filtered by `object_type` column in `hubspot_lists` table
+- Object types stored as: `CONTACT`, `COMPANY`, `DEAL`, `TICKET`
+- Need to map play's `objectType` to list's `object_type` for filtering
 
 ### Content Enhancements
 - [x] Rich text editor for banner messages *(completed in v1.3.0)*
