@@ -2,6 +2,22 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.13.1] - 2025-12-24 - Index Tags Default & Tailwind Infrastructure
+
+### Changed
+- **Index Tags Default ON**: New banners now default "Show as Tag on Index" to enabled
+  - Users can still toggle off if desired
+  - Existing banners unchanged
+
+### Added
+- **Tailwind CSS Infrastructure**: Added configuration files for future UI migrations
+  - `tailwind.config.js` with RevGuide theme tokens
+  - `postcss.config.js` for build pipeline
+  - `styles/tailwind.css` with custom component classes
+
+### Technical
+- `admin/pages/banners.js`: Changed default from `false` to `true` for new banners
+
 ## [2.13.0] - 2025-12-23 - Partner-Initiated Portal Setup
 
 ### Added

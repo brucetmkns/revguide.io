@@ -1009,7 +1009,7 @@ Would you like me to suggest values?"
 |------|----------|--------|-------|
 | Login/Signup | Low | Preview done | Simple pages, good starter |
 | Home | Medium | Pending | Dashboard layout |
-| Wiki | High | Complete | Migrated to Tailwind (v2.13.x) |
+| Wiki | High | Reverted | Needs styling fixes before migration |
 | Banners | High | Pending | Similar to Wiki |
 | Plays | High | Pending | Similar to Wiki |
 | Settings | Medium | Pending | Forms and cards |
