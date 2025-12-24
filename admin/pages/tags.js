@@ -42,8 +42,12 @@
    * Initialize the page
    */
   async function init() {
-    // Wait for AdminShared to initialize
-    await AdminShared.init();
+    // Check authentication (redirects to login if not authenticated)
+    const isAuthenticated = await AdminShared.checkAuth();
+    if (!isAuthenticated) return;
+
+    // Render sidebar
+    AdminShared.renderSidebar('tags');
 
     // Check if user can edit content
     if (!AdminShared.canEditContent()) {
