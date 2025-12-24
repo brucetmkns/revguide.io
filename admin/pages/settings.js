@@ -302,9 +302,9 @@ class SettingsPage {
       connectedState.style.display = 'block';
       disconnectedState.style.display = 'none';
 
-      // Update portal info
-      document.getElementById('connectedPortalName').textContent = connection.portalName || 'HubSpot Portal';
-      document.getElementById('connectedPortalDomain').textContent = connection.portalDomain || connection.portalId;
+      // Update portal info - show Portal ID and domain
+      document.getElementById('connectedPortalName').textContent = `Portal ${connection.portalId}`;
+      document.getElementById('connectedPortalDomain').textContent = connection.portalDomain || '';
 
       // Store connection for disconnect action
       this.currentConnection = {
