@@ -2,7 +2,17 @@
 // Replaces Nango with direct HubSpot OAuth implementation
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Create a Supabase client with service role (bypasses RLS)
+function getServiceClient(): SupabaseClient {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,7 +104,7 @@ async function handleAuthorize(req: Request): Promise<Response> {
   let userId: string | null = null
 
   if (authHeader) {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const supabase = getServiceClient()
     const token = authHeader.replace('Bearer ', '')
     const { data: { user } } = await supabase.auth.getUser(token)
     userId = user?.id || null
@@ -102,10 +112,11 @@ async function handleAuthorize(req: Request): Promise<Response> {
 
   // Generate state for CSRF protection
   const state = crypto.randomUUID()
+  console.log('Generated OAuth state:', state, 'for user:', userId, 'org:', organizationId)
 
   // Store state in database
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const { error: stateError } = await supabase
+  const supabase = getServiceClient()
+  const { data: insertedState, error: stateError } = await supabase
     .from('oauth_states')
     .insert({
       state,
@@ -114,6 +125,10 @@ async function handleAuthorize(req: Request): Promise<Response> {
       return_url: returnUrl,
       expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
     })
+    .select()
+    .single()
+
+  console.log('OAuth state insert result:', { insertedState, stateError })
 
   if (stateError) {
     console.error('Failed to store OAuth state:', stateError)
@@ -156,17 +171,20 @@ async function handleCallback(req: Request): Promise<Response> {
     return redirectWithError('Missing code or state parameter', '')
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = getServiceClient()
 
   // Validate state (CSRF protection)
+  console.log('Looking up OAuth state:', state)
   const { data: oauthState, error: stateError } = await supabase
     .from('oauth_states')
     .select('*')
     .eq('state', state)
     .single()
 
+  console.log('OAuth state lookup result:', { oauthState, stateError })
+
   if (stateError || !oauthState) {
-    console.error('Invalid OAuth state:', state)
+    console.error('Invalid OAuth state:', state, 'Error:', stateError?.message, stateError?.code)
     return redirectWithError('Invalid or expired session', '')
   }
 
@@ -386,7 +404,7 @@ async function handleCallback(req: Request): Promise<Response> {
  * Get connection status for current user/organization
  */
 async function handleGetConnection(req: Request): Promise<Response> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = getServiceClient()
 
   // Get user from authorization header
   const authHeader = req.headers.get('authorization')
@@ -480,7 +498,7 @@ async function handleDisconnect(req: Request): Promise<Response> {
     )
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = getServiceClient()
 
   // Get the connection to optionally revoke the token
   const { data: connection } = await supabase
@@ -534,7 +552,7 @@ async function handleProxy(req: Request): Promise<Response> {
     )
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = getServiceClient()
 
   // Get access token (refresh if needed)
   const accessToken = await getValidAccessToken(supabase, connectionId)
