@@ -709,16 +709,29 @@ async function fetchPortalInfo(accessToken: string): Promise<{
     const portalDomain = hubDomain || (portalId ? `${portalId}.hubspot.com` : 'hubspot.com')
 
     // Build the best name we can
-    // Priority: companyName > formatted hub_domain > portal ID fallback
+    // Priority: companyName > reconstructed domain from hub_domain > portal ID fallback
     let portalName = accountData.companyName
     if (!portalName && hubDomain) {
-      // Convert hub_domain like "teamofi-com-ar-6292307" to "Teamofi Com Ar"
-      // Remove the portal ID suffix and convert dashes to spaces
+      // Convert hub_domain like "teamofi-com-ar-6292307" back to domain format
+      // Remove the portal ID suffix first
       const domainWithoutId = hubDomain.replace(/-\d+$/, '')
-      portalName = domainWithoutId
-        .split('-')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+
+      // Try to reconstruct domain by replacing -com-, -co-, -org-, -net- etc with dots
+      // e.g., "teamofi-com-ar" -> "teamofi.com.ar"
+      // e.g., "acme-corp-co-uk" -> "acme-corp.co.uk"
+      const domainPattern = /-(com|co|org|net|io|edu|gov|biz)(-[a-z]{2,3})?$/i
+      const match = domainWithoutId.match(domainPattern)
+
+      if (match) {
+        // Found a TLD pattern, reconstruct the domain
+        const tldStart = domainWithoutId.lastIndexOf(match[0])
+        const baseName = domainWithoutId.substring(0, tldStart)
+        const tld = match[0].substring(1).replace(/-/g, '.') // Remove leading dash, convert internal dashes to dots
+        portalName = `${baseName}.${tld}`
+      } else {
+        // No recognizable TLD pattern, just use the cleaned hub_domain as-is
+        portalName = domainWithoutId
+      }
     }
     if (!portalName) {
       portalName = `HubSpot Portal ${portalId}`
