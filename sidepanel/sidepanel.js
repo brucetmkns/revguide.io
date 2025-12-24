@@ -601,6 +601,81 @@ class SidePanel {
       });
     });
 
+    // Add click handlers for recommendation items (click on row to open)
+    container.querySelectorAll('.recommendation-item.clickable').forEach(item => {
+      item.addEventListener('click', (e) => {
+        // Don't trigger if clicking on buttons
+        if (e.target.closest('.rec-copy-btn') || e.target.closest('.rec-open-btn')) {
+          return;
+        }
+        const url = item.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
+    // Add click handlers for recommendation open buttons
+    container.querySelectorAll('.rec-open-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
+    // Add click handlers for recommended content play items (click on row to open)
+    container.querySelectorAll('.rec-content-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        // Don't trigger if clicking on buttons
+        if (e.target.closest('.rec-content-open-btn')) {
+          return;
+        }
+        const url = item.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
+    // Add click handlers for recommended content play open buttons
+    container.querySelectorAll('.rec-content-open-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+
+    // Add click handlers for recommendation copy buttons
+    container.querySelectorAll('.rec-copy-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (url) {
+          try {
+            await navigator.clipboard.writeText(url);
+            // Show brief feedback
+            btn.classList.add('copied');
+            btn.title = 'Copied!';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.title = 'Copy link';
+            }, 1500);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+          }
+        }
+      });
+    });
+
     // Initialize editable field section events
     this.initFieldSectionEvents();
 
@@ -788,8 +863,14 @@ class SidePanel {
       competitor: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="9" y1="14" y2="18"/><line x1="7" x2="4" y1="17" y2="20"/><line x1="3" x2="5" y1="19" y2="21"/></svg>',
       objection: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
       tip: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
-      process: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>'
+      process: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>',
+      recommended_content: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><polyline points="10 2 10 10 13 7 16 10 16 2"/></svg>'
     };
+
+    // For recommended_content type, render asset list instead of sections
+    if (card.cardType === 'recommended_content' && card.resolvedAssets?.length > 0) {
+      return this.renderRecommendedContentCard(card, typeIcons);
+    }
 
     const sectionsHtml = card.sections ? card.sections.map(section => {
       // Interpolate variables in section title
@@ -873,6 +954,101 @@ class SidePanel {
         </div>
         <div class="card-body">
           ${sectionsHtml}
+          ${linkHtml}
+          ${adminEditHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render a Recommended Content play card with its linked assets
+   */
+  renderRecommendedContentCard(card, typeIcons) {
+    // Content type icons for assets
+    const assetTypeIcons = {
+      external_link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+      hubspot_document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      hubspot_sequence: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    };
+
+    // Render asset list
+    const assetsHtml = card.resolvedAssets.map(asset => {
+      const contentType = asset.content_type || asset.contentType || 'external_link';
+      const assetIcon = assetTypeIcons[contentType] || assetTypeIcons.external_link;
+      const assetUrl = asset.url || '';
+      const assetTitle = asset.title || 'Untitled';
+      const assetDescription = asset.description || '';
+
+      return `
+        <div class="rec-content-item" data-url="${this.escapeHtml(assetUrl)}">
+          <div class="rec-content-icon">${assetIcon}</div>
+          <div class="rec-content-details">
+            <div class="rec-content-title">${this.escapeHtml(assetTitle)}</div>
+            ${assetDescription ? `<div class="rec-content-description">${this.escapeHtml(assetDescription)}</div>` : ''}
+          </div>
+          ${assetUrl ? `
+            <button class="rec-content-open-btn" data-url="${this.escapeHtml(assetUrl)}" title="Open in new tab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const linkHtml = card.link ? `
+      <div class="card-link">
+        <a href="${this.escapeHtml(card.link)}" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          View Full Play
+        </a>
+      </div>
+    ` : '';
+
+    // Admin edit link
+    const role = this.authState.profile?.role;
+    const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
+    const showAdminLinks = this.settings.showAdminLinks !== false && canEditContent;
+    const adminEditHtml = showAdminLinks ? `
+      <div class="card-admin-edit">
+        <a href="#" class="admin-edit-link" data-card-id="${card.id}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit in Admin Panel
+        </a>
+      </div>
+    ` : '';
+
+    return `
+      <div class="battle-card recommended-content-card" data-card-id="${card.id}">
+        <div class="card-header">
+          <div class="card-icon recommended_content">
+            ${typeIcons.recommended_content}
+          </div>
+          <div class="card-info">
+            <div class="card-name">${this.escapeHtml(card.name)}</div>
+            ${card.subtitle ? `<div class="card-subtitle">${this.escapeHtml(card.subtitle)}</div>` : ''}
+          </div>
+          <span class="card-expand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="rec-content-list">
+            ${assetsHtml}
+          </div>
           ${linkHtml}
           ${adminEditHtml}
         </div>
@@ -1089,10 +1265,10 @@ class SidePanel {
 
     // Make the item clickable if it has a URL
     const isClickable = item.url ? 'clickable' : '';
-    const onClick = item.url ? `onclick="window.open('${this.escapeHtml(item.url)}', '_blank')"` : '';
+    const urlAttr = item.url ? `data-url="${this.escapeHtml(item.url)}"` : '';
 
     return `
-      <div class="recommendation-item ${isClickable}" ${onClick}>
+      <div class="recommendation-item ${isClickable}" ${urlAttr}>
         <div class="rec-icon-wrapper">
           ${icon}
         </div>
@@ -1102,10 +1278,18 @@ class SidePanel {
           ${tags.length > 0 ? `<div class="rec-tags">${tagsHtml}</div>` : ''}
         </div>
         ${item.url ? `
-          <div class="rec-action">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+          <div class="rec-actions">
+            <button class="rec-copy-btn" data-url="${this.escapeHtml(item.url)}" title="Copy link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <button class="rec-open-btn" data-url="${this.escapeHtml(item.url)}" title="Open link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
           </div>
         ` : ''}
       </div>

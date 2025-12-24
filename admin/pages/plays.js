@@ -14,6 +14,10 @@ class PlaysPage {
     this.isViewOnly = false; // View-only mode for members
     this.sectionEditors = new Map(); // Map of section element -> Tiptap editor
     this.tiptapReady = false;
+    // Recommended Content play type state
+    this.contentAssets = []; // All available content assets from library
+    this.selectedAssetIds = []; // Selected asset IDs for current play
+    this.assetPickerSelectedIds = []; // Temporary selection in picker modal
     this.init();
   }
 
@@ -177,6 +181,19 @@ class PlaysPage {
 
     // Add section
     document.getElementById('addSectionBtn').addEventListener('click', () => this.addSection());
+
+    // Play type change (toggle sections vs content assets)
+    document.getElementById('playType').addEventListener('change', (e) => this.onPlayTypeChange(e.target.value));
+
+    // Asset picker modal events
+    document.getElementById('addAssetToPlayBtn').addEventListener('click', () => this.openAssetPicker());
+    document.getElementById('closeAssetPickerBtn').addEventListener('click', () => this.closeAssetPicker());
+    document.getElementById('cancelAssetPickerBtn').addEventListener('click', () => this.closeAssetPicker());
+    document.getElementById('confirmAssetPickerBtn').addEventListener('click', () => this.confirmAssetSelection());
+    document.getElementById('assetPickerSearch').addEventListener('input', (e) => this.filterAssetPicker(e.target.value));
+
+    // Close modal on backdrop click
+    document.querySelector('#assetPickerModal .modal-backdrop').addEventListener('click', () => this.closeAssetPicker());
   }
 
   switchTab(tabName) {
@@ -192,6 +209,267 @@ class PlaysPage {
     // Update tab panels
     document.querySelectorAll('.play-tab-panel').forEach(panel => {
       panel.hidden = panel.id !== `play-tab-${tabName}`;
+    });
+  }
+
+  // ===== Recommended Content Play Type Methods =====
+
+  onPlayTypeChange(cardType) {
+    const isRecommendedContent = cardType === 'recommended_content';
+    const sectionsWrapper = document.getElementById('playSectionsWrapper');
+    const contentAssetsWrapper = document.getElementById('contentAssetsWrapper');
+
+    if (sectionsWrapper) {
+      sectionsWrapper.style.display = isRecommendedContent ? 'none' : 'block';
+    }
+    if (contentAssetsWrapper) {
+      contentAssetsWrapper.style.display = isRecommendedContent ? 'block' : 'none';
+    }
+
+    // Load content assets if switching to recommended_content type
+    if (isRecommendedContent && this.contentAssets.length === 0) {
+      this.loadContentAssets();
+    }
+  }
+
+  async loadContentAssets() {
+    if (!AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+      try {
+        const { data, error } = await RevGuideDB.getRecommendedContent();
+        if (error) throw error;
+        this.contentAssets = (data || []).map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          url: item.url,
+          contentType: item.content_type,
+          thumbnailUrl: item.thumbnail_url
+        }));
+      } catch (err) {
+        console.error('Failed to load content assets:', err);
+        AdminShared.showToast('Failed to load content assets', 'error');
+      }
+    }
+  }
+
+  openAssetPicker() {
+    // Initialize picker with current selection
+    this.assetPickerSelectedIds = [...this.selectedAssetIds];
+
+    // Load content assets if not already loaded
+    if (this.contentAssets.length === 0) {
+      this.loadContentAssets().then(() => {
+        this.renderAssetPickerGrid();
+      });
+    } else {
+      this.renderAssetPickerGrid();
+    }
+
+    document.getElementById('assetPickerModal').classList.add('open');
+    document.getElementById('assetPickerSearch').value = '';
+  }
+
+  closeAssetPicker() {
+    document.getElementById('assetPickerModal').classList.remove('open');
+    this.assetPickerSelectedIds = [];
+  }
+
+  confirmAssetSelection() {
+    // Add newly selected assets (avoid duplicates)
+    this.assetPickerSelectedIds.forEach(id => {
+      if (!this.selectedAssetIds.includes(id)) {
+        this.selectedAssetIds.push(id);
+      }
+    });
+
+    this.renderSelectedAssets();
+    this.closeAssetPicker();
+  }
+
+  filterAssetPicker(searchTerm) {
+    const grid = document.getElementById('assetPickerGrid');
+    const items = grid.querySelectorAll('.asset-picker-item');
+    const term = searchTerm.toLowerCase();
+
+    items.forEach(item => {
+      const title = item.querySelector('.asset-picker-title')?.textContent.toLowerCase() || '';
+      const desc = item.querySelector('.asset-picker-description')?.textContent.toLowerCase() || '';
+      const matches = title.includes(term) || desc.includes(term);
+      item.style.display = matches ? '' : 'none';
+    });
+  }
+
+  renderAssetPickerGrid() {
+    const grid = document.getElementById('assetPickerGrid');
+    const emptyState = document.getElementById('assetPickerEmpty');
+
+    // Filter out already selected assets
+    const availableAssets = this.contentAssets.filter(
+      asset => !this.selectedAssetIds.includes(asset.id)
+    );
+
+    if (availableAssets.length === 0) {
+      grid.style.display = 'none';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    grid.style.display = 'grid';
+    emptyState.style.display = 'none';
+
+    grid.innerHTML = availableAssets.map(asset => {
+      const isSelected = this.assetPickerSelectedIds.includes(asset.id);
+      const typeIcon = this.getContentTypeIcon(asset.contentType);
+
+      return `
+        <div class="asset-picker-item ${isSelected ? 'selected' : ''}" data-id="${asset.id}">
+          <div class="asset-picker-checkbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="asset-picker-content">
+            <div class="asset-picker-type-icon">${typeIcon}</div>
+            <div class="asset-picker-info">
+              <div class="asset-picker-title">${AdminShared.escapeHtml(asset.title)}</div>
+              ${asset.description ? `<div class="asset-picker-description">${AdminShared.escapeHtml(asset.description)}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Bind click events
+    grid.querySelectorAll('.asset-picker-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        const index = this.assetPickerSelectedIds.indexOf(id);
+        if (index === -1) {
+          this.assetPickerSelectedIds.push(id);
+          item.classList.add('selected');
+        } else {
+          this.assetPickerSelectedIds.splice(index, 1);
+          item.classList.remove('selected');
+        }
+      });
+    });
+  }
+
+  getContentTypeIcon(contentType) {
+    switch (contentType) {
+      case 'hubspot_document':
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      case 'hubspot_sequence':
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+      default: // external_link
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+    }
+  }
+
+  renderSelectedAssets() {
+    const container = document.getElementById('playContentAssets');
+    const emptyState = document.getElementById('contentAssetsEmpty');
+
+    if (this.selectedAssetIds.length === 0) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    container.style.display = 'flex';
+    emptyState.style.display = 'none';
+
+    // Get asset details for selected IDs
+    const selectedAssets = this.selectedAssetIds
+      .map(id => this.contentAssets.find(a => a.id === id))
+      .filter(Boolean);
+
+    container.innerHTML = selectedAssets.map((asset, index) => {
+      const typeIcon = this.getContentTypeIcon(asset.contentType);
+      return `
+        <div class="content-asset-row" data-id="${asset.id}" data-index="${index}" draggable="true">
+          <button type="button" class="btn-icon drag-handle" title="Drag to reorder">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="16" y2="6"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="8" y1="18" x2="16" y2="18"/>
+            </svg>
+          </button>
+          <div class="content-asset-type-icon">${typeIcon}</div>
+          <div class="content-asset-info">
+            <div class="content-asset-title">${AdminShared.escapeHtml(asset.title)}</div>
+            ${asset.url ? `<div class="content-asset-url">${AdminShared.escapeHtml(asset.url)}</div>` : ''}
+          </div>
+          <button type="button" class="btn-icon btn-icon-danger remove-asset-btn" title="Remove" data-id="${asset.id}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    // Bind remove events
+    container.querySelectorAll('.remove-asset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        this.selectedAssetIds = this.selectedAssetIds.filter(aid => aid !== id);
+        this.renderSelectedAssets();
+      });
+    });
+
+    // Bind drag events for reordering
+    this.initAssetDragReorder(container);
+  }
+
+  initAssetDragReorder(container) {
+    let draggedItem = null;
+
+    container.querySelectorAll('.content-asset-row').forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        draggedItem = row;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      row.addEventListener('dragend', () => {
+        if (draggedItem) {
+          draggedItem.classList.remove('dragging');
+          draggedItem = null;
+        }
+        container.querySelectorAll('.content-asset-row').forEach(r => r.classList.remove('drag-over'));
+
+        // Update selectedAssetIds order based on DOM order
+        const newOrder = [...container.querySelectorAll('.content-asset-row')]
+          .map(r => r.dataset.id);
+        this.selectedAssetIds = newOrder;
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (row !== draggedItem) {
+          container.querySelectorAll('.content-asset-row').forEach(r => r.classList.remove('drag-over'));
+          row.classList.add('drag-over');
+        }
+      });
+
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedItem && row !== draggedItem) {
+          const rows = [...container.querySelectorAll('.content-asset-row')];
+          const draggedIndex = rows.indexOf(draggedItem);
+          const targetIndex = rows.indexOf(row);
+
+          if (draggedIndex < targetIndex) {
+            row.after(draggedItem);
+          } else {
+            row.before(draggedItem);
+          }
+        }
+        row.classList.remove('drag-over');
+      });
     });
   }
 
@@ -289,7 +567,8 @@ class PlaysPage {
         competitor: 'icon-swords',
         objection: 'icon-shield',
         tip: 'icon-lightbulb',
-        process: 'icon-clipboard-list'
+        process: 'icon-clipboard-list',
+        recommended_content: 'icon-book-open'
       };
       const iconClass = iconMap[card.cardType] || 'icon-layers';
 
@@ -543,11 +822,46 @@ class PlaysPage {
     document.getElementById('playDisplayOnAll').checked = displayOnAll;
     AdminShared.toggleConditionsWrapper('playConditionsWrapper', displayOnAll);
 
-    // Sections
+    // Toggle sections vs content assets based on play type
+    const isRecommendedContent = play?.cardType === 'recommended_content';
+    const sectionsWrapper = document.getElementById('playSectionsWrapper');
+    const contentAssetsWrapper = document.getElementById('contentAssetsWrapper');
+
+    if (sectionsWrapper) {
+      sectionsWrapper.style.display = isRecommendedContent ? 'none' : 'block';
+    }
+    if (contentAssetsWrapper) {
+      contentAssetsWrapper.style.display = isRecommendedContent ? 'block' : 'none';
+    }
+
+    // Reset content assets selection
+    this.selectedAssetIds = [];
+    document.getElementById('playContentAssets').innerHTML = '';
+    document.getElementById('contentAssetsEmpty').style.display = 'block';
+
+    // Sections (for non-recommended_content types)
     const sectionsContainer = document.getElementById('playSections');
     sectionsContainer.innerHTML = '';
-    if (play?.sections?.length) {
+    if (!isRecommendedContent && play?.sections?.length) {
       play.sections.forEach(s => this.addSection(s));
+    }
+
+    // Load content assets for recommended_content type
+    if (isRecommendedContent) {
+      await this.loadContentAssets();
+
+      // Load existing linked assets if editing
+      if (play?.id && !AdminShared.isExtensionContext && typeof RevGuideDB !== 'undefined') {
+        try {
+          const { data } = await RevGuideDB.getPlayContentAssets(play.id);
+          if (data) {
+            this.selectedAssetIds = data.map(item => item.content_asset?.id || item.content_asset_id).filter(Boolean);
+            this.renderSelectedAssets();
+          }
+        } catch (err) {
+          console.error('Failed to load play content assets:', err);
+        }
+      }
     }
 
     // Migrate conditions to groups format if needed
@@ -575,16 +889,18 @@ class PlaysPage {
   }
 
   getCurrentFormData() {
+    const cardType = document.getElementById('playType').value;
     return JSON.stringify({
       name: document.getElementById('playName').value,
-      cardType: document.getElementById('playType').value,
+      cardType,
       subtitle: document.getElementById('playSubtitle').value,
       link: document.getElementById('playLink').value,
       objectType: document.getElementById('playObjectType').value,
       displayOnAll: document.getElementById('playDisplayOnAll').checked,
       groupLogic: AdminShared.getGroupLogic('playGroupLogicToggle'),
       conditionGroups: AdminShared.getConditionGroups('playConditionGroups'),
-      sections: this.getSections()
+      sections: cardType === 'recommended_content' ? [] : this.getSections(),
+      contentAssetIds: cardType === 'recommended_content' ? this.selectedAssetIds : []
     });
   }
 
@@ -1251,7 +1567,8 @@ class PlaysPage {
     }
 
     const conditionGroups = AdminShared.getConditionGroups('playConditionGroups');
-    const sections = this.getSections();
+    const isRecommendedContent = cardType === 'recommended_content';
+    const sections = isRecommendedContent ? [] : this.getSections();
     const groupLogic = AdminShared.getGroupLogic('playGroupLogicToggle');
     const displayOnAll = document.getElementById('playDisplayOnAll').checked;
 
@@ -1284,6 +1601,8 @@ class PlaysPage {
           sections
         };
 
+        let playId = this.editingPlayId;
+
         if (this.editingPlayId) {
           // Update existing play
           const { data, error } = await RevGuideDB.updatePlay(this.editingPlayId, supabaseData);
@@ -1300,9 +1619,19 @@ class PlaysPage {
           const { data, error } = await RevGuideDB.createPlay(supabaseData);
           if (error) throw error;
 
+          playId = data.id;
+
           // Map response back to camelCase and add to local array
           const mappedData = this.mapPlayFromSupabase(data);
           this.battleCards.push(mappedData);
+        }
+
+        // Save content asset links for recommended_content type
+        if (isRecommendedContent && playId) {
+          const { error: assetError } = await RevGuideDB.savePlayContentAssets(playId, this.selectedAssetIds);
+          if (assetError) {
+            console.error('Failed to save content asset links:', assetError);
+          }
         }
 
         // Clear storage cache so next load gets fresh data

@@ -363,7 +363,7 @@ function mapBannerFromSupabase(data) {
 /**
  * Map play from Supabase snake_case to camelCase
  */
-function mapPlayFromSupabase(data) {
+function mapPlayFromSupabase(data, contentAssetIds = []) {
   if (!data) return null;
   return {
     id: data.id,
@@ -373,9 +373,12 @@ function mapPlayFromSupabase(data) {
     link: data.link,
     objectType: data.object_type,
     conditions: data.conditions,
+    conditionGroups: data.condition_groups,
+    groupLogic: data.group_logic,
     logic: data.logic,
     displayOnAll: data.display_on_all,
     sections: data.sections,
+    contentAssetIds: contentAssetIds,
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
@@ -427,7 +430,7 @@ async function fetchCloudContent(targetOrgId = null) {
 
   try {
     // Fetch all content types in parallel (including org settings for erp_config)
-    const [banners, plays, wikiEntries, orgData, tagRules, contentTags, recommendedContent] = await Promise.all([
+    const [banners, plays, wikiEntries, orgData, tagRules, contentTags, recommendedContent, playContentAssets] = await Promise.all([
       supabaseFetch('banners', {
         filter: { 'organization_id': `eq.${orgId}` },
         order: 'priority.desc'
@@ -453,6 +456,10 @@ async function fetchCloudContent(targetOrgId = null) {
       supabaseFetch('recommended_content', {
         filter: { 'organization_id': `eq.${orgId}`, 'enabled': 'eq.true' },
         order: 'priority.desc'
+      }),
+      // Play content assets (for Recommended Content play type)
+      supabaseFetch('play_content_assets', {
+        order: 'display_order.asc'
       })
     ]);
 
@@ -478,10 +485,19 @@ async function fetchCloudContent(targetOrgId = null) {
     // Extract ERP config from org data
     const erpConfig = orgData && orgData.length > 0 ? orgData[0].erp_config : null;
 
+    // Build map of play_id -> content_asset_ids for Recommended Content plays
+    const playAssetMap = {};
+    (playContentAssets || []).forEach(pca => {
+      if (!playAssetMap[pca.play_id]) {
+        playAssetMap[pca.play_id] = [];
+      }
+      playAssetMap[pca.play_id].push(pca.content_asset_id);
+    });
+
     // Transform to match local storage format (snake_case to camelCase)
     const content = {
       rules: (banners || []).map(mapBannerFromSupabase),
-      battleCards: (plays || []).map(mapPlayFromSupabase),
+      battleCards: (plays || []).map(p => mapPlayFromSupabase(p, playAssetMap[p.id] || [])),
       wikiEntries: (wikiEntries || []).map(mapWikiFromSupabase),
       erpConfig: erpConfig,
       // Content Recommendations (keep snake_case for now, transform in sidepanel)

@@ -1051,19 +1051,135 @@ body {
   opacity: 0.9;
 }
 
-.rec-action {
+.rec-actions {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: #94a3b8;
-  transition: color 0.15s ease;
+  gap: 4px;
 }
 
-.rec-action svg {
+.rec-copy-btn,
+.rec-open-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rec-copy-btn:hover,
+.rec-open-btn:hover {
+  background: #e2e8f0;
+  color: #4f46e5;
+}
+
+.rec-copy-btn.copied {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.rec-copy-btn svg,
+.rec-open-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ----------------------------------------
+   Recommended Content Play Cards
+   ---------------------------------------- */
+.card-icon.recommended_content {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.rec-content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-content-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rec-content-item:hover {
+  background: #e2e8f0;
+}
+
+.rec-content-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 6px;
+  color: #6366f1;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.rec-content-icon svg {
   width: 16px;
   height: 16px;
 }
 
-.recommendation-item.clickable:hover .rec-action {
-  color: #4f46e5;
+.rec-content-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-content-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rec-content-description {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rec-content-open-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.rec-content-open-btn:hover {
+  background: white;
+  color: #6366f1;
+}
+
+.rec-content-open-btn svg {
+  width: 14px;
+  height: 14px;
 }

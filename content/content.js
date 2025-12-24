@@ -77,7 +77,7 @@
       this.tagRules = [];
       this.contentTags = [];
       this.recommendedContent = [];
-      this.recommendationEngine = null;
+      // Note: recommendationEngine already initialized on line 61
 
       // Feature modules (initialized after page load)
       this.bannersModule = null;
@@ -963,7 +963,7 @@
         return pluralMap[t] || t;
       };
 
-      return this.battleCards.filter(card => {
+      const matchingCards = this.battleCards.filter(card => {
         log(`Checking card "${card.name}": objectType=${card.objectType}, objectTypes=${JSON.stringify(card.objectTypes)}`);
 
         // Check object type filter (array form)
@@ -978,11 +978,32 @@
         }
 
         if (card.displayOnAll) return true;
+
+        // Check conditionGroups (new format) or conditions (legacy format)
+        if (card.conditionGroups?.length > 0) {
+          return this.rulesEngine.evaluateRule(
+            { conditionGroups: card.conditionGroups, groupLogic: card.groupLogic || 'AND' },
+            this.properties
+          );
+        }
+
         if (!card.conditions || card.conditions.length === 0) return true;
         return this.rulesEngine.evaluateRule(
           { conditions: card.conditions, logic: card.logic || 'AND' },
           this.properties
         );
+      });
+
+      // Resolve content assets for recommended_content plays
+      return matchingCards.map(card => {
+        if (card.cardType === 'recommended_content' && card.contentAssetIds?.length > 0) {
+          // Resolve asset IDs to full asset objects from recommendedContent
+          const resolvedAssets = card.contentAssetIds
+            .map(id => this.recommendedContent.find(c => c.id === id))
+            .filter(Boolean);
+          return { ...card, resolvedAssets };
+        }
+        return card;
       });
     }
 

@@ -2362,6 +2362,85 @@ const RevGuideDB = {
       .from('recommended_content')
       .delete()
       .eq('id', id);
+  },
+
+  // ===== Play Content Assets (for Recommended Content play type) =====
+
+  async getPlayContentAssets(playId) {
+    const client = await RevGuideAuth.waitForClient();
+    return client
+      .from('play_content_assets')
+      .select(`
+        id,
+        display_order,
+        content_asset:recommended_content (*)
+      `)
+      .eq('play_id', playId)
+      .order('display_order');
+  },
+
+  async savePlayContentAssets(playId, assetIds) {
+    const client = await RevGuideAuth.waitForClient();
+
+    // Delete existing links
+    const { error: deleteError } = await client
+      .from('play_content_assets')
+      .delete()
+      .eq('play_id', playId);
+
+    if (deleteError) return { data: null, error: deleteError };
+
+    // Insert new links with order
+    if (assetIds && assetIds.length > 0) {
+      const inserts = assetIds.map((assetId, index) => ({
+        play_id: playId,
+        content_asset_id: assetId,
+        display_order: index
+      }));
+
+      return client
+        .from('play_content_assets')
+        .insert(inserts)
+        .select();
+    }
+
+    return { data: [], error: null };
+  },
+
+  async getPlayWithAssets(playId) {
+    const client = await RevGuideAuth.waitForClient();
+
+    // Get play
+    const { data: play, error: playError } = await client
+      .from('plays')
+      .select('*')
+      .eq('id', playId)
+      .single();
+
+    if (playError) return { data: null, error: playError };
+
+    // Get linked assets
+    const { data: assets, error: assetsError } = await client
+      .from('play_content_assets')
+      .select(`
+        display_order,
+        content_asset:recommended_content (*)
+      `)
+      .eq('play_id', playId)
+      .order('display_order');
+
+    if (assetsError) return { data: play, error: assetsError };
+
+    return {
+      data: {
+        ...play,
+        contentAssets: assets?.map(a => ({
+          ...a.content_asset,
+          displayOrder: a.display_order
+        })) || []
+      },
+      error: null
+    };
   }
 };
 
