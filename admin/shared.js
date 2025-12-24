@@ -2130,10 +2130,10 @@ function addConditionGroup(containerId, group = null, properties = []) {
   div.dataset.groupId = groupId;
 
   div.innerHTML = `
-    <div class="border border-border rounded-lg bg-surface overflow-hidden">
-      <div class="flex items-center justify-between py-2 px-3 bg-bg-subtle border-b border-border-subtle">
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-medium text-text-secondary group-label">Group 1</span>
+    <div class="condition-group-card">
+      <div class="condition-group-header">
+        <div class="condition-group-header-left">
+          <span class="condition-group-label">Group 1</span>
           <div class="logic-toggle" data-group-logic>
             <button type="button" class="logic-btn ${groupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
             <button type="button" class="logic-btn ${groupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
@@ -2145,9 +2145,9 @@ function addConditionGroup(containerId, group = null, properties = []) {
           </svg>
         </button>
       </div>
-      <div class="p-3">
-        <div class="conditions-builder space-y-2 mb-2 empty:mb-0" data-group-conditions="${groupId}"></div>
-        <button type="button" class="inline-flex items-center gap-1 py-1 px-2 text-xs text-text-tertiary border border-dashed border-border rounded hover:border-primary hover:text-primary-dark hover:bg-primary-subtle transition-colors add-group-condition-btn">
+      <div class="condition-group-body">
+        <div class="conditions-builder" data-group-conditions="${groupId}"></div>
+        <button type="button" class="add-group-condition-btn">
           <span class="icon icon-plus icon--sm"></span> Add condition
         </button>
       </div>
@@ -2215,7 +2215,7 @@ function updateConditionGroupsUI(containerId) {
 
   groups.forEach((group, index) => {
     // Update group number label
-    const label = group.querySelector('.group-label');
+    const label = group.querySelector('.condition-group-label');
     if (label) {
       label.textContent = `Group ${index + 1}`;
     }
@@ -2223,29 +2223,28 @@ function updateConditionGroupsUI(containerId) {
     // Add connector AFTER each group except the last
     if (index < groups.length - 1) {
       const connector = document.createElement('div');
-      connector.className = 'group-connector flex items-center justify-center py-1';
+      connector.className = 'group-connector';
       connector.innerHTML = `
-        <div class="logic-toggle group-logic-connector bg-primary-subtle border border-primary rounded-full">
-          <button type="button" class="logic-btn ${currentGroupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
-          <button type="button" class="logic-btn ${currentGroupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
-        </div>
+        <span class="group-connector-badge" data-value="${currentGroupLogic}">${currentGroupLogic}</span>
       `;
 
-      // Set up connector toggle - syncs all connectors
-      const toggle = connector.querySelector('.logic-toggle');
-      toggle.addEventListener('click', (e) => {
-        const btn = e.target.closest('.logic-btn');
-        if (btn) {
-          const newValue = btn.dataset.value;
-          // Update all connectors and the wrapper toggle
-          container.querySelectorAll('.group-connector .logic-btn').forEach(b => {
+      // Set up connector toggle - click to toggle AND/OR
+      const badge = connector.querySelector('.group-connector-badge');
+      badge.addEventListener('click', () => {
+        const currentValue = badge.dataset.value;
+        const newValue = currentValue === 'AND' ? 'OR' : 'AND';
+
+        // Update all connector badges
+        container.querySelectorAll('.group-connector-badge').forEach(b => {
+          b.dataset.value = newValue;
+          b.textContent = newValue;
+        });
+
+        // Update the wrapper toggle if exists
+        if (wrapperLogicToggle) {
+          wrapperLogicToggle.querySelectorAll('.logic-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.value === newValue);
           });
-          if (wrapperLogicToggle) {
-            wrapperLogicToggle.querySelectorAll('.logic-btn').forEach(b => {
-              b.classList.toggle('active', b.dataset.value === newValue);
-            });
-          }
         }
       });
 
