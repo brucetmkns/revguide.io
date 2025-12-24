@@ -382,10 +382,17 @@ async function handleCallback(req: Request): Promise<Response> {
       }
     }
 
-    await supabase
+    console.log('Updating organization with HubSpot info:', { organizationId, updateData })
+    const { error: orgUpdateError } = await supabase
       .from('organizations')
       .update(updateData)
       .eq('id', organizationId)
+
+    if (orgUpdateError) {
+      console.error('Failed to update organization with HubSpot info:', orgUpdateError)
+    } else {
+      console.log('Organization updated successfully with HubSpot portal ID')
+    }
 
     // Redirect back to frontend with success
     const returnUrl = new URL(oauthState.return_url)
