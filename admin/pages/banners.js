@@ -592,8 +592,8 @@ class BannersPage {
     const tabVis = rule?.tabVisibility;
     document.getElementById('ruleTabVisibility').value = (tabVis && tabVis !== 'all') ? tabVis : '';
 
-    // Show on index pages
-    document.getElementById('ruleShowOnIndex').checked = rule?.showOnIndex || false;
+    // Show on index pages - default to true for new banners
+    document.getElementById('ruleShowOnIndex').checked = rule ? (rule.showOnIndex || false) : true;
 
     // Load properties and conditions
     if (mappedType && rule?.conditions?.length) {

@@ -1,0 +1,106 @@
+/*
+ * RevGuide Tailwind CSS
+ *
+ * This file generates Tailwind utilities that complement
+ * the existing design system (base.css + components.css).
+ *
+ * Usage:
+ * - Keep using existing component classes (.btn, .card, etc.)
+ * - Use Tailwind utilities for spacing, layout, and quick styling
+ * - New components can be built with Tailwind-first approach
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Custom component classes using Tailwind
+ * Add new shadcn-style components here as needed
+ */
+@layer components {
+  /* Example: shadcn-style button variant */
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply text-base font-medium whitespace-nowrap;
+    @apply border border-border-strong rounded-md;
+    @apply bg-transparent text-text-secondary;
+    @apply transition-all duration-fast;
+    @apply hover:bg-surface-hover hover:border-text-muted;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* shadcn-style input */
+  .input {
+    @apply flex w-full px-4 py-3;
+    @apply text-base text-text-primary bg-surface;
+    @apply border border-border-strong rounded-md;
+    @apply transition-colors duration-fast;
+    @apply placeholder:text-text-muted;
+    @apply hover:border-text-muted;
+    @apply focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25;
+    @apply disabled:bg-bg-subtle disabled:text-text-disabled disabled:cursor-not-allowed;
+  }
+
+  /* shadcn-style card */
+  .card-tw {
+    @apply bg-surface rounded-lg shadow-sm;
+  }
+
+  .card-tw-header {
+    @apply flex items-center gap-3 p-4 border-b border-border-subtle;
+  }
+
+  .card-tw-body {
+    @apply p-4;
+  }
+
+  .card-tw-footer {
+    @apply flex items-center gap-2 p-4 border-t border-border-subtle;
+  }
+
+  /* shadcn-style badge */
+  .badge-tw {
+    @apply inline-flex items-center gap-1 px-2 py-1;
+    @apply text-xs font-medium leading-none rounded-sm;
+    @apply bg-bg-subtle text-text-secondary;
+  }
+
+  .badge-tw-primary {
+    @apply bg-primary/20 text-primary-dark;
+  }
+
+  .badge-tw-success {
+    @apply bg-success-bg text-success;
+  }
+
+  .badge-tw-warning {
+    @apply bg-warning-bg text-warning;
+  }
+
+  .badge-tw-danger {
+    @apply bg-danger-bg text-danger;
+  }
+
+  /* shadcn-style alert */
+  .alert {
+    @apply relative w-full p-4 rounded-lg border;
+  }
+
+  .alert-info {
+    @apply bg-info-bg border-info text-text-secondary;
+  }
+
+  .alert-success {
+    @apply bg-success-bg border-success text-text-secondary;
+  }
+
+  .alert-warning {
+    @apply bg-warning-bg border-warning text-text-secondary;
+  }
+
+  .alert-danger {
+    @apply bg-danger-bg border-danger text-text-secondary;
+  }
+}

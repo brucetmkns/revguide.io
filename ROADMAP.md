@@ -4,9 +4,9 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.11.0 (Stripe Billing)
+## Current State: v2.12.1 (Performance Optimization)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, and **Stripe billing integration with per-seat and tiered partner pricing**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, and **ERP icon integration for linking HubSpot records to external systems like Q360**.
 
 ### Index Page Tags (v2.5.0 + v2.5.1)
 - **Show as Tag on Index**: New checkbox in banner editor to enable tags on index pages
@@ -35,6 +35,15 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Auto-invite acceptance**: OAuth users with pending invitations are automatically added to teams
 - **Streamlined onboarding**: Install extension → Click SSO → Ready to use
 
+### ERP Icon Integration (v2.12.0)
+- **External System Links**: Display clickable icon next to HubSpot record names when records exist in external ERP systems
+- **Per-Object Configuration**: Configure field mappings and URL templates per object type (Company, Deal, Contact, Ticket)
+- **Primary + Fallback Fields**: Support for primary field with fallback (e.g., Q360 Company ID primary, Q360 Site ID fallback)
+- **Custom Icon Upload**: Upload custom PNG/SVG icon or use text badge fallback
+- **URL Template Variables**: Support `{{value}}` and `{{fieldname}}` placeholders in URL templates
+- **Partner Support**: Partners can configure ERP settings for managed client organizations
+- **Collapsible UI**: Fallback field configuration hidden by default with toggle to expand
+
 ### Stripe Billing (v2.11.0)
 - **Per-Seat Pricing**: Standard plans with per-seat billing (Starter $5, Pro $10, Business $20)
 - **Partner Tiered Plans**: Flat monthly pricing (Starter $500, Pro $1,250, Enterprise $2,500)
@@ -47,7 +56,7 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **Settings Page**: Displays current plan, usage meters (partner: portals/libraries, standard: banners/wiki/plays)
 
 **Future Enhancements:**
-- [ ] Feature gating (block content creation when over limits)
+- [x] Feature gating (block content creation when over limits) - Complete in v2.13.x
 - [ ] Grace period UI warnings
 - [ ] Usage analytics dashboard
 
@@ -574,7 +583,7 @@ presentations
 - [x] Billing portal for self-service
 - [x] Webhook endpoint and subscription creation
 - [x] Plan detection from product metadata
-- [ ] Feature gating (content limits)
+- [x] Feature gating (content limits) - v2.13.x
 - [ ] Grace period warnings
 
 ### 2.4 Technical Changes to Extension
@@ -911,6 +920,7 @@ Would you like me to suggest values?"
 - [ ] **Duplicate trigger word validation** - Warn when saving a wiki entry with a trigger word that already exists
 - [ ] Bulk entry management (select multiple, delete, enable/disable)
 - [ ] Entry merge tool for consolidating duplicates
+- [ ] **Review "Edit" button linking** - Verify edit links work correctly for banners, wiki popups, and plays after adding shortened organization UUID to admin panel URLs
 
 ### Index Page Tags Improvements
 - [x] **Board/Kanban view support** - Tags now display on board view cards (v2.5.1)
@@ -918,11 +928,43 @@ Would you like me to suggest values?"
 - [x] **Board scroll loading** - Tags load as new cards scroll into view (v2.5.1)
 - [x] **Improve tag UI contrast** - Darkened text colors and slightly richer backgrounds for better readability (v2.5.2)
 - [x] **Improve tag placement on board cards** - Tags now positioned after properties section, before quick actions (v2.5.2)
-- [ ] **Default "Show as Tag on Index" to ON** - New banners should have tag display enabled by default; users can toggle off if desired
+- [x] **Default "Show as Tag on Index" to ON** - New banners have tag display enabled by default (v2.13.x)
 - [ ] **Reduce initial load delay** - Currently waits 500ms for HubSpot to settle before rendering tags; explore faster detection of when HubSpot is ready
 - [ ] **Investigate HubSpot's React reconciliation** - Tags are removed during HubSpot re-renders; current workaround uses MutationObserver to restore them
 - [ ] **Consider alternative injection strategies** - Floating overlay outside table DOM vs injecting into MediaBody
 - [ ] **Performance optimization** - Reduce rules engine evaluations per record on virtual scroll
+
+### Performance Optimization (Content Script)
+
+**Goal:** Reduce Chrome extension overhead on HubSpot page loads.
+
+**Status:** P1 Quick Wins complete (v2.12.1) - estimated 440-1550ms savings per page load.
+
+**Full Implementation Details:** See [docs/PERFORMANCE_REMEDIATION.md](docs/PERFORMANCE_REMEDIATION.md)
+
+| Priority | Issue | Status | Est. Savings |
+|----------|-------|--------|--------------|
+| P1 | `document.body.innerText` forces reflow | **Fixed** | 200-800ms |
+| P1 | Sequential async calls in `loadData()` | **Fixed** | 30-100ms |
+| P1 | Triple wiki passes (6 total in 3s) | **Fixed** | 200-600ms |
+| P1 | `DEBUG = true` with extensive logging | **Fixed** | 10-50ms |
+| P2 | urlObserver on `document.body` | Pending | CPU during render |
+| P2 | URL polling every 500ms | Pending | Battery/idle |
+| P2 | index-tags.js loads on all pages | Pending | 38KB parsing |
+
+**Quick Wins - COMPLETE (v2.12.1):**
+- [x] Set `DEBUG = false` for production
+- [x] Parallelize `loadData()` with `Promise.all()`
+- [x] Remove `document.body.innerText` extraction (Methods 9 & 10)
+- [x] Consolidate triple wiki passes to single + `requestIdleCallback`
+
+**Remaining P2 Optimizations:**
+- [ ] Replace urlObserver with History API interception
+- [ ] Lazy-load index-tags.js only on index pages
+
+**Constraint:** All changes must preserve the wiki tooltip insertion scheme (TreeWalker traversal, wrapper structure, section deduplication).
+
+---
 
 ### Performance Optimization (Admin Pages)
 
@@ -951,9 +993,41 @@ Would you like me to suggest values?"
 ### UI/UX Enhancements
 - [x] Inline sidebar HTML for instant navigation rendering
 - [x] **Skeleton loading states for content** - See Performance Optimization above
+- [x] **Tailwind CSS Integration** - Utility-first CSS framework for consistent, professional UI (v2.13.x)
+- [ ] **Tailwind CSS Migration** - Incrementally migrate existing pages to Tailwind (reduce tech debt)
 - [ ] **Collapsible sidebar navigation** - Toggle sidebar to icon-only mode for more content space
 - [ ] **Single Page App (SPA) conversion** - Client-side routing for seamless page transitions without full reloads
 - [ ] Page transition animations
+
+### Tailwind CSS Migration Plan
+
+**Goal:** Reduce CSS tech debt by migrating from 4,000+ lines of custom CSS to Tailwind utilities.
+
+**Status:** Infrastructure complete (v2.13.x). Migration in progress.
+
+| Page | Priority | Status | Notes |
+|------|----------|--------|-------|
+| Login/Signup | Low | Preview done | Simple pages, good starter |
+| Home | Medium | Pending | Dashboard layout |
+| Wiki | High | Complete | Migrated to Tailwind (v2.13.x) |
+| Banners | High | Pending | Similar to Wiki |
+| Plays | High | Pending | Similar to Wiki |
+| Settings | Medium | Pending | Forms and cards |
+| Partner Dashboard | Medium | Pending | Grid layouts |
+| Sidepanel | Low | Pending | Keep simple for extension |
+
+**Approach:**
+1. New features use Tailwind from the start
+2. Bug fixes in existing pages: migrate touched components
+3. Dedicated migration sprints for high-priority pages
+4. Keep existing CSS working alongside Tailwind (no breaking changes)
+
+**Benefits:**
+- Consistent spacing, colors, typography across all pages
+- Faster UI development (no writing custom CSS)
+- Smaller CSS bundle (Tailwind tree-shakes unused utilities)
+- Professional, shadcn-style component patterns
+- Easier for AI assistants to generate consistent UI
 
 #### Admin Dashboard Redesign (Draft)
 **Status:** Exploration / Not finalized
@@ -995,6 +1069,44 @@ Design mockups created in `website/admin-redesign.html` (Admin view) and `websit
 - [ ] Zapier/Make integration
 - [ ] HubSpot custom cards (CRM card API)
 - [ ] Salesforce support (Phase 4?)
+
+### Bidirectional ERP Link (Q360 → HubSpot)
+
+**Goal:** Display HubSpot icon in Q360 that links back to the HubSpot record, completing the bidirectional integration started with the ERP Icon feature (v2.12.0).
+
+**Current State:** ERP Icon feature shows Q360 icon on HubSpot records (HubSpot → Q360 direction). This enhancement adds the reverse direction.
+
+**Blocker:** Q360 does not currently store HubSpot record IDs for contacts/companies. Sync happens via email/name/domain matching. Only deals have an "external reference number" field storing the HubSpot Deal ID.
+
+#### Options
+
+| Option | Feasibility | Notes |
+|--------|-------------|-------|
+| **Deals only** | Ready now | Deals have external reference number = HubSpot Deal ID |
+| **Search URL** | Poor UX | Links to HubSpot search results, not direct record |
+| **Store HubSpot ID in Q360** | Best | Requires Q360 sync modification to write HubSpot ID back |
+| **Lookup service** | Complex | Build redirect service that calls HubSpot API to find record by email/domain |
+
+#### Technical Considerations
+- Q360 uses iframe-based architecture (`id="theonewindow"`)
+- Chrome extension needs `all_frames: true` to inject into iframe content
+- Would need Q360 domain patterns in manifest host_permissions
+- No HubSpot API calls needed - just URL construction
+
+#### Prerequisites
+- [ ] Q360 sync stores HubSpot Contact/Company ID in a Q360 field
+- [ ] OR: Build deals-only implementation using external reference number
+
+#### Implementation (Once Prerequisites Met)
+- [ ] Add Q360 domains to manifest.json host_permissions
+- [ ] Create `content/q360/q360-content.js` content script
+- [ ] Add Q360 settings to admin panel (field mappings, HubSpot portal ID)
+- [ ] Find DOM selectors for Q360 record name/header
+- [ ] Inject HubSpot icon with link to HubSpot record
+
+**Status:** Blocked - waiting on Q360 field availability
+
+---
 
 ### Custom Scripts (Extensibility)
 
