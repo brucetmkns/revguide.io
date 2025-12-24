@@ -2484,6 +2484,12 @@
 /* ----------------------------------------
    Condition Builder (shared)
    ---------------------------------------- */
+.conditions-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .condition-row {
   display: flex;
   gap: var(--space-2);
