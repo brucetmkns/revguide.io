@@ -15,8 +15,14 @@ All notable changes to RevGuide will be documented in this file.
   - `postcss.config.js` for build pipeline
   - `styles/tailwind.css` with custom component classes
 
+### Fixed
+- **Show on Index not persisting**: Fixed `showOnIndex` field being lost on page reload
+  - Root cause: `mapBannerFromSupabase()` in `shared.js` was missing the field mapping
+  - Field saved correctly but wasn't loaded back from database
+
 ### Technical
 - `admin/pages/banners.js`: Changed default from `false` to `true` for new banners
+- `admin/shared.js`: Added `showOnIndex: data.show_on_index` to `mapBannerFromSupabase()`
 
 ## [2.13.0] - 2025-12-23 - Partner-Initiated Portal Setup
 

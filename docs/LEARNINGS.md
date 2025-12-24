@@ -18,6 +18,22 @@ const value = entry.newField || entry.legacyField || '';
 
 **Files affected**: `content/modules/wiki.js` - Methods 4 and 5 had hardcoded `entry.term` references.
 
+### Supabase Field Mapping Functions
+**Lesson**: When adding new database columns, update BOTH the page-specific mapper AND the shared mapper function.
+
+**Context**: Added `show_on_index` column to banners table. Updated `mapBannerFromSupabase()` in `banners.js` but forgot the identical function in `shared.js`. Data saved correctly but was lost on page reload because `loadStorageData()` uses the shared mapper.
+
+**Pattern**: There are two mapping locations for each entity type:
+- `admin/shared.js` - `mapBannerFromSupabase()`, `mapPlayFromSupabase()`, `mapWikiFromSupabase()` (used by `loadStorageData()`)
+- `admin/pages/*.js` - Page-specific mappers (used after create/update operations)
+
+**Checklist for new columns**:
+1. Add migration: `ALTER TABLE x ADD COLUMN y`
+2. Update `admin/shared.js` mapper function
+3. Update `admin/pages/*.js` mapper function
+4. Update save logic to include new field
+5. Update UI to read/write the field
+
 ---
 
 ## Event Handling
