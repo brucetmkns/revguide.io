@@ -1081,7 +1081,7 @@ class SidePanel {
       </svg>`
     };
 
-    const icon = typeIcons[item.contentType] || typeIcons.external_link;
+    const icon = typeIcons[item.contentType || item.content_type] || typeIcons.external_link;
     const tags = item.tags || [];
     const tagsHtml = tags.map(tag =>
       `<span class="rec-tag" style="background: ${this.escapeHtml(tag.color || '#6366f1')}">${this.escapeHtml(tag.name)}</span>`
