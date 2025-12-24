@@ -1015,6 +1015,8 @@ function mapBannerFromSupabase(data) {
     objectType: data.object_type,
     conditions: data.conditions,
     logic: data.logic,
+    conditionGroups: data.condition_groups,
+    groupLogic: data.group_logic,
     displayOnAll: data.display_on_all,
     tabVisibility: data.tab_visibility,
     showOnIndex: data.show_on_index,
@@ -1039,6 +1041,8 @@ function mapPlayFromSupabase(data) {
     objectType: data.object_type,
     conditions: data.conditions,
     logic: data.logic,
+    conditionGroups: data.condition_groups,
+    groupLogic: data.group_logic,
     displayOnAll: data.display_on_all,
     sections: data.sections,
     createdAt: data.created_at,
@@ -1085,6 +1089,8 @@ function mapBannerToSupabase(data) {
     object_type: data.objectType || null,
     conditions: data.conditions || [],
     logic: data.logic || 'AND',
+    condition_groups: data.conditionGroups || null,
+    group_logic: data.groupLogic || 'AND',
     display_on_all: data.displayOnAll ?? false,
     tab_visibility: data.tabVisibility || 'all',
     related_play_id: data.relatedPlayId || null,
@@ -1110,6 +1116,8 @@ function mapPlayToSupabase(data) {
     object_types: data.objectTypes || [],
     conditions: data.conditions || [],
     logic: data.logic || 'AND',
+    condition_groups: data.conditionGroups || null,
+    group_logic: data.groupLogic || 'AND',
     display_on_all: data.displayOnAll ?? false,
     sections: data.sections || [],
     enabled: data.enabled !== false
@@ -2101,6 +2109,330 @@ function toggleConditionsWrapper(wrapperId, disabled) {
   }
 }
 
+// ============================================
+// Condition Groups Functions
+// ============================================
+
+/**
+ * Add a condition group card to the container
+ * @param {string} containerId - ID of the groups container
+ * @param {Object|null} group - Existing group data or null for new
+ * @param {Array} properties - Array of property objects
+ * @returns {string} The group ID
+ */
+function addConditionGroup(containerId, group = null, properties = []) {
+  const container = document.getElementById(containerId);
+  const groupId = group?.id || `group_${Date.now()}`;
+  const groupLogic = group?.logic || 'AND';
+
+  const div = document.createElement('div');
+  div.className = 'condition-group-card';
+  div.dataset.groupId = groupId;
+
+  div.innerHTML = `
+    <div class="condition-group-header">
+      <div class="condition-group-header-left">
+        <span class="condition-group-label">Filter Group</span>
+        <div class="logic-toggle condition-group-logic" data-group-id="${groupId}">
+          <button type="button" class="logic-btn ${groupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
+          <button type="button" class="logic-btn ${groupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
+        </div>
+      </div>
+      <button type="button" class="btn-icon btn-icon-danger remove-group-btn" title="Remove group">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="condition-group-body">
+      <div class="conditions-builder" data-group-conditions="${groupId}"></div>
+      <button type="button" class="btn btn-secondary btn-sm add-group-condition-btn">
+        <span class="icon icon-plus icon--sm"></span> Add Condition
+      </button>
+    </div>
+  `;
+
+  // Set up group logic toggle
+  const logicToggle = div.querySelector('.condition-group-logic');
+  logicToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.logic-btn');
+    if (btn) {
+      logicToggle.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  });
+
+  // Set up remove button
+  const removeBtn = div.querySelector('.remove-group-btn');
+  removeBtn.addEventListener('click', () => {
+    // Don't allow removing the last group
+    if (container.querySelectorAll('.condition-group-card').length > 1) {
+      div.remove();
+      updateGroupLogicVisibility(containerId);
+    } else {
+      showToast('At least one filter group is required', 'warning');
+    }
+  });
+
+  // Set up add condition button
+  const addConditionBtn = div.querySelector('.add-group-condition-btn');
+  const conditionsContainer = div.querySelector('[data-group-conditions]');
+  addConditionBtn.addEventListener('click', () => {
+    addConditionToGroup(conditionsContainer, null, properties);
+  });
+
+  container.appendChild(div);
+
+  // Add existing conditions if any
+  if (group?.conditions?.length) {
+    group.conditions.forEach(condition => {
+      addConditionToGroup(conditionsContainer, condition, properties);
+    });
+  }
+
+  // Update group logic toggle visibility
+  updateGroupLogicVisibility(containerId);
+
+  return groupId;
+}
+
+/**
+ * Add a condition row to a specific group
+ * @param {HTMLElement} container - The conditions container element
+ * @param {Object|null} condition - Existing condition data or null for new
+ * @param {Array} properties - Array of property objects
+ */
+function addConditionToGroup(container, condition = null, properties = []) {
+  const div = document.createElement('div');
+  div.className = 'condition-row';
+
+  const selectedProp = condition?.property ? properties.find(p => p.name === condition.property) : null;
+  const selectedLabel = selectedProp ? selectedProp.label : 'Select property...';
+
+  div.innerHTML = `
+    <div class="searchable-select" data-properties='${JSON.stringify(properties.map(p => ({name: p.name, label: p.label, type: p.type})))}'>
+      <button type="button" class="searchable-select-trigger" data-value="${condition?.property || ''}">
+        <span class="select-label">${escapeHtml(selectedLabel)}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="searchable-select-dropdown">
+        <div class="searchable-select-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" placeholder="Search properties..." class="searchable-select-input">
+        </div>
+        <div class="searchable-select-options">
+          ${properties.map(p => `
+            <div class="searchable-select-option ${condition?.property === p.name ? 'selected' : ''}" data-value="${p.name}" data-label="${escapeHtml(p.label)}">
+              <span class="option-label">${escapeHtml(p.label)}</span>
+              <span class="option-name">${p.name}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+    <select class="condition-operator">
+      ${OPERATORS.map(op => `
+        <option value="${op.value}" ${condition?.operator === op.value ? 'selected' : ''}>${op.label}</option>
+      `).join('')}
+    </select>
+    <input type="text" class="condition-value" placeholder="Value" value="${escapeHtml(condition?.value || '')}">
+    <button class="btn-icon btn-icon-danger remove-condition-btn" title="Remove">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  `;
+
+  // Set up searchable select
+  initSearchableSelect(div.querySelector('.searchable-select'), properties);
+
+  const removeBtn = div.querySelector('.remove-condition-btn');
+  removeBtn.addEventListener('click', () => div.remove());
+
+  const operatorSelect = div.querySelector('.condition-operator');
+  const valueInput = div.querySelector('.condition-value');
+
+  const updateValueVisibility = () => {
+    const op = operatorSelect.value;
+    valueInput.style.display = (op === 'is_empty' || op === 'is_not_empty') ? 'none' : 'block';
+  };
+
+  operatorSelect.addEventListener('change', updateValueVisibility);
+  updateValueVisibility();
+
+  container.appendChild(div);
+
+  // If editing, set value after appending
+  if (condition?.value) {
+    setTimeout(() => {
+      const valInput = div.querySelector('.condition-value');
+      if (valInput) valInput.value = condition.value;
+    }, 0);
+  }
+}
+
+/**
+ * Get all condition groups from a container
+ * @param {string} containerId
+ * @returns {Array}
+ */
+function getConditionGroups(containerId) {
+  const container = document.getElementById(containerId);
+  const groups = [];
+
+  container.querySelectorAll('.condition-group-card').forEach(groupCard => {
+    const groupId = groupCard.dataset.groupId;
+    const logicToggle = groupCard.querySelector('.condition-group-logic');
+    const activeBtn = logicToggle?.querySelector('.logic-btn.active');
+    const logic = activeBtn ? activeBtn.dataset.value : 'AND';
+
+    const conditions = [];
+    const conditionsContainer = groupCard.querySelector('[data-group-conditions]');
+
+    conditionsContainer.querySelectorAll('.condition-row').forEach(item => {
+      const trigger = item.querySelector('.searchable-select-trigger');
+      const property = trigger ? trigger.dataset.value : '';
+      const operator = item.querySelector('.condition-operator').value;
+      const valueEl = item.querySelector('.condition-value');
+      const value = valueEl?.value?.trim() || '';
+
+      if (property) {
+        conditions.push({ property, operator, value });
+      }
+    });
+
+    // Only include groups that have conditions
+    if (conditions.length > 0) {
+      groups.push({ id: groupId, logic, conditions });
+    }
+  });
+
+  return groups;
+}
+
+/**
+ * Set condition groups in a container
+ * @param {string} containerId
+ * @param {Array} groups
+ * @param {Array} properties
+ */
+function setConditionGroups(containerId, groups, properties = []) {
+  clearConditionGroups(containerId);
+
+  if (groups && groups.length > 0) {
+    groups.forEach(group => {
+      addConditionGroup(containerId, group, properties);
+    });
+  } else {
+    // Always have at least one empty group
+    addConditionGroup(containerId, null, properties);
+  }
+}
+
+/**
+ * Clear all condition groups from a container
+ * @param {string} containerId
+ */
+function clearConditionGroups(containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+}
+
+/**
+ * Update visibility of group logic toggle (only show when 2+ groups)
+ * @param {string} containerId
+ */
+function updateGroupLogicVisibility(containerId) {
+  const container = document.getElementById(containerId);
+  const groupCount = container.querySelectorAll('.condition-group-card').length;
+  const groupLogicWrapper = document.getElementById(containerId + 'LogicWrapper');
+
+  if (groupLogicWrapper) {
+    groupLogicWrapper.style.display = groupCount >= 2 ? 'flex' : 'none';
+  }
+}
+
+/**
+ * Get group logic value from toggle
+ * @param {string} toggleId
+ * @returns {string}
+ */
+function getGroupLogic(toggleId) {
+  const toggle = document.getElementById(toggleId);
+  if (!toggle) return 'AND';
+  const activeBtn = toggle.querySelector('.logic-btn.active');
+  return activeBtn ? activeBtn.dataset.value : 'AND';
+}
+
+/**
+ * Set group logic value on toggle
+ * @param {string} toggleId
+ * @param {string} value
+ */
+function setGroupLogic(toggleId, value) {
+  const toggle = document.getElementById(toggleId);
+  if (!toggle) return;
+  toggle.querySelectorAll('.logic-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+
+/**
+ * Initialize group logic toggle (between groups)
+ * @param {string} toggleId
+ */
+function initGroupLogicToggle(toggleId) {
+  const toggle = document.getElementById(toggleId);
+  if (!toggle) return;
+
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.logic-btn');
+    if (btn) {
+      toggle.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  });
+}
+
+/**
+ * Migrate flat conditions to condition groups format
+ * @param {Object} rule - Rule with conditions/logic or conditionGroups/groupLogic
+ * @returns {Object} - { conditionGroups, groupLogic }
+ */
+function migrateConditionsToGroups(rule) {
+  // Already in new format
+  if (rule.conditionGroups && rule.conditionGroups.length > 0) {
+    return {
+      conditionGroups: rule.conditionGroups,
+      groupLogic: rule.groupLogic || 'AND'
+    };
+  }
+
+  // Migrate from flat format
+  if (rule.conditions && rule.conditions.length > 0) {
+    return {
+      conditionGroups: [{
+        id: 'migrated_default',
+        logic: rule.logic || 'AND',
+        conditions: rule.conditions
+      }],
+      groupLogic: 'AND'
+    };
+  }
+
+  // No conditions - return empty
+  return {
+    conditionGroups: [],
+    groupLogic: 'AND'
+  };
+}
+
 /**
  * Initialize rich text editor toolbar
  * @param {string} toolbarSelector - CSS selector for toolbar
@@ -2608,6 +2940,17 @@ window.AdminShared = {
   setLogic,
   initLogicToggle,
   toggleConditionsWrapper,
+  // Condition groups
+  addConditionGroup,
+  addConditionToGroup,
+  getConditionGroups,
+  setConditionGroups,
+  clearConditionGroups,
+  updateGroupLogicVisibility,
+  getGroupLogic,
+  setGroupLogic,
+  initGroupLogicToggle,
+  migrateConditionsToGroups,
   initRichTextEditor,
   convertToEmbedUrl,
   // Constants

@@ -132,13 +132,13 @@ class BannersPage {
     // Object type change
     document.getElementById('ruleObjectType').addEventListener('change', (e) => this.onObjectTypeChange(e.target.value));
 
-    // Add condition
-    document.getElementById('addRuleConditionBtn').addEventListener('click', () => {
-      AdminShared.addCondition('ruleConditions', null, this.currentProperties);
+    // Add condition group
+    document.getElementById('addRuleGroupBtn').addEventListener('click', () => {
+      AdminShared.addConditionGroup('ruleConditionGroups', null, this.currentProperties);
     });
 
-    // Logic toggle
-    AdminShared.initLogicToggle('ruleLogicToggle');
+    // Group logic toggle (between groups)
+    AdminShared.initGroupLogicToggle('ruleGroupLogicToggle');
 
     // Display on all checkbox
     document.getElementById('ruleDisplayOnAll').addEventListener('change', (e) => {
@@ -579,8 +579,8 @@ class BannersPage {
     document.getElementById('ruleObjectType').value = mappedType;
 
     this.currentProperties = [];
-    document.getElementById('ruleConditions').innerHTML = '';
-    document.getElementById('addRuleConditionBtn').disabled = true;
+    AdminShared.clearConditionGroups('ruleConditionGroups');
+    document.getElementById('addRuleGroupBtn').disabled = true;
     document.getElementById('ruleConditionStatus').textContent = '';
 
     // Display on all
@@ -595,15 +595,18 @@ class BannersPage {
     // Show on index pages - default to true for new banners
     document.getElementById('ruleShowOnIndex').checked = rule ? (rule.showOnIndex || false) : true;
 
-    // Load properties and conditions
-    if (mappedType && rule?.conditions?.length) {
-      this.loadPropertiesAndConditions(mappedType, rule.conditions);
+    // Migrate conditions to groups format if needed
+    const { conditionGroups, groupLogic } = AdminShared.migrateConditionsToGroups(rule || {});
+
+    // Load properties and condition groups
+    if (mappedType && conditionGroups?.length) {
+      this.loadPropertiesAndConditionGroups(mappedType, conditionGroups);
     } else if (mappedType) {
       this.onObjectTypeChange(mappedType);
     }
 
-    // Set logic
-    AdminShared.setLogic('ruleLogicToggle', rule?.logic || 'AND');
+    // Set group logic (between groups)
+    AdminShared.setGroupLogic('ruleGroupLogicToggle', groupLogic);
 
     this.updatePreview();
 
@@ -629,8 +632,8 @@ class BannersPage {
       displayOnAll: document.getElementById('ruleDisplayOnAll').checked,
       tabVisibility: document.getElementById('ruleTabVisibility').value,
       showOnIndex: document.getElementById('ruleShowOnIndex').checked,
-      logic: AdminShared.getLogic('ruleLogicToggle'),
-      conditions: AdminShared.getConditions('ruleConditions'),
+      groupLogic: AdminShared.getGroupLogic('ruleGroupLogicToggle'),
+      conditionGroups: AdminShared.getConditionGroups('ruleConditionGroups'),
       embedUrl: document.getElementById('ruleEmbedUrl').value,
       relatedPlayId: playSelectEl ? AdminShared.getPlaySelectValue(playSelectEl) : ''
     });
@@ -720,8 +723,7 @@ class BannersPage {
 
   async onObjectTypeChange(objectType) {
     const statusEl = document.getElementById('ruleConditionStatus');
-    const addBtn = document.getElementById('addRuleConditionBtn');
-    const container = document.getElementById('ruleConditions');
+    const addBtn = document.getElementById('addRuleGroupBtn');
 
     if (!objectType) {
       this.currentProperties = [];
@@ -740,7 +742,8 @@ class BannersPage {
       addBtn.disabled = false;
       statusEl.textContent = `${properties.length} properties loaded`;
       statusEl.className = 'status-text success';
-      container.innerHTML = '';
+      // Add one empty group by default
+      AdminShared.setConditionGroups('ruleConditionGroups', [], properties);
       setTimeout(() => { statusEl.textContent = ''; }, 2000);
     } catch (err) {
       statusEl.textContent = 'Error: ' + err.message;
@@ -749,9 +752,9 @@ class BannersPage {
     }
   }
 
-  async loadPropertiesAndConditions(objectType, conditions) {
+  async loadPropertiesAndConditionGroups(objectType, conditionGroups) {
     const statusEl = document.getElementById('ruleConditionStatus');
-    const addBtn = document.getElementById('addRuleConditionBtn');
+    const addBtn = document.getElementById('addRuleGroupBtn');
 
     statusEl.textContent = 'Loading properties...';
     statusEl.className = 'status-text';
@@ -762,11 +765,12 @@ class BannersPage {
       addBtn.disabled = false;
       statusEl.textContent = '';
 
-      conditions.forEach(c => AdminShared.addCondition('ruleConditions', c, properties));
+      AdminShared.setConditionGroups('ruleConditionGroups', conditionGroups, properties);
     } catch (err) {
       statusEl.textContent = 'Error loading properties';
       statusEl.className = 'status-text error';
-      conditions.forEach(c => AdminShared.addCondition('ruleConditions', c, []));
+      // Still try to show groups without property list
+      AdminShared.setConditionGroups('ruleConditionGroups', conditionGroups, []);
     }
   }
 
@@ -808,8 +812,8 @@ class BannersPage {
 
     const objectTypeReverseMap = { contacts: 'contact', companies: 'company', deals: 'deal', tickets: 'ticket' };
     const objectTypes = [objectTypeReverseMap[objectTypeValue] || objectTypeValue];
-    const conditions = AdminShared.getConditions('ruleConditions');
-    const logic = AdminShared.getLogic('ruleLogicToggle');
+    const conditionGroups = AdminShared.getConditionGroups('ruleConditionGroups');
+    const groupLogic = AdminShared.getGroupLogic('ruleGroupLogicToggle');
     const displayOnAll = document.getElementById('ruleDisplayOnAll').checked;
     const tabVisibilityInput = document.getElementById('ruleTabVisibility').value.trim();
     const tabVisibility = tabVisibilityInput ? String(tabVisibilityInput) : 'all';
@@ -828,8 +832,8 @@ class BannersPage {
       priority,
       objectTypes,
       objectType: objectTypeValue,
-      conditions,
-      logic,
+      conditionGroups,
+      groupLogic,
       displayOnAll,
       tabVisibility,
       showOnIndex,
@@ -855,8 +859,8 @@ class BannersPage {
           priority,
           object_types: objectTypes,
           object_type: objectTypeValue,
-          conditions,
-          logic,
+          condition_groups: conditionGroups,
+          group_logic: groupLogic,
           display_on_all: displayOnAll,
           tab_visibility: tabVisibility,
           show_on_index: showOnIndex,
@@ -904,13 +908,12 @@ class BannersPage {
           priority,
           objectTypes,
           objectType: objectTypeValue,
-          conditions,
-          logic,
+          conditionGroups,
+          groupLogic,
           displayOnAll,
           tabVisibility,
           showOnIndex,
           relatedPlayId,
-          fields,
           enabled: true,
           createdAt: Date.now()
         };

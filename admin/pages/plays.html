@@ -225,16 +225,23 @@
                         <span id="playConditionStatus" class="status-text"></span>
                       </div>
                       <span class="form-hint">Define when this card should appear based on record properties</span>
-                      <div class="logic-toggle" id="playLogicToggle">
-                        <span class="logic-label">Match:</span>
-                        <button type="button" class="logic-btn active" data-value="AND">All conditions (AND)</button>
-                        <button type="button" class="logic-btn" data-value="OR">Any condition (OR)</button>
+
+                      <!-- Group Logic Toggle (between groups) - hidden when < 2 groups -->
+                      <div class="group-logic-wrapper" id="playConditionGroupsLogicWrapper" style="display: none;">
+                        <span class="logic-label" style="margin-right: var(--space-2);">Combine groups with:</span>
+                        <div class="logic-toggle group-logic-toggle" id="playGroupLogicToggle">
+                          <button type="button" class="logic-btn active" data-value="AND">AND</button>
+                          <button type="button" class="logic-btn" data-value="OR">OR</button>
+                        </div>
                       </div>
-                      <div class="conditions-builder" id="playConditions">
-                        <!-- Conditions added by JS -->
+
+                      <!-- Condition Groups Container -->
+                      <div class="condition-groups-container" id="playConditionGroups">
+                        <!-- Groups added by JS -->
                       </div>
-                      <button class="btn btn-secondary btn-sm" id="addPlayConditionBtn" disabled>
-                        <span class="icon icon-plus icon--sm"></span> Add Condition
+
+                      <button type="button" class="add-group-btn" id="addPlayGroupBtn" disabled>
+                        <span class="icon icon-plus icon--sm"></span> Add Filter Group
                       </button>
                     </div>
                   </div>

@@ -162,13 +162,13 @@ class PlaysPage {
     // Object type change
     document.getElementById('playObjectType').addEventListener('change', (e) => this.onObjectTypeChange(e.target.value));
 
-    // Add condition
-    document.getElementById('addPlayConditionBtn').addEventListener('click', () => {
-      AdminShared.addCondition('playConditions', null, this.currentProperties);
+    // Add condition group
+    document.getElementById('addPlayGroupBtn').addEventListener('click', () => {
+      AdminShared.addConditionGroup('playConditionGroups', null, this.currentProperties);
     });
 
-    // Logic toggle
-    AdminShared.initLogicToggle('playLogicToggle');
+    // Group logic toggle (between groups)
+    AdminShared.initGroupLogicToggle('playGroupLogicToggle');
 
     // Display on all checkbox
     document.getElementById('playDisplayOnAll').addEventListener('change', (e) => {
@@ -534,8 +534,8 @@ class PlaysPage {
     document.getElementById('playObjectType').value = play?.objectType || '';
 
     this.currentProperties = [];
-    document.getElementById('playConditions').innerHTML = '';
-    document.getElementById('addPlayConditionBtn').disabled = !play?.objectType;
+    AdminShared.clearConditionGroups('playConditionGroups');
+    document.getElementById('addPlayGroupBtn').disabled = !play?.objectType;
     document.getElementById('playConditionStatus').textContent = '';
 
     // Display on all
@@ -550,15 +550,18 @@ class PlaysPage {
       play.sections.forEach(s => this.addSection(s));
     }
 
-    // Load properties and conditions
-    if (play?.objectType && play?.conditions?.length) {
-      this.loadPropertiesAndConditions(play.objectType, play.conditions);
+    // Migrate conditions to groups format if needed
+    const { conditionGroups, groupLogic } = AdminShared.migrateConditionsToGroups(play || {});
+
+    // Load properties and condition groups
+    if (play?.objectType && conditionGroups?.length) {
+      this.loadPropertiesAndConditionGroups(play.objectType, conditionGroups);
     } else if (play?.objectType) {
       this.onObjectTypeChange(play.objectType);
     }
 
-    // Set logic
-    AdminShared.setLogic('playLogicToggle', play?.logic || 'AND');
+    // Set group logic (between groups)
+    AdminShared.setGroupLogic('playGroupLogicToggle', groupLogic);
 
     // Store original data for change detection
     // Use setTimeout to allow conditions to be populated
@@ -579,8 +582,8 @@ class PlaysPage {
       link: document.getElementById('playLink').value,
       objectType: document.getElementById('playObjectType').value,
       displayOnAll: document.getElementById('playDisplayOnAll').checked,
-      logic: AdminShared.getLogic('playLogicToggle'),
-      conditions: AdminShared.getConditions('playConditions'),
+      groupLogic: AdminShared.getGroupLogic('playGroupLogicToggle'),
+      conditionGroups: AdminShared.getConditionGroups('playConditionGroups'),
       sections: this.getSections()
     });
   }
@@ -632,8 +635,7 @@ class PlaysPage {
 
   async onObjectTypeChange(objectType) {
     const statusEl = document.getElementById('playConditionStatus');
-    const addBtn = document.getElementById('addPlayConditionBtn');
-    const container = document.getElementById('playConditions');
+    const addBtn = document.getElementById('addPlayGroupBtn');
 
     if (!objectType) {
       this.currentProperties = [];
@@ -655,7 +657,8 @@ class PlaysPage {
       addBtn.disabled = false;
       statusEl.textContent = `${properties.length} properties loaded`;
       statusEl.className = 'status-text success';
-      container.innerHTML = '';
+      // Add one empty group by default
+      AdminShared.setConditionGroups('playConditionGroups', [], properties);
       // Refresh any existing fields sections to show property dropdowns
       this.refreshFieldSections();
       setTimeout(() => { statusEl.textContent = ''; }, 2000);
@@ -666,9 +669,9 @@ class PlaysPage {
     }
   }
 
-  async loadPropertiesAndConditions(objectType, conditions) {
+  async loadPropertiesAndConditionGroups(objectType, conditionGroups) {
     const statusEl = document.getElementById('playConditionStatus');
-    const addBtn = document.getElementById('addPlayConditionBtn');
+    const addBtn = document.getElementById('addPlayGroupBtn');
 
     statusEl.textContent = 'Loading properties...';
     statusEl.className = 'status-text';
@@ -680,14 +683,15 @@ class PlaysPage {
       addBtn.disabled = false;
       statusEl.textContent = '';
 
-      conditions.forEach(c => AdminShared.addCondition('playConditions', c, properties));
+      AdminShared.setConditionGroups('playConditionGroups', conditionGroups, properties);
 
       // Refresh any existing fields sections to show property dropdowns
       this.refreshFieldSections();
     } catch (err) {
       statusEl.textContent = 'Error loading properties';
       statusEl.className = 'status-text error';
-      conditions.forEach(c => AdminShared.addCondition('playConditions', c, []));
+      // Still try to show groups without property list
+      AdminShared.setConditionGroups('playConditionGroups', conditionGroups, []);
     }
   }
 
@@ -1246,9 +1250,9 @@ class PlaysPage {
       link = 'https://' + link;
     }
 
-    const conditions = AdminShared.getConditions('playConditions');
+    const conditionGroups = AdminShared.getConditionGroups('playConditionGroups');
     const sections = this.getSections();
-    const logic = AdminShared.getLogic('playLogicToggle');
+    const groupLogic = AdminShared.getGroupLogic('playGroupLogicToggle');
     const displayOnAll = document.getElementById('playDisplayOnAll').checked;
 
     // Build play data object (camelCase for local use)
@@ -1258,8 +1262,8 @@ class PlaysPage {
       subtitle,
       link,
       objectType,
-      conditions,
-      logic,
+      conditionGroups,
+      groupLogic,
       displayOnAll,
       sections
     };
@@ -1274,8 +1278,8 @@ class PlaysPage {
           subtitle,
           link,
           object_type: objectType || null,
-          conditions,
-          logic,
+          condition_groups: conditionGroups,
+          group_logic: groupLogic,
           display_on_all: displayOnAll,
           sections
         };
