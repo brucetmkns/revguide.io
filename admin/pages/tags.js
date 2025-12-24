@@ -125,8 +125,8 @@
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (elements.tagModal.classList.contains('active')) closeTagModal();
-        if (elements.deleteModal.classList.contains('active')) closeDeleteModal();
+        if (elements.tagModal.classList.contains('open')) closeTagModal();
+        if (elements.deleteModal.classList.contains('open')) closeDeleteModal();
       }
     });
   }
@@ -231,7 +231,7 @@
       }
     });
 
-    elements.tagModal.classList.add('active');
+    elements.tagModal.classList.add('open');
     elements.tagName.focus();
   }
 
@@ -239,7 +239,7 @@
    * Close tag modal
    */
   function closeTagModal() {
-    elements.tagModal.classList.remove('active');
+    elements.tagModal.classList.remove('open');
     editingTag = null;
   }
 
@@ -314,14 +314,14 @@
 
     deleteTagId = tagId;
     elements.deleteTagName.textContent = tag.name;
-    elements.deleteModal.classList.add('active');
+    elements.deleteModal.classList.add('open');
   }
 
   /**
    * Close delete modal
    */
   function closeDeleteModal() {
-    elements.deleteModal.classList.remove('active');
+    elements.deleteModal.classList.remove('open');
     deleteTagId = null;
   }
 
