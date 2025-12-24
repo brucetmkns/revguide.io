@@ -737,6 +737,35 @@ Or create `config.toml` in function folder:
 verify_jwt = false
 ```
 
+### Edge Function Service Client Configuration (v2.13.0)
+**Lesson**: When using Supabase client in Edge Functions with service_role key, explicitly configure auth options to ensure proper RLS bypass.
+
+**Problem**: OAuth state lookup failed with "Invalid or expired session" even though:
+- State was successfully inserted into `oauth_states` table
+- Service role key was being used
+- RLS policy explicitly allowed service_role access
+
+**Root cause**: Default Supabase client configuration in Edge Functions may not properly bypass RLS for all operations.
+
+**Solution**: Create a helper function with explicit auth options:
+```typescript
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+function getServiceClient(): SupabaseClient {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
+// Use everywhere instead of inline createClient()
+const supabase = getServiceClient()
+```
+
+**Key insight**: The explicit `auth` options ensure the client operates in "service" mode without attempting any session management that could interfere with RLS bypass.
+
 ### Database Schema Constraints
 **Lesson**: When creating records during OAuth flow, ensure all NOT NULL constraints are satisfied.
 

@@ -51,7 +51,8 @@ plugin/
 │       ├── wiki.js        # Wiki tooltips
 │       ├── sidepanel.js   # FAB button & sidepanel
 │       ├── presentations.js # Media embeds (Google Slides, etc.)
-│       └── index-tags.js  # Index page tags (table & board views)
+│       ├── index-tags.js  # Index page tags (table & board views)
+│       └── erp-icon.js    # ERP system link icons
 │
 ├── sidepanel/
 │   └── sidepanel.js       # Chrome side panel UI
@@ -182,7 +183,7 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - CRM-agnostic design: supports future Salesforce, Attio, etc. via `crmType` parameter
 - Key function: `getOrgByCrmPortalId(portalId, crmType, accessToken)` in background.js
 
-**Partner Account System (v2.8.0+, v2.8.2+):**
+**Partner Account System (v2.8.0+, v2.8.2+, v2.13.0+):**
 - `account_type` column: `'standard'` or `'partner'`
 - `home_organization_id` tracks partner's agency org
 - Partner Home (`/partner/home`) - 3-step onboarding for partners (v2.8.2+)
@@ -190,6 +191,11 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - Sidebar dropdown: Partner → Home, Managed Accounts
 - Partners have `partner` role in client orgs
 - Admins can invite partners or convert their account to partner
+- **Portal Creation (v2.13.0+):** Partners can create client portals before customer signup
+  - "Add Client Portal" creates org with partner as manager
+  - "Invite Owner" sends ownership claim email to customer
+  - Customer becomes owner while partner retains management access
+  - Partners can connect HubSpot for client orgs via `active_organization_id`
 
 **Key tables:**
 - `organization_members` - Many-to-many user↔org with per-org roles
@@ -204,6 +210,9 @@ See: [AUTHENTICATION.md](AUTHENTICATION.md)
 - `getPartnerClients()` - Get client portals for partner (v2.8.0+)
 - `getPartnerStats()` - Get dashboard stats for partner (v2.8.0+)
 - `convertToPartner(agencyName)` - Convert admin to partner (v2.8.0+)
+- `createClientOrganization(orgName)` - Create portal for client (v2.13.0+)
+- `inviteOrgOwner(orgId, email)` - Send ownership invitation (v2.13.0+)
+- `orgHasOwner(orgId)` - Check if org has an owner (v2.13.0+)
 
 **Partner Signup Paths:**
 1. **Invited by client**: Accept invitation → `/signup?token=xxx&role=partner` → Creates partner account + joins client org → Redirects to `/partner/home`
@@ -328,6 +337,58 @@ Banners with linked plays show "Open Play" button. Clicking opens the play in si
 
 ---
 
+## ERP Icon Feature (v2.12.0+)
+
+Displays a clickable icon next to HubSpot record names when those records exist in an external ERP system (e.g., Q360, NetSuite, SAP).
+
+### Configuration (Settings → External System Link)
+
+- **Master toggle**: Enable/disable feature globally
+- **System name**: Display name (e.g., "Q360")
+- **Icon upload**: Custom PNG/SVG (stored as data URI, 100KB max)
+- **Per-object mappings**: Configure for Companies, Deals, Contacts, Tickets
+  - **Primary field**: HubSpot property containing ERP ID (e.g., `q360_company_id`)
+  - **Primary URL template**: Link template with `{{value}}` or `{{fieldname}}` placeholder
+  - **Fallback field** (optional): Secondary field if primary is empty (e.g., `q360_site_id`)
+  - **Fallback URL template**: Separate URL for fallback
+
+### Data Storage
+
+```javascript
+// organizations.erp_config (JSONB)
+{
+  enabled: true,
+  erp_name: "Q360",
+  icon: "data:image/png;base64,...",
+  field_mappings: {
+    "company": {
+      field: "q360_company_id",
+      url_template: "https://erp.example.com/company/{{value}}",
+      fallback_field: "q360_site_id",
+      fallback_url_template: "https://erp.example.com/site/{{value}}"
+    },
+    "deal": { field: "q360_opportunity_id", url_template: "..." },
+    "contact": { field: "q360_contact_id", url_template: "..." }
+  }
+}
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `content/modules/erp-icon.js` | Icon rendering on record pages |
+| `admin/pages/settings.js` | Configuration UI logic |
+| `admin/pages/settings.html` | Configuration UI markup |
+| `supabase/migrations/033_add_erp_config.sql` | Database column |
+| `supabase/migrations/034_partner_erp_config_update.sql` | Partner update RPC |
+
+### Partner Access
+
+Partners can configure ERP settings for managed organizations via RPC function `update_org_erp_config()` which bypasses RLS with proper authorization checks.
+
+---
+
 ## Known Issues / Tech Debt
 
 1. **Terminology inconsistency** - "plays" vs "battleCards" vs "presentations"
@@ -388,4 +449,4 @@ See: [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)
 
 ---
 
-*Last updated: December 2025 (v2.11.6)*
+*Last updated: December 2025 (v2.12.0)*

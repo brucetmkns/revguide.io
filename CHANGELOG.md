@@ -2,6 +2,82 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.13.0] - 2025-12-23 - Partner-Initiated Portal Setup
+
+### Added
+- **Partner Portal Creation**: Partners can now create client portals on behalf of customers
+  - "Add Client Portal" button in partner dashboard
+  - Creates organization with partner as manager
+  - Customer email is optional - partner can set up content first
+- **Ownership Invitation System**: Partners can invite customers to claim their portal
+  - "Invite Owner" button on client cards for partner-created orgs
+  - Ownership invitation email with branded template
+  - New invitation type: `ownership_claim`
+  - Customers become owners while partner retains management access
+- **HubSpot Connection for Partner-Managed Orgs**: Partners can connect HubSpot for client organizations
+  - Uses `active_organization_id` for partner context
+  - RLS policies updated to allow partner role access
+
+### Fixed
+- **HubSpot OAuth State Lookup**: Fixed "Invalid or expired session" error during OAuth callback
+  - Added proper service client configuration with explicit auth options
+  - Edge function now correctly bypasses RLS for OAuth state management
+- **HubSpot Portal Display**: Connection now shows Portal ID and domain instead of repeated values
+  - Parses `hub_domain` (e.g., `teamofi-com-ar-6292307`) to clean domain format (`teamofi.com.ar`)
+  - Displays "Portal 6292307" and domain on separate lines
+
+### Technical
+- New migrations:
+  - `035_partner_create_client_org.sql` - RPC functions for portal creation and ownership invites
+  - `036_fix_partner_hubspot_connection.sql` - RLS policies for partner HubSpot management
+- `supabase/functions/hubspot-oauth/index.ts` - Added `getServiceClient()` helper, improved portal name parsing
+- `admin/supabase.js` - New methods: `createClientOrganization()`, `inviteOrgOwner()`, `orgHasOwner()`, `getPendingOwnershipInvitation()`, `cancelOwnershipInvitation()`
+- `admin/pages/partner.js` - Add portal form, invite owner modal, ownership status display
+- `api/invite-worker.js` - New `/api/send-ownership-invite` endpoint with email template
+
+## [2.12.1] - 2025-12-23 - Content Script Performance Optimization
+
+### Improved
+- **Parallel Data Loading**: Content, settings, and auth state now load simultaneously via `Promise.all()` instead of sequentially (30-100ms savings)
+- **Removed DOM Reflow**: Eliminated `document.body.innerText` extraction that forced expensive browser reflow on every page load (200-800ms savings)
+- **Smart Wiki Highlighting**: Consolidated triple wiki passes (500/1500/3000ms) to single pass + `requestIdleCallback` for idle-time follow-up (200-600ms savings)
+- **Production Debug Mode**: Disabled verbose console logging in production builds (10-50ms savings)
+
+### Technical
+- `content.js`: Refactored `loadData()` to use `Promise.all()` for parallel fetching
+- `content.js`: Removed Methods 9 & 10 (innerText parsing) - API fetch provides definitive values
+- `content.js`: Wiki and ERP icon follow-up passes now use `requestIdleCallback` with timeout fallback
+- `content.js`: Set `DEBUG = false` for production
+
+**Total estimated page load improvement: 440-1550ms**
+
+## [2.12.0] - 2025-12-23 - ERP Icon Integration
+
+### Added
+- **External System Link (ERP Icon)**: Display a clickable icon next to HubSpot record names when they exist in an external ERP system
+  - Master toggle to enable/disable feature
+  - Custom icon upload (PNG/SVG, stored as data URI)
+  - Custom ERP system name (e.g., "Q360", "NetSuite")
+  - Per-object type configuration (Companies, Deals, Contacts, Tickets)
+  - Primary field + URL template for each object type
+  - Fallback field + URL template (optional) - uses secondary field when primary is empty
+  - URL templates support `{{value}}` or `{{fieldname}}` placeholders
+  - Icon appears in record page header next to record name
+  - Clicking icon opens ERP record in new tab
+
+- **Partner ERP Configuration**: Partners can configure ERP settings for managed organizations
+  - New RPC function `update_org_erp_config()` with SECURITY DEFINER
+  - Validates organization membership before allowing updates
+  - Works for partners with owner, admin, or partner roles
+
+### Technical
+- New module: `content/modules/erp-icon.js` - ERP icon rendering
+- New migrations:
+  - `033_add_erp_config.sql` - Adds `erp_config` JSONB column to organizations
+  - `034_partner_erp_config_update.sql` - RPC for partner updates
+- Settings UI: Collapsible fallback field sections (expand on click or if has value)
+- Data stored in `organizations.erp_config` as JSONB
+
 ## [2.11.6] - 2025-12-23 - Wiki UUID Validation Fix
 
 ### Fixed
