@@ -286,9 +286,8 @@
                       </div>
                       <span class="form-hint">Define when this banner should appear based on record properties</span>
 
-                      <!-- Group Logic Toggle (between groups) - hidden when < 2 groups -->
-                      <div class="flex items-center justify-center py-3" id="ruleConditionGroupsLogicWrapper" style="display: none;">
-                        <span class="text-sm text-text-secondary mr-2">Combine groups with:</span>
+                      <!-- Hidden group logic toggle (value synced by visible connectors) -->
+                      <div class="hidden" id="ruleConditionGroupsLogicWrapper">
                         <div class="logic-toggle" id="ruleGroupLogicToggle">
                           <button type="button" class="logic-btn active" data-value="AND">AND</button>
                           <button type="button" class="logic-btn" data-value="OR">OR</button>
@@ -296,12 +295,12 @@
                       </div>
 
                       <!-- Condition Groups Container -->
-                      <div class="flex flex-col" id="ruleConditionGroups">
+                      <div class="flex flex-col gap-0" id="ruleConditionGroups">
                         <!-- Groups added by JS -->
                       </div>
 
                       <button type="button" class="inline-flex items-center gap-2 mt-4 py-2 px-3 text-sm font-medium text-primary-dark border border-dashed border-primary rounded-md bg-primary-subtle cursor-pointer transition-all duration-fast hover:bg-primary hover:border-solid hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed" id="addRuleGroupBtn" disabled>
-                        <span class="icon icon-plus icon--sm"></span> Add Filter Group
+                        <span class="icon icon-plus icon--sm"></span> Add condition group
                       </button>
                     </div>
                   </div>

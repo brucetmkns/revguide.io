@@ -2124,37 +2124,38 @@ function addConditionGroup(containerId, group = null, properties = []) {
   const container = document.getElementById(containerId);
   const groupId = group?.id || `group_${Date.now()}`;
   const groupLogic = group?.logic || 'AND';
-  const isFirstGroup = container.querySelectorAll('[data-group-id]').length === 0;
 
   const div = document.createElement('div');
-  div.className = `border border-border rounded-lg bg-surface overflow-hidden${isFirstGroup ? '' : ' mt-4'}`;
+  div.className = 'condition-group-wrapper';
   div.dataset.groupId = groupId;
 
   div.innerHTML = `
-    <div class="flex items-center justify-between py-3 px-4 bg-bg-subtle border-b border-border-subtle">
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-medium text-text-secondary">Filter Group</span>
-        <div class="logic-toggle" data-group-id="${groupId}">
-          <button type="button" class="logic-btn ${groupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
-          <button type="button" class="logic-btn ${groupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
+    <div class="border border-border rounded-lg bg-surface overflow-hidden">
+      <div class="flex items-center justify-between py-3 px-4 bg-bg-subtle border-b border-border-subtle">
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-medium text-text-secondary group-label">Group 1</span>
+          <div class="logic-toggle" data-group-logic>
+            <button type="button" class="logic-btn ${groupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
+            <button type="button" class="logic-btn ${groupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
+          </div>
         </div>
+        <button type="button" class="btn-icon btn-icon-danger remove-group-btn" title="Remove group">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          </svg>
+        </button>
       </div>
-      <button type="button" class="btn-icon btn-icon-danger remove-group-btn" title="Remove group">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
-    </div>
-    <div class="p-4">
-      <div class="conditions-builder mb-3 empty:mb-0" data-group-conditions="${groupId}"></div>
-      <button type="button" class="btn btn-secondary btn-sm add-group-condition-btn">
-        <span class="icon icon-plus icon--sm"></span> Add Condition
-      </button>
+      <div class="p-4">
+        <div class="conditions-builder mb-3 empty:mb-0" data-group-conditions="${groupId}"></div>
+        <button type="button" class="btn btn-secondary btn-sm add-group-condition-btn">
+          <span class="icon icon-plus icon--sm"></span> Add Condition
+        </button>
+      </div>
     </div>
   `;
 
-  // Set up group logic toggle
-  const logicToggle = div.querySelector('.logic-toggle[data-group-id]');
+  // Set up group logic toggle (within group)
+  const logicToggle = div.querySelector('[data-group-logic]');
   logicToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.logic-btn');
     if (btn) {
@@ -2169,7 +2170,7 @@ function addConditionGroup(containerId, group = null, properties = []) {
     // Don't allow removing the last group
     if (container.querySelectorAll('[data-group-id]').length > 1) {
       div.remove();
-      updateGroupLogicVisibility(containerId);
+      updateConditionGroupsUI(containerId);
     } else {
       showToast('At least one filter group is required', 'warning');
     }
@@ -2191,10 +2192,67 @@ function addConditionGroup(containerId, group = null, properties = []) {
     });
   }
 
-  // Update group logic toggle visibility
-  updateGroupLogicVisibility(containerId);
+  // Update UI (numbering, connectors)
+  updateConditionGroupsUI(containerId);
 
   return groupId;
+}
+
+/**
+ * Update condition groups UI: numbering and connectors
+ * @param {string} containerId
+ */
+function updateConditionGroupsUI(containerId) {
+  const container = document.getElementById(containerId);
+  const groups = container.querySelectorAll('[data-group-id]');
+
+  // Remove all existing connectors
+  container.querySelectorAll('.group-connector').forEach(c => c.remove());
+
+  // Get current group logic value from wrapper element
+  const wrapperLogicToggle = document.getElementById(containerId.replace('ConditionGroups', 'GroupLogicToggle'));
+  const currentGroupLogic = wrapperLogicToggle?.querySelector('.logic-btn.active')?.dataset.value || 'AND';
+
+  groups.forEach((group, index) => {
+    // Update group number label
+    const label = group.querySelector('.group-label');
+    if (label) {
+      label.textContent = `Group ${index + 1}`;
+    }
+
+    // Add connector AFTER each group except the last
+    if (index < groups.length - 1) {
+      const connector = document.createElement('div');
+      connector.className = 'group-connector flex items-center justify-center py-2';
+      connector.innerHTML = `
+        <div class="logic-toggle group-logic-connector bg-primary-subtle border border-primary">
+          <button type="button" class="logic-btn ${currentGroupLogic === 'AND' ? 'active' : ''}" data-value="AND">AND</button>
+          <button type="button" class="logic-btn ${currentGroupLogic === 'OR' ? 'active' : ''}" data-value="OR">OR</button>
+        </div>
+      `;
+
+      // Set up connector toggle - syncs all connectors
+      const toggle = connector.querySelector('.logic-toggle');
+      toggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.logic-btn');
+        if (btn) {
+          const newValue = btn.dataset.value;
+          // Update all connectors and the wrapper toggle
+          container.querySelectorAll('.group-connector .logic-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.value === newValue);
+          });
+          if (wrapperLogicToggle) {
+            wrapperLogicToggle.querySelectorAll('.logic-btn').forEach(b => {
+              b.classList.toggle('active', b.dataset.value === newValue);
+            });
+          }
+        }
+      });
+
+      // Insert connector after this group
+      group.after(connector);
+    }
+  });
 }
 
 /**
@@ -2289,7 +2347,7 @@ function getConditionGroups(containerId) {
 
   container.querySelectorAll('[data-group-id]').forEach(groupCard => {
     const groupId = groupCard.dataset.groupId;
-    const logicToggle = groupCard.querySelector('.logic-toggle[data-group-id]');
+    const logicToggle = groupCard.querySelector('[data-group-logic]');
     const activeBtn = logicToggle?.querySelector('.logic-btn.active');
     const logic = activeBtn ? activeBtn.dataset.value : 'AND';
 
@@ -2947,6 +3005,7 @@ window.AdminShared = {
   getConditionGroups,
   setConditionGroups,
   clearConditionGroups,
+  updateConditionGroupsUI,
   updateGroupLogicVisibility,
   getGroupLogic,
   setGroupLogic,
