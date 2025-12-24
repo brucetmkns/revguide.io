@@ -285,30 +285,42 @@ const RevGuideHubSpot = {
   // ============================================
 
   /**
-   * Fetch all HubSpot lists
+   * Fetch all HubSpot lists using the search endpoint
    * @param {string} connectionId - The connection ID
    * @returns {Promise<Array>} Array of lists with id, name, objectType, etc.
    */
   async getLists(connectionId) {
     const allLists = [];
-    let hasMore = true;
     let offset = 0;
+    const pageSize = 100;
 
-    while (hasMore) {
-      const data = await this.proxy(connectionId, `/crm/v3/lists?count=250&offset=${offset}`);
+    while (true) {
+      // Use POST /crm/v3/lists/search endpoint (v3 API requires search for listing)
+      const data = await this.proxy(connectionId, '/crm/v3/lists/search', {
+        method: 'POST',
+        body: {
+          offset: offset,
+          count: pageSize,
+          processingTypes: ['DYNAMIC', 'MANUAL', 'SNAPSHOT'] // All list types
+        }
+      });
 
       if (data.lists && data.lists.length > 0) {
         allLists.push(...data.lists.map(list => ({
-          listId: list.listId,
+          listId: String(list.listId),
           name: list.name,
-          objectType: list.objectTypeId || 'CONTACT',
-          listType: list.processingType, // STATIC, DYNAMIC
+          objectType: this.mapObjectTypeId(list.objectTypeId),
+          listType: list.processingType, // DYNAMIC, MANUAL, SNAPSHOT
           size: list.size || 0
         })));
       }
 
-      hasMore = data.hasMore === true;
-      offset = data.offset || (offset + 250);
+      // Check if there are more pages
+      if (!data.lists || data.lists.length < pageSize) {
+        break;
+      }
+
+      offset += pageSize;
 
       // Safety limit
       if (allLists.length > 5000) {
@@ -317,7 +329,23 @@ const RevGuideHubSpot = {
       }
     }
 
+    console.log('[RevGuide] Fetched', allLists.length, 'lists from HubSpot');
     return allLists;
+  },
+
+  /**
+   * Map HubSpot object type ID to readable name
+   * @param {string} objectTypeId - e.g., '0-1', '0-2'
+   * @returns {string} Object type name
+   */
+  mapObjectTypeId(objectTypeId) {
+    const typeMap = {
+      '0-1': 'CONTACT',
+      '0-2': 'COMPANY',
+      '0-3': 'DEAL',
+      '0-5': 'TICKET'
+    };
+    return typeMap[objectTypeId] || 'CONTACT';
   },
 
   /**
