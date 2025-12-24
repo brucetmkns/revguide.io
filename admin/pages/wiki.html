@@ -4,83 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="/admin/analytics.js"></script>
-  <title>Wiki - RevGuide (Tailwind Demo)</title>
-  <!-- Base styles for CSS variables and fonts -->
-  <link rel="stylesheet" href="/styles/base.css">
-  <link rel="stylesheet" href="/styles/icons.css">
-  <!-- Tailwind utilities -->
-  <link rel="stylesheet" href="/styles/tailwind-output.css">
-  <style>
-    /* Minimal custom styles for complex interactive states */
-    .wiki-node-term.is-selected { background: var(--color-primary); }
-    .wiki-node-term.is-selected .wiki-term-text { color: white; }
-    .wiki-tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--color-primary);
-    }
-  </style>
+  <title>Wiki - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <link rel="stylesheet" href="/admin/pages/rules.css">
+  <link rel="stylesheet" href="/admin/pages/wiki.css">
 </head>
-<body class="bg-bg font-sans text-text-primary">
-  <div class="flex min-h-screen">
+<body>
+  <div class="app">
     <!-- Sidebar -->
-    <aside class="w-56 bg-[#1e293b] text-white flex flex-col shrink-0">
-      <div class="flex items-center gap-3 px-6 py-5">
-        <span class="icon icon-target-white w-6 h-6 text-primary"></span>
-        <h1 class="text-lg font-bold">RevGuide</h1>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon"><span class="icon icon-target-white"></span></span>
+        <h1>RevGuide</h1>
       </div>
-      <nav class="flex-1 py-2">
-        <a href="/home" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-          <span class="icon icon-home-white w-5 h-5"></span>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
           Home
         </a>
-        <!-- Partner Nav Group -->
-        <div class="nav-group hidden" data-section="partner" id="partnerNavGroup">
-          <button class="flex items-center gap-3 px-6 py-3 w-full text-left text-white/70 hover:bg-white/10 hover:text-white transition-colors" id="partnerNavToggle">
-            <span class="icon icon-users-white w-5 h-5"></span>
-            <span class="flex-1">Partner</span>
-            <svg class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="nav-group" data-section="partner" id="partnerNavGroup" style="display: none;">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
-          <div class="hidden pl-8 bg-white/5">
-            <a href="/partner/home" class="flex items-center gap-3 px-6 py-2 text-white/60 hover:text-white text-sm transition-colors">Home</a>
-            <a href="/partner/accounts" class="flex items-center gap-3 px-6 py-2 text-white/60 hover:text-white text-sm transition-colors">Managed Accounts</a>
+          <div class="nav-group-menu">
+            <a href="/partner/home" class="nav-item" data-section="partner-home">Home</a>
+            <a href="/partner/accounts" class="nav-item" data-section="partner-accounts">Managed Accounts</a>
           </div>
         </div>
-        <a href="/banners" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-          <span class="icon icon-clipboard-list-white w-5 h-5"></span>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
           Banners
         </a>
-        <a href="/plays" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-          <span class="icon icon-layers-white w-5 h-5"></span>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
           Plays
         </a>
-        <a href="/wiki" class="flex items-center gap-3 px-6 py-3 bg-white/15 text-white border-l-[3px] border-primary pl-[21px]">
-          <span class="icon icon-book-white w-5 h-5"></span>
+        <a href="/wiki" class="nav-item active" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
           Wiki
         </a>
-        <a href="/libraries" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-          <span class="icon icon-download-white w-5 h-5"></span>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
           Libraries
         </a>
-        <a href="/settings" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-          <span class="icon icon-settings-white w-5 h-5"></span>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
           Settings
         </a>
       </nav>
-      <div class="px-4 py-4 border-t border-white/10">
-        <div class="flex items-center gap-3">
-          <a href="/settings" class="flex items-center gap-3 flex-1 min-w-0">
-            <span class="w-8 h-8 rounded-full bg-primary text-text-primary flex items-center justify-center text-sm font-semibold" id="sidebarUserAvatar">...</span>
-            <span class="text-sm truncate" id="sidebarUserName">Loading...</span>
+      <div class="sidebar-footer">
+        <div class="user-profile-link">
+          <a href="/settings" class="user-profile-btn" id="sidebarUserProfile">
+            <span class="user-avatar" id="sidebarUserAvatar">...</span>
+            <span class="user-name" id="sidebarUserName">Loading...</span>
           </a>
-          <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-white" title="Sign out" onclick="AdminShared.signOut()">
-            <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
@@ -91,38 +74,38 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-6 overflow-auto">
-      <section id="wikiSection">
+    <main class="main-content">
+      <section class="content-section active" id="wikiSection">
         <!-- Page Header -->
-        <div class="flex items-start justify-between mb-6">
+        <div class="section-header">
           <div>
-            <h2 class="text-2xl font-semibold text-text-primary">Wiki</h2>
-            <p class="text-text-tertiary mt-1">Create a knowledge base of terms and definitions for your team</p>
+            <h2>Wiki</h2>
+            <p class="section-description">Create a knowledge base of terms and definitions for your team</p>
           </div>
-          <div class="flex gap-2">
-            <button class="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-border-strong rounded-md text-text-secondary font-medium hover:bg-surface-hover transition-colors" id="importFieldsBtn">
-              <span class="icon icon-download w-4 h-4"></span> Import Fields
+          <div class="section-header-actions">
+            <button class="btn btn-secondary" id="importFieldsBtn">
+              <span class="icon icon-download"></span> Import Fields
             </button>
-            <button class="inline-flex items-center gap-2 px-4 py-2 bg-primary rounded-md text-text-primary font-medium hover:bg-primary-dark transition-colors" id="addWikiBtn">
-              <span class="icon icon-plus w-4 h-4"></span> Add Entry
+            <button class="btn btn-primary" id="addWikiBtn">
+              <span class="icon icon-plus"></span> Add Entry
             </button>
           </div>
         </div>
 
         <!-- Two-Pane Layout -->
-        <div class="flex gap-5 h-[calc(100vh-120px)] min-h-[600px]">
+        <div class="wiki-layout">
           <!-- Left Navigation Pane -->
-          <aside class="w-[360px] min-w-[320px] max-w-[450px] bg-surface border border-border rounded-lg flex flex-col overflow-hidden">
+          <aside class="wiki-nav-pane">
             <!-- Search & Filters -->
-            <div class="p-3 border-b border-border flex flex-col gap-2">
-              <div class="relative w-full">
-                <input type="text" class="input w-full pr-8" id="wikiSearch" placeholder="Search wiki entries...">
-                <button type="button" class="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-text-muted hover:bg-bg-muted hover:text-text-primary hidden" id="wikiSearchClear" title="Clear search">
-                  <span class="icon icon-x w-4 h-4"></span>
+            <div class="wiki-nav-toolbar">
+              <div class="search-input-wrapper">
+                <input type="text" class="search-input wiki-nav-search" id="wikiSearch" placeholder="Search wiki entries...">
+                <button type="button" class="search-clear-btn" id="wikiSearchClear" title="Clear search">
+                  <span class="icon icon-x icon--sm"></span>
                 </button>
               </div>
-              <div class="flex gap-2">
-                <select class="input flex-1 text-sm py-1 px-2" id="wikiObjectFilter">
+              <div class="wiki-nav-filters">
+                <select class="filter-select" id="wikiObjectFilter">
                   <option value="all">All Objects</option>
                   <option value="contacts">Contacts</option>
                   <option value="companies">Companies</option>
@@ -130,7 +113,7 @@
                   <option value="tickets">Tickets</option>
                   <option value="custom">Custom Terms</option>
                 </select>
-                <select class="input flex-1 text-sm py-1 px-2" id="wikiFilter">
+                <select class="filter-select" id="wikiFilter">
                   <option value="all">All Categories</option>
                   <option value="general">General</option>
                   <option value="sales">Sales</option>
@@ -140,160 +123,161 @@
                   <option value="field">HubSpot Fields</option>
                 </select>
               </div>
-              <div class="flex justify-between items-center">
-                <div class="flex gap-2">
-                  <button class="w-7 h-7 flex items-center justify-center bg-bg-subtle border border-border rounded text-text-secondary hover:bg-bg-muted" id="wikiSelectModeBtn" title="Select multiple">
-                    <span class="icon icon-square w-4 h-4" id="wikiSelectModeIcon"></span>
+              <div class="wiki-nav-actions">
+                <button class="btn btn-icon btn-sm" id="wikiSelectModeBtn" data-tooltip="Select multiple entries" data-tooltip-position="left">
+                  <span class="icon icon-square" id="wikiSelectModeIcon"></span>
+                </button>
+                <button class="btn btn-icon btn-sm" id="refreshWikiBtn" title="Refresh">
+                  <span class="icon icon-refresh"></span>
+                </button>
+                <div class="wiki-nav-actions-right">
+                  <button class="btn btn-icon btn-sm" id="wikiExpandAllBtn" data-tooltip="Expand all groups">
+                    <span class="icon icon-chevrons-down"></span>
                   </button>
-                  <button class="w-7 h-7 flex items-center justify-center bg-bg-subtle border border-border rounded text-text-secondary hover:bg-bg-muted" id="refreshWikiBtn" title="Refresh">
-                    <span class="icon icon-refresh w-4 h-4"></span>
-                  </button>
-                </div>
-                <div class="flex gap-2">
-                  <button class="w-7 h-7 flex items-center justify-center bg-bg-subtle border border-border rounded text-text-secondary hover:bg-bg-muted" id="wikiExpandAllBtn" title="Expand all">
-                    <span class="icon icon-chevrons-down w-4 h-4"></span>
-                  </button>
-                  <button class="w-7 h-7 flex items-center justify-center bg-bg-subtle border border-border rounded text-text-secondary hover:bg-bg-muted" id="wikiCollapseAllBtn" title="Collapse all">
-                    <span class="icon icon-chevrons-up w-4 h-4"></span>
+                  <button class="btn btn-icon btn-sm" id="wikiCollapseAllBtn" data-tooltip="Collapse all groups" data-tooltip-position="right">
+                    <span class="icon icon-chevrons-up"></span>
                   </button>
                 </div>
               </div>
             </div>
 
             <!-- Bulk Actions Bar (hidden by default) -->
-            <div class="hidden p-3 border-b border-border bg-bg-muted" id="wikiBulkActions">
-              <div class="flex items-center justify-between mb-2">
-                <label class="flex items-center gap-2 cursor-pointer text-sm">
-                  <input type="checkbox" id="wikiSelectAll" class="w-4 h-4 accent-primary">
+            <div class="wiki-bulk-actions" id="wikiBulkActions" style="display: none;">
+              <div class="wiki-bulk-actions-row">
+                <label class="wiki-select-all-label">
+                  <input type="checkbox" id="wikiSelectAll">
                   <span>Select All</span>
                 </label>
-                <span class="text-xs text-text-muted" id="wikiSelectedCount">0 selected</span>
+                <span class="wiki-selected-count" id="wikiSelectedCount">0 selected</span>
               </div>
-              <div class="flex gap-2">
-                <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-danger-bg border border-danger rounded text-sm font-medium text-danger hover:bg-danger hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="wikiDeleteSelectedBtn" disabled>
-                  <span class="icon icon-trash w-4 h-4"></span> Delete
+              <div class="wiki-bulk-buttons">
+                <button class="btn btn-danger btn-sm" id="wikiDeleteSelectedBtn" disabled>
+                  <span class="icon icon-trash icon--sm"></span> Delete
                 </button>
-                <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface border border-border-strong rounded text-sm font-medium text-text-secondary hover:bg-surface-hover transition-colors" id="wikiCancelSelectBtn">
+                <button class="btn btn-secondary btn-sm" id="wikiCancelSelectBtn">
                   Cancel
                 </button>
               </div>
             </div>
 
             <!-- Navigation Tree -->
-            <div class="flex-1 overflow-y-auto p-2">
-              <ul class="list-none" id="wikiNavTree">
+            <div class="wiki-nav-tree-container">
+              <ul class="wiki-tree" id="wikiNavTree">
                 <!-- Populated by JS -->
               </ul>
 
-              <!-- Empty State -->
-              <div class="flex flex-col items-center justify-center p-8 text-text-muted text-center hidden" id="wikiNavEmpty">
-                <span class="icon icon-book w-12 h-12 mb-3 opacity-50"></span>
-                <p class="text-sm">No entries found</p>
+              <!-- Empty State for Nav -->
+              <div class="wiki-nav-empty" id="wikiNavEmpty" style="display: none;">
+                <span class="icon icon-book icon--xl"></span>
+                <p>No entries found</p>
               </div>
             </div>
 
             <!-- Stats -->
-            <div class="flex gap-4 p-3 border-t border-border bg-bg-subtle text-xs text-text-secondary" id="wikiStats">
-              <span><strong class="text-text-primary font-semibold" id="wikiTotalCount">0</strong> total</span>
-              <span><strong class="text-text-primary font-semibold" id="wikiEnabledCount">0</strong> enabled</span>
-              <span><strong class="text-text-primary font-semibold" id="wikiFieldsCount">0</strong> fields</span>
+            <div class="wiki-nav-stats" id="wikiStats">
+              <span class="wiki-stat"><strong id="wikiTotalCount">0</strong> total</span>
+              <span class="wiki-stat"><strong id="wikiEnabledCount">0</strong> enabled</span>
+              <span class="wiki-stat"><strong id="wikiFieldsCount">0</strong> fields</span>
             </div>
           </aside>
 
           <!-- Right Detail Pane -->
-          <section class="flex-1 min-w-0 flex flex-col">
-            <div class="bg-surface border border-border rounded-lg flex flex-col h-full overflow-hidden" id="wikiCard">
+          <section class="wiki-detail-pane">
+            <!-- Card View -->
+            <div class="wiki-card" id="wikiCard">
               <!-- Card Header -->
-              <header class="flex justify-between items-start p-5 border-b border-border gap-4">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-3 mb-2">
-                    <h2 class="text-xl font-semibold text-text-primary truncate" id="wikiCardTitle">Select an Entry</h2>
-                    <button class="hidden items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface text-sm font-medium text-text-secondary hover:bg-bg-muted transition-colors" id="wikiStatusToggle">
-                      <span class="w-2 h-2 rounded-full bg-border"></span>
-                      <span>Enabled</span>
+              <header class="wiki-card-header">
+                <div class="wiki-card-header-main">
+                  <div class="wiki-card-title-row">
+                    <h2 id="wikiCardTitle">Select an Entry</h2>
+                    <button class="status-toggle" id="wikiStatusToggle" style="display: none;">
+                      <span class="status-toggle-dot"></span>
+                      <span class="status-toggle-label">Enabled</span>
                     </button>
                   </div>
-                  <div class="flex flex-wrap gap-2" id="wikiCardMeta">
-                    <!-- Badges populated by JS -->
+                  <div class="wiki-card-meta" id="wikiCardMeta">
+                    <!-- Populated by JS -->
                   </div>
                 </div>
-                <div class="hidden gap-2 shrink-0" id="wikiCardActions">
-                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary rounded text-sm font-medium text-text-primary hover:bg-primary-dark transition-colors" id="saveEntryBtnTop">
-                    <span class="icon icon-save w-4 h-4"></span> Save
+                <div class="wiki-card-actions" id="wikiCardActions" style="display: none;">
+                  <button class="btn btn-primary btn-sm" id="saveEntryBtnTop" title="Save">
+                    <span class="icon icon-save icon--sm" id="saveEntryBtnTopIcon"></span> Save
                   </button>
-                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface border border-border-strong rounded text-sm font-medium text-text-secondary hover:bg-surface-hover transition-colors" id="duplicateEntryBtn">
-                    <span class="icon icon-copy w-4 h-4"></span> Duplicate
+                  <button class="btn btn-secondary btn-sm" id="duplicateEntryBtn" title="Duplicate">
+                    <span class="icon icon-copy icon--sm"></span> Duplicate
                   </button>
-                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-danger-bg border border-danger rounded text-sm font-medium text-danger hover:bg-danger hover:text-white transition-colors" id="deleteEntryBtn">
-                    <span class="icon icon-trash w-4 h-4"></span> Delete
+                  <button class="btn btn-danger btn-sm" id="deleteEntryBtn" title="Delete">
+                    <span class="icon icon-trash icon--sm"></span> Delete
                   </button>
                 </div>
               </header>
 
               <!-- Tabs -->
-              <nav class="flex gap-0 px-5 border-b border-border bg-bg-subtle" role="tablist" id="wikiCardTabs">
-                <button role="tab" aria-selected="true" data-tab="content" class="wiki-tab relative px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary cursor-pointer active">Content</button>
-                <button role="tab" aria-selected="false" data-tab="rules" class="wiki-tab relative px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary cursor-pointer">Rules</button>
-                <button role="tab" aria-selected="false" data-tab="usage" class="wiki-tab relative px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary cursor-pointer">Usage</button>
+              <nav class="wiki-card-tabs" role="tablist" id="wikiCardTabs">
+                <button role="tab" aria-selected="true" data-tab="content" class="wiki-tab active">Content</button>
+                <button role="tab" aria-selected="false" data-tab="rules" class="wiki-tab">Rules</button>
+                <button role="tab" aria-selected="false" data-tab="usage" class="wiki-tab">Usage</button>
               </nav>
 
               <!-- Tab Panels -->
-              <div class="flex-1 overflow-y-auto flex flex-col">
+              <div class="wiki-card-body">
                 <!-- Content Tab -->
-                <section id="tab-content" role="tabpanel" class="flex-1 p-5 flex flex-col">
-                  <div class="flex flex-col items-center justify-center text-center p-12 text-text-muted flex-1" id="wikiCardEmpty">
-                    <span class="icon icon-book w-16 h-16 mb-4 opacity-40"></span>
-                    <h3 class="text-lg font-semibold text-text-secondary mb-2">Select a term from the left</h3>
-                    <p class="text-sm">Choose an entry to view or edit its details</p>
+                <section id="tab-content" role="tabpanel" class="wiki-tab-panel">
+                  <div class="wiki-card-empty-state" id="wikiCardEmpty">
+                    <span class="icon icon-book icon--2xl"></span>
+                    <h3>Select a term from the left</h3>
+                    <p>Choose an entry to view or edit its details</p>
                   </div>
 
-                  <div class="hidden grid-cols-[1fr_280px] gap-6 flex-1" id="wikiCardContent">
-                    <div class="flex flex-col gap-4">
+                  <div class="wiki-card-content" id="wikiCardContent" style="display: none;">
+                    <div class="wiki-content-form">
                       <!-- Title -->
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">Title <span class="text-danger">*</span></label>
-                        <input type="text" id="wikiTitle" placeholder="e.g., Marketing Qualified Lead" class="input">
-                        <span class="block mt-2 text-sm text-text-muted">The display name shown in the navigation tree and tooltip header</span>
+                      <div class="form-group">
+                        <label>Title <span class="required">*</span></label>
+                        <input type="text" id="wikiTitle" placeholder="e.g., Marketing Qualified Lead">
+                        <span class="form-hint">The display name shown in the navigation tree and tooltip header</span>
                       </div>
 
                       <!-- Trigger -->
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">Trigger Text</label>
-                        <input type="text" id="wikiTrigger" placeholder="e.g., MQL" class="input">
-                        <span class="block mt-2 text-sm text-text-muted">Optional: The text to match on HubSpot pages to show the tooltip.</span>
+                      <div class="form-group">
+                        <label>Trigger Text</label>
+                        <input type="text" id="wikiTrigger" placeholder="e.g., MQL">
+                        <span class="form-hint">Optional: The text to match on HubSpot pages to show the tooltip. Leave empty for glossary-only entries.</span>
                       </div>
 
                       <!-- Aliases -->
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">Aliases</label>
-                        <input type="text" id="wikiAliases" placeholder="e.g., M.Q.L., marketing-qualified-lead" class="input">
-                        <span class="block mt-2 text-sm text-text-muted">Comma-separated additional trigger terms</span>
+                      <div class="form-group">
+                        <label>Aliases</label>
+                        <input type="text" id="wikiAliases" placeholder="e.g., M.Q.L., marketing-qualified-lead">
+                        <span class="form-hint">Comma-separated additional trigger terms that should also show this tooltip</span>
                       </div>
 
                       <!-- Definition -->
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">Definition <span class="text-danger">*</span></label>
-                        <div id="wikiDefinitionEditor" class="min-h-[120px] border border-border-strong rounded-md"></div>
+                      <div class="form-group">
+                        <label>Definition <span class="required">*</span></label>
+                        <div id="wikiDefinitionEditor"></div>
                       </div>
 
                       <!-- Related Link -->
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">Related Link</label>
-                        <input type="url" id="wikiLink" placeholder="https://docs.google.com/..." class="input">
-                        <span class="block mt-2 text-sm text-text-muted">Optional link to documentation</span>
+                      <div class="form-group">
+                        <label>Related Link</label>
+                        <input type="url" id="wikiLink" placeholder="https://docs.google.com/...">
+                        <span class="form-hint">Optional link to documentation or more details</span>
                       </div>
                     </div>
 
                     <!-- Preview -->
-                    <div class="sticky top-0">
-                      <h4 class="text-sm font-semibold text-text-secondary mb-3">Preview</h4>
-                      <div class="bg-bg-muted rounded-md p-3" id="wikiPreview">
-                        <div class="bg-surface rounded-md p-4 shadow-sm">
-                          <div class="flex items-center justify-between mb-3">
-                            <span class="font-semibold text-text-primary">Term</span>
-                            <span class="text-xs px-2 py-0.5 bg-bg-muted rounded text-text-secondary">Category</span>
+                    <div class="wiki-content-preview">
+                      <h4>Preview</h4>
+                      <div class="wiki-preview" id="wikiPreview">
+                        <div class="wiki-preview-card">
+                          <div class="wiki-preview-header">
+                            <span class="wiki-preview-term">Term</span>
+                            <span class="wiki-preview-category">Category</span>
                           </div>
-                          <p class="text-sm text-text-secondary leading-relaxed">Your definition will appear here</p>
+                          <div class="wiki-preview-content">
+                            <p>Your definition will appear here</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -301,21 +285,22 @@
                 </section>
 
                 <!-- Rules Tab -->
-                <section id="tab-rules" role="tabpanel" class="flex-1 p-5 flex flex-col hidden">
-                  <div class="flex flex-col items-center justify-center text-center p-12 text-text-muted flex-1" id="wikiRulesEmpty">
-                    <span class="icon icon-settings w-16 h-16 mb-4 opacity-40"></span>
-                    <h3 class="text-lg font-semibold text-text-secondary mb-2">Select a term to configure rules</h3>
-                    <p class="text-sm">Choose an entry from the left to set up where and how it appears</p>
+                <section id="tab-rules" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiRulesEmpty">
+                    <span class="icon icon-settings icon--2xl"></span>
+                    <h3>Select a term to configure rules</h3>
+                    <p>Choose an entry from the left to set up where and how it appears</p>
                   </div>
 
-                  <div class="hidden flex-col gap-6" id="wikiRulesContent">
+                  <div class="wiki-rules-content" id="wikiRulesContent" style="display: none;">
                     <!-- Where to Show -->
-                    <div class="pb-5 border-b border-border">
-                      <h4 class="text-md font-semibold text-text-primary mb-4">Where to Show</h4>
-                      <div class="flex gap-4">
-                        <div class="flex-1">
-                          <label class="block mb-2 text-base font-medium text-text-primary">Category</label>
-                          <select id="wikiCategory" class="input">
+                    <div class="wiki-rules-section">
+                      <h4>Where to Show</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Category</label>
+                          <select id="wikiCategory">
                             <option value="general">General</option>
                             <option value="sales">Sales</option>
                             <option value="marketing">Marketing</option>
@@ -324,122 +309,127 @@
                             <option value="field">HubSpot Field</option>
                           </select>
                         </div>
-                        <div class="flex-1">
-                          <label class="block mb-2 text-base font-medium text-text-primary">HubSpot Object</label>
-                          <select id="wikiObjectType" class="input">
+                        <div class="form-group flex-1">
+                          <label>HubSpot Object</label>
+                          <select id="wikiObjectType">
                             <option value="">None (Custom Term)</option>
                             <option value="contacts">Contacts</option>
                             <option value="companies">Companies</option>
                             <option value="deals">Deals</option>
                             <option value="tickets">Tickets</option>
                           </select>
-                          <span class="block mt-2 text-sm text-text-muted">Associate this entry with a HubSpot object type</span>
+                          <span class="form-hint">Associate this entry with a HubSpot object type</span>
                         </div>
                       </div>
-                      <div class="mt-4">
-                        <label class="block mb-2 text-base font-medium text-text-primary">Property Group</label>
-                        <select id="wikiPropertyGroup" class="input">
+
+                      <div class="form-group">
+                        <label>Property Group</label>
+                        <select id="wikiPropertyGroup">
                           <option value="">Select a property group...</option>
                         </select>
-                        <span class="block mt-2 text-sm text-text-muted">Optional group name for organization</span>
+                        <span class="form-hint">Optional group name for organization</span>
                       </div>
                     </div>
 
                     <!-- Matching Behavior -->
-                    <div class="pb-5 border-b border-border">
-                      <h4 class="text-md font-semibold text-text-primary mb-4">Matching Behavior</h4>
-                      <div class="flex gap-4 mb-4">
-                        <div class="flex-1">
-                          <label class="block mb-2 text-base font-medium text-text-primary">Match Type</label>
-                          <select id="wikiMatchType" class="input">
+                    <div class="wiki-rules-section">
+                      <h4>Matching Behavior</h4>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Match Type</label>
+                          <select id="wikiMatchType">
                             <option value="exact">Exact match</option>
                             <option value="case-insensitive">Case-insensitive</option>
                             <option value="starts-with">Starts with</option>
                           </select>
                         </div>
-                        <div class="flex-1">
-                          <label class="block mb-2 text-base font-medium text-text-primary">Frequency</label>
-                          <select id="wikiFrequency" class="input">
+                        <div class="form-group flex-1">
+                          <label>Frequency</label>
+                          <select id="wikiFrequency">
                             <option value="once">Once per page</option>
                             <option value="all">Every occurrence</option>
                           </select>
                         </div>
                       </div>
-                      <div class="flex gap-4">
-                        <div class="flex-1">
-                          <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="wikiIncludeAliases" checked class="w-4 h-4 accent-primary">
-                            <span class="text-sm">Also match aliases</span>
+
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="wikiIncludeAliases" checked>
+                            <span>Also match aliases</span>
                           </label>
                         </div>
-                        <div class="flex-1">
-                          <label class="block mb-2 text-base font-medium text-text-primary">Priority</label>
-                          <input type="number" id="wikiPriority" min="0" max="100" value="50" class="input">
-                          <span class="block mt-2 text-sm text-text-muted">Higher priority entries match first (0-100)</span>
+                        <div class="form-group flex-1">
+                          <label>Priority</label>
+                          <input type="number" id="wikiPriority" min="0" max="100" value="50" placeholder="0-100">
+                          <span class="form-hint">Higher priority entries match first (0-100)</span>
                         </div>
                       </div>
                     </div>
 
                     <!-- Visibility Conditions -->
-                    <div class="pb-5 border-b border-border">
-                      <h4 class="text-md font-semibold text-text-primary mb-4">Visibility Conditions</h4>
-                      <div class="mb-4">
-                        <label class="block mb-2 text-base font-medium text-text-primary">Page Type</label>
-                        <select id="wikiPageType" class="input">
+                    <div class="wiki-rules-section">
+                      <h4>Visibility Conditions</h4>
+
+                      <div class="form-group">
+                        <label>Page Type</label>
+                        <select id="wikiPageType">
                           <option value="any">Any page</option>
                           <option value="record">Record detail pages</option>
                           <option value="index">Index/list pages</option>
                           <option value="pipeline">Pipeline board</option>
                         </select>
                       </div>
-                      <div>
-                        <label class="block mb-2 text-base font-medium text-text-primary">URL Patterns</label>
-                        <textarea id="wikiUrlPatterns" rows="3" class="input resize-y" placeholder="/contacts/*&#10;/deals/*&#10;/companies/*/"></textarea>
-                        <span class="block mt-2 text-sm text-text-muted">One pattern per line. Use * as wildcard. Leave empty to match all URLs.</span>
+
+                      <div class="form-group">
+                        <label>URL Patterns</label>
+                        <textarea id="wikiUrlPatterns" rows="3" placeholder="/contacts/*&#10;/deals/*&#10;/companies/*/"></textarea>
+                        <span class="form-hint">One pattern per line. Use * as wildcard. Leave empty to match all URLs.</span>
                       </div>
                     </div>
                   </div>
                 </section>
 
                 <!-- Usage Tab -->
-                <section id="tab-usage" role="tabpanel" class="flex-1 p-5 flex flex-col hidden">
-                  <div class="flex flex-col items-center justify-center text-center p-12 text-text-muted flex-1" id="wikiUsageEmpty">
-                    <span class="icon icon-chart w-16 h-16 mb-4 opacity-40"></span>
-                    <h3 class="text-lg font-semibold text-text-secondary mb-2">Select a term to view usage</h3>
-                    <p class="text-sm">Choose an entry from the left to see its metadata and statistics</p>
+                <section id="tab-usage" role="tabpanel" class="wiki-tab-panel" hidden>
+                  <div class="wiki-card-empty-state" id="wikiUsageEmpty">
+                    <span class="icon icon-chart icon--2xl"></span>
+                    <h3>Select a term to view usage</h3>
+                    <p>Choose an entry from the left to see its metadata and statistics</p>
                   </div>
 
-                  <div class="hidden flex-col gap-6" id="wikiUsageContent">
-                    <div>
-                      <h4 class="text-md font-semibold text-text-primary mb-4">Entry Information</h4>
-                      <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-bg-subtle p-4 rounded-md border border-border">
-                          <span class="block text-xs text-text-muted uppercase tracking-wide mb-1">Created</span>
-                          <span class="block text-lg font-semibold text-text-primary" id="wikiCreatedAt">-</span>
+                  <div class="wiki-usage-content" id="wikiUsageContent" style="display: none;">
+                    <div class="wiki-usage-section">
+                      <h4>Entry Information</h4>
+                      <div class="wiki-usage-stats">
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Created</span>
+                          <span class="wiki-usage-stat-value" id="wikiCreatedAt">-</span>
                         </div>
-                        <div class="bg-bg-subtle p-4 rounded-md border border-border">
-                          <span class="block text-xs text-text-muted uppercase tracking-wide mb-1">Last Updated</span>
-                          <span class="block text-lg font-semibold text-text-primary" id="wikiUpdatedAt">-</span>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Last Updated</span>
+                          <span class="wiki-usage-stat-value" id="wikiUpdatedAt">-</span>
                         </div>
-                        <div class="bg-bg-subtle p-4 rounded-md border border-border">
-                          <span class="block text-xs text-text-muted uppercase tracking-wide mb-1">Aliases</span>
-                          <span class="block text-lg font-semibold text-text-primary" id="wikiAliasesCount">0</span>
+                        <div class="wiki-usage-stat">
+                          <span class="wiki-usage-stat-label">Aliases</span>
+                          <span class="wiki-usage-stat-value" id="wikiAliasesCount">0</span>
                         </div>
                       </div>
                     </div>
 
-                    <div class="text-center p-8 bg-bg-subtle rounded-lg border border-dashed border-border">
-                      <span class="icon icon-trending-up w-12 h-12 text-text-muted opacity-50 mb-3"></span>
-                      <h4 class="text-md font-semibold text-text-secondary mb-2">Usage Analytics Coming Soon</h4>
-                      <p class="text-sm text-text-muted max-w-md mx-auto">In a future version, this tab will show tooltip usage statistics and recent activity.</p>
+                    <div class="wiki-usage-section wiki-usage-placeholder">
+                      <span class="icon icon-trending-up icon--xl"></span>
+                      <h4>Usage Analytics Coming Soon</h4>
+                      <p>In a future version, this tab will show tooltip usage statistics and recent activity, including how often this term is displayed and clicked.</p>
                     </div>
                   </div>
                 </section>
 
                 <!-- Save Actions -->
-                <div class="hidden justify-end gap-3 p-4 border-t border-border bg-bg-subtle" id="wikiCardFooter">
-                  <button class="px-4 py-2 bg-surface border border-border-strong rounded-md text-text-secondary font-medium hover:bg-surface-hover transition-colors" id="cancelWikiBtn">Cancel</button>
-                  <button class="px-4 py-2 bg-primary rounded-md text-text-primary font-medium hover:bg-primary-dark transition-colors" id="saveWikiBtn">Save Entry</button>
+                <div class="wiki-card-footer" id="wikiCardFooter" style="display: none;">
+                  <button class="btn btn-secondary" id="cancelWikiBtn">Cancel</button>
+                  <button class="btn btn-primary" id="saveWikiBtn">Save Entry</button>
                 </div>
               </div>
             </div>
@@ -450,18 +440,18 @@
   </div>
 
   <!-- Import Fields Modal -->
-  <div class="fixed inset-0 bg-black/50 z-[1000] hidden items-center justify-center" id="importFieldsModal">
-    <div class="bg-surface rounded-lg w-full max-w-[700px] max-h-[90vh] flex flex-col shadow-xl">
-      <div class="flex items-center justify-between p-5 border-b border-border">
-        <h2 class="text-lg font-semibold">Import HubSpot Fields</h2>
-        <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-muted text-text-muted hover:text-text-primary transition-colors" id="closeImportFieldsModal">
-          <span class="icon icon-x w-5 h-5"></span>
+  <div class="modal" id="importFieldsModal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2>Import HubSpot Fields</h2>
+        <button class="modal-close" id="closeImportFieldsModal">
+          <span class="icon icon-x"></span>
         </button>
       </div>
-      <div class="p-5 overflow-y-auto flex-1">
-        <div class="mb-4">
-          <label class="block mb-2 text-base font-medium text-text-primary">Object Type</label>
-          <select id="importObjectType" class="input w-full">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Object Type</label>
+          <select id="importObjectType" class="full-width">
             <option value="">Select object type...</option>
             <option value="contacts">Contacts</option>
             <option value="companies">Companies</option>
@@ -469,31 +459,31 @@
             <option value="tickets">Tickets</option>
           </select>
         </div>
-        <div id="fieldsLoadingStatus" class="text-sm"></div>
-        <div class="hidden mt-4" id="fieldsList">
-          <div class="flex items-center justify-between p-3 bg-bg-muted rounded-t-md border border-border border-b-0">
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
-              <input type="checkbox" id="selectAllFields" class="w-4 h-4 accent-primary">
+        <div id="fieldsLoadingStatus" class="status-text"></div>
+        <div class="fields-list" id="fieldsList" style="display: none;">
+          <div class="fields-list-header">
+            <label class="checkbox-label">
+              <input type="checkbox" id="selectAllFields">
               <span>Select All</span>
             </label>
-            <input type="text" id="fieldsSearch" placeholder="Search fields..." class="input w-48 py-1 px-2 text-sm">
+            <input type="text" id="fieldsSearch" placeholder="Search fields..." class="fields-search">
           </div>
-          <div class="max-h-[300px] overflow-y-auto border border-border rounded-b-md" id="fieldsListItems">
-            <!-- Fields populated by JS -->
+          <div class="fields-tree" id="fieldsListItems">
+            <!-- Fields populated by JS in tree structure -->
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-between gap-4 p-5 border-t border-border">
-        <label class="hidden items-center gap-2 text-sm text-text-secondary cursor-pointer" id="fieldsImportOptions">
-          <input type="checkbox" id="importDropdownValues" class="w-4 h-4 accent-primary">
+      <div class="modal-footer modal-footer-import">
+        <label class="checkbox-label fields-import-option" id="fieldsImportOptions" style="display: none;">
+          <input type="checkbox" id="importDropdownValues">
           <span>Import dropdown values as nested entries</span>
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-bg-muted text-text-muted text-xs cursor-help" title="For dropdown/enumeration fields, each option value will be created as a child entry under the property">
-            <span class="icon icon-info w-3 h-3"></span>
+          <span class="help-icon" data-tooltip="For dropdown/enumeration fields, each option value will be created as a child entry under the property" data-tooltip-position="top">
+            <span class="icon icon-info icon--sm"></span>
           </span>
         </label>
-        <div class="flex gap-2 ml-auto">
-          <button class="px-4 py-2 bg-surface border border-border-strong rounded-md text-text-secondary font-medium hover:bg-surface-hover transition-colors" id="cancelImportFieldsBtn">Cancel</button>
-          <button class="px-4 py-2 bg-primary rounded-md text-text-primary font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="confirmImportFieldsBtn" disabled>Import Selected</button>
+        <div class="modal-footer-buttons">
+          <button class="btn btn-secondary" id="cancelImportFieldsBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmImportFieldsBtn" disabled>Import Selected</button>
         </div>
       </div>
     </div>
