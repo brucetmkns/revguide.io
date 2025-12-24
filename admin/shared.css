@@ -2513,6 +2513,10 @@
   gap: var(--space-3);
 }
 
+.condition-group-header-left .logic-toggle {
+  margin: 0;
+}
+
 .condition-group-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
