@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { minify } = require('terser');
 const CleanCSS = require('clean-css');
 
@@ -55,7 +56,11 @@ const EXCLUDE = [
   'README.md',
   'ROADMAP.md',
   'HUBSPOT_DOM_STRUCTURE.md',
-  'INSTALL.md'
+  'INSTALL.md',
+  // Tailwind source (output file is included)
+  'tailwind.css',
+  'tailwind.config.js',
+  'postcss.config.js'
 ];
 
 // Files to copy without processing (already minified or binary)
@@ -108,6 +113,34 @@ const stats = {
   css: { original: 0, minified: 0, files: 0 },
   other: { files: 0 }
 };
+
+/**
+ * Build Tailwind CSS
+ */
+function buildTailwind() {
+  const inputFile = path.join(ROOT, 'styles', 'tailwind.css');
+  const outputFile = path.join(ROOT, 'styles', 'tailwind-output.css');
+
+  if (!fs.existsSync(inputFile)) {
+    console.log('   Skipping Tailwind (no tailwind.css found)');
+    return;
+  }
+
+  console.log('   Building Tailwind CSS...');
+
+  try {
+    const minifyFlag = isDev ? '' : '--minify';
+    const tailwindBin = path.join(ROOT, 'node_modules', '.bin', 'tailwindcss');
+    execSync(`"${tailwindBin}" -i "${inputFile}" -o "${outputFile}" ${minifyFlag}`, {
+      cwd: ROOT,
+      stdio: 'pipe'
+    });
+    console.log('   Tailwind CSS built successfully');
+  } catch (err) {
+    console.error('   Error building Tailwind CSS:', err.message);
+    throw err;
+  }
+}
 
 /**
  * Check if a path should be excluded
@@ -253,6 +286,9 @@ async function build() {
   console.log(`\n🔧 RevGuide Extension Build`);
   console.log(`   Mode: ${isDev ? 'Development (no minification)' : 'Production (minified)'}`);
   console.log(`   Environment: ${targetEnv}\n`);
+
+  // Build Tailwind CSS first
+  buildTailwind();
 
   // Clean dist directory
   if (fs.existsSync(DIST)) {

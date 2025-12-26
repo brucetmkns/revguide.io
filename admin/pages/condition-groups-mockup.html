@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Condition Groups UI Mockup - RevGuide</title>
+  <link rel="stylesheet" href="../../styles/base.css">
+  <link rel="stylesheet" href="../../styles/icons.css">
+  <link rel="stylesheet" href="../../styles/tailwind-output.css">
+  <style>
+    /* Mockup-specific styles */
+    .mockup-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+
+    .mockup-title {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .mockup-description {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-tertiary);
+      margin-bottom: var(--space-5);
+    }
+
+    /* Logic connector badge */
+    .logic-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2) 0;
+    }
+
+    .logic-connector-badge {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Toggle button group */
+    .logic-toggle {
+      display: inline-flex;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      padding: 2px;
+    }
+
+    .logic-toggle-btn {
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      border-radius: calc(var(--radius-md) - 2px);
+      color: var(--color-text-tertiary);
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .logic-toggle-btn:hover {
+      color: var(--color-text-secondary);
+    }
+
+    .logic-toggle-btn.active {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Group-level logic toggle (between groups) - more prominent */
+    .group-logic-toggle {
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-primary);
+    }
+
+    .group-logic-toggle .logic-toggle-btn.active {
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+
+    /* Condition row */
+    .condition-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2);
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+    }
+
+    .condition-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .condition-select {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      min-width: 140px;
+    }
+
+    .condition-input {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .condition-delete {
+      padding: var(--space-2);
+      color: var(--color-text-muted);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .condition-delete:hover {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+    }
+
+    /* Add buttons */
+    .add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-tertiary);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      background: transparent;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .add-btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary-dark);
+      background: var(--color-primary-subtle);
+    }
+
+    .add-btn-primary {
+      border-style: solid;
+      border-color: var(--color-primary);
+      color: var(--color-primary-dark);
+      background: var(--color-primary-subtle);
+    }
+
+    .add-btn-primary:hover {
+      background: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+
+    /* Group card (Option 1) */
+    .group-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface);
+      overflow: hidden;
+    }
+
+    .group-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-bg-subtle);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .group-card-body {
+      padding: var(--space-4);
+    }
+
+    .group-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+    }
+
+    .group-delete {
+      padding: var(--space-1);
+      color: var(--color-text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .group-delete:hover {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+    }
+
+    /* Pill style (Option 2) */
+    .pill-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+    }
+
+    .condition-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+    }
+
+    .pill-property {
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+    }
+
+    .pill-operator {
+      color: var(--color-text-tertiary);
+    }
+
+    .pill-value {
+      color: var(--color-primary-dark);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .pill-delete {
+      margin-left: var(--space-1);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+
+    .pill-delete:hover {
+      color: var(--color-danger);
+    }
+
+    .pill-logic {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+    }
+
+    .pill-add {
+      padding: var(--space-2);
+      color: var(--color-text-muted);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .pill-add:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary-dark);
+      background: var(--color-primary-subtle);
+    }
+
+    /* Tree style (Option 3) */
+    .tree-container {
+      font-family: var(--font-family-mono);
+      font-size: var(--font-size-sm);
+    }
+
+    .tree-node {
+      position: relative;
+      padding-left: var(--space-6);
+    }
+
+    .tree-node::before {
+      content: '';
+      position: absolute;
+      left: var(--space-2);
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--color-border);
+    }
+
+    .tree-node::after {
+      content: '';
+      position: absolute;
+      left: var(--space-2);
+      top: 50%;
+      width: var(--space-3);
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .tree-node:last-child::before {
+      bottom: 50%;
+    }
+
+    .tree-root {
+      padding-left: 0;
+    }
+
+    .tree-root::before,
+    .tree-root::after {
+      display: none;
+    }
+
+    .tree-logic {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-bg-muted);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-2);
+      font-family: var(--font-family-sans);
+    }
+
+    .tree-logic-label {
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+    }
+
+    .tree-condition {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-2);
+      font-family: var(--font-family-sans);
+    }
+
+    .tree-condition:last-child {
+      margin-bottom: 0;
+    }
+
+    .tree-field {
+      color: var(--color-info);
+    }
+
+    .tree-op {
+      color: var(--color-text-muted);
+    }
+
+    .tree-val {
+      color: var(--color-success);
+    }
+
+    /* Pros/Cons list */
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .pros h4, .cons h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-2);
+    }
+
+    .pros h4 {
+      color: var(--color-success);
+    }
+
+    .cons h4 {
+      color: var(--color-danger);
+    }
+
+    .pros ul, .cons ul {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .pros li, .cons li {
+      margin-bottom: var(--space-1);
+      padding-left: var(--space-4);
+      position: relative;
+    }
+
+    .pros li::before {
+      content: '+';
+      position: absolute;
+      left: 0;
+      color: var(--color-success);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .cons li::before {
+      content: '-';
+      position: absolute;
+      left: 0;
+      color: var(--color-danger);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    /* Page header */
+    .page-header {
+      margin-bottom: var(--space-8);
+    }
+
+    .page-title {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .page-subtitle {
+      font-size: var(--font-size-base);
+      color: var(--color-text-tertiary);
+      max-width: 600px;
+    }
+
+    /* Recommendation badge */
+    .recommended {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-dark);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      border-radius: var(--radius-full);
+      margin-left: var(--space-3);
+    }
+
+    /* Data structure preview */
+    .data-preview {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      font-family: var(--font-family-mono);
+      font-size: var(--font-size-sm);
+      overflow-x: auto;
+      margin-top: var(--space-4);
+    }
+
+    .data-preview .key {
+      color: #9cdcfe;
+    }
+
+    .data-preview .string {
+      color: #ce9178;
+    }
+
+    .data-preview .comment {
+      color: #6a9955;
+    }
+  </style>
+</head>
+<body style="padding: var(--space-8); max-width: 1000px; margin: 0 auto;">
+
+  <div class="page-header">
+    <h1 class="page-title">Condition Groups UI Mockup</h1>
+    <p class="page-subtitle">
+      Three different approaches for building grouped/nested conditions with AND/OR logic.
+      Each shows the same example rule for comparison.
+    </p>
+  </div>
+
+  <!-- Example Rule Description -->
+  <div style="background: var(--color-info-bg); border: 1px solid var(--color-info); border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-8);">
+    <h3 style="font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-info); margin-bottom: var(--space-2);">Example Rule Being Displayed</h3>
+    <code style="font-size: var(--font-size-sm); color: var(--color-text-secondary); background: none; padding: 0;">
+      (dealstage = "closedwon" <strong>OR</strong> dealstage = "negotiation") <strong>AND</strong> (amount > 10000 <strong>AND</strong> owner = "John Smith")
+    </code>
+  </div>
+
+  <!-- Option 1: Vertical Groups -->
+  <div class="mockup-section">
+    <div style="display: flex; align-items: center;">
+      <h2 class="mockup-title">Option 1: Vertical Groups</h2>
+      <span class="recommended">Recommended</span>
+    </div>
+    <p class="mockup-description">
+      Stacked cards for each group with visual AND connectors between them. Clear hierarchy, easy to scan.
+    </p>
+
+    <div style="max-width: 600px;">
+      <!-- Group 1 -->
+      <div class="group-card">
+        <div class="group-card-header">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <span class="group-label">Group 1</span>
+            <div class="logic-toggle">
+              <button class="logic-toggle-btn">AND</button>
+              <button class="logic-toggle-btn active">OR</button>
+            </div>
+          </div>
+          <button class="group-delete" title="Delete group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="group-card-body">
+          <div class="condition-row">
+            <select class="condition-select">
+              <option selected>dealstage</option>
+            </select>
+            <select class="condition-select" style="min-width: 100px;">
+              <option selected>equals</option>
+            </select>
+            <input type="text" class="condition-input" value="closedwon">
+            <button class="condition-delete" title="Delete condition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="condition-row">
+            <select class="condition-select">
+              <option selected>dealstage</option>
+            </select>
+            <select class="condition-select" style="min-width: 100px;">
+              <option selected>equals</option>
+            </select>
+            <input type="text" class="condition-input" value="negotiation">
+            <button class="condition-delete" title="Delete condition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <button class="add-btn" style="margin-top: var(--space-3);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add condition
+          </button>
+        </div>
+      </div>
+
+      <!-- Group Logic Connector (clickable) -->
+      <div class="logic-connector">
+        <div class="logic-toggle group-logic-toggle">
+          <button class="logic-toggle-btn active">AND</button>
+          <button class="logic-toggle-btn">OR</button>
+        </div>
+      </div>
+
+      <!-- Group 2 -->
+      <div class="group-card">
+        <div class="group-card-header">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <span class="group-label">Group 2</span>
+            <div class="logic-toggle">
+              <button class="logic-toggle-btn active">AND</button>
+              <button class="logic-toggle-btn">OR</button>
+            </div>
+          </div>
+          <button class="group-delete" title="Delete group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="group-card-body">
+          <div class="condition-row">
+            <select class="condition-select">
+              <option selected>amount</option>
+            </select>
+            <select class="condition-select" style="min-width: 100px;">
+              <option selected>greater than</option>
+            </select>
+            <input type="text" class="condition-input" value="10000">
+            <button class="condition-delete" title="Delete condition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="condition-row">
+            <select class="condition-select">
+              <option selected>owner</option>
+            </select>
+            <select class="condition-select" style="min-width: 100px;">
+              <option selected>equals</option>
+            </select>
+            <input type="text" class="condition-input" value="John Smith">
+            <button class="condition-delete" title="Delete condition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <button class="add-btn" style="margin-top: var(--space-3);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add condition
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Group Button -->
+      <div style="margin-top: var(--space-4);">
+        <button class="add-btn add-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add condition group
+        </button>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Pros</h4>
+        <ul>
+          <li>Clear visual hierarchy</li>
+          <li>Easy to understand grouping</li>
+          <li>Familiar card-based UI pattern</li>
+          <li>Room for many conditions per group</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Cons</h4>
+        <ul>
+          <li>Takes more vertical space</li>
+          <li>May feel heavy for simple rules</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option 2: Inline Pills -->
+  <div class="mockup-section">
+    <h2 class="mockup-title">Option 2: Inline Pills</h2>
+    <p class="mockup-description">
+      Compact pill-based approach where conditions flow inline. Great for quick scanning and simpler rules.
+    </p>
+
+    <div style="max-width: 700px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);">
+        <!-- Group 1 -->
+        <div class="pill-group">
+          <div class="condition-pill">
+            <span class="pill-property">dealstage</span>
+            <span class="pill-operator">=</span>
+            <span class="pill-value">"closedwon"</span>
+            <span class="pill-delete">x</span>
+          </div>
+          <span class="pill-logic">or</span>
+          <div class="condition-pill">
+            <span class="pill-property">dealstage</span>
+            <span class="pill-operator">=</span>
+            <span class="pill-value">"negotiation"</span>
+            <span class="pill-delete">x</span>
+          </div>
+          <button class="pill-add" title="Add condition">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="logic-toggle group-logic-toggle">
+          <button class="logic-toggle-btn active">AND</button>
+          <button class="logic-toggle-btn">OR</button>
+        </div>
+
+        <!-- Group 2 -->
+        <div class="pill-group">
+          <div class="condition-pill">
+            <span class="pill-property">amount</span>
+            <span class="pill-operator">></span>
+            <span class="pill-value">10000</span>
+            <span class="pill-delete">x</span>
+          </div>
+          <span class="pill-logic">and</span>
+          <div class="condition-pill">
+            <span class="pill-property">owner</span>
+            <span class="pill-operator">=</span>
+            <span class="pill-value">"John Smith"</span>
+            <span class="pill-delete">x</span>
+          </div>
+          <button class="pill-add" title="Add condition">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </button>
+        </div>
+
+        <button class="add-btn" style="height: fit-content;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add group
+        </button>
+      </div>
+
+      <!-- Editing state example -->
+      <div style="margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px dashed var(--color-border);">
+        <p style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: var(--space-3);">Click a pill to edit (example expanded state):</p>
+        <div class="pill-group" style="background: var(--color-surface); border-color: var(--color-primary);">
+          <select class="condition-select" style="font-size: var(--font-size-xs);">
+            <option selected>dealstage</option>
+          </select>
+          <select class="condition-select" style="min-width: 80px; font-size: var(--font-size-xs);">
+            <option selected>equals</option>
+          </select>
+          <input type="text" class="condition-input" value="closedwon" style="font-size: var(--font-size-xs); min-width: 100px;">
+          <button style="padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); background: var(--color-primary); color: var(--color-text-primary); border-radius: var(--radius-sm);">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Pros</h4>
+        <ul>
+          <li>Very compact, minimal space</li>
+          <li>Quick to scan for simple rules</li>
+          <li>Feels lightweight</li>
+          <li>Good for inline display in lists</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Cons</h4>
+        <ul>
+          <li>Harder to edit (requires expand/collapse)</li>
+          <li>Gets messy with many conditions</li>
+          <li>Long values truncate or wrap awkwardly</li>
+          <li>Group logic toggle less visible</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option 3: Indented Tree -->
+  <div class="mockup-section">
+    <h2 class="mockup-title">Option 3: Indented Tree</h2>
+    <p class="mockup-description">
+      Traditional query builder style with indentation showing hierarchy. Familiar to power users.
+    </p>
+
+    <div class="tree-container" style="max-width: 500px;">
+      <!-- Root AND -->
+      <div class="tree-root">
+        <div class="tree-logic">
+          <span class="tree-logic-label">Match ALL of:</span>
+          <div class="logic-toggle" style="margin-left: auto;">
+            <button class="logic-toggle-btn active" style="font-size: 10px; padding: 2px 8px;">ALL</button>
+            <button class="logic-toggle-btn" style="font-size: 10px; padding: 2px 8px;">ANY</button>
+          </div>
+          <button class="group-delete" style="margin-left: var(--space-2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Group 1 (OR) -->
+        <div class="tree-node">
+          <div class="tree-logic">
+            <span class="tree-logic-label">Match ANY of:</span>
+            <div class="logic-toggle" style="margin-left: auto;">
+              <button class="logic-toggle-btn" style="font-size: 10px; padding: 2px 8px;">ALL</button>
+              <button class="logic-toggle-btn active" style="font-size: 10px; padding: 2px 8px;">ANY</button>
+            </div>
+            <button class="group-delete" style="margin-left: var(--space-2);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="tree-node">
+            <div class="tree-condition">
+              <span class="tree-field">dealstage</span>
+              <span class="tree-op">=</span>
+              <span class="tree-val">"closedwon"</span>
+              <button class="condition-delete" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-condition">
+              <span class="tree-field">dealstage</span>
+              <span class="tree-op">=</span>
+              <span class="tree-val">"negotiation"</span>
+              <button class="condition-delete" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="tree-node">
+            <button class="add-btn" style="font-size: var(--font-size-xs);">+ Add condition</button>
+          </div>
+        </div>
+
+        <!-- Group 2 (AND) -->
+        <div class="tree-node">
+          <div class="tree-logic">
+            <span class="tree-logic-label">Match ALL of:</span>
+            <div class="logic-toggle" style="margin-left: auto;">
+              <button class="logic-toggle-btn active" style="font-size: 10px; padding: 2px 8px;">ALL</button>
+              <button class="logic-toggle-btn" style="font-size: 10px; padding: 2px 8px;">ANY</button>
+            </div>
+            <button class="group-delete" style="margin-left: var(--space-2);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="tree-node">
+            <div class="tree-condition">
+              <span class="tree-field">amount</span>
+              <span class="tree-op">></span>
+              <span class="tree-val">10000</span>
+              <button class="condition-delete" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-condition">
+              <span class="tree-field">owner</span>
+              <span class="tree-op">=</span>
+              <span class="tree-val">"John Smith"</span>
+              <button class="condition-delete" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="tree-node">
+            <button class="add-btn" style="font-size: var(--font-size-xs);">+ Add condition</button>
+          </div>
+        </div>
+
+        <div class="tree-node">
+          <button class="add-btn add-btn-primary" style="font-size: var(--font-size-xs);">+ Add group</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Pros</h4>
+        <ul>
+          <li>Supports unlimited nesting depth</li>
+          <li>Familiar to developers/power users</li>
+          <li>Very explicit about hierarchy</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Cons</h4>
+        <ul>
+          <li>Can be confusing for non-technical users</li>
+          <li>Indentation gets awkward at depth 3+</li>
+          <li>More complex to implement</li>
+          <li>Overkill for 95% of use cases</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Structure -->
+  <div class="mockup-section">
+    <h2 class="mockup-title">Proposed Data Structure</h2>
+    <p class="mockup-description">
+      The underlying data model that would power any of these UI options.
+    </p>
+
+    <div class="data-preview">
+<pre><span class="comment">// Proposed grouped structure</span>
+{
+  <span class="key">"conditionGroups"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"group_1"</span>,
+      <span class="key">"logic"</span>: <span class="string">"OR"</span>,   <span class="comment">// conditions within this group</span>
+      <span class="key">"conditions"</span>: [
+        { <span class="key">"property"</span>: <span class="string">"dealstage"</span>, <span class="key">"operator"</span>: <span class="string">"equals"</span>, <span class="key">"value"</span>: <span class="string">"closedwon"</span> },
+        { <span class="key">"property"</span>: <span class="string">"dealstage"</span>, <span class="key">"operator"</span>: <span class="string">"equals"</span>, <span class="key">"value"</span>: <span class="string">"negotiation"</span> }
+      ]
+    },
+    {
+      <span class="key">"id"</span>: <span class="string">"group_2"</span>,
+      <span class="key">"logic"</span>: <span class="string">"AND"</span>,
+      <span class="key">"conditions"</span>: [
+        { <span class="key">"property"</span>: <span class="string">"amount"</span>, <span class="key">"operator"</span>: <span class="string">"greater_than"</span>, <span class="key">"value"</span>: <span class="string">"10000"</span> },
+        { <span class="key">"property"</span>: <span class="string">"owner"</span>, <span class="key">"operator"</span>: <span class="string">"equals"</span>, <span class="key">"value"</span>: <span class="string">"John Smith"</span> }
+      ]
+    }
+  ],
+  <span class="key">"groupLogic"</span>: <span class="string">"AND"</span>  <span class="comment">// user-selectable: AND or OR</span>
+}
+
+<span class="comment">// Backward compatible: migrate flat conditions to single group</span>
+<span class="comment">// Old: { conditions: [...], logic: "AND" }</span>
+<span class="comment">// New: { conditionGroups: [{ id: "default", logic: "AND", conditions: [...] }], groupLogic: "AND" }</span></pre>
+    </div>
+  </div>
+
+  <!-- Recommendation -->
+  <div style="background: var(--color-primary-subtle); border: 2px solid var(--color-primary); border-radius: var(--radius-lg); padding: var(--space-6);">
+    <h2 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-bottom: var(--space-3);">Recommendation</h2>
+    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-4);">
+      <strong>Go with Option 1 (Vertical Groups)</strong> for the main editing interface. It's the clearest for users to understand and build complex rules without making mistakes.
+    </p>
+    <p style="color: var(--color-text-secondary); margin-bottom: 0;">
+      Consider using <strong>Option 2 (Inline Pills)</strong> as a read-only summary view in list tables or compact previews.
+    </p>
+  </div>
+
+  <script>
+    // Simple toggle interaction for demo
+    document.querySelectorAll('.logic-toggle').forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        if (e.target.classList.contains('logic-toggle-btn')) {
+          toggle.querySelectorAll('.logic-toggle-btn').forEach(btn => btn.classList.remove('active'));
+          e.target.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

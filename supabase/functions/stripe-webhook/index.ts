@@ -194,48 +194,82 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
  */
 async function handleSubscriptionCreated(supabase: any, subscription: Stripe.Subscription) {
   console.log('Subscription created:', subscription.id)
+  console.log('Subscription metadata:', subscription.metadata)
 
   const customerId = subscription.customer as string
+  let orgId: string | null = null
 
-  // Find organization by Stripe customer ID
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('stripe_customer_id', customerId)
-    .single()
+  // First check subscription metadata for organization_id (most reliable)
+  if (subscription.metadata?.organization_id) {
+    orgId = subscription.metadata.organization_id
+    console.log('Found org ID in subscription metadata:', orgId)
+  } else {
+    // Fall back to finding by Stripe customer ID
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
+      .single()
 
-  if (!org) {
-    console.error('No organization found for customer:', customerId)
+    if (org) {
+      orgId = org.id
+      console.log('Found org ID by customer lookup:', orgId)
+    }
+  }
+
+  if (!orgId) {
+    console.error('No organization found for subscription:', subscription.id, 'customer:', customerId)
     return
   }
 
-  // Get plan type from price metadata
+  // Ensure the org has the stripe_customer_id set
+  await supabase
+    .from('organizations')
+    .update({ stripe_customer_id: customerId })
+    .eq('id', orgId)
+
+  // Get plan type from price or product metadata
   const priceId = subscription.items.data[0]?.price.id
   const price = await stripe.prices.retrieve(priceId, { expand: ['product'] })
-  const planType = (price.metadata?.plan_type as string) || 'starter'
+  const product = price.product as Stripe.Product
+
+  // Check price metadata first, then product metadata
+  const planType = (price.metadata?.plan_type as string)
+    || (product?.metadata?.plan_type as string)
+    || 'starter'
+
+  console.log('Price ID:', priceId)
+  console.log('Price metadata:', price.metadata)
+  console.log('Product metadata:', product?.metadata)
+  console.log('Resolved plan type:', planType)
 
   // In per-seat model, seat count is the subscription quantity
   // For partner plans, this may be 1 (flat fee)
   const seatCount = subscription.items.data[0]?.quantity || 1
 
+  // Get period dates - try subscription level first, fall back to item level
+  const subscriptionItem = subscription.items.data[0]
+  const periodStart = subscription.current_period_start || subscriptionItem?.current_period_start || subscription.start_date
+  const periodEnd = subscription.current_period_end || subscriptionItem?.current_period_end
+
   // Create subscription record
   const { error } = await supabase.rpc('upsert_subscription', {
-    p_org_id: org.id,
+    p_org_id: orgId,
     p_stripe_customer_id: customerId,
     p_stripe_subscription_id: subscription.id,
     p_stripe_price_id: priceId,
     p_plan_type: PLAN_TYPE_MAP[planType] || planType,
-    p_billing_interval: subscription.items.data[0]?.price.recurring?.interval || 'month',
+    p_billing_interval: subscriptionItem?.price.recurring?.interval || 'month',
     p_status: mapStripeStatus(subscription.status),
     p_seat_count: seatCount,
-    p_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-    p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    p_current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+    p_current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
   })
 
   if (error) {
     console.error('Failed to create subscription record:', error)
   } else {
-    console.log('Subscription record created for org:', org.id)
+    console.log('Subscription record created for org:', orgId)
   }
 }
 
@@ -244,48 +278,74 @@ async function handleSubscriptionCreated(supabase: any, subscription: Stripe.Sub
  */
 async function handleSubscriptionUpdated(supabase: any, subscription: Stripe.Subscription) {
   console.log('Subscription updated:', subscription.id)
+  console.log('Subscription metadata:', subscription.metadata)
 
   const customerId = subscription.customer as string
+  let orgId: string | null = null
 
-  // Find organization by Stripe customer ID
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('stripe_customer_id', customerId)
-    .single()
+  // First check subscription metadata for organization_id (most reliable)
+  if (subscription.metadata?.organization_id) {
+    orgId = subscription.metadata.organization_id
+  } else {
+    // Fall back to finding by Stripe customer ID
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
+      .single()
 
-  if (!org) {
-    console.error('No organization found for customer:', customerId)
+    if (org) {
+      orgId = org.id
+    }
+  }
+
+  if (!orgId) {
+    console.error('No organization found for subscription update:', subscription.id, 'customer:', customerId)
     return
   }
 
-  // Get plan type from price metadata
+  // Get plan type from price or product metadata
   const priceId = subscription.items.data[0]?.price.id
   const price = await stripe.prices.retrieve(priceId, { expand: ['product'] })
-  const planType = (price.metadata?.plan_type as string) || 'starter'
+  const product = price.product as Stripe.Product
+
+  // Check price metadata first, then product metadata
+  const planType = (price.metadata?.plan_type as string)
+    || (product?.metadata?.plan_type as string)
+    || 'starter'
+
+  console.log('Update - Price ID:', priceId)
+  console.log('Update - Price metadata:', price.metadata)
+  console.log('Update - Product metadata:', product?.metadata)
+  console.log('Update - Resolved plan type:', planType)
 
   // In per-seat model, seat count is the subscription quantity
   // For partner plans, this may be 1 (flat fee)
   const seatCount = subscription.items.data[0]?.quantity || 1
 
+  // Get period dates - try subscription level first, fall back to item level
+  const subscriptionItem = subscription.items.data[0]
+  const periodStart = subscription.current_period_start || subscriptionItem?.current_period_start || subscription.start_date
+  const periodEnd = subscription.current_period_end || subscriptionItem?.current_period_end
+
   // Update subscription record
   const { error } = await supabase.rpc('upsert_subscription', {
-    p_org_id: org.id,
+    p_org_id: orgId,
     p_stripe_customer_id: customerId,
     p_stripe_subscription_id: subscription.id,
     p_stripe_price_id: priceId,
     p_plan_type: PLAN_TYPE_MAP[planType] || planType,
-    p_billing_interval: subscription.items.data[0]?.price.recurring?.interval || 'month',
+    p_billing_interval: subscriptionItem?.price.recurring?.interval || 'month',
     p_status: mapStripeStatus(subscription.status),
     p_seat_count: seatCount,
-    p_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-    p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    p_current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+    p_current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
   })
 
   if (error) {
     console.error('Failed to update subscription record:', error)
   } else {
-    console.log('Subscription record updated for org:', org.id)
+    console.log('Subscription record updated for org:', orgId)
   }
 }
 

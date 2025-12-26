@@ -1,0 +1,216 @@
+<!--
+  REVGUIDE FRAMER EMBEDS - BASE STYLES
+  ====================================
+  Add this to your Framer site's custom code (Settings > General > Custom Code > Head)
+  These are shared CSS variables and reset styles used by all sections.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Primary Brand */
+    --rg-accent: #b2ef63;
+    --rg-accent-dark: #9ed655;
+    --rg-accent-light: #c8f58e;
+    --rg-accent-glow: rgba(178, 239, 99, 0.4);
+    --rg-accent-subtle: rgba(178, 239, 99, 0.08);
+
+    /* Dark Theme */
+    --rg-bg-dark: #0a0f05;
+    --rg-bg-dark-elevated: #111a09;
+    --rg-bg-dark-card: #151f0c;
+
+    /* Light Theme */
+    --rg-bg-light: #fafbf8;
+    --rg-bg-surface: #ffffff;
+    --rg-bg-muted: #f4f6f1;
+
+    /* Text */
+    --rg-text-primary: #111111;
+    --rg-text-secondary: #4a4a4a;
+    --rg-text-muted: #7a7a7a;
+    --rg-text-inverse: #ffffff;
+    --rg-text-inverse-muted: rgba(255, 255, 255, 0.7);
+
+    /* Borders */
+    --rg-border-light: rgba(0, 0, 0, 0.08);
+    --rg-border-dark: rgba(255, 255, 255, 0.1);
+
+    /* Semantic */
+    --rg-warning: #f59e0b;
+    --rg-warning-bg: #fef3c7;
+    --rg-info: #3b82f6;
+    --rg-info-bg: #dbeafe;
+    --rg-success: #22c55e;
+    --rg-danger: #ef4444;
+
+    /* Typography */
+    --rg-font: "Manrope", system-ui, sans-serif;
+
+    /* Spacing */
+    --rg-space-1: 0.25rem;
+    --rg-space-2: 0.5rem;
+    --rg-space-3: 0.75rem;
+    --rg-space-4: 1rem;
+    --rg-space-5: 1.25rem;
+    --rg-space-6: 1.5rem;
+    --rg-space-8: 2rem;
+    --rg-space-10: 2.5rem;
+    --rg-space-12: 3rem;
+    --rg-space-16: 4rem;
+    --rg-space-24: 6rem;
+
+    /* Radius */
+    --rg-radius-sm: 6px;
+    --rg-radius-md: 10px;
+    --rg-radius-lg: 16px;
+    --rg-radius-xl: 24px;
+    --rg-radius-2xl: 32px;
+    --rg-radius-full: 9999px;
+
+    /* Shadows */
+    --rg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --rg-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --rg-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --rg-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --rg-shadow-glow: 0 0 60px var(--rg-accent-glow);
+
+    /* Transitions */
+    --rg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --rg-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --rg-duration-fast: 150ms;
+    --rg-duration-base: 250ms;
+  }
+
+  .rg-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--rg-space-6);
+    box-sizing: border-box;
+  }
+
+  .rg-container *, .rg-container *::before, .rg-container *::after {
+    box-sizing: border-box;
+  }
+
+  /* Buttons */
+  .rg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rg-space-2);
+    padding: var(--rg-space-3) var(--rg-space-5);
+    font-family: var(--rg-font);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--rg-radius-lg);
+    transition: all var(--rg-duration-fast) var(--rg-ease-out);
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+  }
+
+  .rg-btn-primary {
+    background: var(--rg-accent);
+    color: var(--rg-bg-dark);
+    border: 2px solid var(--rg-accent);
+  }
+
+  .rg-btn-primary:hover {
+    background: var(--rg-accent-dark);
+    border-color: var(--rg-accent-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--rg-accent-glow);
+  }
+
+  .rg-btn-outline {
+    background: transparent;
+    color: var(--rg-text-primary);
+    border: 2px solid var(--rg-border-light);
+  }
+
+  .rg-btn-outline:hover {
+    border-color: var(--rg-text-primary);
+    background: var(--rg-bg-muted);
+  }
+
+  .rg-btn-ghost {
+    background: transparent;
+    color: var(--rg-text-primary);
+    border: 2px solid transparent;
+  }
+
+  .rg-btn-ghost:hover {
+    background: var(--rg-bg-muted);
+  }
+
+  .rg-btn-lg {
+    padding: var(--rg-space-4) var(--rg-space-8);
+    font-size: 1rem;
+    border-radius: var(--rg-radius-xl);
+  }
+
+  .rg-btn-xl {
+    padding: var(--rg-space-5) var(--rg-space-10);
+    font-size: 1.1rem;
+    border-radius: var(--rg-radius-xl);
+  }
+
+  .rg-btn-block {
+    width: 100%;
+  }
+
+  .rg-btn-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Section Headers */
+  .rg-section-header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto var(--rg-space-16);
+  }
+
+  .rg-section-label {
+    display: inline-block;
+    padding: var(--rg-space-2) var(--rg-space-4);
+    background: var(--rg-accent-subtle);
+    color: var(--rg-accent-dark);
+    font-family: var(--rg-font);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: var(--rg-radius-full);
+    margin-bottom: var(--rg-space-4);
+  }
+
+  .rg-section-title {
+    font-family: var(--rg-font);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--rg-text-primary);
+    margin: 0 0 var(--rg-space-4);
+  }
+
+  .rg-text-accent {
+    color: var(--rg-accent-dark);
+  }
+
+  .rg-section-description {
+    font-family: var(--rg-font);
+    font-size: 1.1rem;
+    color: var(--rg-text-secondary);
+    line-height: 1.7;
+    margin: 0;
+  }
+</style>

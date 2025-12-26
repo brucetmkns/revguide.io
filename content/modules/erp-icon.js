@@ -170,36 +170,20 @@ class ErpIconModule {
    * @param {Object} context - { objectType, recordId }
    */
   renderOnRecordPage(properties, context) {
-    console.log('[RevGuide ERP] renderOnRecordPage called', {
-      isEnabled: this.isEnabled(),
-      objectType: context?.objectType,
-      propertyCount: Object.keys(properties || {}).length
-    });
     if (!this.isEnabled()) return;
     if (!context?.objectType) return;
 
     const mapping = this.getConfigForObjectType(context.objectType);
-    console.log('[RevGuide ERP] Mapping for', context.objectType, ':', mapping);
     if (!mapping) return;
 
     // Try primary field first, then fallback
-    console.log('[RevGuide ERP] Looking for field:', mapping.field, 'in properties:', Object.keys(properties || {}).slice(0, 20));
     let fieldValue = this.getPropertyValue(properties, mapping.field);
-    let usedFallback = false;
 
     if (!fieldValue && mapping.fallback_field) {
-      console.log('[RevGuide ERP] Primary empty, trying fallback:', mapping.fallback_field);
       fieldValue = this.getPropertyValue(properties, mapping.fallback_field);
-      usedFallback = true;
     }
 
-    console.log('[RevGuide ERP] Field value result:', fieldValue, usedFallback ? '(fallback)' : '(primary)');
-    if (!fieldValue) {
-      console.log('[RevGuide ERP] No value for field', mapping.field, 'or fallback on', context.objectType);
-      return;
-    }
-
-    console.log('[RevGuide ERP] Found ERP value:', fieldValue, 'for', context.objectType);
+    if (!fieldValue) return;
 
     // Find the record name element in the header
     const nameEl = this.findRecordNameElement();
@@ -223,7 +207,6 @@ class ErpIconModule {
     nameEl.appendChild(iconLink);
     this.injectedIcons.add(nameEl);
     this.recordPageIcon = iconLink;
-    console.log('[RevGuide ERP] Icon injected on record page');
   }
 
   /**
@@ -248,19 +231,12 @@ class ErpIconModule {
       '.main-content-wrapper h2'
     ];
 
-    console.log('[RevGuide ERP] Searching for record name element...');
     for (const selector of selectors) {
       const el = document.querySelector(selector);
-      console.log('[RevGuide ERP] Selector:', selector, '-> found:', !!el, el?.textContent?.substring(0, 30));
       if (el && el.textContent?.trim()) {
         return el;
       }
     }
-
-    console.log('[RevGuide ERP] No selector matched. Dumping page h1/h2 elements:');
-    document.querySelectorAll('h1, h2').forEach((el, i) => {
-      console.log(`[RevGuide ERP] h1/h2[${i}]:`, el.tagName, el.className, el.getAttribute('data-test-id'), el.textContent?.substring(0, 50));
-    });
 
     return null;
   }

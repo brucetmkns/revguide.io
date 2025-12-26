@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RevGuide",
-  "version": "2.14.0",
+  "version": "2.15.0",
   "description": "Surface plays, recommendations, and contextual help on HubSpot records based on property rules",
   "permissions": [
     "storage",

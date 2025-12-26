@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki - RevGuide (Tailwind Preview)</title>
+  <!-- Base styles for CSS variables and fonts -->
+  <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/icons.css">
+  <!-- Tailwind utilities -->
+  <link rel="stylesheet" href="/styles/tailwind-output.css">
+  <style>
+    /* Minimal custom styles for complex interactive states */
+    .wiki-node-term.is-selected { background: var(--color-primary); }
+    .wiki-node-term.is-selected .wiki-term-text { color: #1e293b; font-weight: 500; }
+    .wiki-node-term.is-selected .status-dot { border: 1px solid rgba(0,0,0,0.2); }
+    .wiki-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--color-primary);
+    }
+    .wiki-node.is-collapsed > .wiki-node-children { display: none; }
+    .wiki-node-toggle[aria-expanded="true"] { transform: rotate(90deg); }
+  </style>
+</head>
+<body class="bg-bg font-sans text-text-primary">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-56 bg-[#1e293b] text-white flex flex-col shrink-0">
+      <div class="flex items-center gap-3 px-6 py-5">
+        <span class="icon icon-target-white w-6 h-6 text-primary"></span>
+        <h1 class="text-lg font-bold">RevGuide</h1>
+      </div>
+      <nav class="flex-1 py-2">
+        <a href="#" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+          <span class="icon icon-home-white w-5 h-5"></span>
+          Home
+        </a>
+        <a href="#" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+          <span class="icon icon-clipboard-list-white w-5 h-5"></span>
+          Banners
+        </a>
+        <a href="#" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+          <span class="icon icon-layers-white w-5 h-5"></span>
+          Plays
+        </a>
+        <a href="#" class="flex items-center gap-3 px-6 py-3 bg-white/15 text-white border-l-[3px] border-primary pl-[21px]">
+          <span class="icon icon-book-white w-5 h-5"></span>
+          Wiki
+        </a>
+        <a href="#" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+          <span class="icon icon-download-white w-5 h-5"></span>
+          Libraries
+        </a>
+        <a href="#" class="flex items-center gap-3 px-6 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+          <span class="icon icon-settings-white w-5 h-5"></span>
+          Settings
+        </a>
+      </nav>
+      <div class="px-4 py-4 border-t border-white/10">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-primary text-text-primary flex items-center justify-center text-sm font-semibold">JD</span>
+          <span class="text-sm truncate flex-1">John Doe</span>
+          <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-white" title="Sign out">
+            <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 overflow-auto">
+      <section>
+        <!-- Page Header -->
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h2 class="text-2xl font-semibold text-text-primary">Wiki</h2>
+            <p class="text-text-tertiary mt-1">Create a knowledge base of terms and definitions for your team</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-border-strong rounded-md text-text-secondary font-medium hover:bg-surface-hover transition-colors">
+              <span class="icon icon-download w-4 h-4"></span> Import Fields
+            </button>
+            <button class="inline-flex items-center gap-2 px-4 py-2 bg-primary rounded-md text-text-primary font-medium hover:bg-primary-dark transition-colors">
+              <span class="icon icon-plus w-4 h-4"></span> Add Entry
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Pane Layout -->
+        <div class="flex gap-5 h-[calc(100vh-180px)] min-h-[600px]">
+          <!-- Left Navigation Pane -->
+          <aside class="w-[360px] min-w-[320px] max-w-[450px] bg-surface border border-border rounded-lg flex flex-col overflow-hidden">
+            <!-- Search & Filters -->
+            <div class="p-3 border-b border-border flex flex-col gap-2">
+              <input type="text" class="input w-full" placeholder="Search wiki entries...">
+              <div class="flex gap-2">
+                <select class="input flex-1 text-sm py-1 px-2">
+                  <option>All Objects</option>
+                </select>
+                <select class="input flex-1 text-sm py-1 px-2">
+                  <option>All Categories</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Navigation Tree -->
+            <div class="flex-1 overflow-y-auto p-2">
+              <ul class="list-none">
+
+                <!-- Contacts Object -->
+                <li class="wiki-node mb-3">
+                  <div class="flex items-center gap-2 px-3 py-2 bg-bg-muted rounded-md cursor-pointer hover:bg-bg-subtle">
+                    <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                      <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                    </button>
+                    <span class="flex-1 font-semibold text-text-primary">Contacts</span>
+                    <span class="text-xs text-text-muted bg-bg-subtle px-1.5 py-0.5 rounded-full">8</span>
+                  </div>
+                  <div class="wiki-node-children mt-2 ml-3 pl-3 border-l-2 border-border">
+
+                    <!-- Contact Information Group -->
+                    <div class="wiki-node mb-2">
+                      <div class="flex items-center gap-2 px-2 py-1 bg-bg-subtle rounded cursor-pointer hover:bg-bg-muted">
+                        <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                          <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                        </button>
+                        <span class="flex-1 text-sm font-semibold text-text-secondary uppercase tracking-wide">Contact Information</span>
+                        <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">3</span>
+                      </div>
+                      <div class="wiki-node-children ml-3 pl-3 border-l border-border mt-1">
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Email</span>
+                          <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded">field</span>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Phone Number</span>
+                          <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded">field</span>
+                        </div>
+                        <div class="wiki-node-term is-selected flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer">
+                          <span class="status-dot w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Lifecycle Stage</span>
+                          <span class="text-xs bg-black/20 px-1.5 py-0.5 rounded text-[#1e293b]">field</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Lead Scoring Group -->
+                    <div class="wiki-node mb-2">
+                      <div class="flex items-center gap-2 px-2 py-1 bg-bg-subtle rounded cursor-pointer hover:bg-bg-muted">
+                        <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                          <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                        </button>
+                        <span class="flex-1 text-sm font-semibold text-text-secondary uppercase tracking-wide">Lead Scoring</span>
+                        <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">2</span>
+                      </div>
+                      <div class="wiki-node-children ml-3 pl-3 border-l border-border mt-1">
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">HubSpot Score</span>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-text-muted shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate text-text-secondary">Lead Status</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </li>
+
+                <!-- Deals Object -->
+                <li class="wiki-node mb-3">
+                  <div class="flex items-center gap-2 px-3 py-2 bg-bg-muted rounded-md cursor-pointer hover:bg-bg-subtle">
+                    <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                      <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                    </button>
+                    <span class="flex-1 font-semibold text-text-primary">Deals</span>
+                    <span class="text-xs text-text-muted bg-bg-subtle px-1.5 py-0.5 rounded-full">5</span>
+                  </div>
+                  <div class="wiki-node-children mt-2 ml-3 pl-3 border-l-2 border-border">
+
+                    <!-- Deal Information Group -->
+                    <div class="wiki-node mb-2">
+                      <div class="flex items-center gap-2 px-2 py-1 bg-bg-subtle rounded cursor-pointer hover:bg-bg-muted">
+                        <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                          <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                        </button>
+                        <span class="flex-1 text-sm font-semibold text-text-secondary uppercase tracking-wide">Deal Information</span>
+                        <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">3</span>
+                      </div>
+                      <div class="wiki-node-children ml-3 pl-3 border-l border-border mt-1">
+                        <!-- Entry with children (dropdown values) -->
+                        <div class="wiki-node">
+                          <div class="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                            <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                              <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                            </button>
+                            <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                            <span class="wiki-term-text flex-1 text-sm truncate">Deal Stage</span>
+                            <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">6</span>
+                          </div>
+                          <div class="wiki-node-children ml-4 pl-3 border-l border-border mt-1">
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Appointment Scheduled</span>
+                            </div>
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Qualified to Buy</span>
+                            </div>
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Presentation Scheduled</span>
+                            </div>
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Decision Maker Bought-In</span>
+                            </div>
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Contract Sent</span>
+                            </div>
+                            <div class="wiki-node-term flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-bg-muted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                              <span class="wiki-term-text flex-1 text-sm truncate">Closed Won</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Amount</span>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Close Date</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </li>
+
+                <!-- Custom Terms -->
+                <li class="wiki-node mb-3">
+                  <div class="flex items-center gap-2 px-3 py-2 bg-bg-muted rounded-md cursor-pointer hover:bg-bg-subtle">
+                    <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                      <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                    </button>
+                    <span class="flex-1 font-semibold text-text-primary">Custom Terms</span>
+                    <span class="text-xs text-text-muted bg-bg-subtle px-1.5 py-0.5 rounded-full">4</span>
+                  </div>
+                  <div class="wiki-node-children mt-2 ml-3 pl-3 border-l-2 border-border">
+
+                    <!-- Sales Category -->
+                    <div class="wiki-node mb-2">
+                      <div class="flex items-center gap-2 px-2 py-1 bg-bg-subtle rounded cursor-pointer hover:bg-bg-muted">
+                        <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                          <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                        </button>
+                        <span class="flex-1 text-sm font-semibold text-text-secondary uppercase tracking-wide">Sales</span>
+                        <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">2</span>
+                      </div>
+                      <div class="wiki-node-children ml-3 pl-3 border-l border-border mt-1">
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">MQL</span>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">SQL</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Process Category -->
+                    <div class="wiki-node mb-2">
+                      <div class="flex items-center gap-2 px-2 py-1 bg-bg-subtle rounded cursor-pointer hover:bg-bg-muted">
+                        <button class="wiki-node-toggle w-5 h-5 flex items-center justify-center text-text-muted transition-transform" aria-expanded="true">
+                          <span class="icon icon-chevron-right w-3.5 h-3.5"></span>
+                        </button>
+                        <span class="flex-1 text-sm font-semibold text-text-secondary uppercase tracking-wide">Process</span>
+                        <span class="text-xs text-text-muted bg-bg-muted px-1.5 py-0.5 rounded-full">2</span>
+                      </div>
+                      <div class="wiki-node-children ml-3 pl-3 border-l border-border mt-1">
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-success shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate">Discovery Call</span>
+                        </div>
+                        <div class="wiki-node-term flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-bg-muted">
+                          <span class="w-2 h-2 rounded-full bg-text-muted shrink-0"></span>
+                          <span class="wiki-term-text flex-1 text-sm truncate text-text-secondary">BANT Framework</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </li>
+
+              </ul>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex gap-4 p-3 border-t border-border bg-bg-subtle text-xs text-text-secondary">
+              <span><strong class="text-text-primary font-semibold">17</strong> total</span>
+              <span><strong class="text-text-primary font-semibold">14</strong> enabled</span>
+              <span><strong class="text-text-primary font-semibold">8</strong> fields</span>
+            </div>
+          </aside>
+
+          <!-- Right Detail Pane -->
+          <section class="flex-1 min-w-0 flex flex-col">
+            <div class="bg-surface border border-border rounded-lg flex flex-col h-full overflow-hidden">
+              <!-- Card Header -->
+              <header class="flex justify-between items-start p-5 border-b border-border gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h2 class="text-xl font-semibold text-text-primary">Lifecycle Stage</h2>
+                    <button class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-success bg-success-bg text-sm font-medium text-success">
+                      <span class="w-2 h-2 rounded-full bg-success"></span>
+                      <span>Enabled</span>
+                    </button>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-info-bg text-info">Contacts</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#e0f2fe] text-[#0284c7]">HubSpot Field</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-bg-muted text-text-secondary">Contact Information</span>
+                  </div>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary rounded text-sm font-medium text-text-primary hover:bg-primary-dark transition-colors">
+                    <span class="icon icon-save w-4 h-4"></span> Save
+                  </button>
+                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface border border-border-strong rounded text-sm font-medium text-text-secondary hover:bg-surface-hover transition-colors">
+                    <span class="icon icon-copy w-4 h-4"></span> Duplicate
+                  </button>
+                  <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-danger-bg border border-danger rounded text-sm font-medium text-danger hover:bg-danger hover:text-white transition-colors">
+                    <span class="icon icon-trash w-4 h-4"></span> Delete
+                  </button>
+                </div>
+              </header>
+
+              <!-- Tabs -->
+              <nav class="flex gap-0 px-5 border-b border-border bg-bg-subtle" role="tablist">
+                <button class="wiki-tab active relative px-4 py-3 text-sm font-semibold text-text-primary cursor-pointer">Content</button>
+                <button class="wiki-tab relative px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary cursor-pointer">Rules</button>
+                <button class="wiki-tab relative px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary cursor-pointer">Usage</button>
+              </nav>
+
+              <!-- Tab Content -->
+              <div class="flex-1 overflow-y-auto p-5">
+                <div class="grid grid-cols-[1fr_280px] gap-6">
+                  <div class="flex flex-col gap-5">
+                    <!-- Title -->
+                    <div>
+                      <label class="block mb-2 text-base font-medium text-text-primary">Title <span class="text-danger">*</span></label>
+                      <input type="text" value="Lifecycle Stage" class="input">
+                      <span class="block mt-2 text-sm text-text-muted">The display name shown in the navigation tree and tooltip header</span>
+                    </div>
+
+                    <!-- Trigger -->
+                    <div>
+                      <label class="block mb-2 text-base font-medium text-text-primary">Trigger Text</label>
+                      <input type="text" value="lifecyclestage" class="input">
+                      <span class="block mt-2 text-sm text-text-muted">The text to match on HubSpot pages to show the tooltip</span>
+                    </div>
+
+                    <!-- Aliases -->
+                    <div>
+                      <label class="block mb-2 text-base font-medium text-text-primary">Aliases</label>
+                      <input type="text" value="lifecycle, lifecycle_stage" class="input">
+                      <span class="block mt-2 text-sm text-text-muted">Comma-separated additional trigger terms</span>
+                    </div>
+
+                    <!-- Definition -->
+                    <div>
+                      <label class="block mb-2 text-base font-medium text-text-primary">Definition <span class="text-danger">*</span></label>
+                      <div class="min-h-[120px] border border-border-strong rounded-md p-3 bg-surface">
+                        <p class="text-text-secondary">The <strong>Lifecycle Stage</strong> property tracks where a contact is in your marketing and sales process. Common stages include:</p>
+                        <ul class="list-disc pl-5 mt-2 text-text-secondary">
+                          <li><strong>Subscriber</strong> - Opted in to hear from you</li>
+                          <li><strong>Lead</strong> - Converted on your site</li>
+                          <li><strong>MQL</strong> - Marketing qualified lead</li>
+                          <li><strong>SQL</strong> - Sales qualified lead</li>
+                          <li><strong>Opportunity</strong> - Associated with a deal</li>
+                          <li><strong>Customer</strong> - Closed won deal</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <!-- Related Link -->
+                    <div>
+                      <label class="block mb-2 text-base font-medium text-text-primary">Related Link</label>
+                      <input type="url" value="https://knowledge.hubspot.com/contacts/use-lifecycle-stages" class="input">
+                      <span class="block mt-2 text-sm text-text-muted">Optional link to documentation</span>
+                    </div>
+                  </div>
+
+                  <!-- Preview -->
+                  <div class="sticky top-0">
+                    <h4 class="text-sm font-semibold text-text-secondary mb-3">Preview</h4>
+                    <div class="bg-bg-muted rounded-md p-3">
+                      <div class="text-xs text-text-muted px-3 py-2 bg-bg-subtle border-b border-border rounded-t-md">
+                        Trigger: <code class="bg-bg-muted px-1 py-0.5 rounded text-xs font-mono">lifecyclestage</code>
+                      </div>
+                      <div class="bg-surface rounded-b-md p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                          <span class="font-semibold text-text-primary">Lifecycle Stage</span>
+                          <span class="text-xs px-2 py-0.5 bg-[#e0f2fe] text-[#0284c7] rounded">HubSpot Field</span>
+                        </div>
+                        <p class="text-sm text-text-secondary leading-relaxed mb-2">The <strong>Lifecycle Stage</strong> property tracks where a contact is in your marketing and sales process.</p>
+                        <a href="#" class="text-sm text-info hover:underline">Learn more</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="flex justify-end gap-3 p-4 border-t border-border bg-bg-subtle">
+                <button class="px-4 py-2 bg-surface border border-border-strong rounded-md text-text-secondary font-medium hover:bg-surface-hover transition-colors">Cancel</button>
+                <button class="px-4 py-2 bg-primary rounded-md text-text-primary font-medium hover:bg-primary-dark transition-colors">Save Entry</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Simple toggle for demo
+    document.querySelectorAll('.wiki-node-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', !isExpanded);
+        const node = btn.closest('.wiki-node');
+        if (node) {
+          node.classList.toggle('is-collapsed', isExpanded);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

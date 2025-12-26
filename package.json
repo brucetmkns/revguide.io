@@ -13,9 +13,12 @@
     "lint": "eslint admin/**/*.js content/**/*.js background/**/*.js lib/**/*.js sidepanel/**/*.js"
   },
   "devDependencies": {
-    "terser": "^5.36.0",
+    "autoprefixer": "^10.4.23",
     "clean-css": "^5.3.3",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "terser": "^5.36.0"
   },
   "engines": {
     "node": ">=18.0.0"

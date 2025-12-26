@@ -64,6 +64,40 @@ element.style.strokeDashoffset = value;
 - Font: Manrope (via Google Fonts)
 - Primary color: `#b2ef63` (lime green)
 
+### Tailwind CSS (Preferred for New Work)
+
+**Use Tailwind utilities for all new UI work.** The project uses Tailwind CSS v3 with custom theme tokens matching the existing design system.
+
+**Include in HTML pages:**
+```html
+<link rel="stylesheet" href="/styles/base.css">
+<link rel="stylesheet" href="/styles/icons.css">
+<link rel="stylesheet" href="/styles/tailwind-output.css">
+```
+
+**Key files:**
+- `tailwind.config.js` - Theme config with RevGuide colors/spacing
+- `styles/tailwind.css` - Entry file with custom component classes
+- `styles/tailwind-output.css` - Generated output (gitignored)
+
+**Custom colors available:**
+- `bg-primary`, `text-primary`, `border-primary` (lime green)
+- `bg-surface`, `bg-bg`, `bg-bg-subtle`, `bg-bg-muted`
+- `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-text-muted`
+- `border-border`, `border-border-strong`, `border-border-subtle`
+- `bg-success`, `bg-danger`, `bg-warning`, `bg-info` (with `-bg` variants)
+
+**Custom component classes (in `styles/tailwind.css`):**
+- `.input` - Styled form input
+- `.btn-outline` - Outline button
+- `.card-tw`, `.card-tw-header`, `.card-tw-body` - Card components
+- `.badge-tw`, `.badge-tw-primary/success/warning/danger` - Badges
+- `.alert`, `.alert-info/success/warning/danger` - Alert boxes
+
+**Build command:** `npm run build` (processes Tailwind automatically)
+
+**Migration approach:** Keep existing component classes (`.btn`, `.card`, etc.) working alongside Tailwind. Migrate pages incrementally as they're touched.
+
 ## Common Gotchas
 
 1. **RLS + Joins**: PostgREST queries with joins can fail - use SECURITY DEFINER functions

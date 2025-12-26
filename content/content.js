@@ -64,6 +64,7 @@
       this.currentUrl = window.location.href;
       this.properties = {};
       this.context = {};
+      this.matchedOrgId = null; // Organization ID for OAuth API calls
 
       // Data from storage
       this.rules = [];
@@ -288,9 +289,10 @@
         })
       ]);
 
-      // Log portal matching result
+      // Log portal matching result and store org ID for OAuth API calls
       if (contentResult?.matchedOrg) {
         log('Content loaded for matched org:', contentResult.matchedOrg.name);
+        this.matchedOrgId = contentResult.matchedOrg.id;
       } else if (contentResult?.usingFallback) {
         log('No org matched portal, using default org');
       }
@@ -980,7 +982,10 @@
         action: 'updateSidePanelCards',
         cards: cards,
         properties: this.properties,
-        context: this.context
+        context: {
+          ...this.context,
+          orgId: this.matchedOrgId // Include org ID for OAuth API calls
+        }
       }).catch(() => {
         // Sidepanel might not be open, ignore error
       });
