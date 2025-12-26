@@ -66,6 +66,11 @@ class SidePanel {
     // Check auth state
     await this.checkAuthState();
 
+    // Load and apply branding (if authenticated)
+    if (this.authState.isAuthenticated) {
+      await this.loadBranding();
+    }
+
     // Set up settings event handlers
     this.setupSettingsHandlers();
 
@@ -709,6 +714,86 @@ class SidePanel {
     document.getElementById('showBattleCards').checked = this.settings.showBattleCards !== false;
     document.getElementById('showPresentations').checked = this.settings.showPresentations !== false;
     document.getElementById('showWiki').checked = this.settings.showWiki !== false;
+  }
+
+  async loadBranding() {
+    // Load branding for the current user's organization
+    try {
+      if (!this.authState.isAuthenticated || !this.authState.session) {
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('get_current_user_branding');
+
+      if (error) {
+        console.error('Error loading branding:', error);
+        return;
+      }
+
+      if (data) {
+        this.applyBranding(data);
+      }
+    } catch (err) {
+      console.error('Failed to load branding:', err);
+    }
+  }
+
+  applyBranding(branding) {
+    const root = document.documentElement;
+
+    // Apply primary color
+    if (branding.primary_color) {
+      root.style.setProperty('--sp-primary', branding.primary_color);
+
+      // Calculate darker shade for hover states
+      const darkerColor = this.darkenColor(branding.primary_color, 20);
+      root.style.setProperty('--sp-primary-dark', darkerColor);
+
+      // Calculate transparent background version
+      const rgb = this.hexToRgb(branding.primary_color);
+      if (rgb) {
+        root.style.setProperty('--sp-primary-bg', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
+      }
+    }
+
+    // Apply display name
+    if (branding.display_name) {
+      document.querySelectorAll('[data-brand-name]').forEach(el => {
+        el.textContent = branding.display_name;
+      });
+    }
+
+    // Apply logo icon (for header)
+    if (branding.logo_icon_url) {
+      const headerLogo = document.querySelector('.header-logo');
+      if (headerLogo) {
+        headerLogo.innerHTML = `<img src="${branding.logo_icon_url}" alt="${branding.display_name || 'Logo'}" style="height: 24px; width: auto;">`;
+      }
+    }
+
+    // Store branding for tooltip attribution
+    this.currentBranding = branding;
+  }
+
+  hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
+
+  darkenColor(hex, percent) {
+    const rgb = this.hexToRgb(hex);
+    if (!rgb) return hex;
+
+    const factor = 1 - (percent / 100);
+    const r = Math.round(rgb.r * factor);
+    const g = Math.round(rgb.g * factor);
+    const b = Math.round(rgb.b * factor);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   setupSettingsHandlers() {

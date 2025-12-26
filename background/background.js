@@ -695,6 +695,42 @@ async function supabaseFetch(table, options = {}) {
 }
 
 /**
+ * Call a Supabase RPC function
+ * @param {string} functionName - The RPC function name
+ * @param {Object} params - Parameters to pass to the function
+ */
+async function supabaseRpc(functionName, params = {}) {
+  const tokenValid = await ensureValidToken();
+  if (!tokenValid) {
+    throw new Error('Not authenticated - please log in again');
+  }
+
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    throw new Error('Not authenticated');
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${authState.accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(params)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Supabase RPC error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Map banner from Supabase snake_case to camelCase
  */
 function mapBannerFromSupabase(data) {
@@ -791,8 +827,8 @@ async function fetchCloudContent(targetOrgId = null) {
   console.log('[RevGuide] Fetching cloud content for org:', orgId);
 
   try {
-    // Fetch all content types in parallel (including org settings for erp_config)
-    const [banners, plays, wikiEntries, orgData, tagRules, contentTags, recommendedContent, playContentAssets] = await Promise.all([
+    // Fetch all content types in parallel (including org settings for erp_config and branding)
+    const [banners, plays, wikiEntries, orgData, tagRules, contentTags, recommendedContent, playContentAssets, branding] = await Promise.all([
       supabaseFetch('banners', {
         filter: { 'organization_id': `eq.${orgId}` },
         order: 'priority.desc'
@@ -804,7 +840,7 @@ async function fetchCloudContent(targetOrgId = null) {
         filter: { 'organization_id': `eq.${orgId}` }
       }),
       supabaseFetch('organizations', {
-        select: 'erp_config',
+        select: 'erp_config,partner_branding_id',
         filter: { 'id': `eq.${orgId}` }
       }),
       // Content Recommendations tables
@@ -822,6 +858,11 @@ async function fetchCloudContent(targetOrgId = null) {
       // Play content assets (for Recommended Content play type)
       supabaseFetch('play_content_assets', {
         order: 'display_order.asc'
+      }),
+      // Fetch branding using RPC (handles partner cascade)
+      supabaseRpc('get_organization_branding', { org_id: orgId }).catch(err => {
+        console.log('[RevGuide] Branding fetch failed (may not exist yet):', err.message);
+        return null;
       })
     ]);
 
@@ -865,8 +906,14 @@ async function fetchCloudContent(targetOrgId = null) {
       // Content Recommendations (keep snake_case for now, transform in sidepanel)
       tagRules: tagRules || [],
       contentTags: contentTags || [],
-      recommendedContent: recommendedContent || []
+      recommendedContent: recommendedContent || [],
+      // Partner branding (keep snake_case for consistency with DB)
+      branding: branding || null
     };
+
+    if (branding) {
+      console.log('[RevGuide] Branding loaded:', branding.display_name || 'default');
+    }
 
     // Log transformed banner for debugging
     if (content.rules?.length > 0) {

@@ -63,6 +63,7 @@ function getCurrentPagePath() {
 const NON_ORG_AWARE_PAGES = [
   '/partner/accounts',
   '/partner/home',
+  '/branding',
   '/login',
   '/signup',
   '/reset-password',
@@ -348,6 +349,9 @@ async function checkAuth() {
     // Must await to ensure org-specific roles are available before page setup
     await loadUserOrganizations();
 
+    // Initialize branding (applies partner white-label if configured)
+    await initializeBranding();
+
     // Background check: verify user still exists in database
     // This catches cases where a user was deleted but session is still active
     setTimeout(async () => {
@@ -420,6 +424,9 @@ async function checkAuth() {
           // Load user's organizations for portal switching AND role detection
           // Must await to ensure org-specific roles are available before page setup
           await loadUserOrganizations();
+
+          // Initialize branding (applies partner white-label if configured)
+          await initializeBranding();
         } else {
           // No profile found and couldn't create one - user was deleted
           // Force logout
@@ -472,6 +479,34 @@ async function signOut() {
  */
 function refreshUserCache() {
   saveUserToCache();
+}
+
+/**
+ * Initialize and apply branding for the current organization
+ * Should be called after auth is complete
+ */
+async function initializeBranding() {
+  // Skip in extension context (branding handled differently there)
+  if (isExtensionContext) return;
+
+  // Skip if branding module not available
+  if (typeof RevGuideBranding === 'undefined') {
+    console.log('[Branding] RevGuideBranding not available');
+    return;
+  }
+
+  try {
+    console.log('[Branding] Initializing branding...');
+    const branding = await RevGuideBranding.getCurrentBranding();
+
+    if (branding) {
+      RevGuideBranding.applyBranding(branding);
+      console.log('[Branding] Applied branding:', branding.displayName);
+    }
+  } catch (error) {
+    console.warn('[Branding] Failed to initialize branding:', error);
+    // Continue with default branding on error
+  }
 }
 
 /**
@@ -3045,6 +3080,7 @@ window.AdminShared = {
   checkAuth,
   signOut,
   refreshUserCache,
+  initializeBranding,
   get currentUser() { return currentUser; },
   get currentOrganization() { return currentOrganization; },
   get userOrganizations() { return userOrganizations; },

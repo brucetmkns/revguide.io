@@ -2,6 +2,14 @@
    RevGuide - Side Panel Styles
    ============================================ */
 
+/* CSS Variables for Branding (overridden dynamically) */
+:root {
+  --sp-primary: #b2ef63;
+  --sp-primary-dark: #1a2e05;
+  --sp-primary-bg: rgba(178, 239, 99, 0.1);
+  --sp-font-family: "Lexend Deca", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,7 +17,7 @@
 }
 
 body {
-  font-family: "Lexend Deca", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--sp-font-family);
   font-size: 14px;
   line-height: 1.5;
   color: #33475b;
@@ -55,8 +63,8 @@ body {
 }
 
 .sidepanel-tab.active {
-  color: #1a2e05;
-  border-bottom-color: #b2ef63;
+  color: var(--sp-primary-dark);
+  border-bottom-color: var(--sp-primary);
 }
 
 .sidepanel-tab svg {
@@ -307,7 +315,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: #b2ef63;
+  background: var(--sp-primary);
   color: #1a2e05;
   border: none;
   border-radius: 4px;
@@ -381,7 +389,7 @@ body {
 }
 
 .battle-card:hover {
-  border-color: #b2ef63;
+  border-color: var(--sp-primary);
   box-shadow: 0 2px 8px rgba(178, 239, 99, 0.15);
 }
 
@@ -468,7 +476,7 @@ body {
 }
 
 .battle-card:hover .card-expand {
-  color: #b2ef63;
+  color: var(--sp-primary);
 }
 
 /* Card Body - hidden in list view, content shown in detail panel */
@@ -530,7 +538,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: #b2ef63;
+  background: var(--sp-primary);
   color: #1a2e05;
   text-decoration: none;
   border-radius: 4px;
@@ -651,7 +659,7 @@ body {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #b2ef63;
+  background-color: var(--sp-primary);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -671,7 +679,7 @@ body {
   width: 14px;
   height: 14px;
   border: 2px solid #eaf0f6;
-  border-top-color: #b2ef63;
+  border-top-color: var(--sp-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -744,7 +752,7 @@ body {
 
 .settings-form-group input:focus {
   outline: none;
-  border-color: #b2ef63;
+  border-color: var(--sp-primary);
   box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
 }
 
@@ -768,7 +776,7 @@ body {
 }
 
 .btn-primary {
-  background: #b2ef63;
+  background: var(--sp-primary);
   color: #1a2e05;
 }
 
@@ -849,7 +857,7 @@ body {
 
 .field-input:focus {
   outline: none;
-  border-color: #b2ef63;
+  border-color: var(--sp-primary);
   box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
 }
 
@@ -916,7 +924,7 @@ body {
 
 .field-select:focus {
   outline: none;
-  border-color: #b2ef63;
+  border-color: var(--sp-primary);
   box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
 }
 
@@ -1049,7 +1057,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #b2ef63;
+  background: var(--sp-primary);
   border: none;
   border-radius: 4px;
   color: #1a2e05;

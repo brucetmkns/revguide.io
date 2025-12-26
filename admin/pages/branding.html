@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/admin/analytics.js"></script>
+  <title>Branding - RevGuide</title>
+  <link rel="stylesheet" href="/admin/shared.css">
+  <style>
+    /* Branding Page Styles */
+    .branding-container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: var(--space-8);
+    }
+
+    @media (max-width: 1200px) {
+      .branding-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Sections */
+    .branding-section {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border-subtle);
+      margin-bottom: var(--space-6);
+    }
+
+    .branding-section-header {
+      margin-bottom: var(--space-5);
+    }
+
+    .branding-section-header h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-1);
+      color: var(--color-text-primary);
+    }
+
+    .branding-section-header p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: var(--space-5);
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .form-label .required {
+      color: var(--color-danger);
+    }
+
+    .form-help {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      margin-top: var(--space-1);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-bg);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    /* Color Picker */
+    .color-picker-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .color-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--color-border);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .color-preview:hover {
+      transform: scale(1.05);
+    }
+
+    .color-input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .color-hex-input {
+      flex: 1;
+      max-width: 140px;
+    }
+
+    /* Logo Upload */
+    .upload-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--color-primary);
+      background: var(--color-bg-subtle);
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    .upload-zone.has-file {
+      border-style: solid;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-3);
+      color: var(--color-text-muted);
+    }
+
+    .upload-text {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .upload-text strong {
+      color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    .upload-preview {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .upload-preview img {
+      max-width: 120px;
+      max-height: 60px;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+    }
+
+    .upload-preview-info {
+      flex: 1;
+      text-align: left;
+    }
+
+    .upload-preview-name {
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      font-size: var(--font-size-sm);
+    }
+
+    .upload-preview-size {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .upload-remove {
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      padding: var(--space-2);
+      transition: color 0.15s;
+    }
+
+    .upload-remove:hover {
+      color: var(--color-danger);
+    }
+
+    /* Radio Group */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .radio-option:hover {
+      border-color: var(--color-border);
+      background: var(--color-bg-subtle);
+    }
+
+    .radio-option.selected {
+      border-color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    .radio-option input[type="radio"] {
+      margin-top: 3px;
+    }
+
+    .radio-option-content {
+      flex: 1;
+    }
+
+    .radio-option-title {
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .radio-option-desc {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      position: sticky;
+      top: var(--space-6);
+    }
+
+    .preview-section {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border-subtle);
+      overflow: hidden;
+      margin-bottom: var(--space-6);
+    }
+
+    .preview-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-header h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .preview-content {
+      padding: var(--space-5);
+    }
+
+    /* Sidebar Preview */
+    .preview-sidebar {
+      background: var(--color-text-primary);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+
+    .preview-sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .preview-sidebar-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--color-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-sidebar-logo img {
+      max-width: 24px;
+      max-height: 24px;
+      object-fit: contain;
+    }
+
+    .preview-sidebar-name {
+      color: white;
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-base);
+    }
+
+    .preview-sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .preview-nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: var(--font-size-sm);
+    }
+
+    .preview-nav-item.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    /* Tooltip Preview */
+    .preview-tooltip {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-4);
+      max-width: 280px;
+    }
+
+    .preview-tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .preview-tooltip-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-tooltip-title {
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .preview-tooltip-content {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .preview-tooltip-footer {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    /* Form Row */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Save Actions */
+    .branding-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-6);
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-lg);
+      margin-top: var(--space-6);
+    }
+
+    .save-status {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    /* Partner Only Notice */
+    .partner-only-notice {
+      background: var(--color-info-bg);
+      border: 1px solid var(--color-info);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .partner-only-notice h3 {
+      color: var(--color-info);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-2);
+    }
+
+    .partner-only-notice p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .partner-only-notice a {
+      color: var(--color-info);
+      text-decoration: underline;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon" data-brand-icon><span class="icon icon-target-white"></span></span>
+        <h1 data-brand-name>RevGuide</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/home" class="nav-item" data-section="home">
+          <span class="nav-icon"><span class="icon icon-home-white"></span></span>
+          Home
+        </a>
+        <div class="nav-group" data-section="partner" id="partnerNavGroup" style="display: none;">
+          <button class="nav-group-toggle" id="partnerNavToggle">
+            <span class="nav-icon"><span class="icon icon-users-white"></span></span>
+            <span class="nav-label">Partner</span>
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-group-menu">
+            <a href="/partner/home" class="nav-item" data-section="partner-home">Home</a>
+            <a href="/partner/accounts" class="nav-item" data-section="partner-accounts">Managed Accounts</a>
+            <a href="/branding" class="nav-item active" data-section="branding">Branding</a>
+          </div>
+        </div>
+        <a href="/banners" class="nav-item" data-section="banners">
+          <span class="nav-icon"><span class="icon icon-clipboard-list-white"></span></span>
+          Banners
+        </a>
+        <a href="/plays" class="nav-item" data-section="cards">
+          <span class="nav-icon"><span class="icon icon-layers-white"></span></span>
+          Plays
+        </a>
+        <a href="/wiki" class="nav-item" data-section="wiki">
+          <span class="nav-icon"><span class="icon icon-book-white"></span></span>
+          Wiki
+        </a>
+        <a href="/libraries" class="nav-item" data-section="libraries">
+          <span class="nav-icon"><span class="icon icon-download-white"></span></span>
+          Libraries
+        </a>
+        <a href="/settings" class="nav-item" data-section="settings">
+          <span class="nav-icon"><span class="icon icon-settings-white"></span></span>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-profile-link">
+          <a href="/settings" class="user-profile-btn" id="sidebarUserProfile">
+            <span class="user-avatar" id="sidebarUserAvatar">...</span>
+            <span class="user-name" id="sidebarUserName">Loading...</span>
+          </a>
+          <button class="btn-icon logout-btn" title="Sign out" onclick="AdminShared.signOut()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Partner-Only Notice (shown to non-partners) -->
+      <div class="partner-only-notice" id="partnerOnlyNotice" style="display: none;">
+        <h3>Partner Feature</h3>
+        <p>White-label branding is available for Partner accounts. <a href="/partner/home">Become a partner</a> to customize branding for your clients.</p>
+      </div>
+
+      <section class="content-section active" id="brandingSection">
+        <div class="section-header">
+          <div>
+            <h2>Branding</h2>
+            <p class="section-description">Customize the look and feel for your clients</p>
+          </div>
+        </div>
+
+        <div class="branding-container">
+          <!-- Form Column -->
+          <div class="branding-form">
+            <!-- Identity Section -->
+            <div class="branding-section">
+              <div class="branding-section-header">
+                <h3>Identity</h3>
+                <p>How your brand appears to clients</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="displayName">Display Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="displayName" placeholder="Your Agency Name" maxlength="50">
+                <p class="form-help">Replaces "RevGuide" throughout the interface</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="tagline">Tagline</label>
+                <input type="text" class="form-input" id="tagline" placeholder="Your tagline here" maxlength="100">
+                <p class="form-help">Optional short description</p>
+              </div>
+            </div>
+
+            <!-- Visual Branding Section -->
+            <div class="branding-section">
+              <div class="branding-section-header">
+                <h3>Visual Branding</h3>
+                <p>Logo, icon, and colors</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Logo</label>
+                <div class="upload-zone" id="logoUploadZone" data-type="logo">
+                  <div class="upload-placeholder" id="logoPlaceholder">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="upload-text"><strong>Click to upload</strong> or drag and drop</p>
+                    <p class="upload-text">SVG, PNG or JPG (max 500KB, recommended 200x50)</p>
+                  </div>
+                  <div class="upload-preview" id="logoPreview" style="display: none;">
+                    <img id="logoPreviewImg" src="" alt="Logo preview">
+                    <div class="upload-preview-info">
+                      <p class="upload-preview-name" id="logoFileName"></p>
+                      <p class="upload-preview-size" id="logoFileSize"></p>
+                    </div>
+                    <button class="upload-remove" id="logoRemove" title="Remove">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <input type="file" id="logoFileInput" accept="image/svg+xml,image/png,image/jpeg" style="display: none;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Icon (Square)</label>
+                <div class="upload-zone" id="iconUploadZone" data-type="icon">
+                  <div class="upload-placeholder" id="iconPlaceholder">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="M21 15l-5-5L5 21"/>
+                    </svg>
+                    <p class="upload-text"><strong>Click to upload</strong> or drag and drop</p>
+                    <p class="upload-text">Square image (recommended 64x64)</p>
+                  </div>
+                  <div class="upload-preview" id="iconPreview" style="display: none;">
+                    <img id="iconPreviewImg" src="" alt="Icon preview">
+                    <div class="upload-preview-info">
+                      <p class="upload-preview-name" id="iconFileName"></p>
+                      <p class="upload-preview-size" id="iconFileSize"></p>
+                    </div>
+                    <button class="upload-remove" id="iconRemove" title="Remove">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <input type="file" id="iconFileInput" accept="image/svg+xml,image/png,image/jpeg" style="display: none;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Primary Color</label>
+                <div class="color-picker-group">
+                  <label class="color-preview" id="primaryColorPreview" style="background: #b2ef63;" for="primaryColorPicker"></label>
+                  <input type="color" id="primaryColorPicker" class="color-input" value="#b2ef63">
+                  <input type="text" class="form-input color-hex-input" id="primaryColorHex" value="#b2ef63" placeholder="#b2ef63">
+                </div>
+                <p class="form-help">Main brand color used for buttons, highlights, and accents</p>
+              </div>
+            </div>
+
+            <!-- Links Section -->
+            <div class="branding-section">
+              <div class="branding-section-header">
+                <h3>Links & Support</h3>
+                <p>Custom URLs and contact information</p>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="helpUrl">Help Center URL</label>
+                  <input type="url" class="form-input" id="helpUrl" placeholder="https://help.yourdomain.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="supportEmail">Support Email</label>
+                  <input type="email" class="form-input" id="supportEmail" placeholder="support@yourdomain.com">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="websiteUrl">Website URL</label>
+                  <input type="url" class="form-input" id="websiteUrl" placeholder="https://yourdomain.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="privacyUrl">Privacy Policy URL</label>
+                  <input type="url" class="form-input" id="privacyUrl" placeholder="https://yourdomain.com/privacy">
+                </div>
+              </div>
+            </div>
+
+            <!-- Tooltip Attribution -->
+            <div class="branding-section">
+              <div class="branding-section-header">
+                <h3>Content Attribution</h3>
+                <p>What appears on tooltips and content cards</p>
+              </div>
+
+              <div class="form-group">
+                <div class="radio-group" id="tooltipAttributionGroup">
+                  <label class="radio-option selected" data-value="agency">
+                    <input type="radio" name="tooltipAttribution" value="agency" checked>
+                    <div class="radio-option-content">
+                      <p class="radio-option-title">Show my agency name</p>
+                      <p class="radio-option-desc">Tooltips display "Powered by [Your Agency]"</p>
+                    </div>
+                  </label>
+                  <label class="radio-option" data-value="revguide">
+                    <input type="radio" name="tooltipAttribution" value="revguide">
+                    <div class="radio-option-content">
+                      <p class="radio-option-title">Show RevGuide</p>
+                      <p class="radio-option-desc">Tooltips display "Powered by RevGuide"</p>
+                    </div>
+                  </label>
+                  <label class="radio-option" data-value="none">
+                    <input type="radio" name="tooltipAttribution" value="none">
+                    <div class="radio-option-content">
+                      <p class="radio-option-title">Hide attribution</p>
+                      <p class="radio-option-desc">No "Powered by" text shown</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Actions -->
+            <div class="branding-actions">
+              <span class="save-status" id="saveStatus"></span>
+              <button class="btn btn-secondary" id="resetBtn">Reset to Defaults</button>
+              <button class="btn btn-primary" id="saveBtn">Save Changes</button>
+            </div>
+          </div>
+
+          <!-- Preview Column -->
+          <div class="preview-panel">
+            <div class="preview-section">
+              <div class="preview-header">
+                <h4>Sidebar Preview</h4>
+              </div>
+              <div class="preview-content">
+                <div class="preview-sidebar" id="previewSidebar">
+                  <div class="preview-sidebar-header">
+                    <div class="preview-sidebar-logo" id="previewSidebarLogo">
+                      <span class="icon icon-target-white"></span>
+                    </div>
+                    <span class="preview-sidebar-name" id="previewSidebarName">RevGuide</span>
+                  </div>
+                  <div class="preview-sidebar-nav">
+                    <div class="preview-nav-item active">Home</div>
+                    <div class="preview-nav-item">Banners</div>
+                    <div class="preview-nav-item">Plays</div>
+                    <div class="preview-nav-item">Wiki</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <div class="preview-header">
+                <h4>Tooltip Preview</h4>
+              </div>
+              <div class="preview-content">
+                <div class="preview-tooltip" id="previewTooltip">
+                  <div class="preview-tooltip-header">
+                    <div class="preview-tooltip-icon" id="previewTooltipIcon" style="background: #b2ef63;">
+                      <span class="icon icon-book icon--sm"></span>
+                    </div>
+                    <span class="preview-tooltip-title">Annual Revenue</span>
+                  </div>
+                  <div class="preview-tooltip-content">
+                    Total revenue from all recurring contracts for this company over the last 12 months.
+                  </div>
+                  <div class="preview-tooltip-footer" id="previewTooltipFooter">
+                    Powered by RevGuide
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/config/environments.js"></script>
+  <script src="/config/current.js"></script>
+  <script src="/admin/supabase.js"></script>
+  <script src="/lib/branding.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/pages/branding.js"></script>
+</body>
+</html>

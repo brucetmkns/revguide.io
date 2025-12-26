@@ -469,13 +469,14 @@ class WikiModule {
     if (parent.querySelector('.hshelper-wiki-icon')) return;
 
     const displayTitle = entry.title || entry.trigger || entry.term;
+    const iconColor = this.helper.branding?.primary_color || '#7cb342';
 
     // Create icon
     const icon = document.createElement('span');
     icon.className = 'hshelper-wiki-icon';
     icon.title = `Wiki: ${displayTitle}`;
     icon.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7cb342">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${iconColor}">
         <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
       </svg>
     `;
@@ -512,12 +513,13 @@ class WikiModule {
    */
   addIconToElement(element, entry) {
     const displayTitle = entry.title || entry.trigger || entry.term;
+    const iconColor = this.helper.branding?.primary_color || '#7cb342';
 
     const icon = document.createElement('span');
     icon.className = 'hshelper-wiki-icon';
     icon.title = `Wiki: ${displayTitle}`;
     icon.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7cb342">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${iconColor}">
         <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
       </svg>
     `;
@@ -582,10 +584,16 @@ class WikiModule {
       </a>
     ` : '';
 
-    const footerHtml = (showAdminLinks || entry.link) ? `
+    // Generate attribution based on branding settings
+    const attributionHtml = this.getAttributionHtml();
+
+    const footerHtml = (showAdminLinks || entry.link || attributionHtml) ? `
       <div class="wiki-tooltip-footer">
-        ${editLinkHtml}
-        ${learnMoreHtml}
+        <div style="display: flex; gap: 12px; align-items: center;">
+          ${editLinkHtml}
+          ${learnMoreHtml}
+        </div>
+        ${attributionHtml}
       </div>
     ` : '';
 
@@ -686,6 +694,26 @@ class WikiModule {
     document.removeEventListener('click', this.handleOutsideTooltipClick);
     this.wikiTooltipActive = false;
     this.currentTooltipEntryId = null;
+  }
+
+  /**
+   * Get attribution HTML based on branding settings
+   * @returns {string} HTML for attribution
+   */
+  getAttributionHtml() {
+    const branding = this.helper.branding;
+    const attribution = branding?.tooltip_attribution || 'revguide';
+
+    if (attribution === 'none') {
+      return '';
+    }
+
+    if (attribution === 'agency' && branding?.display_name) {
+      return `<span class="wiki-tooltip-attribution" style="font-size: 10px; color: #9ca3af; margin-left: auto;">Powered by ${this.helper.escapeHtml(branding.display_name)}</span>`;
+    }
+
+    // Default to RevGuide
+    return '<span class="wiki-tooltip-attribution" style="font-size: 10px; color: #9ca3af; margin-left: auto;">Powered by RevGuide</span>';
   }
 
   // ============ REMOVAL ============

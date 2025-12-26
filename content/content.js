@@ -73,6 +73,7 @@
       this.wikiEntries = [];
       this.settings = {};
       this.erpConfig = null;
+      this.branding = null;
 
       // Recommendation data
       this.tagRules = [];
@@ -305,6 +306,7 @@
         this.battleCards = content.battleCards || [];
         this.wikiEntries = content.wikiEntries || [];
         this.erpConfig = content.erpConfig || null;
+        this.branding = content.branding || null;
 
         // Recommendation data
         this.tagRules = content.tagRules || [];
@@ -314,6 +316,11 @@
         // Initialize ERP module if already created
         if (this.erpModule && this.erpConfig) {
           this.erpModule.init(this.erpConfig);
+        }
+
+        // Log branding if loaded
+        if (this.branding) {
+          log('Branding loaded:', this.branding.display_name || 'default');
         }
       } else {
         // Fall back to local storage directly
