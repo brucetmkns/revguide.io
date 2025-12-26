@@ -101,7 +101,8 @@ class SidePanel {
         if (message.recordContext) {
           this.context = {
             objectType: message.recordContext.objectType,
-            recordId: message.recordContext.recordId
+            recordId: message.recordContext.recordId,
+            orgId: message.recordContext.orgId
           };
           this.properties = message.recordContext.properties || {};
         }
@@ -741,6 +742,18 @@ class SidePanel {
       }
     });
 
+    // HubSpot connection buttons
+    document.getElementById('connectHubSpotBtn')?.addEventListener('click', () => {
+      this.initiateHubSpotConnection();
+    });
+
+    document.getElementById('disconnectHubSpotBtn')?.addEventListener('click', () => {
+      this.disconnectHubSpot();
+    });
+
+    // Check HubSpot connection status
+    this.checkHubSpotConnectionStatus();
+
     // Export
     document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
 
@@ -809,6 +822,124 @@ class SidePanel {
     } catch (error) {
       console.error('Import error:', error);
       alert('Failed to import data. Please check the file format.');
+    }
+  }
+
+  // ============ HUBSPOT CONNECTION ============
+
+  async checkHubSpotConnectionStatus() {
+    const loadingEl = document.getElementById('hubspotConnectionLoading');
+    const connectedEl = document.getElementById('hubspotConnected');
+    const disconnectedEl = document.getElementById('hubspotDisconnected');
+    const sectionEl = document.getElementById('hubspotConnectionSection');
+
+    // Only show for authenticated users
+    if (!this.authState.isAuthenticated) {
+      if (sectionEl) sectionEl.style.display = 'none';
+      return;
+    }
+
+    // Show section for authenticated users
+    if (sectionEl) sectionEl.style.display = 'block';
+
+    // Need org ID to check connection
+    const orgId = this.context?.orgId || this.authState.profile?.organizationId;
+    if (!orgId) {
+      // Hide loading, show disconnected
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (disconnectedEl) disconnectedEl.style.display = 'block';
+      return;
+    }
+
+    // Check connection via background
+    try {
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'checkUserHubSpotConnection',
+          orgId: orgId
+        }, resolve);
+      });
+
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      if (response?.connected) {
+        const emailEl = document.getElementById('hubspotUserEmail');
+        if (emailEl) emailEl.textContent = response.email || 'Connected';
+        if (connectedEl) connectedEl.style.display = 'flex';
+        if (disconnectedEl) disconnectedEl.style.display = 'none';
+      } else {
+        if (connectedEl) connectedEl.style.display = 'none';
+        if (disconnectedEl) disconnectedEl.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('[RevGuide] Error checking HubSpot connection:', error);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (disconnectedEl) disconnectedEl.style.display = 'block';
+    }
+  }
+
+  async initiateHubSpotConnection() {
+    const orgId = this.context?.orgId || this.authState.profile?.organizationId;
+    const userId = this.authState.user?.id;
+
+    console.log('[RevGuide] initiateHubSpotConnection - orgId:', orgId, 'userId:', userId);
+    console.log('[RevGuide] context:', this.context);
+    console.log('[RevGuide] authState:', this.authState);
+
+    if (!orgId || !userId) {
+      console.error('[RevGuide] Missing orgId or userId - orgId:', orgId, 'userId:', userId);
+      alert('Please sign in to connect your HubSpot account.');
+      return;
+    }
+
+    try {
+      // Get the OAuth URL from background
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'getUserHubSpotAuthUrl',
+          orgId: orgId,
+          userId: userId
+        }, resolve);
+      });
+
+      if (response?.authUrl) {
+        // Open OAuth in new tab
+        chrome.tabs.create({ url: response.authUrl });
+      } else {
+        alert('Failed to start HubSpot connection. Please try again.');
+      }
+    } catch (error) {
+      console.error('[RevGuide] Error initiating HubSpot connection:', error);
+      alert('Failed to connect. Please try again.');
+    }
+  }
+
+  async disconnectHubSpot() {
+    const orgId = this.context?.orgId || this.authState.profile?.organizationId;
+
+    if (!orgId) return;
+
+    if (!confirm('Disconnect your HubSpot account? Property updates will use the organization connection instead.')) {
+      return;
+    }
+
+    try {
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'disconnectUserHubSpot',
+          orgId: orgId
+        }, resolve);
+      });
+
+      if (response?.success) {
+        // Refresh the UI
+        await this.checkHubSpotConnectionStatus();
+      } else {
+        alert('Failed to disconnect. Please try again.');
+      }
+    } catch (error) {
+      console.error('[RevGuide] Error disconnecting HubSpot:', error);
+      alert('Failed to disconnect. Please try again.');
     }
   }
 
@@ -1090,7 +1221,8 @@ class SidePanel {
       console.log('[RevGuide] Applying record context for play:', playId, this.pendingRecordContext);
       this.context = {
         objectType: this.pendingRecordContext.objectType,
-        recordId: this.pendingRecordContext.recordId
+        recordId: this.pendingRecordContext.recordId,
+        orgId: this.pendingRecordContext.orgId
       };
       this.properties = this.pendingRecordContext.properties || {};
       this.pendingRecordContext = null;
@@ -2166,7 +2298,8 @@ class SidePanel {
         action: 'updateHubSpotProperties',
         objectType: this.context.objectType,
         recordId: this.context.recordId,
-        properties: properties
+        properties: properties,
+        orgId: this.context.orgId // Include org ID for OAuth
       }, (response) => {
         if (chrome.runtime.lastError) {
           resolve({ success: false, error: chrome.runtime.lastError.message });

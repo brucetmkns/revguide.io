@@ -584,7 +584,8 @@ class IndexTagsModule {
         recordContext: {
           recordId: recordId,
           objectType: this.objectType,
-          properties: properties
+          properties: properties,
+          orgId: this.helper.matchedOrgId
         }
       });
     });
@@ -720,7 +721,8 @@ class IndexTagsModule {
         recordContext: {
           recordId: recordId,
           objectType: this.objectType,
-          properties: properties
+          properties: properties,
+          orgId: this.helper.matchedOrgId
         }
       });
     });

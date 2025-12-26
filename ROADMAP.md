@@ -4,9 +4,32 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.15.1 (Sidepanel Slide-in Panels)
+## Current State: v2.16.0 (User-Level HubSpot OAuth)
 
-A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, and **slide-in detail panels for viewing play content**.
+A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, **slide-in detail panels for viewing play content**, and **user-level HubSpot OAuth for personal attribution tracking**.
+
+### User-Level HubSpot OAuth (v2.16.0)
+- **Personal OAuth Connections**: Users can connect their individual HubSpot accounts in the sidepanel Settings tab
+- **User Attribution Property**: Property updates include `revguide_last_modified_by` field storing the user's email
+- **Token Selection Logic**: Write operations prefer user token → org token → private app fallback
+- **OAuth Proxy Pattern**: All API calls routed through Supabase edge function for secure token handling
+- **Database Migration**: `042_user_hubspot_connections.sql` with encrypted token storage
+
+#### Setup Required: User Attribution Property
+To track which RevGuide user made each property change, create a custom HubSpot property:
+
+1. **HubSpot Settings** → **Properties** → Select object type (Deals, Contacts, Companies)
+2. Click **Create property**
+3. Configure:
+   | Field | Value |
+   |-------|-------|
+   | Label | `RevGuide Last Modified By` |
+   | Internal name | `revguide_last_modified_by` |
+   | Field type | Single-line text |
+   | Group | Any (e.g., "Deal information") |
+4. Save and repeat for each object type you use with property update plays
+
+**Note**: This property provides data governance by recording the actual user who made changes via RevGuide, since HubSpot's native history only shows the app name for API-based updates.
 
 ### Sidepanel Slide-in Panels (v2.15.1)
 - **Full-Height Detail Panel**: Plays open in a slide-in panel from the right edge
@@ -131,11 +154,13 @@ A fully functional SaaS web application with Chrome extension, featuring direct 
 - **HubSpot connection loading state** with spinner animation
 - **Fixed OAuth org naming** to not use portal domains like "app.hubspot.com"
 
-### Direct HubSpot OAuth (v2.1.0)
+### Direct HubSpot OAuth (v2.1.0, enhanced v2.16.0)
 - **Replaced Nango** with direct HubSpot OAuth via Supabase edge functions
 - **Secure token storage** with pgcrypto encryption in database
 - **Automatic token refresh** before expiry
 - **Field import** now works in web app via OAuth proxy
+- **User-level OAuth** (v2.16.0): Individual users can connect their HubSpot accounts for personal attribution
+- **Token hierarchy** (v2.16.0): Write operations use user token → org token → private app fallback
 
 ### Rebrand to RevGuide (v1.9.7)
 - **Product renamed** from "HubSpot Helper" to "RevGuide"
@@ -379,8 +404,9 @@ The extension uses HubSpot Private App tokens which require specific scopes:
 
 ### Future Security Enhancements (Planned)
 
-- [ ] OAuth flow instead of Private App tokens (more secure, user-scoped)
-- [ ] Token encryption at rest
+- [x] OAuth flow instead of Private App tokens (more secure, user-scoped) - *Complete in v2.1.0*
+- [x] Token encryption at rest - *Complete in v2.1.0 (pgcrypto)*
+- [x] User-level OAuth for personal attribution - *Complete in v2.16.0*
 - [ ] Session timeout for sensitive operations
 - [ ] Audit log viewer in admin panel
 - [ ] Per-user permissions when SaaS version launches

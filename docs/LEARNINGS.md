@@ -3425,4 +3425,120 @@ grep -r "closest.*battle-card" sidepanel/
 
 ---
 
+## HubSpot OAuth User-Level Authentication (v2.16.0)
+
+### OAuth Scope Matching
+**Lesson**: HubSpot OAuth requires exact scope matching between the OAuth URL request and the app configuration. Optional scopes are treated differently than required scopes.
+
+**Problem**: User OAuth flow failed with "mismatch between the scopes in the install URL and the app's configured scopes."
+
+**Root cause**: The edge function requested write scopes (`crm.objects.contacts.write`, etc.) but they were marked as `optionalScopes` in `app-hsmeta.json`. When requesting scopes in the OAuth URL, you can only request scopes that are in `requiredScopes`.
+
+**Solution**: Move all needed scopes to `requiredScopes`:
+```json
+{
+  "requiredScopes": [
+    "oauth",
+    "crm.objects.contacts.read",
+    "crm.objects.contacts.write",
+    ...
+  ],
+  "optionalScopes": []
+}
+```
+
+**Files affected**: `RevGuide/src/app/app-hsmeta.json`, `supabase/functions/hubspot-oauth/index.ts`
+
+### Supabase Edge Function JWT Verification
+**Lesson**: Supabase Edge Functions have JWT verification enabled by default. Callback endpoints from OAuth providers (which are redirects, not authenticated requests) will fail with 401.
+
+**Problem**: HubSpot OAuth callback returned `{"code":401,"message":"Missing authorization header"}`.
+
+**Root cause**: The edge function had `verify_jwt = false` in `config.toml`, but the setting wasn't being applied on deploy.
+
+**Solution**: Deploy with explicit flag:
+```bash
+supabase functions deploy hubspot-oauth --no-verify-jwt
+```
+
+**Files affected**: `supabase/functions/hubspot-oauth/config.toml`
+
+### HubSpot Property History Attribution
+**Lesson**: HubSpot property history shows the **app name** for all API-based changes, not the individual user - even when using user-specific OAuth tokens.
+
+**Context**: Wanted property changes to show actual user names in HubSpot history (e.g., "Bruce Tomkins" instead of "RevGuide").
+
+**Reality**: HubSpot attributes all OAuth app changes to the app, not users. This is a platform limitation:
+- UI changes → Show user name
+- API/OAuth changes → Show app name
+
+**Workaround**: Create a custom property `revguide_last_modified_by` that stores the user's email on each update. This provides audit trail within HubSpot.
+
+```javascript
+// Add attribution to updates when using user-oauth
+if (auth.type === 'user-oauth' && auth.hubspotEmail) {
+  propsToUpdate.revguide_last_modified_by = auth.hubspotEmail;
+}
+```
+
+**Files affected**: `background/background.js` - `updateHubSpotRecord()`
+
+### Context Passing Through Message Chains
+**Lesson**: When data flows through multiple message hops (content script → background → sidepanel), ensure context is passed at every step.
+
+**Problem**: Property updates via plays failed with "orgId: null" despite org being matched correctly.
+
+**Debug trace**:
+1. Content script matched portal to org correctly
+2. `openSidePanelToPlay` message sent with `recordContext`
+3. But `recordContext` didn't include `orgId`
+4. Sidepanel received empty `orgId`, couldn't use OAuth
+
+**Solution**: Add `orgId` to `recordContext` at every origin point:
+```javascript
+// In banners.js and index-tags.js
+recordContext: {
+  recordId: recordId,
+  objectType: this.objectType,
+  properties: properties,
+  orgId: this.helper.matchedOrgId  // Must include this!
+}
+```
+
+And ensure receiving end extracts it:
+```javascript
+// In sidepanel.js
+this.context = {
+  objectType: message.recordContext.objectType,
+  recordId: message.recordContext.recordId,
+  orgId: message.recordContext.orgId  // Must extract this!
+};
+```
+
+**Files affected**:
+- `content/modules/banners.js` - `recordContext` in play link click
+- `content/modules/index-tags.js` - `recordContext` in tag click
+- `sidepanel/sidepanel.js` - `focusOnPlay` message handler
+
+### Auth State Property Names
+**Lesson**: The extension's auth state uses camelCase for profile properties. Don't assume snake_case.
+
+**Problem**: "Please sign in to connect your HubSpot account" alert despite being authenticated.
+
+**Root cause**: Code checked `authState.profile?.organization_id` (snake_case) but the actual property was `authState.profile?.organizationId` (camelCase).
+
+**Pattern**: When accessing auth state properties, verify the exact structure:
+```javascript
+// Check what's actually in authState
+console.log('[Debug] authState:', this.authState);
+
+// Use correct property names
+const orgId = this.authState.profile?.organizationId;  // camelCase
+const userId = this.authState.user?.id;  // user.id, not profile.id
+```
+
+**Files affected**: `sidepanel/sidepanel.js` - `initiateHubSpotConnection()`
+
+---
+
 *Last updated: December 2025*

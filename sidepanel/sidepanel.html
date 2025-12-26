@@ -193,6 +193,40 @@
           </div>
         </div>
 
+        <!-- HubSpot Connection -->
+        <div class="settings-section" id="hubspotConnectionSection">
+          <h3 class="settings-section-title">HubSpot Connection</h3>
+          <div id="hubspotConnectionStatus">
+            <div class="connection-loading" id="hubspotConnectionLoading">
+              <span class="loading-spinner-small"></span>
+              <span>Checking connection...</span>
+            </div>
+            <div class="connection-connected" id="hubspotConnected" style="display: none;">
+              <div class="connection-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="connection-icon connected">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div class="connection-details">
+                  <span class="connection-label">Connected as</span>
+                  <span class="connection-email" id="hubspotUserEmail">user@example.com</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="disconnectHubSpotBtn">Disconnect</button>
+            </div>
+            <div class="connection-disconnected" id="hubspotDisconnected" style="display: none;">
+              <p class="settings-hint">Connect your HubSpot account to enable property updates with your name in the history.</p>
+              <button class="btn btn-primary" id="connectHubSpotBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                Connect HubSpot
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Admin Panel Link -->
         <div class="settings-section">
           <h3 class="settings-section-title">Administration</h3>

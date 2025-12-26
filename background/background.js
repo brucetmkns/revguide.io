@@ -218,6 +218,368 @@ const SUPABASE_URL = 'https://qbdhvhrowmfnacyikkbf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RC5R8c5f-uoyMkoABXCRPg_n3HjyXXS';
 const CLOUD_CONTENT_TTL_MS = 1 * 60 * 1000; // 1 minute cache for faster updates
 
+// ============ HUBSPOT OAUTH PROXY ============
+
+// Cache for OAuth connections (avoid repeated lookups)
+const oauthConnectionCache = new Map();
+const OAUTH_CONNECTION_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get OAuth connection for an organization
+ * @param {string} orgId - Organization ID
+ * @returns {Object|null} Connection info or null if not connected
+ */
+async function getOAuthConnection(orgId) {
+  if (!orgId) {
+    return null;
+  }
+
+  // Check cache first
+  const cached = oauthConnectionCache.get(orgId);
+  if (cached && (Date.now() - cached.timestamp < OAUTH_CONNECTION_CACHE_TTL_MS)) {
+    return cached.connection;
+  }
+
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/hubspot-oauth/connection-by-org`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ organizationId: orgId })
+      }
+    );
+
+    if (!response.ok) {
+      console.log('[RevGuide BG] OAuth connection lookup failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // Cache the result
+    oauthConnectionCache.set(orgId, {
+      connection: data.isConnected ? data : null,
+      timestamp: Date.now()
+    });
+
+    return data.isConnected ? data : null;
+  } catch (error) {
+    console.error('[RevGuide BG] OAuth connection error:', error);
+    return null;
+  }
+}
+
+/**
+ * Make a HubSpot API request via the OAuth proxy
+ * @param {string} connectionId - OAuth connection ID
+ * @param {string} endpoint - HubSpot API endpoint (e.g., '/crm/v3/objects/contacts/123')
+ * @param {string} method - HTTP method (GET, POST, PATCH, DELETE)
+ * @param {Object} body - Request body for POST/PATCH
+ * @returns {Object} API response data
+ */
+async function hubspotProxyRequest(connectionId, endpoint, method = 'GET', body = null) {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/hubspot-oauth/proxy`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authState.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        connectionId,
+        endpoint,
+        method,
+        body
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OAuth proxy error: ${response.status} - ${errText}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Get HubSpot API token - prefers OAuth, falls back to Private App token
+ * @param {string} orgId - Organization ID (optional, for OAuth lookup)
+ * @returns {Object} { type: 'oauth'|'private', connectionId?, apiToken? }
+ */
+async function getHubSpotAuth(orgId) {
+  // Try OAuth first if we have an org ID
+  if (orgId) {
+    const oauthConnection = await getOAuthConnection(orgId);
+    if (oauthConnection?.connectionId) {
+      return {
+        type: 'oauth',
+        connectionId: oauthConnection.connectionId,
+        scopes: oauthConnection.scopes || []
+      };
+    }
+  }
+
+  // Fall back to Private App token
+  const { settings } = await chrome.storage.local.get({ settings: {} });
+  if (settings.hubspotApiToken) {
+    return {
+      type: 'private',
+      apiToken: settings.hubspotApiToken
+    };
+  }
+
+  return null;
+}
+
+// Cache for user OAuth connections
+const userOAuthConnectionCache = new Map();
+const USER_OAUTH_CONNECTION_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get user's personal HubSpot connection for an organization
+ * @param {string} orgId - Organization ID
+ * @returns {Object|null} User connection info or null if not connected
+ */
+async function getUserOAuthConnection(orgId) {
+  console.log('[RevGuide BG] getUserOAuthConnection called with orgId:', orgId);
+  if (!orgId) {
+    console.log('[RevGuide BG] No orgId provided');
+    return null;
+  }
+
+  // Check cache first
+  const cached = userOAuthConnectionCache.get(orgId);
+  if (cached && (Date.now() - cached.timestamp < USER_OAUTH_CONNECTION_CACHE_TTL_MS)) {
+    console.log('[RevGuide BG] Returning cached user connection:', cached.connection);
+    return cached.connection;
+  }
+  console.log('[RevGuide BG] No valid cache, fetching from API');
+
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-connection`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ organizationId: orgId })
+      }
+    );
+
+    if (!response.ok) {
+      console.log('[RevGuide BG] User OAuth connection lookup failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('[RevGuide BG] User connection API response:', data);
+
+    // Cache the result
+    userOAuthConnectionCache.set(orgId, {
+      connection: data.isConnected ? data : null,
+      timestamp: Date.now()
+    });
+
+    console.log('[RevGuide BG] Returning connection:', data.isConnected ? data : null);
+    return data.isConnected ? data : null;
+  } catch (error) {
+    console.error('[RevGuide BG] User OAuth connection error:', error);
+    return null;
+  }
+}
+
+/**
+ * Make a HubSpot API request via the user's OAuth proxy
+ * Updates will be attributed to the specific user in HubSpot history
+ * @param {string} connectionId - User's OAuth connection ID
+ * @param {string} endpoint - HubSpot API endpoint
+ * @param {string} method - HTTP method
+ * @param {Object} body - Request body
+ * @returns {Object} API response data
+ */
+async function userHubspotProxyRequest(connectionId, endpoint, method = 'GET', body = null) {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-proxy`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authState.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        connectionId,
+        endpoint,
+        method,
+        body
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`User OAuth proxy error: ${response.status} - ${errText}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Get HubSpot auth for write operations - prefers user token for personal attribution
+ * @param {string} orgId - Organization ID
+ * @param {boolean} isWriteOperation - If true, prefer user token for attribution
+ * @returns {Object} { type: 'user-oauth'|'oauth'|'private', connectionId?, apiToken? }
+ */
+async function getHubSpotAuthForWrite(orgId) {
+  console.log('[RevGuide BG] getHubSpotAuthForWrite called with orgId:', orgId);
+
+  // For write operations, prefer user token for personal attribution
+  if (orgId) {
+    const userConnection = await getUserOAuthConnection(orgId);
+    console.log('[RevGuide BG] User connection result:', userConnection);
+    if (userConnection?.connectionId) {
+      console.log('[RevGuide BG] Using user OAuth for write (attributed to:', userConnection.hubspotEmail, ')');
+      return {
+        type: 'user-oauth',
+        connectionId: userConnection.connectionId,
+        hubspotEmail: userConnection.hubspotEmail
+      };
+    }
+  }
+
+  // Fall back to org-level OAuth
+  console.log('[RevGuide BG] Falling back to org-level auth');
+  return await getHubSpotAuth(orgId);
+}
+
+/**
+ * Clear OAuth connection cache (e.g., when connection changes)
+ */
+function clearOAuthConnectionCache(orgId = null) {
+  if (orgId) {
+    oauthConnectionCache.delete(orgId);
+    userOAuthConnectionCache.delete(orgId);
+  } else {
+    oauthConnectionCache.clear();
+    userOAuthConnectionCache.clear();
+  }
+}
+
+/**
+ * Check if user has an active HubSpot connection for this org
+ * @param {string} orgId - Organization ID
+ * @returns {Object} { connected: boolean, email?: string }
+ */
+async function checkUserHubSpotConnection(orgId) {
+  const connection = await getUserOAuthConnection(orgId);
+  if (connection?.isConnected) {
+    return {
+      connected: true,
+      email: connection.hubspotEmail || 'Connected'
+    };
+  }
+  return { connected: false };
+}
+
+/**
+ * Get OAuth authorization URL for user-level HubSpot connection
+ * @param {string} orgId - Organization ID
+ * @param {string} userId - User ID
+ * @returns {Object} { authUrl: string } or { authUrl: null }
+ */
+async function getUserHubSpotAuthUrl(orgId, userId) {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    return { authUrl: null };
+  }
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-authorize`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          organizationId: orgId,
+          userId: userId,
+          returnUrl: 'https://app.revguide.io/settings?hubspot=connected'
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.error('[RevGuide BG] Failed to get user auth URL:', response.status);
+      return { authUrl: null };
+    }
+
+    const data = await response.json();
+    return { authUrl: data.authUrl };
+  } catch (error) {
+    console.error('[RevGuide BG] Error getting user auth URL:', error);
+    return { authUrl: null };
+  }
+}
+
+/**
+ * Disconnect user's HubSpot connection
+ * @param {string} orgId - Organization ID
+ */
+async function disconnectUserHubSpot(orgId) {
+  const authState = await getAuthState();
+  if (!authState.isAuthenticated || !authState.accessToken) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-disconnect`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authState.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ organizationId: orgId })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to disconnect');
+  }
+
+  // Clear cache so next check gets fresh data
+  clearOAuthConnectionCache(orgId);
+}
+
 // ============ CRM PORTAL MATCHING ============
 
 /**
@@ -1042,7 +1404,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Update HubSpot record properties
   if (request.action === 'updateHubSpotProperties') {
-    updateHubSpotRecord(request.objectType, request.recordId, request.properties)
+    updateHubSpotRecord(request.objectType, request.recordId, request.properties, request.orgId)
       .then(data => sendResponse({ success: true, data }))
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
@@ -1058,9 +1420,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Get list memberships for a record (with caching)
   if (request.action === 'getListMemberships') {
-    getListMemberships(request.objectType, request.recordId, request.portalId)
+    getListMemberships(request.objectType, request.recordId, request.portalId, request.orgId)
       .then(data => sendResponse({ success: true, listIds: data }))
       .catch(err => sendResponse({ success: false, error: err.message, listIds: [] }));
+    return true;
+  }
+
+  // Check user's HubSpot connection status
+  if (request.action === 'checkUserHubSpotConnection') {
+    checkUserHubSpotConnection(request.orgId)
+      .then(sendResponse)
+      .catch(() => sendResponse({ connected: false }));
+    return true;
+  }
+
+  // Get OAuth URL for user connection
+  if (request.action === 'getUserHubSpotAuthUrl') {
+    getUserHubSpotAuthUrl(request.orgId, request.userId)
+      .then(sendResponse)
+      .catch(() => sendResponse({ authUrl: null }));
+    return true;
+  }
+
+  // Disconnect user's HubSpot connection
+  if (request.action === 'disconnectUserHubSpot') {
+    disconnectUserHubSpot(request.orgId)
+      .then(() => sendResponse({ success: true }))
+      .catch(() => sendResponse({ success: false }));
     return true;
   }
 });
@@ -1098,31 +1484,36 @@ async function setCachedHubSpotProperties(apiObjectType, properties) {
   await chrome.storage.local.set({ [HUBSPOT_PROPERTIES_CACHE_KEY]: updated });
 }
 
-async function fetchHubSpotPropertiesPaged(apiObjectType, apiToken) {
+async function fetchHubSpotPropertiesPaged(apiObjectType, auth) {
   const properties = [];
   let after = null;
   let pageCount = 0;
 
   while (true) {
-    const url = new URL(`https://api.hubapi.com/crm/v3/properties/${apiObjectType}`);
-    url.searchParams.set('limit', '100');
+    let endpoint = `/crm/v3/properties/${apiObjectType}?limit=100`;
     if (after) {
-      url.searchParams.set('after', after);
+      endpoint += `&after=${after}`;
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
+    let data;
+    if (auth.type === 'oauth') {
+      data = await hubspotProxyRequest(auth.connectionId, endpoint);
+    } else {
+      const response = await fetch(`https://api.hubapi.com${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${auth.apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
       }
-    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
+      data = await response.json();
     }
 
-    const data = await response.json();
     if (Array.isArray(data.results)) {
       properties.push(...data.results);
     }
@@ -1140,26 +1531,24 @@ async function fetchHubSpotPropertiesPaged(apiObjectType, apiToken) {
 
 // Fetch any HubSpot record from API (contacts, companies, deals, tickets)
 // Requires HubSpot API token configured in extension settings
-async function fetchHubSpotRecord(objectType, recordId) {
-  console.log('[RevGuide BG] Fetching record:', objectType, recordId);
+async function fetchHubSpotRecord(objectType, recordId, orgId = null) {
+  console.log('[RevGuide BG] Fetching record:', objectType, recordId, 'orgId:', orgId);
 
-  const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = settings.hubspotApiToken;
-
-  if (!apiToken) {
-    throw new Error('HubSpot API token not configured. Add it in extension settings.');
+  const auth = await getHubSpotAuth(orgId);
+  if (!auth) {
+    throw new Error('HubSpot not connected. Connect via OAuth in settings or add a Private App token.');
   }
 
   const apiObjectType = getHubSpotApiObjectType(objectType);
 
-  console.log('[RevGuide BG] Token found, fetching properties list...');
+  console.log('[RevGuide BG] Using', auth.type, 'auth, fetching properties list...');
 
   let cachedProperties = await getCachedHubSpotProperties(apiObjectType);
   let propertyNames = cachedProperties ? cachedProperties.map(p => p.name) : [];
 
   if (propertyNames.length === 0) {
     try {
-      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { apiToken, forceRefresh: true });
+      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { orgId, forceRefresh: true });
       propertyNames = fetchedProperties.map(p => p.name);
       console.log('[RevGuide BG] Found', propertyNames.length, apiObjectType, 'properties');
     } catch (e) {
@@ -1175,25 +1564,33 @@ async function fetchHubSpotRecord(objectType, recordId) {
   }
 
   // Fetch the record with all properties
-  const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/${recordId}?properties=${propertyNames.join(',')}`;
+  const endpoint = `/crm/v3/objects/${apiObjectType}/${recordId}?properties=${propertyNames.join(',')}`;
   console.log('[RevGuide BG] Fetching', apiObjectType, 'record with', propertyNames.length, 'properties');
 
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/json'
+  let data;
+  if (auth.type === 'oauth') {
+    // Use OAuth proxy
+    data = await hubspotProxyRequest(auth.connectionId, endpoint);
+  } else {
+    // Use Private App token directly
+    const response = await fetch(`https://api.hubapi.com${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${auth.apiToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('[RevGuide BG] Response status:', response.status);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.log('[RevGuide BG] Error response:', errText);
+      throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
     }
-  });
 
-  console.log('[RevGuide BG] Response status:', response.status);
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.log('[RevGuide BG] Error response:', errText);
-    throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
+    data = await response.json();
   }
 
-  const data = await response.json();
   console.log('[RevGuide BG] Success, got', Object.keys(data.properties || {}).length, 'properties');
   return data;
 }
@@ -1203,20 +1600,19 @@ async function fetchHubSpotRecord(objectType, recordId) {
  * Used for index page tags to efficiently fetch properties for many records
  * @param {string} objectType - Object type (deal, contact, company, ticket)
  * @param {Array} recordIds - Array of record IDs to fetch
+ * @param {string} orgId - Organization ID (optional, for OAuth lookup)
  * @returns {Object} Map of recordId -> properties
  */
-async function fetchHubSpotBatchRecords(objectType, recordIds) {
-  console.log('[RevGuide BG] Batch fetching', recordIds.length, objectType, 'records');
+async function fetchHubSpotBatchRecords(objectType, recordIds, orgId = null) {
+  console.log('[RevGuide BG] Batch fetching', recordIds.length, objectType, 'records, orgId:', orgId);
 
   if (!recordIds || recordIds.length === 0) {
     return {};
   }
 
-  const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = settings.hubspotApiToken;
-
-  if (!apiToken) {
-    throw new Error('HubSpot API token not configured. Add it in extension settings.');
+  const auth = await getHubSpotAuth(orgId);
+  if (!auth) {
+    throw new Error('HubSpot not connected. Connect via OAuth in settings or add a Private App token.');
   }
 
   const apiObjectType = getHubSpotApiObjectType(objectType);
@@ -1227,7 +1623,7 @@ async function fetchHubSpotBatchRecords(objectType, recordIds) {
 
   if (propertyNames.length === 0) {
     try {
-      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { apiToken, forceRefresh: true });
+      const fetchedProperties = await fetchHubSpotProperties(apiObjectType, { orgId, forceRefresh: true });
       propertyNames = fetchedProperties.map(p => p.name);
     } catch (e) {
       console.log('[RevGuide BG] Could not fetch property list, using defaults');
@@ -1247,7 +1643,7 @@ async function fetchHubSpotBatchRecords(objectType, recordIds) {
 
   for (let i = 0; i < recordIds.length; i += batchSize) {
     const batch = recordIds.slice(i, i + batchSize);
-    const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/batch/read`;
+    const endpoint = `/crm/v3/objects/${apiObjectType}/batch/read`;
 
     const requestBody = {
       properties: propertyNames,
@@ -1257,30 +1653,39 @@ async function fetchHubSpotBatchRecords(objectType, recordIds) {
 
     console.log('[RevGuide BG] Batch request for', batch.length, 'records');
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let data;
+    try {
+      if (auth.type === 'oauth') {
+        data = await hubspotProxyRequest(auth.connectionId, endpoint, 'POST', requestBody);
+      } else {
+        const response = await fetch(`https://api.hubapi.com${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${auth.apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('[RevGuide BG] Batch API error:', response.status, errText);
-      // Continue with next batch instead of throwing
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('[RevGuide BG] Batch API error:', response.status, errText);
+          continue;
+        }
+
+        data = await response.json();
+      }
+
+      // Map results by record ID
+      if (data.results && Array.isArray(data.results)) {
+        data.results.forEach(record => {
+          const recordId = record.id;
+          results[recordId] = record.properties || {};
+        });
+      }
+    } catch (error) {
+      console.error('[RevGuide BG] Batch request error:', error);
       continue;
-    }
-
-    const data = await response.json();
-
-    // Map results by record ID
-    if (data.results && Array.isArray(data.results)) {
-      data.results.forEach(record => {
-        const recordId = record.id;
-        results[recordId] = record.properties || {};
-      });
     }
   }
 
@@ -1289,16 +1694,15 @@ async function fetchHubSpotBatchRecords(objectType, recordIds) {
 }
 
 // Fetch properties for a HubSpot object type
-// Requires HubSpot API token configured in extension settings
+// Supports OAuth or Private App token
 async function fetchHubSpotProperties(objectType, options = {}) {
   console.log('[RevGuide BG] Fetching properties for:', objectType);
 
-  const { apiToken: providedToken, forceRefresh = false } = options;
-  const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = providedToken || settings.hubspotApiToken;
+  const { orgId = null, forceRefresh = false } = options;
 
-  if (!apiToken) {
-    throw new Error('HubSpot API token not configured. Add it in extension settings.');
+  const auth = await getHubSpotAuth(orgId);
+  if (!auth) {
+    throw new Error('HubSpot not connected. Connect via OAuth in settings or add a Private App token.');
   }
 
   const apiObjectType = getHubSpotApiObjectType(objectType);
@@ -1310,7 +1714,7 @@ async function fetchHubSpotProperties(objectType, options = {}) {
     }
   }
 
-  const rawProperties = await fetchHubSpotPropertiesPaged(apiObjectType, apiToken);
+  const rawProperties = await fetchHubSpotPropertiesPaged(apiObjectType, auth);
   const simplified = rawProperties.map(prop => ({
     name: prop.name,
     label: prop.label,
@@ -1328,15 +1732,14 @@ async function fetchHubSpotProperties(objectType, options = {}) {
 }
 
 // Update a HubSpot record's properties
-// Requires HubSpot API token configured in extension settings
-async function updateHubSpotRecord(objectType, recordId, properties) {
-  console.log('[RevGuide BG] Updating record:', objectType, recordId, properties);
+// Prefers user-level OAuth for personal attribution in HubSpot history
+async function updateHubSpotRecord(objectType, recordId, properties, orgId = null) {
+  console.log('[RevGuide BG] Updating record:', objectType, recordId, properties, 'orgId:', orgId);
 
-  const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = settings.hubspotApiToken;
-
-  if (!apiToken) {
-    throw new Error('HubSpot API token not configured. Add it in extension settings.');
+  // Use getHubSpotAuthForWrite to prefer user token for personal attribution
+  const auth = await getHubSpotAuthForWrite(orgId);
+  if (!auth) {
+    throw new Error('HubSpot not connected. Connect via OAuth in settings or add a Private App token.');
   }
 
   if (!objectType || !recordId) {
@@ -1344,28 +1747,45 @@ async function updateHubSpotRecord(objectType, recordId, properties) {
   }
 
   const apiObjectType = getHubSpotApiObjectType(objectType);
+  const endpoint = `/crm/v3/objects/${apiObjectType}/${recordId}`;
+  console.log('[RevGuide BG] PATCH request to:', endpoint, 'using', auth.type, 'auth');
 
-  const url = `https://api.hubapi.com/crm/v3/objects/${apiObjectType}/${recordId}`;
-  console.log('[RevGuide BG] PATCH request to:', url);
-
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ properties })
-  });
-
-  console.log('[RevGuide BG] Response status:', response.status);
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.log('[RevGuide BG] Error response:', errText);
-    throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
+  // Add user attribution property if using user-oauth
+  const propsToUpdate = { ...properties };
+  if (auth.type === 'user-oauth' && auth.hubspotEmail) {
+    propsToUpdate.revguide_last_modified_by = auth.hubspotEmail;
+    console.log('[RevGuide BG] Adding attribution:', auth.hubspotEmail);
   }
 
-  const data = await response.json();
+  let data;
+  if (auth.type === 'user-oauth') {
+    // Use user's OAuth proxy - updates attributed to the specific user
+    data = await userHubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties: propsToUpdate });
+  } else if (auth.type === 'oauth') {
+    // Use org-level OAuth proxy - updates attributed to "RevGuide" app
+    data = await hubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties });
+  } else {
+    // Use Private App token directly
+    const response = await fetch(`https://api.hubapi.com${endpoint}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${auth.apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ properties })
+    });
+
+    console.log('[RevGuide BG] Response status:', response.status);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.log('[RevGuide BG] Error response:', errText);
+      throw new Error(`HubSpot API error: ${response.status} - ${errText}`);
+    }
+
+    data = await response.json();
+  }
+
   console.log('[RevGuide BG] Success, updated properties');
   return data;
 }
@@ -1401,9 +1821,10 @@ function getHubSpotObjectTypeId(objectType) {
  * @param {string} objectType - Object type (contact, company, deal)
  * @param {string} recordId - HubSpot record ID
  * @param {string} portalId - Portal ID for cache key
+ * @param {string} orgId - Organization ID (optional, for OAuth lookup)
  * @returns {Promise<Array>} Array of list IDs the record belongs to
  */
-async function getListMemberships(objectType, recordId, portalId) {
+async function getListMemberships(objectType, recordId, portalId, orgId = null) {
   const cacheKey = `${portalId}_${objectType}_${recordId}`;
 
   // Check cache first
@@ -1417,35 +1838,39 @@ async function getListMemberships(objectType, recordId, portalId) {
     return cached.listIds || [];
   }
 
-  // Fetch from HubSpot API
-  const { settings } = await chrome.storage.local.get({ settings: {} });
-  const apiToken = settings.hubspotApiToken;
-
-  if (!apiToken) {
-    console.warn('[RevGuide BG] No HubSpot API token, cannot fetch list memberships');
+  // Get HubSpot auth (OAuth or Private App token)
+  const auth = await getHubSpotAuth(orgId);
+  if (!auth) {
+    console.warn('[RevGuide BG] No HubSpot connection, cannot fetch list memberships');
     return [];
   }
 
   try {
     const objectTypeId = getHubSpotObjectTypeId(objectType);
-    const url = `https://api.hubapi.com/crm/v3/lists/records/${objectTypeId}/${recordId}/memberships`;
+    const endpoint = `/crm/v3/lists/records/${objectTypeId}/${recordId}/memberships`;
 
-    console.log('[RevGuide BG] Fetching list memberships:', url);
+    console.log('[RevGuide BG] Fetching list memberships:', endpoint, 'using', auth.type, 'auth');
 
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
+    let data;
+    if (auth.type === 'oauth') {
+      data = await hubspotProxyRequest(auth.connectionId, endpoint);
+    } else {
+      const response = await fetch(`https://api.hubapi.com${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${auth.apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn('[RevGuide BG] List memberships API error:', response.status, errText);
+        return [];
       }
-    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.warn('[RevGuide BG] List memberships API error:', response.status, errText);
-      return [];
+      data = await response.json();
     }
 
-    const data = await response.json();
     const listIds = data.listIds || [];
 
     console.log('[RevGuide BG] Got list memberships:', listIds.length);

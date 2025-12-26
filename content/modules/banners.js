@@ -337,7 +337,8 @@ class BannersModule {
         recordContext: {
           recordId: this.helper.context?.recordId,
           objectType: this.helper.context?.objectType,
-          properties: this.helper.properties || {}
+          properties: this.helper.properties || {},
+          orgId: this.helper.matchedOrgId
         }
       }, (resp) => {
         if (chrome.runtime.lastError) {

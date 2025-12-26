@@ -8,7 +8,8 @@
     "auth": {
       "type": "oauth",
       "redirectUrls": [
-        "https://qbdhvhrowmfnacyikkbf.supabase.co/functions/v1/hubspot-oauth/callback"
+        "https://qbdhvhrowmfnacyikkbf.supabase.co/functions/v1/hubspot-oauth/callback",
+        "https://qbdhvhrowmfnacyikkbf.supabase.co/functions/v1/hubspot-oauth/user-callback"
       ],
       "requiredScopes": [
         "oauth",
@@ -17,13 +18,13 @@
         "crm.objects.deals.read",
         "crm.schemas.contacts.read",
         "crm.schemas.companies.read",
-        "crm.schemas.deals.read"
-      ],
-      "optionalScopes": [
+        "crm.schemas.deals.read",
+        "crm.lists.read",
         "crm.objects.contacts.write",
         "crm.objects.companies.write",
         "crm.objects.deals.write"
       ],
+      "optionalScopes": [],
       "conditionallyRequiredScopes": []
     },
     "permittedUrls": {

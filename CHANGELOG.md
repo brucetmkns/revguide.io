@@ -2,6 +2,48 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.16.0] - 2025-12-24 - HubSpot OAuth User-Level Authentication
+
+### Added
+- **User-Level HubSpot OAuth**: Individual users can now connect their personal HubSpot accounts
+  - Personal OAuth tokens used for property updates (shows "RevGuide-Application" in HubSpot history instead of old private app)
+  - User connection UI in sidepanel Settings tab with connect/disconnect buttons
+  - Connection status shows connected user's email address
+  - Token selection logic prefers user tokens for write operations, falls back to org-level OAuth
+- **User Attribution Property**: Property updates include `revguide_last_modified_by` field
+  - Stores the email of the RevGuide user who made the change
+  - Provides audit trail for data governance and compliance
+  - Requires creating custom HubSpot property (see Setup below)
+- **New Database Migration**: `042_user_hubspot_connections.sql`
+  - `user_hubspot_connections` table stores encrypted per-user OAuth tokens
+  - RPC functions: `store_user_hubspot_connection`, `get_user_hubspot_connection`, `update_user_hubspot_tokens`, `disconnect_user_hubspot`
+
+### Changed
+- **OAuth Scopes**: Write scopes (`crm.objects.*.write`) now required (moved from optional)
+- **Property Updates**: Now route through OAuth proxy instead of direct API calls with private app token
+- **Edge Function**: Added user-level OAuth endpoints (`user-authorize`, `user-callback`, `user-connection`, `user-disconnect`, `user-proxy`)
+
+### Technical
+- `background/background.js`: New functions `getUserOAuthConnection()`, `userHubspotProxyRequest()`, `getHubSpotAuthForWrite()`, `checkUserHubSpotConnection()`, `getUserHubSpotAuthUrl()`, `disconnectUserHubSpot()`
+- `sidepanel/sidepanel.js`: New methods `checkHubSpotConnectionStatus()`, `initiateHubSpotConnection()`, `disconnectHubSpot()`
+- `sidepanel/sidepanel.html`: HubSpot Connection section in Settings tab
+- `content/modules/banners.js`, `content/modules/index-tags.js`: Pass `orgId` in recordContext for OAuth routing
+
+### Setup Required
+To enable user attribution tracking, create a custom property in HubSpot for each object type:
+1. Go to **Settings** > **Properties** > Select object type (Deals, Contacts, Companies)
+2. Click **Create property**
+3. Configure:
+   - **Label**: `RevGuide Last Modified By`
+   - **Internal name**: `revguide_last_modified_by`
+   - **Field type**: Single-line text
+4. Repeat for each object type you use
+
+### Migration Notes
+- Existing org-level OAuth connections continue to work
+- User connections are optional but recommended for property update plays
+- Private app token fallback remains for backwards compatibility
+
 ## [2.15.1] - 2025-12-24 - Sidepanel Slide-in Panels & Recommended Content Plays
 
 ### Added

@@ -41,13 +41,18 @@ const HUBSPOT_API_VERSION = '2025-02'
 // Required OAuth scopes
 const HUBSPOT_SCOPES = [
   'oauth',
+  // Read scopes
   'crm.objects.contacts.read',
   'crm.objects.companies.read',
   'crm.objects.deals.read',
   'crm.schemas.contacts.read',
   'crm.schemas.companies.read',
   'crm.schemas.deals.read',
-  'crm.lists.read'
+  'crm.lists.read',
+  // Write scopes (for property updates via plays)
+  'crm.objects.contacts.write',
+  'crm.objects.companies.write',
+  'crm.objects.deals.write'
 ]
 
 serve(async (req) => {
@@ -61,16 +66,30 @@ serve(async (req) => {
 
   try {
     switch (path) {
+      // Org-level OAuth endpoints
       case 'authorize':
         return await handleAuthorize(req)
       case 'callback':
         return await handleCallback(req)
       case 'connection':
         return await handleGetConnection(req)
+      case 'connection-by-org':
+        return await handleGetConnectionByOrg(req)
       case 'disconnect':
         return await handleDisconnect(req)
       case 'proxy':
         return await handleProxy(req)
+      // User-level OAuth endpoints (for personal attribution in property history)
+      case 'user-authorize':
+        return await handleUserAuthorize(req)
+      case 'user-callback':
+        return await handleUserCallback(req)
+      case 'user-connection':
+        return await handleGetUserConnection(req)
+      case 'user-disconnect':
+        return await handleUserDisconnect(req)
+      case 'user-proxy':
+        return await handleUserProxy(req)
       default:
         return new Response(
           JSON.stringify({ error: 'Not found' }),
@@ -494,6 +513,107 @@ async function handleGetConnection(req: Request): Promise<Response> {
 }
 
 /**
+ * Get connection by organization ID (for extension use)
+ * Used by the Chrome extension to get the OAuth connection for making API calls
+ */
+async function handleGetConnectionByOrg(req: Request): Promise<Response> {
+  const supabase = getServiceClient()
+
+  // Get user from authorization header
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Not authenticated' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid token' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get organization ID from request body
+  const { organizationId } = await req.json()
+
+  if (!organizationId) {
+    return new Response(
+      JSON.stringify({ error: 'organizationId required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Verify user has access to this organization
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('organization_id, active_organization_id')
+    .eq('auth_user_id', user.id)
+    .single()
+
+  if (userError || !userData) {
+    return new Response(
+      JSON.stringify({ error: 'User not found' }),
+      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Check if user has access to the requested organization
+  const hasAccess = userData.organization_id === organizationId ||
+                    userData.active_organization_id === organizationId
+
+  if (!hasAccess) {
+    // Also check org_members for partner access
+    const { data: memberData } = await supabase
+      .from('org_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('organization_id', organizationId)
+      .single()
+
+    if (!memberData) {
+      return new Response(
+        JSON.stringify({ error: 'Access denied to this organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // Get active connection for organization
+  const { data: connection, error: connError } = await supabase
+    .from('hubspot_connections')
+    .select('id, portal_id, portal_domain, portal_name, token_expires_at, scopes, connected_at')
+    .eq('organization_id', organizationId)
+    .eq('is_active', true)
+    .single()
+
+  if (connError || !connection) {
+    return new Response(
+      JSON.stringify({ isConnected: false }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  return new Response(
+    JSON.stringify({
+      isConnected: true,
+      connectionId: connection.id,
+      portalId: connection.portal_id,
+      portalDomain: connection.portal_domain,
+      portalName: connection.portal_name,
+      scopes: connection.scopes,
+      connectedAt: connection.connected_at,
+      tokenExpiresAt: connection.token_expires_at
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
  * Disconnect HubSpot connection
  */
 async function handleDisconnect(req: Request): Promise<Response> {
@@ -799,4 +919,538 @@ function redirectWithError(message: string, returnUrl: string): Response {
   const url = new URL(returnUrl)
   url.searchParams.set('error', message)
   return Response.redirect(url.toString(), 302)
+}
+
+// ============================================
+// USER-LEVEL OAUTH HANDLERS
+// For personal attribution in HubSpot property history
+// ============================================
+
+/**
+ * Start user-level OAuth flow
+ * Similar to org-level but stores in user_hubspot_connections
+ */
+async function handleUserAuthorize(req: Request): Promise<Response> {
+  const body = await req.json()
+  const { returnUrl, organizationId } = body
+
+  if (!returnUrl) {
+    return new Response(
+      JSON.stringify({ error: 'returnUrl is required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  if (!organizationId) {
+    return new Response(
+      JSON.stringify({ error: 'organizationId is required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get user from authorization header (required for user-level auth)
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const supabase = getServiceClient()
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user } } = await supabase.auth.getUser(token)
+
+  if (!user) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid token' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get user's internal ID
+  const { data: userData } = await supabase
+    .from('users')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single()
+
+  if (!userData) {
+    return new Response(
+      JSON.stringify({ error: 'User profile not found' }),
+      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Generate state for CSRF protection - mark as user-level
+  const state = `user_${crypto.randomUUID()}`
+  console.log('Generated user OAuth state:', state, 'for user:', userData.id, 'org:', organizationId)
+
+  // Store state in database
+  const { error: stateError } = await supabase
+    .from('oauth_states')
+    .insert({
+      state,
+      user_id: user.id,
+      organization_id: organizationId,
+      return_url: returnUrl,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    })
+
+  if (stateError) {
+    console.error('Failed to store OAuth state:', stateError)
+    return new Response(
+      JSON.stringify({ error: 'Failed to initialize OAuth flow' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Build HubSpot authorization URL - use user-callback endpoint
+  const redirectUri = `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-callback`
+  const authUrl = new URL(HUBSPOT_AUTH_URL)
+  authUrl.searchParams.set('client_id', HUBSPOT_CLIENT_ID)
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('scope', HUBSPOT_SCOPES.join(' '))
+  authUrl.searchParams.set('state', state)
+
+  return new Response(
+    JSON.stringify({ authUrl: authUrl.toString() }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
+ * Handle user-level OAuth callback from HubSpot
+ */
+async function handleUserCallback(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const code = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+  const error = url.searchParams.get('error')
+  const errorDescription = url.searchParams.get('error_description')
+
+  if (error) {
+    console.error('HubSpot user OAuth error:', error, errorDescription)
+    return redirectWithError('OAuth was cancelled or failed', '')
+  }
+
+  if (!code || !state) {
+    return redirectWithError('Missing code or state parameter', '')
+  }
+
+  // Verify this is a user-level state
+  if (!state.startsWith('user_')) {
+    return redirectWithError('Invalid state format for user OAuth', '')
+  }
+
+  const supabase = getServiceClient()
+
+  // Validate state (CSRF protection)
+  const { data: oauthState, error: stateError } = await supabase
+    .from('oauth_states')
+    .select('*')
+    .eq('state', state)
+    .single()
+
+  if (stateError || !oauthState) {
+    console.error('Invalid user OAuth state:', state)
+    return redirectWithError('Invalid or expired session', '')
+  }
+
+  if (new Date(oauthState.expires_at) < new Date()) {
+    await supabase.from('oauth_states').delete().eq('state', state)
+    return redirectWithError('Session expired, please try again', oauthState.return_url)
+  }
+
+  // Delete the used state
+  await supabase.from('oauth_states').delete().eq('state', state)
+
+  try {
+    // Exchange code for tokens - use user-callback redirect URI
+    const redirectUri = `${SUPABASE_URL}/functions/v1/hubspot-oauth/user-callback`
+    const tokenResponse = await fetch(HUBSPOT_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: HUBSPOT_CLIENT_ID,
+        client_secret: HUBSPOT_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        code
+      })
+    })
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text()
+      console.error('User token exchange failed:', tokenResponse.status, errorData)
+      return redirectWithError('Failed to connect to HubSpot', oauthState.return_url)
+    }
+
+    const tokens = await tokenResponse.json()
+    console.log('User tokens received, expires_in:', tokens.expires_in)
+
+    // Get HubSpot user info from token - this gives us the user ID for attribution
+    const hubspotUserInfo = await fetchHubSpotUserInfo(tokens.access_token)
+    if (!hubspotUserInfo) {
+      return redirectWithError('Failed to get HubSpot user info', oauthState.return_url)
+    }
+
+    console.log('HubSpot user info:', hubspotUserInfo)
+
+    // Get portal info
+    const portalInfo = await fetchPortalInfo(tokens.access_token)
+    if (!portalInfo) {
+      return redirectWithError('Failed to get HubSpot account info', oauthState.return_url)
+    }
+
+    // Get the RevGuide user ID
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', oauthState.user_id)
+      .single()
+
+    if (!userData) {
+      return redirectWithError('User profile not found', oauthState.return_url)
+    }
+
+    // Store the user connection with encrypted tokens
+    const { data: connectionResult, error: connectionError } = await supabase.rpc(
+      'store_user_hubspot_connection',
+      {
+        p_user_id: userData.id,
+        p_organization_id: oauthState.organization_id,
+        p_portal_id: portalInfo.portalId,
+        p_hubspot_user_id: hubspotUserInfo.userId,
+        p_hubspot_user_email: hubspotUserInfo.email,
+        p_access_token: tokens.access_token,
+        p_refresh_token: tokens.refresh_token,
+        p_expires_in: tokens.expires_in,
+        p_scopes: HUBSPOT_SCOPES,
+        p_encryption_key: TOKEN_ENCRYPTION_KEY
+      }
+    )
+
+    if (connectionError) {
+      console.error('Failed to store user connection:', connectionError)
+      return redirectWithError('Failed to save connection', oauthState.return_url)
+    }
+
+    console.log('User connection stored successfully:', connectionResult)
+
+    // Redirect back with success
+    const returnUrl = new URL(oauthState.return_url)
+    returnUrl.searchParams.set('user_connected', 'true')
+    returnUrl.searchParams.set('hubspot_email', hubspotUserInfo.email)
+
+    return Response.redirect(returnUrl.toString(), 302)
+
+  } catch (error) {
+    console.error('User OAuth callback error:', error)
+    return redirectWithError('An error occurred during connection', oauthState.return_url)
+  }
+}
+
+/**
+ * Get HubSpot user info from access token
+ */
+async function fetchHubSpotUserInfo(accessToken: string): Promise<{
+  userId: string
+  email: string
+} | null> {
+  try {
+    // The token info endpoint returns the user who authorized
+    const response = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`)
+
+    if (!response.ok) {
+      console.error('Failed to fetch HubSpot user info:', response.status)
+      return null
+    }
+
+    const data = await response.json()
+    return {
+      userId: data.user_id?.toString() || data.hub_id?.toString(),
+      email: data.user || 'unknown@hubspot.com'
+    }
+  } catch (error) {
+    console.error('HubSpot user info error:', error)
+    return null
+  }
+}
+
+/**
+ * Get user's HubSpot connection status
+ */
+async function handleGetUserConnection(req: Request): Promise<Response> {
+  const supabase = getServiceClient()
+
+  // Get user from authorization header
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ isConnected: false, error: 'Not authenticated' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ isConnected: false, error: 'Invalid token' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get organization ID from request body or query
+  let organizationId: string | null = null
+  try {
+    const body = await req.json()
+    organizationId = body.organizationId
+  } catch {
+    // No body, check query params
+    const url = new URL(req.url)
+    organizationId = url.searchParams.get('organizationId')
+  }
+
+  if (!organizationId) {
+    return new Response(
+      JSON.stringify({ isConnected: false, error: 'organizationId required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get user's internal ID
+  const { data: userData } = await supabase
+    .from('users')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single()
+
+  if (!userData) {
+    return new Response(
+      JSON.stringify({ isConnected: false }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Get user's active connection for this org
+  const { data: connection } = await supabase
+    .from('user_hubspot_connections')
+    .select('id, portal_id, hubspot_user_email, token_expires_at, scopes, connected_at')
+    .eq('user_id', userData.id)
+    .eq('organization_id', organizationId)
+    .eq('is_active', true)
+    .single()
+
+  if (!connection) {
+    return new Response(
+      JSON.stringify({ isConnected: false }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  return new Response(
+    JSON.stringify({
+      isConnected: true,
+      connectionId: connection.id,
+      portalId: connection.portal_id,
+      hubspotEmail: connection.hubspot_user_email,
+      scopes: connection.scopes,
+      connectedAt: connection.connected_at,
+      tokenExpiresAt: connection.token_expires_at
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
+ * Disconnect user's HubSpot connection
+ */
+async function handleUserDisconnect(req: Request): Promise<Response> {
+  const { connectionId } = await req.json()
+
+  if (!connectionId) {
+    return new Response(
+      JSON.stringify({ error: 'connectionId required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const supabase = getServiceClient()
+
+  const { error } = await supabase.rpc('disconnect_user_hubspot', {
+    p_connection_id: connectionId
+  })
+
+  if (error) {
+    console.error('Failed to disconnect user:', error)
+    return new Response(
+      JSON.stringify({ error: 'Failed to disconnect' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
+ * Proxy HubSpot API requests using user's token
+ * Updates are attributed to the specific user in HubSpot
+ */
+async function handleUserProxy(req: Request): Promise<Response> {
+  const { connectionId, endpoint, method = 'GET', body } = await req.json()
+
+  if (!connectionId || !endpoint) {
+    return new Response(
+      JSON.stringify({ error: 'connectionId and endpoint required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const supabase = getServiceClient()
+
+  // Get user's access token
+  const accessToken = await getValidUserAccessToken(supabase, connectionId)
+
+  if (!accessToken) {
+    return new Response(
+      JSON.stringify({ error: 'User connection not found or token refresh failed' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Make request to HubSpot using user's token
+  const hubspotResponse = await fetch(`${HUBSPOT_API_BASE}${endpoint}`, {
+    method,
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-HubSpot-API-Version': HUBSPOT_API_VERSION
+    },
+    body: body ? JSON.stringify(body) : undefined
+  })
+
+  const data = await hubspotResponse.json()
+
+  // Update last_used_at
+  await supabase
+    .from('user_hubspot_connections')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('id', connectionId)
+
+  return new Response(
+    JSON.stringify(data),
+    {
+      status: hubspotResponse.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    }
+  )
+}
+
+/**
+ * Get a valid user access token, refreshing if necessary
+ */
+async function getValidUserAccessToken(supabase: any, connectionId: string): Promise<string | null> {
+  // Get token info from database
+  const { data: connection, error } = await supabase
+    .from('user_hubspot_connections')
+    .select('access_token_encrypted, refresh_token_encrypted, token_expires_at')
+    .eq('id', connectionId)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !connection) {
+    console.error('User connection not found:', error)
+    return null
+  }
+
+  // Decrypt the tokens
+  const { data: tokenData, error: decryptError } = await supabase.rpc(
+    'get_user_hubspot_connection',
+    {
+      p_user_id: null, // Not needed when we have connection_id directly
+      p_organization_id: null,
+      p_encryption_key: TOKEN_ENCRYPTION_KEY
+    }
+  )
+
+  // Actually, let's query differently - use a simpler approach
+  // Decrypt tokens inline
+  const { data: decrypted } = await supabase.rpc('decrypt_hubspot_token', {
+    p_encrypted_token: connection.access_token_encrypted,
+    p_encryption_key: TOKEN_ENCRYPTION_KEY
+  })
+
+  if (!decrypted) {
+    console.error('Failed to decrypt user token')
+    return null
+  }
+
+  const accessToken = decrypted
+
+  // Check if token expires within 5 minutes
+  const expiresAt = new Date(connection.token_expires_at)
+  const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000)
+
+  if (expiresAt > fiveMinutesFromNow) {
+    return accessToken
+  }
+
+  // Token needs refresh
+  console.log('Refreshing user HubSpot token for connection:', connectionId)
+
+  // Decrypt refresh token
+  const { data: refreshToken } = await supabase.rpc('decrypt_hubspot_token', {
+    p_encrypted_token: connection.refresh_token_encrypted,
+    p_encryption_key: TOKEN_ENCRYPTION_KEY
+  })
+
+  if (!refreshToken) {
+    console.error('Failed to decrypt refresh token')
+    return null
+  }
+
+  try {
+    const response = await fetch(HUBSPOT_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: HUBSPOT_CLIENT_ID,
+        client_secret: HUBSPOT_CLIENT_SECRET,
+        refresh_token: refreshToken
+      })
+    })
+
+    if (!response.ok) {
+      console.error('User token refresh failed:', response.status, await response.text())
+      return null
+    }
+
+    const newTokens = await response.json()
+
+    // Update tokens in database
+    await supabase.rpc('update_user_hubspot_tokens', {
+      p_connection_id: connectionId,
+      p_access_token: newTokens.access_token,
+      p_refresh_token: newTokens.refresh_token,
+      p_expires_in: newTokens.expires_in,
+      p_encryption_key: TOKEN_ENCRYPTION_KEY
+    })
+
+    return newTokens.access_token
+
+  } catch (error) {
+    console.error('User token refresh error:', error)
+    return null
+  }
 }
