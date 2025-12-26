@@ -27,7 +27,11 @@
     { "source": "/plays", "destination": "/admin/pages/plays.html" },
     { "source": "/libraries", "destination": "/admin/pages/libraries.html" },
     { "source": "/content", "destination": "/admin/pages/content.html" },
-    { "source": "/settings", "destination": "/admin/pages/settings.html" }
+    { "source": "/settings", "destination": "/admin/pages/settings.html" },
+    { "source": "/branding", "destination": "/admin/pages/branding.html" },
+    { "source": "/tags", "destination": "/admin/pages/tags.html" },
+    { "source": "/tag-rules", "destination": "/admin/pages/tag-rules.html" },
+    { "source": "/recommendations", "destination": "/admin/pages/recommendations.html" }
   ],
   "headers": [
     {
