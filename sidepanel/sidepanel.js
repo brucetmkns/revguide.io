@@ -745,14 +745,19 @@ class SidePanel {
     if (branding.primary_color) {
       root.style.setProperty('--sp-primary', branding.primary_color);
 
-      // Calculate darker shade for hover states
-      const darkerColor = this.darkenColor(branding.primary_color, 20);
-      root.style.setProperty('--sp-primary-dark', darkerColor);
+      // Calculate hover color (slightly darker)
+      const hoverColor = this.darkenColor(branding.primary_color, 10);
+      root.style.setProperty('--sp-primary-hover', hoverColor);
 
-      // Calculate transparent background version
+      // Calculate dark text color for on-primary text
+      const darkColor = this.darkenColor(branding.primary_color, 70);
+      root.style.setProperty('--sp-primary-dark', darkColor);
+
+      // Calculate transparent background and shadow versions
       const rgb = this.hexToRgb(branding.primary_color);
       if (rgb) {
         root.style.setProperty('--sp-primary-bg', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
+        root.style.setProperty('--sp-primary-shadow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
       }
     }
 

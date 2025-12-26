@@ -5,8 +5,10 @@
 /* CSS Variables for Branding (overridden dynamically) */
 :root {
   --sp-primary: #b2ef63;
+  --sp-primary-hover: #9ed654;
   --sp-primary-dark: #1a2e05;
   --sp-primary-bg: rgba(178, 239, 99, 0.1);
+  --sp-primary-shadow: rgba(178, 239, 99, 0.15);
   --sp-font-family: "Lexend Deca", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -316,7 +318,7 @@ body {
   gap: 8px;
   padding: 10px 24px;
   background: var(--sp-primary);
-  color: #1a2e05;
+  color: var(--sp-primary-dark);
   border: none;
   border-radius: 4px;
   font-size: 14px;
@@ -326,7 +328,7 @@ body {
 }
 
 .logged-out-state .btn:hover {
-  background: #9ed654;
+  background: var(--sp-primary-hover);
 }
 
 .logged-out-state .login-hint {
@@ -390,7 +392,7 @@ body {
 
 .battle-card:hover {
   border-color: var(--sp-primary);
-  box-shadow: 0 2px 8px rgba(178, 239, 99, 0.15);
+  box-shadow: 0 2px 8px var(--sp-primary-shadow);
 }
 
 .battle-card:last-child {
@@ -539,7 +541,7 @@ body {
   gap: 6px;
   padding: 10px 16px;
   background: var(--sp-primary);
-  color: #1a2e05;
+  color: var(--sp-primary-dark);
   text-decoration: none;
   border-radius: 4px;
   font-size: 14px;
@@ -548,7 +550,7 @@ body {
 }
 
 .card-link a:hover {
-  background: #9ed654;
+  background: var(--sp-primary-hover);
 }
 
 .card-link a svg {
@@ -753,7 +755,7 @@ body {
 .settings-form-group input:focus {
   outline: none;
   border-color: var(--sp-primary);
-  box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
+  box-shadow: 0 0 0 2px var(--sp-primary-bg);
 }
 
 /* Buttons */
@@ -777,11 +779,11 @@ body {
 
 .btn-primary {
   background: var(--sp-primary);
-  color: #1a2e05;
+  color: var(--sp-primary-dark);
 }
 
 .btn-primary:hover {
-  background: #9ed654;
+  background: var(--sp-primary-hover);
 }
 
 .btn-secondary {
@@ -858,7 +860,7 @@ body {
 .field-input:focus {
   outline: none;
   border-color: var(--sp-primary);
-  box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
+  box-shadow: 0 0 0 2px var(--sp-primary-bg);
 }
 
 .field-input.field-error {
@@ -925,7 +927,7 @@ body {
 .field-select:focus {
   outline: none;
   border-color: var(--sp-primary);
-  box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
+  box-shadow: 0 0 0 2px var(--sp-primary-bg);
 }
 
 /* Checkbox fields */
@@ -1060,7 +1062,7 @@ body {
   background: var(--sp-primary);
   border: none;
   border-radius: 4px;
-  color: #1a2e05;
+  color: var(--sp-primary-dark);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s ease, background 0.2s ease;
@@ -1072,7 +1074,7 @@ body {
 }
 
 .media-open-btn:hover {
-  background: #9edc4f;
+  background: var(--sp-primary-hover);
 }
 
 .media-open-btn svg {
@@ -1412,11 +1414,11 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(178, 239, 99, 0.08);
-  border-bottom: 1px solid rgba(178, 239, 99, 0.15);
+  background: var(--sp-primary-bg);
+  border-bottom: 1px solid var(--sp-primary-shadow);
   font-size: 12px;
   font-weight: 500;
-  color: #6b8a3a;
+  color: var(--sp-primary-dark);
 }
 
 .rec-timeline-match-banner svg {
