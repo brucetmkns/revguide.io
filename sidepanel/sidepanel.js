@@ -717,21 +717,27 @@ class SidePanel {
   }
 
   async loadBranding() {
-    // Load branding for the current user's organization
+    // Load branding for the current user's organization via background script
     try {
       if (!this.authState.isAuthenticated || !this.authState.session) {
         return;
       }
 
-      const { data, error } = await supabase.rpc('get_current_user_branding');
+      // Get branding from background script (it's included in getContent response)
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getContent' }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error getting content for branding:', chrome.runtime.lastError.message);
+            resolve(null);
+          } else {
+            resolve(response);
+          }
+        });
+      });
 
-      if (error) {
-        console.error('Error loading branding:', error);
-        return;
-      }
-
-      if (data) {
-        this.applyBranding(data);
+      if (response?.content?.branding) {
+        console.log('[SidePanel] Branding loaded:', response.content.branding.display_name);
+        this.applyBranding(response.content.branding);
       }
     } catch (err) {
       console.error('Failed to load branding:', err);

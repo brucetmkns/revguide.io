@@ -704,6 +704,12 @@ class WikiModule {
     const branding = this.helper.branding;
     const attribution = branding?.tooltip_attribution || 'revguide';
 
+    console.log('[RevGuide Wiki] Attribution check:', {
+      hasBranding: !!branding,
+      attribution,
+      displayName: branding?.display_name
+    });
+
     if (attribution === 'none') {
       return '';
     }
