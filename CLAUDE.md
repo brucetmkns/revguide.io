@@ -23,6 +23,65 @@ Project-specific instructions for Claude Code sessions.
 - Just `git push` - Vercel auto-deploys via GitHub webhook
 - The free plan has a 100/day limit on API (CLI) deployments, but unlimited git-push deployments
 
+## Versioning
+
+Use semantic versioning (`MAJOR.MINOR.PATCH`) with **conservative increments**:
+
+**PATCH (0.0.X)** - Default for most changes:
+- Bug fixes
+- Small UI tweaks
+- Copy/text changes
+- Performance improvements
+- Refactoring without behavior changes
+
+**MINOR (0.X.0)** - Only when adding significant functionality:
+- New user-facing features
+- New settings/options
+- New integrations or API endpoints
+- Significant UI additions (new pages, panels, components)
+
+**MAJOR (X.0.0)** - Reserved for breaking changes:
+- Breaking API changes
+- Major architectural rewrites
+- Changes requiring user migration/action
+- Incompatible data format changes
+
+**Guidelines:**
+- When in doubt, use PATCH
+- Multiple small fixes in one release = still PATCH
+- A new feature + bug fixes = MINOR (the highest wins)
+- **Minimize top-level version jumps** - prefer 2.1.0 over 3.0.0 unless truly breaking
+- Batch multiple features into a single MINOR bump when releasing to Chrome Web Store
+- Update `manifest.json` version and add entry to `CHANGELOG.md`
+
+## Chrome Web Store Releases
+
+**Packaging:**
+```bash
+# Build and create versioned zip
+npm run build
+./scripts/package-extension.sh
+```
+
+**Zip Naming Convention:**
+- Format: `revguide-extension-v{VERSION}.zip`
+- Example: `revguide-extension-v2.0.0.zip`
+- Store versioned zips in project root for traceability
+- The `dist/` folder contains the unversioned `revguide-extension.zip` (gitignored)
+
+**Release Checklist:**
+1. Ensure all changes are committed
+2. Update `manifest.json` version
+3. Add changelog entry for the version
+4. Run `npm run build` to process Tailwind
+5. Run `./scripts/package-extension.sh` to create versioned zip
+6. Upload to Chrome Web Store Developer Dashboard
+7. Commit the versioned zip for historical reference
+
+**Version History (Chrome Web Store uploads):**
+- v1.9.9 - 2025-12-15
+- v2.0.0 - 2025-01-19 (submitted, pending review)
+
 ## Code Patterns
 
 ### Dual Context (Web vs Extension)
