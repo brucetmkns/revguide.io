@@ -407,6 +407,11 @@ The extension uses HubSpot Private App tokens which require specific scopes:
 - [x] OAuth flow instead of Private App tokens (more secure, user-scoped) - *Complete in v2.1.0*
 - [x] Token encryption at rest - *Complete in v2.1.0 (pgcrypto)*
 - [x] User-level OAuth for personal attribution - *Complete in v2.16.0*
+- [ ] **User deletion cleanup function** - Create `delete_user()` PostgreSQL function to properly handle foreign key constraints:
+  - SET NULL for audit trails (`invitations.invited_by`, `hubspot_connections.connected_by`, `library_installations.installed_by`, `partner_access_requests.reviewed_by`)
+  - DELETE user-specific records (`invite_links.created_by`, `oauth_completions.user_id`)
+  - CASCADE handles the rest (`organization_members`, `partner_libraries`, etc.)
+  - Currently user deletion is blocked by RESTRICT constraints if user has performed any actions
 - [ ] Session timeout for sensitive operations
 - [ ] Audit log viewer in admin panel
 - [ ] Per-user permissions when SaaS version launches
@@ -1149,6 +1154,14 @@ Design mockups created in `website/admin-redesign.html` (Admin view) and `websit
 - [x] **User Profile section** - View/edit profile info (name, email display, company name)
 - [x] **Billing management** - View subscription, upgrade plan, manage via Stripe Portal (v2.11.0)
 - [ ] Account deletion/data export (GDPR compliance)
+
+### Partner Branding Enhancements
+- [x] **Primary Color reset button** - (X) button to restore default color (#b2ef63)
+- [ ] **Multi-shade color system** - Consider separate color settings for different UI elements:
+  - **Tooltip icon** - Currently uses darker green (#7cb342) for better contrast with white backgrounds
+  - **FAB button** - Uses bright primary (#b2ef63) to be eye-catching
+  - **Buttons/accents** - Uses primary color
+  - Options: (a) Auto-generate shades from single primary, (b) Allow advanced users to set each shade, (c) Preset palettes
 
 ### Integrations
 - [ ] Slack notifications on banner display

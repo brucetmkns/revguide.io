@@ -63,9 +63,16 @@ function populateForm(branding) {
 
   // Color
   const color = branding.primaryColor || '#b2ef63';
+  const defaultColor = '#b2ef63';
   document.getElementById('primaryColorPicker').value = color;
   document.getElementById('primaryColorHex').value = color;
   document.getElementById('primaryColorPreview').style.background = color;
+
+  // Update reset button visibility
+  const resetBtn = document.getElementById('primaryColorReset');
+  if (resetBtn) {
+    resetBtn.classList.toggle('hidden', color.toLowerCase() === defaultColor.toLowerCase());
+  }
 
   // Tooltip attribution
   const attribution = branding.tooltipAttribution || 'revguide';
@@ -311,12 +318,21 @@ function setupColorPicker() {
   const picker = document.getElementById('primaryColorPicker');
   const hexInput = document.getElementById('primaryColorHex');
   const preview = document.getElementById('primaryColorPreview');
+  const resetBtn = document.getElementById('primaryColorReset');
+  const defaultColor = '#b2ef63';
+
+  // Update reset button visibility
+  function updateResetButtonVisibility() {
+    const currentColor = hexInput.value.toLowerCase();
+    resetBtn.classList.toggle('hidden', currentColor === defaultColor.toLowerCase());
+  }
 
   // Picker change
   picker.addEventListener('input', () => {
     const color = picker.value;
     hexInput.value = color;
     preview.style.background = color;
+    updateResetButtonVisibility();
     updatePreview(getFormBranding());
   });
 
@@ -331,6 +347,7 @@ function setupColorPicker() {
     if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
       picker.value = color;
       preview.style.background = color;
+      updateResetButtonVisibility();
       updatePreview(getFormBranding());
     }
   });
@@ -339,6 +356,18 @@ function setupColorPicker() {
   preview.addEventListener('click', () => {
     picker.click();
   });
+
+  // Reset button click
+  resetBtn.addEventListener('click', () => {
+    picker.value = defaultColor;
+    hexInput.value = defaultColor;
+    preview.style.background = defaultColor;
+    updateResetButtonVisibility();
+    updatePreview(getFormBranding());
+  });
+
+  // Initial visibility check
+  updateResetButtonVisibility();
 }
 
 /**

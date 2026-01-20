@@ -125,6 +125,31 @@
       max-width: 140px;
     }
 
+    .color-reset-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .color-reset-btn:hover {
+      background: var(--color-bg-subtle);
+      border-color: var(--color-border-strong);
+      color: var(--color-text-primary);
+    }
+
+    .color-reset-btn.hidden {
+      display: none;
+    }
+
     /* Logo Upload */
     .upload-zone {
       border: 2px dashed var(--color-border);
@@ -646,6 +671,12 @@
                   <label class="color-preview" id="primaryColorPreview" style="background: #b2ef63;" for="primaryColorPicker"></label>
                   <input type="color" id="primaryColorPicker" class="color-input" value="#b2ef63">
                   <input type="text" class="form-input color-hex-input" id="primaryColorHex" value="#b2ef63" placeholder="#b2ef63">
+                  <button type="button" class="color-reset-btn" id="primaryColorReset" title="Reset to default">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
                 </div>
                 <p class="form-help">Main brand color used for buttons, highlights, and accents</p>
               </div>
