@@ -1,0 +1,1375 @@
+{
+  "id": "hubspot-default-properties",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "title": "Company Name",
+      "trigger": "Company name",
+      "aliases": [
+        "Name",
+        "Company"
+      ],
+      "definition": "<p>The official name of this organization in our CRM. This is the primary identifier used across all records, reports, and communications.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Company Domain Name",
+      "trigger": "Company domain name",
+      "aliases": [
+        "Domain",
+        "Domain name"
+      ],
+      "definition": "<p>The unique web domain associated with this company (e.g., acme.com). This field is used to:</p><ul><li>Automatically associate contacts via email domain matching</li><li>Identify and deduplicate company records</li><li>Enrich company data from third-party sources</li></ul>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Company Owner",
+      "trigger": "Owner",
+      "aliases": [
+        "Company Owner",
+        "Record Owner"
+      ],
+      "definition": "<p>The team member responsible for managing the relationship with this company. The owner receives notifications, appears in activity reports, and is the primary point of contact for all dealings with this account.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Industry",
+      "trigger": "Industry",
+      "aliases": [
+        "Company Industry",
+        "Business Type"
+      ],
+      "definition": "<p>The primary business sector this company operates in. Use this to segment accounts for targeted campaigns, assign to specialized team members, and analyze performance by market vertical.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Lifecycle Stage",
+      "trigger": "Lifecycle stage",
+      "aliases": [
+        "Company Lifecycle",
+        "Stage"
+      ],
+      "definition": "<p>Where this company stands in our sales and marketing journey. Stages progress from initial awareness through to becoming a customer:</p><ul><li><strong>Subscriber</strong> - Opted in to communications</li><li><strong>Lead</strong> - Shown interest, needs qualification</li><li><strong>MQL</strong> - Marketing has qualified as sales-ready</li><li><strong>SQL</strong> - Sales has accepted and is actively working</li><li><strong>Opportunity</strong> - Has an active deal in pipeline</li><li><strong>Customer</strong> - Closed-won business</li><li><strong>Evangelist</strong> - Active promoter of our brand</li></ul>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Lead Status",
+      "trigger": "Lead status",
+      "aliases": [
+        "Company Lead Status",
+        "Outreach Status"
+      ],
+      "definition": "<p>The current sales outreach status for this company. Use this to track where accounts are in our prospecting workflow, from initial outreach through qualification to either conversion or disqualification.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Number of Employees",
+      "trigger": "Number of employees",
+      "aliases": [
+        "Employee Count",
+        "Company Size",
+        "Employees"
+      ],
+      "definition": "<p>The total headcount at this organization. This metric helps us:</p><ul><li>Segment accounts by company size</li><li>Qualify opportunities based on fit criteria</li><li>Tailor messaging and pricing appropriately</li></ul>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Annual Revenue",
+      "trigger": "Annual revenue",
+      "aliases": [
+        "Revenue",
+        "Company Revenue"
+      ],
+      "definition": "<p>The company's estimated yearly revenue. This data point is crucial for account scoring, territory assignment, and ensuring our team focuses on accounts that match our ideal customer profile.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Create Date",
+      "trigger": "Create date",
+      "aliases": [
+        "Created",
+        "Date Created"
+      ],
+      "definition": "<p>When this company record was first added to our CRM. Use this to track pipeline growth over time and measure how long companies spend in each stage of our funnel.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Last Activity Date",
+      "trigger": "Last activity date",
+      "aliases": [
+        "Last Activity",
+        "Recent Activity"
+      ],
+      "definition": "<p>The most recent date when any engagement was logged on this company record, including calls, emails, meetings, notes, or tasks. Monitor this to identify accounts that may need re-engagement or follow-up.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Last Contacted",
+      "trigger": "Last contacted",
+      "aliases": [
+        "Last Contact Date",
+        "Last Outreach"
+      ],
+      "definition": "<p>When our team last reached out to this company via a direct communication channel (call, email, meeting, or chat). This excludes automated marketing touches and helps us track genuine sales engagement.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Number of Associated Contacts",
+      "trigger": "Number of associated contacts",
+      "aliases": [
+        "Contact Count",
+        "Associated Contacts"
+      ],
+      "definition": "<p>How many individual contacts from this company exist in our CRM. A higher count often indicates deeper penetration into the account and better relationship mapping across the organization.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Number of Associated Deals",
+      "trigger": "Number of associated deals",
+      "aliases": [
+        "Deal Count",
+        "Associated Deals"
+      ],
+      "definition": "<p>The total number of deals (opportunities) linked to this company, including open and closed deals. Use this to understand the full revenue relationship and potential with this account.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Total Revenue",
+      "trigger": "Total revenue",
+      "aliases": [
+        "Lifetime Value",
+        "Total Closed Revenue"
+      ],
+      "definition": "<p>The cumulative value of all closed-won deals with this company. This represents the actual revenue generated from this account and is key for identifying our most valuable customers.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Target Account",
+      "trigger": "Target account",
+      "aliases": [
+        "Target",
+        "Strategic Account"
+      ],
+      "definition": "<p>Marks this company as a priority account in our account-based marketing (ABM) strategy. Target accounts receive focused attention from both sales and marketing teams to drive engagement and conversion.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Ideal Customer Profile Tier",
+      "trigger": "Ideal Customer Profile Tier",
+      "aliases": [
+        "ICP Tier",
+        "ICP Score"
+      ],
+      "definition": "<p>How closely this company matches our ideal customer profile, with Tier 1 being the closest fit. Use this to prioritize outreach and allocate resources to accounts most likely to convert and succeed.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Phone Number",
+      "trigger": "Phone number",
+      "aliases": [
+        "Company Phone",
+        "Main Phone"
+      ],
+      "definition": "<p>The primary phone number for reaching this company. Ensure this is kept current to enable efficient outreach and quick contact when opportunities arise.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Website URL",
+      "trigger": "Website URL",
+      "aliases": [
+        "Website",
+        "Company Website"
+      ],
+      "definition": "<p>The company's web address. When populated, this also fills in the Company Domain Name field. Use this for quick access to research the company and understand their business.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Description",
+      "trigger": "Description",
+      "aliases": [
+        "Company Description",
+        "About"
+      ],
+      "definition": "<p>A brief summary of what this company does, their mission, and their market position. Keep this updated to help our team quickly understand the account context.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Type",
+      "trigger": "Type",
+      "aliases": [
+        "Company Type",
+        "Relationship Type"
+      ],
+      "definition": "<p>Classifies our relationship with this company (e.g., Prospect, Customer, Partner, Vendor). Use this to segment our database and tailor our approach based on the nature of the relationship.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "City",
+      "trigger": "City",
+      "aliases": [
+        "Company City",
+        "Location City"
+      ],
+      "definition": "<p>The city where this company's primary office is located. Use with other location fields for territory assignment and regional analysis.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "State/Region",
+      "trigger": "State/Region",
+      "aliases": [
+        "State",
+        "Region",
+        "Province"
+      ],
+      "definition": "<p>The state, province, or region where this company is headquartered. Essential for territory management and regional reporting.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Country/Region",
+      "trigger": "Country/Region",
+      "aliases": [
+        "Country",
+        "Company Country"
+      ],
+      "definition": "<p>The country where this company operates. Use for geographic segmentation, compliance considerations, and assigning accounts to region-specific teams.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Record Source",
+      "trigger": "Record Source",
+      "aliases": [
+        "Source",
+        "How Created"
+      ],
+      "definition": "<p>How this company record was originally created (e.g., Import, Form Submission, API, Manual Entry). Understanding record sources helps us evaluate which channels are generating the best leads.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Last Modified Date",
+      "trigger": "Last modified date",
+      "aliases": [
+        "Last Updated",
+        "Modified Date"
+      ],
+      "definition": "<p>When any property on this company record was last changed. This includes both manual edits and automated updates, helping us identify recently active records.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Owner Assigned Date",
+      "trigger": "Owner assigned date",
+      "aliases": [
+        "Assignment Date",
+        "Ownership Date"
+      ],
+      "definition": "<p>When the current owner was assigned to this company. Use this to measure response times and ensure new accounts are being worked promptly after assignment.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Next Activity Date",
+      "trigger": "Next activity date",
+      "aliases": [
+        "Next Activity",
+        "Upcoming Activity"
+      ],
+      "definition": "<p>The scheduled date of the next planned engagement with this company. Keep this populated to ensure consistent follow-up and prevent accounts from falling through the cracks.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "LinkedIn Company Page",
+      "trigger": "LinkedIn company page",
+      "aliases": [
+        "LinkedIn",
+        "Company LinkedIn"
+      ],
+      "definition": "<p>The URL to this company's LinkedIn profile. Use for research, social selling, and staying informed about company news and updates.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Facebook Company Page",
+      "trigger": "Facebook company page",
+      "aliases": [
+        "Facebook",
+        "Company Facebook"
+      ],
+      "definition": "<p>The URL to this company's Facebook page. Helpful for understanding their brand presence and engaging with their content.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Original Traffic Source",
+      "trigger": "Original Traffic Source",
+      "aliases": [
+        "Original Source",
+        "First Source"
+      ],
+      "definition": "<p>The marketing channel that first drove a contact from this company to our website (e.g., Organic Search, Paid Ads, Referral). Attribute company acquisition to the right marketing efforts.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Days to Close",
+      "trigger": "Days to close",
+      "aliases": [
+        "Time to Close",
+        "Sales Cycle Length"
+      ],
+      "definition": "<p>The number of days between when this company was created and when they became a customer. Use this metric to benchmark sales cycle performance and identify bottlenecks.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Record ID",
+      "trigger": "Record ID",
+      "aliases": [
+        "Company ID",
+        "Object ID"
+      ],
+      "definition": "<p>The unique identifier for this company record in our CRM. Use this for imports, API integrations, and when we need to reference a specific record unambiguously.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Parent Company",
+      "trigger": "Parent company",
+      "aliases": [
+        "Parent",
+        "Holding Company"
+      ],
+      "definition": "<p>Links this company to its parent organization, creating a corporate hierarchy. Use this to understand complex organizational structures and roll up reporting across subsidiaries.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Number of Open Deals",
+      "trigger": "Number of open deals",
+      "aliases": [
+        "Open Deals",
+        "Active Deals"
+      ],
+      "definition": "<p>How many deals are currently in progress with this company (not yet closed-won or closed-lost). Indicates active sales engagement and pipeline value at risk.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Recent Deal Amount",
+      "trigger": "Recent deal amount",
+      "aliases": [
+        "Last Deal Value",
+        "Recent Won Amount"
+      ],
+      "definition": "<p>The value of the most recently closed-won deal with this company. Helps us understand recent purchasing patterns and set expectations for future deals.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "Recent Deal Close Date",
+      "trigger": "Recent deal close date",
+      "aliases": [
+        "Last Deal Date",
+        "Recent Close Date"
+      ],
+      "definition": "<p>When the most recent deal with this company was closed as won. Use to identify customers who may be ready for upsell or expansion conversations.</p>",
+      "category": "field",
+      "objectType": "companies"
+    },
+    {
+      "title": "First Name",
+      "trigger": "First name",
+      "aliases": [
+        "First",
+        "Given Name"
+      ],
+      "definition": "<p>The contact's given name. Used for personalization in emails, communications, and to help our team address contacts appropriately.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Name",
+      "trigger": "Last name",
+      "aliases": [
+        "Last",
+        "Surname",
+        "Family Name"
+      ],
+      "definition": "<p>The contact's family name or surname. Combined with first name for full identification and formal communications.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Email",
+      "trigger": "Email",
+      "aliases": [
+        "Email Address",
+        "Primary Email"
+      ],
+      "definition": "<p>The contact's primary email address. This is the main identifier for contacts and is used for:</p><ul><li>Deduplication and record matching</li><li>All email communications</li><li>Automatic company association via domain</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Contact Owner",
+      "trigger": "Contact owner",
+      "aliases": [
+        "Owner",
+        "Assigned To"
+      ],
+      "definition": "<p>The team member responsible for this contact relationship. The owner receives activity notifications, appears in reports, and is accountable for moving this contact through the sales process.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Job Title",
+      "trigger": "Job title",
+      "aliases": [
+        "Title",
+        "Role",
+        "Position"
+      ],
+      "definition": "<p>The contact's role within their organization. Essential for:</p><ul><li>Identifying decision-makers and influencers</li><li>Tailoring messaging to their responsibilities</li><li>Qualifying opportunities based on authority</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Phone Number",
+      "trigger": "Phone number",
+      "aliases": [
+        "Phone",
+        "Direct Line"
+      ],
+      "definition": "<p>The contact's primary phone number. Keep this current to enable direct outreach when email isn't the right channel or when we need an immediate response.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Mobile Phone Number",
+      "trigger": "Mobile phone number",
+      "aliases": [
+        "Mobile",
+        "Cell Phone"
+      ],
+      "definition": "<p>The contact's mobile/cell phone number. Useful for reaching contacts outside office hours or for SMS communications where enabled.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Lifecycle Stage",
+      "trigger": "Lifecycle stage",
+      "aliases": [
+        "Stage",
+        "Contact Stage"
+      ],
+      "definition": "<p>Where this contact stands in our marketing and sales journey:</p><ul><li><strong>Subscriber</strong> - Opted in to receive communications</li><li><strong>Lead</strong> - Has shown interest, needs qualification</li><li><strong>MQL</strong> - Marketing qualified, ready for sales</li><li><strong>SQL</strong> - Sales accepted and actively working</li><li><strong>Opportunity</strong> - Associated with an active deal</li><li><strong>Customer</strong> - Has a closed-won deal</li><li><strong>Evangelist</strong> - Actively promotes our brand</li></ul>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Lead Status",
+      "trigger": "Lead status",
+      "aliases": [
+        "Status",
+        "Sales Status"
+      ],
+      "definition": "<p>The contact's current position in our sales outreach process. Tracks progression from initial contact through qualification, helping our team know exactly where to focus their efforts.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Company Name",
+      "trigger": "Company name",
+      "aliases": [
+        "Company",
+        "Organization"
+      ],
+      "definition": "<p>The name of the organization this contact works for. Note: This is a separate field from the associated company record and can be manually updated regardless of company associations.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Create Date",
+      "trigger": "Create date",
+      "aliases": [
+        "Created",
+        "Date Added"
+      ],
+      "definition": "<p>When this contact was first added to our CRM. Use this to track lead generation over time and measure how long contacts spend in each funnel stage.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Activity Date",
+      "trigger": "Last activity date",
+      "aliases": [
+        "Last Activity",
+        "Recent Activity"
+      ],
+      "definition": "<p>When the most recent engagement occurred on this contact's record (calls, emails, meetings, notes, or tasks). Monitor this to identify contacts who may need re-engagement.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Contacted",
+      "trigger": "Last contacted",
+      "aliases": [
+        "Last Contact",
+        "Last Outreach"
+      ],
+      "definition": "<p>The date and time of our most recent direct communication with this contact (call, email, meeting, or chat). Excludes automated marketing and helps track genuine engagement.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "HubSpot Score",
+      "trigger": "HubSpot score",
+      "aliases": [
+        "Lead Score",
+        "Score"
+      ],
+      "definition": "<p>A numerical score indicating this contact's sales readiness, calculated based on criteria we've defined. Higher scores suggest stronger qualification based on demographics, behaviors, and engagement patterns.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Times Contacted",
+      "trigger": "Number of times contacted",
+      "aliases": [
+        "Contact Count",
+        "Outreach Count"
+      ],
+      "definition": "<p>How many direct communications have been logged with this contact (calls, emails, meetings, messages). Use to gauge engagement depth and avoid over-contacting prospects.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Sales Activities",
+      "trigger": "Number of sales activities",
+      "aliases": [
+        "Activity Count",
+        "Sales Touches"
+      ],
+      "definition": "<p>The total count of all sales activities logged on this contact, including calls, emails, meetings, notes, and tasks. Measures overall sales engagement effort.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Original Traffic Source",
+      "trigger": "Original Traffic Source",
+      "aliases": [
+        "Original Source",
+        "First Source"
+      ],
+      "definition": "<p>The marketing channel that first brought this contact to our website (e.g., Organic Search, Paid Ads, Social Media, Referral). Critical for attributing lead generation to the right campaigns.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Latest Traffic Source",
+      "trigger": "Latest Traffic Source",
+      "aliases": [
+        "Latest Source",
+        "Recent Source"
+      ],
+      "definition": "<p>The most recent marketing channel through which this contact interacted with our business. Helps us understand ongoing engagement patterns and which channels keep contacts coming back.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "First Conversion",
+      "trigger": "First conversion",
+      "aliases": [
+        "First Form",
+        "Initial Conversion"
+      ],
+      "definition": "<p>The first form this contact submitted, displayed as the page title followed by the form name. Tells us how this contact initially engaged with our content.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "First Conversion Date",
+      "trigger": "First conversion date",
+      "aliases": [
+        "First Submit Date",
+        "Initial Conversion Date"
+      ],
+      "definition": "<p>When this contact first submitted a form on our website. Marks the beginning of their engagement journey with our brand.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Recent Conversion",
+      "trigger": "Recent conversion",
+      "aliases": [
+        "Last Form",
+        "Latest Conversion"
+      ],
+      "definition": "<p>The most recent form this contact submitted. Shows their latest point of engagement and what content or offers they're currently interested in.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Recent Conversion Date",
+      "trigger": "Recent conversion date",
+      "aliases": [
+        "Last Submit Date",
+        "Latest Conversion Date"
+      ],
+      "definition": "<p>When this contact last submitted a form. A recent date indicates active engagement; a distant date may signal the need for re-engagement.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Form Submissions",
+      "trigger": "Number of form submissions",
+      "aliases": [
+        "Form Count",
+        "Submissions"
+      ],
+      "definition": "<p>How many forms this contact has submitted, including marketing forms and meeting scheduling pages. Higher numbers indicate stronger engagement with our content.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "City",
+      "trigger": "City",
+      "aliases": [
+        "Contact City",
+        "Location"
+      ],
+      "definition": "<p>The city where this contact is located. Useful for territory assignment, local event invitations, and geographic segmentation.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "State/Region",
+      "trigger": "State/Region",
+      "aliases": [
+        "State",
+        "Province"
+      ],
+      "definition": "<p>The state, province, or region where this contact resides. Essential for regional campaigns and territory-based routing.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Country/Region",
+      "trigger": "Country/Region",
+      "aliases": [
+        "Country",
+        "Contact Country"
+      ],
+      "definition": "<p>The country where this contact is located. Important for international compliance, language preferences, and assigning to region-specific teams.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Marketing Emails Opened",
+      "trigger": "Marketing emails opened",
+      "aliases": [
+        "Email Opens",
+        "Opens"
+      ],
+      "definition": "<p>The count of unique marketing emails this contact has opened. A key engagement metric showing how interested this contact is in our communications.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Marketing Emails Clicked",
+      "trigger": "Marketing emails clicked",
+      "aliases": [
+        "Email Clicks",
+        "Clicks"
+      ],
+      "definition": "<p>How many marketing emails this contact has clicked links in. Clicks indicate deeper engagement than opens and suggest genuine interest in our content.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Unsubscribed from All Email",
+      "trigger": "Unsubscribed from all email",
+      "aliases": [
+        "Unsubscribed",
+        "Opted Out"
+      ],
+      "definition": "<p>Indicates this contact has opted out of all email communications from our account. Respect this preference to maintain compliance and brand reputation.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Page Views",
+      "trigger": "Number of page views",
+      "aliases": [
+        "Page Views",
+        "Website Activity"
+      ],
+      "definition": "<p>The total pages this contact has viewed on our website. Higher page views indicate stronger interest and deeper research into our products or services.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Sessions",
+      "trigger": "Number of sessions",
+      "aliases": [
+        "Sessions",
+        "Website Visits"
+      ],
+      "definition": "<p>How many separate browsing sessions this contact has had on our website. Multiple sessions over time show sustained interest and return engagement.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Time First Seen",
+      "trigger": "Time first seen",
+      "aliases": [
+        "First Seen",
+        "First Visit"
+      ],
+      "definition": "<p>When this contact first visited our website. Marks the beginning of their digital engagement with our brand, even before they converted.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Time Last Seen",
+      "trigger": "Time last seen",
+      "aliases": [
+        "Last Seen",
+        "Last Visit"
+      ],
+      "definition": "<p>The most recent time this contact viewed a page on our website. Recent activity suggests active interest; dormant contacts may need nurturing.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Close Date",
+      "trigger": "Close date",
+      "aliases": [
+        "Customer Date",
+        "Won Date"
+      ],
+      "definition": "<p>When this contact became a customer. Automatically set when an associated deal closes as won (if lifecycle stage syncing is enabled). Essential for measuring sales velocity.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Days to Close",
+      "trigger": "Days to close",
+      "aliases": [
+        "Sales Cycle",
+        "Time to Close"
+      ],
+      "definition": "<p>The number of days between when this contact was created and when they became a customer. Benchmark against averages to identify fast-moving or stalled opportunities.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Total Revenue",
+      "trigger": "Total revenue",
+      "aliases": [
+        "Lifetime Value",
+        "Customer Value"
+      ],
+      "definition": "<p>The cumulative dollar value of all closed-won deals associated with this contact. Identifies our most valuable customers and helps prioritize relationship investment.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Number of Associated Deals",
+      "trigger": "Number of associated deals",
+      "aliases": [
+        "Deal Count",
+        "Opportunities"
+      ],
+      "definition": "<p>How many deals (opportunities) are linked to this contact. Shows the breadth of business relationship and potential for future opportunities.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Buying Role",
+      "trigger": "Buying role",
+      "aliases": [
+        "Role in Purchase",
+        "Decision Role"
+      ],
+      "definition": "<p>The part this contact plays in purchasing decisions (e.g., Decision Maker, Budget Holder, Champion, Influencer, End User). Map buying committees by assigning roles to all stakeholders.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Record ID",
+      "trigger": "Record ID",
+      "aliases": [
+        "Contact ID",
+        "Object ID"
+      ],
+      "definition": "<p>The unique identifier for this contact in our CRM. Use for imports, API integrations, and when we need to reference this specific record.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Record Source",
+      "trigger": "Record Source",
+      "aliases": [
+        "Source",
+        "How Created"
+      ],
+      "definition": "<p>How this contact record was originally created (e.g., Form, Import, API, Manual). Understanding sources helps us evaluate lead generation channels.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Modified Date",
+      "trigger": "Last modified date",
+      "aliases": [
+        "Last Updated",
+        "Modified"
+      ],
+      "definition": "<p>When any property on this contact was last changed. Helps identify recently active records and track data freshness.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Owner Assigned Date",
+      "trigger": "Owner assigned date",
+      "aliases": [
+        "Assignment Date",
+        "Ownership Date"
+      ],
+      "definition": "<p>When the current owner was assigned to this contact. Measure response times by comparing this to subsequent activity dates.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Next Activity Date",
+      "trigger": "Next activity date",
+      "aliases": [
+        "Next Activity",
+        "Scheduled Activity"
+      ],
+      "definition": "<p>The date of the next planned engagement with this contact. Ensure this is always populated for active leads to maintain consistent follow-up.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Contact Unworked",
+      "trigger": "Contact unworked",
+      "aliases": [
+        "Unworked",
+        "Not Worked"
+      ],
+      "definition": "<p>Indicates the contact has not been actively worked - either no owner is assigned, or no sales activity has been logged since ownership was assigned. Use to identify leads that need attention.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "LinkedIn URL",
+      "trigger": "LinkedIn URL",
+      "aliases": [
+        "LinkedIn",
+        "LinkedIn Profile"
+      ],
+      "definition": "<p>The URL to this contact's LinkedIn profile. Invaluable for social selling, research, and understanding the contact's professional background.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Persona",
+      "trigger": "Persona",
+      "aliases": [
+        "Buyer Persona",
+        "Contact Persona"
+      ],
+      "definition": "<p>The buyer persona this contact fits into. Use personas to segment our database and deliver targeted content that resonates with each audience type.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Marketing Contact Status",
+      "trigger": "Marketing contact status",
+      "aliases": [
+        "Marketing Status",
+        "Contact Tier"
+      ],
+      "definition": "<p>Whether this contact is classified as a marketing contact (counts toward our subscription limit and can receive marketing emails) or non-marketing contact.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Last Engagement Date",
+      "trigger": "Last engagement date",
+      "aliases": [
+        "Last Engaged",
+        "Recent Engagement"
+      ],
+      "definition": "<p>When this contact last engaged with our business through actions like opening emails, clicking links, booking meetings, or submitting forms. Requires an assigned owner to be tracked.</p>",
+      "category": "field",
+      "objectType": "contacts"
+    },
+    {
+      "title": "Deal Name",
+      "trigger": "Deal name",
+      "aliases": [
+        "Name",
+        "Opportunity Name"
+      ],
+      "definition": "<p>The name we've given this deal or opportunity. Make it descriptive enough that anyone on our team can understand what this opportunity is about at a glance.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Stage",
+      "trigger": "Deal stage",
+      "aliases": [
+        "Stage",
+        "Pipeline Stage"
+      ],
+      "definition": "<p>Where this deal currently sits in our sales pipeline. Each stage represents a milestone in our sales process, with movement through stages indicating progress toward closing.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Pipeline",
+      "trigger": "Pipeline",
+      "aliases": [
+        "Deal Pipeline",
+        "Sales Pipeline"
+      ],
+      "definition": "<p>Which sales pipeline this deal belongs to. Different pipelines can represent different products, services, or sales processes. The pipeline determines which stages are available.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Owner",
+      "trigger": "Deal owner",
+      "aliases": [
+        "Owner",
+        "Sales Rep"
+      ],
+      "definition": "<p>The team member responsible for closing this deal. The owner drives all sales activities, manages the relationship, and is accountable for the outcome.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Amount",
+      "trigger": "Amount",
+      "aliases": [
+        "Deal Amount",
+        "Value"
+      ],
+      "definition": "<p>The total monetary value of this deal. This is the primary metric for pipeline reporting, forecasting, and measuring sales performance.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Close Date",
+      "trigger": "Close date",
+      "aliases": [
+        "Expected Close",
+        "Close By"
+      ],
+      "definition": "<p>When we expect this deal to close. Keep this accurate for reliable forecasting - update it as the deal progresses and we have better visibility into timing.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Create Date",
+      "trigger": "Create date",
+      "aliases": [
+        "Created",
+        "Deal Created"
+      ],
+      "definition": "<p>When this deal was first created in our CRM. Used to measure pipeline generation and calculate sales cycle length from creation to close.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Type",
+      "trigger": "Deal type",
+      "aliases": [
+        "Type",
+        "Opportunity Type"
+      ],
+      "definition": "<p>The category of business this deal represents (e.g., New Business, Existing Business, Renewal). Use to segment pipeline reporting and track performance by deal type.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Priority",
+      "trigger": "Priority",
+      "aliases": [
+        "Deal Priority",
+        "Urgency"
+      ],
+      "definition": "<p>The level of attention this deal requires. Use priority to help our team focus on the most important opportunities and allocate resources appropriately.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Closed Lost Reason",
+      "trigger": "Closed lost reason",
+      "aliases": [
+        "Lost Reason",
+        "Why Lost"
+      ],
+      "definition": "<p>Why this deal was lost. Capturing accurate loss reasons is critical for improving our sales process, addressing competitive gaps, and reducing future losses.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Closed Won Reason",
+      "trigger": "Closed won reason",
+      "aliases": [
+        "Won Reason",
+        "Why Won"
+      ],
+      "definition": "<p>The primary factor that led to winning this deal. Understanding win patterns helps us replicate success and refine our value proposition.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Description",
+      "trigger": "Deal description",
+      "aliases": [
+        "Description",
+        "Notes"
+      ],
+      "definition": "<p>A summary of what this deal involves. Include context that helps our team understand the opportunity - customer needs, solution proposed, and any special circumstances.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Next Step",
+      "trigger": "Next step",
+      "aliases": [
+        "Next Action",
+        "Follow Up"
+      ],
+      "definition": "<p>The immediate next action required to move this deal forward. Keep this current so anyone reviewing the deal knows exactly what needs to happen next.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Last Activity Date",
+      "trigger": "Last activity date",
+      "aliases": [
+        "Last Activity",
+        "Recent Activity"
+      ],
+      "definition": "<p>When the most recent engagement occurred on this deal (calls, emails, meetings, notes). Deals with no recent activity may be at risk of stalling.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Last Contacted",
+      "trigger": "Last contacted",
+      "aliases": [
+        "Last Contact",
+        "Last Outreach"
+      ],
+      "definition": "<p>When we last had a direct communication with stakeholders on this deal. Monitor this to ensure deals don't go cold due to lack of engagement.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Next Activity Date",
+      "trigger": "Next activity date",
+      "aliases": [
+        "Next Activity",
+        "Scheduled Activity"
+      ],
+      "definition": "<p>The date of the next planned action on this deal. Every active deal should have a next activity scheduled to maintain momentum.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Number of Associated Contacts",
+      "trigger": "Number of associated contacts",
+      "aliases": [
+        "Contact Count",
+        "Stakeholders"
+      ],
+      "definition": "<p>How many contacts are linked to this deal. More contacts typically indicates better relationship mapping and multi-threading within the account.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Is Closed Won",
+      "trigger": "Is Closed Won",
+      "aliases": [
+        "Won",
+        "Closed Won"
+      ],
+      "definition": "<p>Indicates this deal has been successfully closed. Use this to filter and report on our wins and calculate win rates.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Is Closed Lost",
+      "trigger": "Is closed lost",
+      "aliases": [
+        "Lost",
+        "Closed Lost"
+      ],
+      "definition": "<p>Indicates this deal was lost and is no longer active. Analyze lost deals to identify patterns and improve our win rate over time.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Currency",
+      "trigger": "Currency",
+      "aliases": [
+        "Deal Currency",
+        "Money Currency"
+      ],
+      "definition": "<p>The currency in which this deal's amount is denominated. Important for global sales teams dealing in multiple currencies.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Amount in Company Currency",
+      "trigger": "Amount in company currency",
+      "aliases": [
+        "Converted Amount",
+        "Base Currency Amount"
+      ],
+      "definition": "<p>The deal value converted to our company's base currency. Enables accurate pipeline and revenue reporting across deals in different currencies.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Annual Contract Value",
+      "trigger": "Annual contract value",
+      "aliases": [
+        "ACV",
+        "Annual Value"
+      ],
+      "definition": "<p>The yearly value of this deal, useful for subscription or recurring revenue businesses. Normalizes deal values for comparison regardless of contract length.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Date Entered Current Stage",
+      "trigger": "Date entered current stage",
+      "aliases": [
+        "Stage Entry Date",
+        "Current Stage Date"
+      ],
+      "definition": "<p>When this deal moved into its current pipeline stage. Use to identify deals that have been in one stage too long and may need intervention.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Time in Current Stage",
+      "trigger": "Time in current stage",
+      "aliases": [
+        "Stage Duration",
+        "Days in Stage"
+      ],
+      "definition": "<p>How long this deal has been in its current stage. Compare against benchmarks to identify deals that may be stuck or at risk.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Deal Status",
+      "trigger": "Deal Status",
+      "aliases": [
+        "Status",
+        "Open/Won/Lost"
+      ],
+      "definition": "<p>A simplified grouping of deals into Won, Lost, or Open (all other stages). Useful for quick filtering and high-level pipeline views.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Record ID",
+      "trigger": "Record ID",
+      "aliases": [
+        "Deal ID",
+        "Object ID"
+      ],
+      "definition": "<p>The unique identifier for this deal in our CRM. Use for imports, API integrations, and referencing specific deals unambiguously.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Record Source",
+      "trigger": "Record Source",
+      "aliases": [
+        "Source",
+        "How Created"
+      ],
+      "definition": "<p>How this deal was originally created (e.g., Manual, Import, API, Workflow). Understanding sources helps us track which processes generate pipeline.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Last Modified Date",
+      "trigger": "Last modified date",
+      "aliases": [
+        "Last Updated",
+        "Modified"
+      ],
+      "definition": "<p>When any property on this deal was last changed. Helps identify recently worked deals and track data freshness across our pipeline.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Owner Assigned Date",
+      "trigger": "Owner assigned date",
+      "aliases": [
+        "Assignment Date",
+        "Ownership Date"
+      ],
+      "definition": "<p>When the current owner was assigned to this deal. Measure response times and ensure deals are being actively worked after assignment.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "HubSpot Team",
+      "trigger": "HubSpot team",
+      "aliases": [
+        "Team",
+        "Owner Team"
+      ],
+      "definition": "<p>The primary team of the deal owner. Enables team-based pipeline reporting and helps managers track their team's performance.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Original Traffic Source",
+      "trigger": "Original Traffic Source",
+      "aliases": [
+        "Original Source",
+        "First Source"
+      ],
+      "definition": "<p>The marketing channel that first brought an associated contact to our website. Attribute revenue to the marketing efforts that generated the opportunity.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Latest Traffic Source",
+      "trigger": "Latest Traffic Source",
+      "aliases": [
+        "Latest Source",
+        "Recent Source"
+      ],
+      "definition": "<p>The most recent marketing channel through which associated contacts interacted with our business. Shows which channels influence deals already in pipeline.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Days to Close",
+      "trigger": "Days to close",
+      "aliases": [
+        "Sales Cycle",
+        "Cycle Length"
+      ],
+      "definition": "<p>The number of days between deal creation and close date. Compare against benchmarks to identify unusually long or short sales cycles.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Forecast Category",
+      "trigger": "Forecast category",
+      "aliases": [
+        "Forecast",
+        "Probability Bucket"
+      ],
+      "definition": "<p>Groups deals for forecasting purposes (e.g., Commit, Best Case, Pipeline). Helps sales leaders build accurate forecasts by categorizing deal likelihood.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Forecast Probability",
+      "trigger": "Forecast probability",
+      "aliases": [
+        "Win Probability",
+        "Close Probability"
+      ],
+      "definition": "<p>The estimated likelihood this deal will close as won. Use historical data and deal characteristics to set realistic probabilities for accurate forecasting.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Merged Deal IDs",
+      "trigger": "Merged Deal IDs",
+      "aliases": [
+        "Merged Deals",
+        "Combined Deals"
+      ],
+      "definition": "<p>The Record IDs of any deals that were merged into this one. Helps track deal consolidation history when duplicate opportunities are combined.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Next Meeting Start Time",
+      "trigger": "Next Meeting Start Time",
+      "aliases": [
+        "Next Meeting",
+        "Upcoming Meeting"
+      ],
+      "definition": "<p>When the next scheduled meeting for this deal begins. Having upcoming meetings booked indicates active engagement and deal momentum.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Is Stalled After Timestamp",
+      "trigger": "Is Stalled After Timestamp",
+      "aliases": [
+        "Stalled Date",
+        "At Risk Since"
+      ],
+      "definition": "<p>When this deal was flagged as potentially stalled - meaning time in the current stage exceeds 20% longer than average for closed-won deals. Indicates the deal may need intervention.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Recurring Revenue Amount",
+      "trigger": "Recurring revenue amount",
+      "aliases": [
+        "ARR",
+        "MRR",
+        "Recurring Amount"
+      ],
+      "definition": "<p>The recurring revenue value associated with this deal. Critical for subscription businesses to track and forecast predictable revenue.</p>",
+      "category": "field",
+      "objectType": "deals"
+    },
+    {
+      "title": "Recurring Revenue Deal Type",
+      "trigger": "Recurring revenue deal type",
+      "aliases": [
+        "RR Type",
+        "Revenue Type"
+      ],
+      "definition": "<p>The category of recurring revenue this deal represents: New Business, Renewal, Upgrade, or Downgrade. Essential for analyzing revenue composition and trends.</p>",
+      "category": "field",
+      "objectType": "deals"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-12-12",
+  "lastUpdated": "2025-01-22",
   "libraries": [
     {
       "id": "hubspot-basics",
@@ -51,6 +51,16 @@
       "category": "service",
       "icon": "headphones",
       "file": "service-tickets.json"
+    },
+    {
+      "id": "hubspot-default-properties",
+      "name": "HubSpot Default Properties Starter Pack",
+      "description": "Complete definitions for all default Company, Contact, and Deal properties",
+      "version": "1.0.0",
+      "entryCount": 124,
+      "category": "hubspot",
+      "icon": "hub",
+      "file": "hubspot-default-properties.json"
     }
   ]
 }
