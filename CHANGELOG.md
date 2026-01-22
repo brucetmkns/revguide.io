@@ -2,6 +2,22 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.2] - 2025-01-22 - Portal Selector Scrolling Fix
+
+### Fixed
+- **Portal Selector Dropdown**: Long lists of managed accounts in the sidebar portal selector are now scrollable
+  - Changed `overflow: hidden` to `overflow-y: auto` with `max-height: 280px`
+  - Added custom scrollbar styling matching the dark sidebar theme
+  - Agencies with many client portals can now access all accounts without truncation
+
+## [2.0.1] - 2025-01-21 - Chrome Web Store Compliance Fix
+
+### Fixed
+- **MV3 Compliance**: Excluded `admin/analytics.js` from extension build to comply with Manifest V3 remote code policy
+  - Microsoft Clarity analytics script was being included in package (violation: Blue Argon)
+  - Analytics only used on web app (app.revguide.io), not needed in extension
+  - Script already had extension context detection, but static analysis flagged the remote URL
+
 ## [2.16.0] - 2025-12-24 - HubSpot OAuth User-Level Authentication
 
 ### Added

@@ -4,7 +4,7 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.16.0 (User-Level HubSpot OAuth)
+## Current State: v2.0.2 (Portal Selector Fix)
 
 A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, **slide-in detail panels for viewing play content**, and **user-level HubSpot OAuth for personal attribution tracking**.
 

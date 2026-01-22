@@ -73,6 +73,36 @@ div.innerHTML = `<div class="condition-group-card">...</div>`;
 
 **Files affected**: `admin/shared.js` - `addConditionGroup()` function, `admin/shared.css` - condition group classes
 
+### Dropdown Lists Need Scrollable Overflow
+**Lesson**: Dropdown menus containing dynamic lists must use `overflow-y: auto` with `max-height` to allow scrolling, not `overflow: hidden` which truncates content.
+
+**Context**: The portal selector dropdown in the admin sidebar was cutting off the list of managed accounts/client portals when agencies had many portals. The menu had `overflow: hidden` which prevented scrolling.
+
+**Pattern**: For dropdown menus with variable-length content:
+```css
+/* BAD - cuts off content */
+.dropdown-menu {
+  overflow: hidden;
+}
+
+/* GOOD - allows scrolling with constrained height */
+.dropdown-menu {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* Add custom scrollbar styling for dark backgrounds */
+.dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+```
+
+**Files affected**: `admin/shared.css` - `.portal-switcher .portal-dropdown-menu`
+
 ### Constructor Property Initialization Order
 **Lesson**: When initializing class properties in a constructor, ensure you don't accidentally overwrite values set earlier in the constructor.
 
