@@ -31,8 +31,25 @@ const value = entry.newField || entry.legacyField || '';
 1. Add migration: `ALTER TABLE x ADD COLUMN y`
 2. Update `admin/shared.js` mapper function
 3. Update `admin/pages/*.js` mapper function
-4. Update save logic to include new field
-5. Update UI to read/write the field
+4. Update `background/background.js` mapper function (critical for runtime!)
+5. Update save logic to include new field
+6. Update UI to read/write the field
+
+### Background Script Mapper Must Match Admin Mapper
+**Lesson**: The background script has its own `mapBannerFromSupabase()` function that MUST stay in sync with the admin version.
+
+**Context**: Banner conditions using `conditionGroups` (the newer format) were not being evaluated correctly on index pages. The background script's mapper was missing `conditionGroups` and `groupLogic` fields. This caused the rules engine to see empty conditions and match ALL records instead of filtering.
+
+**Root Cause**: When condition groups were added, `admin/shared.js` was updated but `background/background.js` was not. The content script receives rules from the background script, so missing fields there break runtime behavior.
+
+**Pattern**: There are THREE mapping locations for banners:
+- `admin/shared.js` - Used by `loadStorageData()` for admin panel
+- `admin/pages/banners.js` - Used after create/update operations
+- `background/background.js` - Used by `fetchCloudContent()` for runtime (content script)
+
+**Symptom**: Banner shows on ALL records even with conditions set; `displayOnAll` shows as `false` but conditions still don't filter.
+
+**Debug**: Check console for `[RevGuide RulesEngine] Rule ... FULL STRUCTURE:` - if `conditionGroups` is `undefined` when it should have data, the background mapper is missing fields.
 
 ### CSS Classes vs Tailwind Utilities for Dynamic Content
 **Lesson**: For JavaScript-generated HTML, prefer explicit CSS classes in shared.css over Tailwind utility classes.
@@ -318,6 +335,34 @@ GRANT EXECUTE ON FUNCTION my_check TO authenticated;
 \df *can*
 \df *permission*
 ```
+
+### Partner Portal: active_organization_id Must Be Used Consistently
+**Lesson**: When partners view managed organizations, `active_organization_id` is set on their user profile. ALL functions that determine org context must use this field.
+
+**Context**: Partners installing wiki libraries to managed orgs saw "success" but entries were silently created in the wrong org. The `getOrganizationId()` function only returned `organization_id`, ignoring `active_organization_id`.
+
+**Root Cause**: `getUserProfile()` correctly used `active_organization_id || organization_id` for caching, but `getOrganizationId()` only returned `organization_id` when cache missed.
+
+**Pattern**: Always check both fields when determining effective organization:
+```javascript
+// WRONG - ignores partner context
+return profile?.organization_id;
+
+// RIGHT - respects partner viewing managed org
+return profile?.active_organization_id || profile?.organization_id;
+```
+
+**Cache considerations**: Org ID is cached in multiple places:
+- `RevGuideDB._cachedOrgId` (in-memory)
+- `sessionStorage.getItem('revguide_org_id')` (persisted)
+
+When debugging partner portal issues, clear both caches:
+```javascript
+RevGuideDB._cachedOrgId = null;
+sessionStorage.removeItem('revguide_org_id');
+```
+
+**Files affected**: `admin/supabase.js` - `getOrganizationId()` function
 
 ---
 
@@ -3539,6 +3584,52 @@ const userId = this.authState.user?.id;  // user.id, not profile.id
 
 **Files affected**: `sidepanel/sidepanel.js` - `initiateHubSpotConnection()`
 
+### HubSpot Sales Workspace URL Patterns
+**Lesson**: HubSpot's Sales Workspace uses different URL patterns and DOM structure than standard index pages. Portal ID extraction and row processing must handle both.
+
+**Context**: ERP icons and banner tags weren't appearing in Sales Workspace deal views. The module was detecting the page correctly but content wasn't loading.
+
+**Root cause**: Portal ID extraction only matched `/contacts/{portalId}/...` but Sales Workspace uses `/prospecting/{portalId}/...`. Without the portal ID, the background script couldn't match the organization and returned empty content.
+
+**URL Patterns**:
+- Standard index: `https://app.hubspot.com/contacts/{portalId}/objects/{objectTypeId}/...`
+- Sales Workspace: `https://app.hubspot.com/prospecting/{portalId}/deals/...`
+
+**DOM Differences**:
+| Element | Standard Index | Sales Workspace |
+|---------|----------------|-----------------|
+| Row | `tr[data-test-id="row-{recordId}"]` | `tr[data-test-id="crm-table-row"][data-test-object-id="{recordId}"]` |
+| Name cell | `td[data-column-index="0"]` | `td[data-test-property-name="dealname"]` |
+
+**Pattern for portal ID extraction**:
+```javascript
+// Handle multiple URL patterns
+const portalMatch = url.match(/\/contacts\/(\d+)\//) ||
+                   url.match(/\/prospecting\/(\d+)\//);
+```
+
+**Pattern for init() early exit logic**:
+```javascript
+// Don't exit early if ERP is enabled even without banner rules
+const erpEnabled = this.helper.erpModule?.isEnabled() &&
+                   this.helper.erpModule.getConfigForObjectType(this.objectType);
+
+if (this.eligibleBanners.length === 0 && !erpEnabled) {
+  return; // Only skip if BOTH are false
+}
+```
+
+**Checklist for supporting new HubSpot page types**:
+1. Update `isIndexPage()` in `content.js` to detect the URL pattern
+2. Update portal ID extraction in `loadData()` and `extractContext()`
+3. Update `parseIndexUrl()` in `index-tags.js` to extract object type
+4. Update row selectors in `processVisibleRows()`, `setupObserver()`, etc.
+5. Update name cell selectors for tag rendering
+
+**Files affected**:
+- `content/content.js` - `isIndexPage()`, `loadData()`, `extractContext()`
+- `content/modules/index-tags.js` - `parseIndexUrl()`, `processVisibleRows()`, `renderTagsForRecord()`, `setupObserver()`
+
 ---
 
-*Last updated: December 2025*
+*Last updated: January 2026*
