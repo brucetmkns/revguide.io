@@ -335,8 +335,10 @@ const RevGuideDB = {
     if (cached) return cached;
 
     // Slow path: fetch from profile
+    // Use active_organization_id if set (for partners viewing managed orgs),
+    // otherwise fall back to primary organization_id
     const { data: profile } = await this.getUserProfile();
-    return profile?.organization_id;
+    return profile?.active_organization_id || profile?.organization_id;
   },
 
   /**
