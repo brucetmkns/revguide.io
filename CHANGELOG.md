@@ -2,6 +2,25 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.4] - 2025-01-23 - Fix Wiki Icon Flickering on List Pages
+
+### Fixed
+- **Wiki Icon Flickering**: Wiki tooltip icons on table column headers no longer flicker (appear/disappear 2-3 times) during page load
+  - Root cause: HubSpot re-renders table headers multiple times during React hydration, removing injected icons
+  - Solution: Added `waitForTableStability()` method that waits for DOM to stabilize (400ms without mutations) before applying icons
+  - Observer-triggered applies also use stability detection on table pages
+  - Maximum wait time of 3 seconds ensures icons eventually appear even on slow pages
+  - Affected file: `content/modules/wiki.js`
+
+## [2.0.3] - 2025-01-23 - Fix Edit Links for Multi-Portal Accounts
+
+### Fixed
+- **Edit Links Include Organization ID**: Edit links on wiki tooltips, banners, and plays now include the organization ID in the URL path
+  - Fixes broken edit links for users with multiple portals (partners/agencies)
+  - URLs now use format `https://app.revguide.io/{shortOrgId}/wiki?edit=...`
+  - Works correctly for both single-portal and multi-portal accounts
+  - Affected files: `content/content.js`, `content/modules/wiki.js`, `content/modules/banners.js`, `sidepanel/sidepanel.js`
+
 ## [2.0.2] - 2025-01-22 - Portal Selector Scrolling Fix
 
 ### Fixed

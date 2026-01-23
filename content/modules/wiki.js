@@ -421,7 +421,8 @@ class WikiModule {
   }
 
   /**
-   * Apply for index pages with multiple passes for lazy loading
+   * Apply for index pages with stability detection
+   * Waits for DOM to stabilize before applying icons to prevent flickering
    */
   applyForIndex() {
     this.log('applyForIndex called');
@@ -429,31 +430,102 @@ class WikiModule {
     if (this.helper.settings.showWiki === false) return;
     if (!this.helper.wikiEntries?.length) return;
 
-    // Immediate pass
-    this.apply();
+    // For index/list pages, wait for table headers to stabilize before applying
+    // HubSpot re-renders table headers multiple times during hydration
+    this.waitForTableStability().then(() => {
+      this.log('Table stable, applying wiki icons');
+      this.apply();
+    });
+  }
 
-    // Check for loading indicators
-    const hasLoading = () => document.querySelector(
-      '[data-loading="true"], .loading, [aria-busy="true"], .skeleton-loader'
-    );
+  /**
+   * Wait for table headers to stabilize (no DOM changes for a period)
+   * This prevents flickering caused by HubSpot's React re-renders
+   * @returns {Promise} Resolves when table is stable
+   */
+  waitForTableStability() {
+    return new Promise((resolve) => {
+      const TABLE_SELECTORS = 'table, [data-test-id="table"], [role="grid"], [class*="Table"]';
+      const STABILITY_THRESHOLD = 400; // ms without changes = stable
+      const MAX_WAIT = 3000; // Maximum time to wait
 
-    // Second pass if loading
-    setTimeout(() => {
-      if (hasLoading()) {
-        this.log('Index pass 2 - loading detected');
-        this.processedElements = new WeakSet(); // Reset for new content
-        this.apply();
+      let stabilityTimer = null;
+      let observer = null;
+      let resolved = false;
+      const startTime = Date.now();
+
+      const cleanup = () => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        clearTimeout(stabilityTimer);
+      };
+
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve();
+      };
+
+      // If no table found, resolve immediately (fallback to normal behavior)
+      const table = document.querySelector(TABLE_SELECTORS);
+      if (!table) {
+        this.log('No table found, applying immediately');
+        done();
+        return;
       }
-    }, 800);
 
-    // Third pass for slow loading
-    setTimeout(() => {
-      if (hasLoading()) {
-        this.log('Index pass 3 - still loading');
-        this.processedElements = new WeakSet();
-        this.apply();
-      }
-    }, 2000);
+      // Reset the stability timer when mutations occur
+      const resetStabilityTimer = () => {
+        clearTimeout(stabilityTimer);
+
+        // Check if we've exceeded max wait time
+        if (Date.now() - startTime > MAX_WAIT) {
+          this.log('Max wait time exceeded, applying now');
+          done();
+          return;
+        }
+
+        stabilityTimer = setTimeout(() => {
+          this.log('Table stable for', STABILITY_THRESHOLD, 'ms');
+          done();
+        }, STABILITY_THRESHOLD);
+      };
+
+      // Observe the table for any changes
+      observer = new MutationObserver((mutations) => {
+        // Filter out our own mutations
+        const hasExternalChanges = mutations.some(m => {
+          const isOurs = (node) => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return false;
+            return node.classList?.contains('hshelper-wiki-icon') ||
+                   node.classList?.contains('hshelper-wiki-wrapper') ||
+                   node.hasAttribute?.('data-hshelper-root');
+          };
+          return Array.from(m.addedNodes).some(n => !isOurs(n)) ||
+                 Array.from(m.removedNodes).some(n => !isOurs(n));
+        });
+
+        if (hasExternalChanges) {
+          resetStabilityTimer();
+        }
+      });
+
+      observer.observe(table, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+      });
+
+      // Start the initial stability timer
+      resetStabilityTimer();
+
+      // Safety: resolve after max wait regardless
+      setTimeout(done, MAX_WAIT + 100);
+    });
   }
 
   // ============ DOM MANIPULATION ============
@@ -469,7 +541,9 @@ class WikiModule {
     if (parent.querySelector('.hshelper-wiki-icon')) return;
 
     const displayTitle = entry.title || entry.trigger || entry.term;
-    const iconColor = this.helper.branding?.primary_color || '#7cb342';
+    // Use branding color only if explicitly customized, otherwise use darker green for better contrast
+    const brandingColor = this.helper.branding?.primary_color;
+    const iconColor = (brandingColor && brandingColor.toLowerCase() !== '#b2ef63') ? brandingColor : '#7cb342';
 
     // Create icon
     const icon = document.createElement('span');
@@ -513,7 +587,9 @@ class WikiModule {
    */
   addIconToElement(element, entry) {
     const displayTitle = entry.title || entry.trigger || entry.term;
-    const iconColor = this.helper.branding?.primary_color || '#7cb342';
+    // Use branding color only if explicitly customized, otherwise use darker green for better contrast
+    const brandingColor = this.helper.branding?.primary_color;
+    const iconColor = (brandingColor && brandingColor.toLowerCase() !== '#b2ef63') ? brandingColor : '#7cb342';
 
     const icon = document.createElement('span');
     icon.className = 'hshelper-wiki-icon';
@@ -656,8 +732,11 @@ class WikiModule {
         e.stopPropagation();
         const entryId = editLink.dataset.entryId;
         // Use web app if authenticated, otherwise local extension
+        // Include org ID in path for multi-portal support
+        const orgId = this.helper.settings.organizationId;
+        const shortOrgId = orgId ? orgId.substring(0, 8).toLowerCase() : '';
         const adminUrl = this.helper.settings.isAuthenticated
-          ? `https://app.revguide.io/wiki?edit=${entryId}`
+          ? `https://app.revguide.io/${shortOrgId}/wiki?edit=${entryId}`
           : chrome.runtime.getURL(`admin/pages/wiki.html?edit=${entryId}`);
         window.open(adminUrl, '_blank');
       });
@@ -825,7 +904,13 @@ class WikiModule {
         this.wikiUpdateTimeout = setTimeout(() => {
           if (this.helper.settings.showWiki !== false && this.helper.wikiEntries?.length) {
             this.lastApplyTime = Date.now();
-            this.apply();
+            // Use stability detection for tables to avoid flickering
+            const isTablePage = document.querySelector('table, [data-test-id="table"], [role="grid"]');
+            if (isTablePage) {
+              this.waitForTableStability().then(() => this.apply());
+            } else {
+              this.apply();
+            }
           }
         }, elapsed < MIN_INTERVAL ? MIN_INTERVAL - elapsed : 300);
       }

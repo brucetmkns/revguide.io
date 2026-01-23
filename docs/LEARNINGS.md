@@ -283,14 +283,43 @@ showPopup() {
 ### Lazy-Loaded Content
 **Lesson**: HubSpot lazy-loads content. Single-pass DOM scanning misses elements.
 
-**Pattern**: Use multiple delayed passes for index pages:
+**Pattern**: For pages without tables, use multiple delayed passes:
 ```javascript
-applyForIndex() {
-  setTimeout(() => this.apply(), 500);
-  setTimeout(() => this.apply(), 1500);
-  setTimeout(() => this.apply(), 3000);
+// Simple delayed passes for non-table pages
+setTimeout(() => this.apply(), 500);
+setTimeout(() => this.apply(), 1500);
+```
+
+### HubSpot React Re-Rendering Causes Flickering
+**Lesson**: HubSpot's React framework re-renders table headers multiple times during page hydration. Injecting icons immediately causes them to flicker (appear, disappear, reappear) as the DOM is replaced.
+
+**Symptom**: Wiki icons on table column headers appear 2-3 times with brief disappearances before staying visible.
+
+**Root Cause**: HubSpot's virtual DOM/React reconciliation replaces table header elements after initial render. Our injected wrapper elements get removed and recreated multiple times.
+
+**Solution**: Wait for DOM stability before injecting icons:
+```javascript
+waitForTableStability() {
+  return new Promise((resolve) => {
+    const STABILITY_THRESHOLD = 400; // ms without changes = stable
+    const MAX_WAIT = 3000;
+
+    const table = document.querySelector('table, [role="grid"]');
+    if (!table) { resolve(); return; }
+
+    let stabilityTimer = null;
+    const observer = new MutationObserver(() => {
+      clearTimeout(stabilityTimer);
+      stabilityTimer = setTimeout(resolve, STABILITY_THRESHOLD);
+    });
+
+    observer.observe(table, { childList: true, subtree: true });
+    setTimeout(resolve, MAX_WAIT); // Safety timeout
+  });
 }
 ```
+
+**Key insight**: Only tables need stability detection. Other page areas (sidebars, record pages) don't have this aggressive re-rendering behavior.
 
 ### MutationObserver Pitfalls
 **Lesson**: When using MutationObserver and modifying the DOM, disconnect first to avoid infinite loops.
@@ -393,6 +422,31 @@ sessionStorage.removeItem('revguide_org_id');
 ```
 
 **Files affected**: `admin/supabase.js` - `getOrganizationId()` function
+
+### Edit Links Must Include Short Org ID for Multi-Portal Support
+**Lesson**: Edit links in the extension (wiki tooltips, banner edit buttons, play edit buttons) must include the short organization ID in the URL path for multi-portal users.
+
+**Context**: Edit links on wiki entry tooltip cards were not working because they pointed to `https://app.revguide.io/wiki?edit=...` without the organization slug. The web app requires the org ID prefix for proper routing, especially for partners managing multiple portals.
+
+**Root Cause**: The edit link URLs were missing the organization ID prefix. The web app uses short org IDs (first 8 chars of UUID) in URL paths like `/{shortOrgId}/wiki?edit=...`.
+
+**Pattern**: When building edit URLs for authenticated users:
+```javascript
+// Get org ID from auth state/settings
+const orgId = this.helper.settings.organizationId; // or this.authState.profile?.organizationId
+const shortOrgId = orgId ? orgId.substring(0, 8).toLowerCase() : '';
+
+// Build URL with org prefix
+const adminUrl = `https://app.revguide.io/${shortOrgId}/wiki?edit=${entryId}`;
+```
+
+**Files affected**:
+- `content/content.js` - Pass `organizationId` to settings from authState
+- `content/modules/wiki.js` - Wiki tooltip edit links
+- `content/modules/banners.js` - Banner edit links
+- `sidepanel/sidepanel.js` - Play edit links
+
+**Note**: This works for both single-portal and multi-portal accounts. The web app routes correctly even with an org prefix for single-portal users.
 
 ---
 
