@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Transparent background with just the rings -->
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#b2ef63" stroke-width="4"/>
+  <circle cx="32" cy="32" r="16" fill="none" stroke="#b2ef63" stroke-width="4"/>
+  <circle cx="32" cy="32" r="5" fill="#b2ef63"/>
+</svg>
