@@ -193,6 +193,38 @@ async function loadUserOrganizations() {
     userOrganizations = orgs || [];
     console.log(`[Auth] Loaded ${userOrganizations.length} organizations`);
 
+    // Self-repair: if user has an org (from users table) but no organization_members record,
+    // auto-create the missing membership. This fixes users who were created before
+    // the organization_members table existed, or via flows that didn't insert into it.
+    if (userOrganizations.length === 0 && currentOrganization?.id && currentUser?.id) {
+      console.warn('[Auth] User has org but no organization_members record - auto-repairing...');
+      try {
+        const client = await RevGuideAuth.waitForClient();
+        const { error: repairError } = await client
+          .from('organization_members')
+          .upsert({
+            user_id: currentUser.id,
+            organization_id: currentOrganization.id,
+            role: currentUser.role || 'member',
+            joined_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,organization_id'
+          });
+
+        if (!repairError) {
+          console.log('[Auth] Auto-repair successful, reloading organizations...');
+          // Re-fetch organizations after repair
+          const { data: repairedOrgs } = await RevGuideDB.getUserOrganizations();
+          userOrganizations = repairedOrgs || [];
+          console.log(`[Auth] After repair: ${userOrganizations.length} organizations`);
+        } else {
+          console.error('[Auth] Auto-repair failed:', repairError);
+        }
+      } catch (repairEx) {
+        console.error('[Auth] Auto-repair exception:', repairEx);
+      }
+    }
+
     // If currentOrganization is not set, populate it from userOrganizations
     // This ensures org name displays even if the separate organizations query failed
     if (!currentOrganization && userOrganizations.length > 0 && currentUser) {

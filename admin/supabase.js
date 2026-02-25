@@ -868,7 +868,24 @@ const RevGuideDB = {
       userProfile = data;
     }
 
-    // 2. Mark invitation as accepted
+    // 2. Add to organization_members
+    const { error: memberError } = await client
+      .from('organization_members')
+      .upsert({
+        user_id: userProfile.id,
+        organization_id: invitation.organization_id,
+        role: invitation.role,
+        joined_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,organization_id'
+      });
+
+    if (memberError) {
+      console.error('Failed to add member to organization_members:', memberError);
+      // Don't fail - user is already linked via users table
+    }
+
+    // 3. Mark invitation as accepted
     const { error: updateError } = await client
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
@@ -879,7 +896,7 @@ const RevGuideDB = {
       // Don't fail the whole operation, user is already linked
     }
 
-    // 3. Cache the organization ID
+    // 4. Cache the organization ID
     this.setCachedOrgId(invitation.organization_id);
 
     return { data: userProfile, error: null };
