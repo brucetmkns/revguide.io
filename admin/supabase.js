@@ -1098,17 +1098,21 @@ const RevGuideDB = {
       .eq('auth_user_id', user.id)
       .single();
 
+    let result;
+    let userId;
+
     if (existingUser) {
       // Update existing user
-      return client
+      result = await client
         .from('users')
         .update({ organization_id: organizationId, role })
         .eq('auth_user_id', user.id)
         .select()
         .single();
+      userId = existingUser.id;
     } else {
       // Create new user record
-      return client
+      result = await client
         .from('users')
         .insert({
           auth_user_id: user.id,
@@ -1118,7 +1122,29 @@ const RevGuideDB = {
         })
         .select()
         .single();
+      userId = result.data?.id;
     }
+
+    // Also add to organization_members (required for getUserOrganizations)
+    if (userId && !result.error) {
+      const { error: memberError } = await client
+        .from('organization_members')
+        .upsert({
+          user_id: userId,
+          organization_id: organizationId,
+          role,
+          joined_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,organization_id'
+        });
+
+      if (memberError) {
+        console.error('Failed to add member to organization_members:', memberError);
+        // Don't fail - user is already linked via users table
+      }
+    }
+
+    return result;
   },
 
   /**
@@ -1273,8 +1299,11 @@ const RevGuideDB = {
    */
   async getUserOrganizations() {
     const client = await RevGuideAuth.waitForClient();
+    const { data: { user } } = await client.auth.getUser();
 
-    const { data, error } = await client.rpc('get_user_organizations');
+    if (!user) return { data: [], error: new Error('Not authenticated') };
+
+    const { data, error } = await client.rpc('get_user_organizations', { p_auth_uid: user.id });
 
     if (error) {
       console.error('Failed to get user organizations:', error);

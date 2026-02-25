@@ -4,9 +4,61 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.0.4 (Wiki Icon Flickering Fix)
+## Current State: v2.0.5.1 (Index Tags Sorting & Layout Fix)
 
 A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, **slide-in detail panels for viewing play content**, and **user-level HubSpot OAuth for personal attribution tracking**.
+
+---
+
+## Pending Deployment: Cloudflare Worker (invite-worker.js)
+
+**Status:** NOT YET DEPLOYED
+**Date identified:** 2026-02-25
+**Priority:** Medium (self-repair mechanism provides safety net)
+
+The following fixes were applied to `api/invite-worker.js` but require a manual Cloudflare Workers deployment (`wrangler deploy`) since this file is NOT auto-deployed via Vercel git push:
+
+1. **`handleSignupInviteLink()`** - Added `organization_members` insert for email/password invite link signups
+2. **`handleSignupInviteLinkOAuth()`** - Added `organization_members` insert for OAuth invite link signups
+
+**Why it matters:** Without this deployment, new users signing up via shareable invite links will be missing their `organization_members` record, causing the admin portal to redirect them to the homepage on every navigation. The self-repair mechanism in `admin/shared.js` catches and fixes this at runtime, but the proper fix is deploying the worker.
+
+**To deploy:**
+```bash
+cd api
+npx wrangler deploy invite-worker.js
+```
+
+**Remove this section** after deployment is confirmed.
+
+---
+
+## High Priority: Performance Optimization Backlog
+
+The following performance improvements were identified during Chrome freeze/crash analysis (v2.0.5) but require more careful implementation due to potential side effects:
+
+### TreeWalker DOM Query Optimization (wiki.js)
+**Location:** `content/modules/wiki.js` lines 254-295
+**Issue:** `querySelector()` called inside `acceptNode()` for every text node (2,000+ on typical pages)
+**Impact:** Main thread blocked 500-2000ms during wiki highlighting, causing visible UI freezes
+**Recommended fix:** Cache parent element checks using WeakSet to avoid redundant DOM queries
+**Risk:** Could miss some text nodes if caching logic has edge cases
+
+### Async Batch API Timeout Handling (index-tags.js)
+**Location:** `content/modules/index-tags.js` lines 469-475
+**Issue:** Batch API calls via `chrome.runtime.sendMessage` have no timeout/abort mechanism
+**Impact:** If HubSpot API is slow, callbacks never fire, blocking subsequent batches
+**Recommended fix:** Add AbortController or Promise.race timeout wrapper
+**Risk:** Need to handle timeout gracefully without breaking batch processing flow
+
+### Wiki apply() Re-entrancy Queueing (wiki.js)
+**Location:** `content/modules/wiki.js` lines 174-180
+**Issue:** When `apply()` is called during an ongoing apply, calls are silently dropped
+**Impact:** Wiki highlighting can become inconsistent on rapidly-updating pages
+**Recommended fix:** Add `pendingApply` flag to queue one follow-up apply
+**Risk:** Queueing could cause different timing issues; needs careful testing
+
+---
 
 ### User-Level HubSpot OAuth (v2.16.0)
 - **Personal OAuth Connections**: Users can connect their individual HubSpot accounts in the sidepanel Settings tab

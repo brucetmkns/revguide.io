@@ -1287,7 +1287,34 @@ async function handleSignupInviteLink(request, env, corsHeaders) {
     const userProfile = await createProfileResponse.json();
     const userId = Array.isArray(userProfile) ? userProfile[0].id : userProfile.id;
 
-    // 4. Consume the invite link (increment counter and record signup)
+    // 4. Add to organization_members (required for getUserOrganizations)
+    const memberPayload = {
+      user_id: userId,
+      organization_id: inviteLink.organization_id,
+      role: inviteLink.role || 'viewer',
+      joined_at: new Date().toISOString()
+    };
+
+    const memberResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(memberPayload)
+      }
+    );
+
+    if (!memberResponse.ok) {
+      console.error('Failed to add to organization_members:', await memberResponse.text());
+      // Don't fail - user is already created and linked via users table
+    }
+
+    // 5. Consume the invite link (increment counter and record signup)
     const consumeResponse = await fetch(
       `${CONFIG.supabaseUrl}/rest/v1/rpc/consume_invite_link`,
       {
@@ -1465,7 +1492,34 @@ async function handleSignupInviteLinkOAuth(request, env, corsHeaders) {
     const userProfile = await createProfileResponse.json();
     const userId = Array.isArray(userProfile) ? userProfile[0].id : userProfile.id;
 
-    // 4. Consume the invite link (increment counter and record signup)
+    // 4. Add to organization_members (required for getUserOrganizations)
+    const memberPayload = {
+      user_id: userId,
+      organization_id: inviteLink.organization_id,
+      role: inviteLink.role || 'viewer',
+      joined_at: new Date().toISOString()
+    };
+
+    const memberResponse = await fetch(
+      `${CONFIG.supabaseUrl}/rest/v1/organization_members`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(memberPayload)
+      }
+    );
+
+    if (!memberResponse.ok) {
+      console.error('Failed to add to organization_members:', await memberResponse.text());
+      // Don't fail - user is already created and linked via users table
+    }
+
+    // 5. Consume the invite link (increment counter and record signup)
     const consumeResponse = await fetch(
       `${CONFIG.supabaseUrl}/rest/v1/rpc/consume_invite_link`,
       {
