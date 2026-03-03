@@ -2514,7 +2514,6 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  overflow: hidden;
 }
 
 .condition-group-header {
@@ -2524,6 +2523,7 @@
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-subtle);
   border-bottom: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .condition-group-header-left {
