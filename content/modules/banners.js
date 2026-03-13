@@ -301,8 +301,11 @@ class BannersModule {
    */
   openAdminEditor(assetType, assetId) {
     // Use web app if authenticated, otherwise local extension
+    // Include org ID in path for multi-portal support
+    const orgId = this.helper.settings.organizationId;
+    const shortOrgId = orgId ? orgId.substring(0, 8).toLowerCase() : '';
     const adminUrl = this.helper.settings.isAuthenticated
-      ? `https://app.revguide.io/${assetType}?edit=${assetId}`
+      ? `https://app.revguide.io/${shortOrgId}/${assetType}?edit=${assetId}`
       : chrome.runtime.getURL(`admin/pages/${assetType}.html?edit=${assetId}`);
     window.open(adminUrl, '_blank');
   }

@@ -53,6 +53,8 @@ class SidePanel {
     this.propertyMetadata = {}; // Property definitions from HubSpot API
     this.authState = { isAuthenticated: false };
     this.currentDetailCard = null;  // Currently displayed card in detail panel
+    this.listenersInitialized = false;  // Prevent duplicate chrome.tabs listeners
+    this.pendingPlayFocusInterval = null;  // Track interval for cleanup
     this.init();
   }
 
@@ -141,24 +143,33 @@ class SidePanel {
       }
     });
 
-    // Poll for pending play focus (fallback when messages don't arrive)
-    setInterval(() => this.checkPendingPlayFocus(), 1000);
+    // Only set up intervals and chrome.tabs listeners once (prevents accumulation on re-init)
+    if (!this.listenersInitialized) {
+      this.listenersInitialized = true;
 
-    // Listen for tab URL changes to refresh cards when navigating
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      // Only refresh if URL changed and it's a HubSpot page
-      if (changeInfo.url && tab.url?.includes('hubspot.com')) {
-        console.log('[RevGuide] Tab URL changed, refreshing cards');
-        // Small delay to let content script re-initialize
-        setTimeout(() => this.requestCardsFromContentScript(), 1000);
-      }
-    });
+      // Poll for pending play focus (fallback when messages don't arrive)
+      // Skip polling when document is hidden to reduce CPU usage
+      this.pendingPlayFocusInterval = setInterval(() => {
+        if (document.hidden) return;
+        this.checkPendingPlayFocus();
+      }, 1000);
 
-    // Listen for tab activation (switching tabs)
-    chrome.tabs.onActivated.addListener((activeInfo) => {
-      console.log('[RevGuide] Tab activated, refreshing cards');
-      setTimeout(() => this.requestCardsFromContentScript(), 500);
-    });
+      // Listen for tab URL changes to refresh cards when navigating
+      chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        // Only refresh if URL changed and it's a HubSpot page
+        if (changeInfo.url && tab.url?.includes('hubspot.com')) {
+          console.log('[RevGuide] Tab URL changed, refreshing cards');
+          // Small delay to let content script re-initialize
+          setTimeout(() => this.requestCardsFromContentScript(), 1000);
+        }
+      });
+
+      // Listen for tab activation (switching tabs)
+      chrome.tabs.onActivated.addListener((activeInfo) => {
+        console.log('[RevGuide] Tab activated, refreshing cards');
+        setTimeout(() => this.requestCardsFromContentScript(), 500);
+      });
+    }
 
     // Request current cards from the active tab's content script
     this.requestCardsFromContentScript();
@@ -379,8 +390,11 @@ class SidePanel {
     document.getElementById('playDetailEdit')?.addEventListener('click', () => {
       if (this.currentDetailCard) {
         const cardId = this.currentDetailCard.id;
+        // Include org ID in path for multi-portal support
+        const orgId = this.authState.profile?.organizationId;
+        const shortOrgId = orgId ? orgId.substring(0, 8).toLowerCase() : '';
         const adminUrl = this.authState.isAuthenticated
-          ? `${WEB_APP_URL}/plays?edit=${cardId}`
+          ? `${WEB_APP_URL}/${shortOrgId}/plays?edit=${cardId}`
           : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
         chrome.tabs.create({ url: adminUrl });
       }
@@ -749,22 +763,28 @@ class SidePanel {
 
     // Apply primary color
     if (branding.primary_color) {
-      root.style.setProperty('--sp-primary', branding.primary_color);
+      const color = branding.primary_color;
+      root.style.setProperty('--sp-primary', color);
 
-      // Calculate hover color (slightly darker)
-      const hoverColor = this.darkenColor(branding.primary_color, 10);
+      // Check if color is dark
+      const isDark = this.isColorDark(color);
+
+      // Calculate hover color (lighter for dark colors, darker for light colors)
+      const hoverColor = isDark ? this.lightenColor(color, 15) : this.darkenColor(color, 10);
       root.style.setProperty('--sp-primary-hover', hoverColor);
 
-      // Calculate dark text color for on-primary text
-      const darkColor = this.darkenColor(branding.primary_color, 70);
-      root.style.setProperty('--sp-primary-dark', darkColor);
+      // Text on primary: white for dark colors, dark for light colors
+      const textColor = isDark ? '#ffffff' : this.darkenColor(color, 70);
+      root.style.setProperty('--sp-primary-dark', textColor);
 
       // Calculate transparent background and shadow versions
-      const rgb = this.hexToRgb(branding.primary_color);
+      const rgb = this.hexToRgb(color);
       if (rgb) {
         root.style.setProperty('--sp-primary-bg', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
         root.style.setProperty('--sp-primary-shadow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
       }
+
+      console.log('[SidePanel] Applied branding colors:', { color, hoverColor, textColor, isDark });
     }
 
     // Apply display name
@@ -805,6 +825,27 @@ class SidePanel {
     const b = Math.round(rgb.b * factor);
 
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  lightenColor(hex, percent) {
+    const rgb = this.hexToRgb(hex);
+    if (!rgb) return hex;
+
+    const factor = percent / 100;
+    const r = Math.round(rgb.r + (255 - rgb.r) * factor);
+    const g = Math.round(rgb.g + (255 - rgb.g) * factor);
+    const b = Math.round(rgb.b + (255 - rgb.b) * factor);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  isColorDark(hex) {
+    const rgb = this.hexToRgb(hex);
+    if (!rgb) return false;
+
+    // Calculate relative luminance using sRGB formula
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    return luminance < 0.5;
   }
 
   setupSettingsHandlers() {
@@ -1144,8 +1185,11 @@ class SidePanel {
         e.stopPropagation();
         const cardId = link.dataset.cardId;
         // Use web app if authenticated, otherwise local extension
+        // Include org ID in path for multi-portal support
+        const orgId = this.authState.profile?.organizationId;
+        const shortOrgId = orgId ? orgId.substring(0, 8).toLowerCase() : '';
         const adminUrl = this.authState.isAuthenticated
-          ? `${WEB_APP_URL}/plays?edit=${cardId}`
+          ? `${WEB_APP_URL}/${shortOrgId}/plays?edit=${cardId}`
           : chrome.runtime.getURL(`admin/pages/plays.html?edit=${cardId}`);
         chrome.tabs.create({ url: adminUrl });
       });

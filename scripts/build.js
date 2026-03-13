@@ -60,7 +60,41 @@ const EXCLUDE = [
   // Tailwind source (output file is included)
   'tailwind.css',
   'tailwind.config.js',
-  'postcss.config.js'
+  'postcss.config.js',
+  // Analytics script - web-only, contains remote code (violates MV3)
+  'admin/analytics.js',
+  // Mockup/preview HTML files - contain external CDN refs (Google Fonts)
+  'tooltip-preview.html',
+  'sidepanel-chat-mockup.html',
+  'sidepanel-complete-mockup.html',
+  'sidepanel-minimal-refined.html',
+  'sidepanel-fresh-take.html',
+  'recommended-content-mockup.html',
+  'recommended-content-a3-refined.html',
+  'recommended-content-chat-variations.html',
+  'recommended-content-match-variations.html',
+  // Other non-extension files
+  'CLAUDE.md',
+  'HUBSPOT_IMPORT_INSTRUCTIONS.md',
+  // Directories that are not part of the extension
+  'mockups',
+  'my-video',
+  'revguide-ads',
+  'revguide-ads-v2',
+  // Stray root files that should not be in the extension
+  'revguide-presentation.html',
+  'create-presentation-pdf.py',
+  'PRIVACY.md',
+  // Admin page mockups/previews (contain external CDN refs)
+  'wiki-redesign.html',
+  'wiki-tailwind-preview.html',
+  'wiki-tree-variations.html',
+  'condition-groups-mockup.html'
+];
+
+// File extensions to exclude from build (non-extension assets)
+const EXCLUDE_EXTENSIONS = [
+  '.csv', '.py', '.jsx', '.pptx', '.pdf', '.zip', '.md', '.sh', '.ts', '.mjs'
 ];
 
 // Files to copy without processing (already minified or binary)
@@ -147,6 +181,8 @@ function buildTailwind() {
  */
 function shouldExclude(relativePath) {
   const parts = relativePath.split(path.sep);
+  const ext = path.extname(relativePath).toLowerCase();
+  if (EXCLUDE_EXTENSIONS.includes(ext)) return true;
   return EXCLUDE.some(exc => parts.includes(exc) || relativePath.startsWith(exc));
 }
 

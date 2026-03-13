@@ -73,6 +73,30 @@ div.innerHTML = `<div class="condition-group-card">...</div>`;
 
 **Files affected**: `admin/shared.js` - `addConditionGroup()` function, `admin/shared.css` - condition group classes
 
+### Overflow Hidden Clips Absolutely-Positioned Children
+**Lesson**: Never use `overflow: hidden` on a container that has children with `position: absolute` dropdowns/popups. The overflow will clip them regardless of `z-index`.
+
+**Context**: The condition builder's `.condition-group-card` had `overflow: hidden` (originally added for border-radius clipping). This cropped the `.searchable-select-dropdown` which uses `position: absolute` + `z-index: 100`. The dropdown was invisible below the card boundary.
+
+**Pattern**: If you need rounded corners on a container with absolute-positioned children, apply `border-radius` to the child elements (e.g., header, footer) instead of using `overflow: hidden` on the parent:
+```css
+/* BAD - clips absolute children */
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* GOOD - rounded corners without clipping */
+.card {
+  border-radius: 8px;
+}
+.card-header {
+  border-radius: 8px 8px 0 0;
+}
+```
+
+**Files affected**: `admin/shared.css` - `.condition-group-card` and `.condition-group-header`
+
 ### Dropdown Lists Need Scrollable Overflow
 **Lesson**: Dropdown menus containing dynamic lists must use `overflow-y: auto` with `max-height` to allow scrolling, not `overflow: hidden` which truncates content.
 
@@ -3714,6 +3738,193 @@ if (this.eligibleBanners.length === 0 && !erpEnabled) {
 - `content/content.js` - `isIndexPage()`, `loadData()`, `extractContext()`
 - `content/modules/index-tags.js` - `parseIndexUrl()`, `processVisibleRows()`, `renderTagsForRecord()`, `setupObserver()`
 
+### HubSpot Table Sorting Replaces Rows
+**Lesson**: When HubSpot sorts a table (clicking column headers), it typically replaces the entire tbody or removes/re-adds all rows. MutationObservers must detect this and reprocess all rows.
+
+**Context**: Index tags appeared on initial load but disappeared or only partially showed after clicking a column header to sort.
+
+**Root cause**: The MutationObserver detected new rows but:
+1. `processedRows` WeakSet still held references to old (removed) DOM elements
+2. New rows weren't being processed because `isProcessing` flag blocked concurrent processing
+3. Some rows weren't in the properties cache
+
+**Solution - Multi-layer detection**:
+```javascript
+// 1. Detect major changes (many rows at once, tbody replacement)
+if (standardRows.length > 3 || node.tagName === 'TBODY') {
+  hasMajorChange = true;
+}
+
+// 2. Direct click listener on column headers
+const headerRow = table.querySelector('thead tr');
+headerRow.addEventListener('click', () => {
+  setTimeout(() => {
+    this.processedRows = new WeakSet();  // Reset tracking
+    this.recheckVisibleRows();
+  }, 500);  // Wait for sort to complete
+});
+
+// 3. Reset tracking on major changes
+if (hasMajorChange) {
+  this.processedRows = new WeakSet();
+  this.recheckVisibleRows();
+}
+```
+
+**Pattern for `recheckVisibleRows()`**:
+```javascript
+// Return whether fetch is needed so caller can batch
+recheckRowForTags(row, recordId, isWorkspace) {
+  if (!tagContainer.querySelector('.hshelper-index-tags')) {
+    const cached = this.propertiesCache.get(recordId);
+    if (cached) {
+      this.renderTagsForRecord(row, recordId, cached.properties);
+      return false;
+    }
+    return true;  // Needs fetch
+  }
+  return false;
+}
+```
+
+**Files affected**: `content/modules/index-tags.js`
+
+### CSS Flexbox and HubSpot Row Hover
+**Lesson**: HubSpot's table row hover can trigger width changes that cause flex items to reflow. Use `flex-wrap: nowrap` with `overflow: hidden` for stable layouts.
+
+**Context**: Index tags wrapped to multiple lines when hovering over a table row, expanding the row height unexpectedly.
+
+**Root cause**: `.hshelper-index-tags` used `flex-wrap: wrap`, so when HubSpot's hover state changed cell dimensions slightly, tags reflowed to new lines.
+
+**Solution**:
+```css
+.hshelper-index-tags {
+  display: inline-flex;
+  flex-wrap: nowrap;      /* Prevent wrapping */
+  overflow: hidden;        /* Hide overflow instead of expanding */
+  vertical-align: middle;
+}
+
+.hshelper-index-tag {
+  flex-shrink: 0;          /* Prevent compression on hover */
+}
+```
+
+**Files affected**: `content/content.css`
+
 ---
 
-*Last updated: January 2026*
+## Interval and Listener Resource Management (v2.0.5.2)
+
+### Preventing Duplicate Listener/Interval Registration
+**Lesson**: When initialization functions can run multiple times (e.g., SPA navigation triggers re-init), global listeners and intervals must only be registered once.
+
+**Problem patterns identified**:
+1. `setInterval()` without storing the ID - can never be cleared
+2. `chrome.tabs.onUpdated.addListener()` inside `init()` - adds duplicate on each call
+3. `this.observer = new MutationObserver()` without disconnecting old observer first
+
+**Solution pattern - initialization flag**:
+```javascript
+class MyModule {
+  constructor() {
+    this.listenersInitialized = false;
+    this.myInterval = null;
+  }
+
+  init() {
+    // Only set up global listeners once
+    if (!this.listenersInitialized) {
+      this.listenersInitialized = true;
+
+      // Store interval ID for potential cleanup
+      this.myInterval = setInterval(() => {
+        if (document.hidden) return;  // Skip when tab inactive
+        this.doWork();
+      }, 1000);
+
+      // Chrome listeners persist for extension lifetime
+      chrome.tabs.onUpdated.addListener(this.handleTabUpdate.bind(this));
+    }
+  }
+}
+```
+
+**Solution pattern - observer reassignment**:
+```javascript
+setupObserver() {
+  // Always disconnect before reassigning
+  if (this.observer) {
+    this.observer.disconnect();
+  }
+
+  this.observer = new MutationObserver((mutations) => {
+    // ... handle mutations
+  });
+
+  this.observer.observe(target, options);
+}
+```
+
+**Key insight**: The `document.hidden` check inside intervals significantly reduces CPU usage when the tab is inactive, without breaking functionality.
+
+**Files affected**:
+- `content/content.js` - `watchForChanges()` with `watchersInitialized` flag
+- `sidepanel/sidepanel.js` - `init()` with `listenersInitialized` flag
+- `content/modules/index-tags.js` - `setupBoardObserver()` with disconnect-before-assign
+
+### Chrome Extension Sidepanel Lifecycle
+**Lesson**: The sidepanel can be opened/closed multiple times during a browser session, but `chrome.tabs` listeners persist. Using a flag prevents accumulation.
+
+**Context**: Opening a play via banner click was causing exponentially increasing log messages and storage reads after multiple sidepanel open/close cycles.
+
+**Root cause**: `chrome.tabs.onUpdated.addListener()` was called in `init()`, which runs on every sidepanel open.
+
+**Why this matters**:
+- Chrome listeners are NOT automatically removed when sidepanel closes
+- Each listener closure holds references to `this`, preventing garbage collection
+- After 10 cycles: 10 listeners all firing on every tab update
+
+---
+
+## API Properties Lost on DOM Re-scrape (v2.0.5.4)
+
+### MutationObserver Wipes API-Fetched Properties
+**Lesson**: When a MutationObserver triggers a DOM re-scrape that resets `this.properties = {}`, any properties fetched from an API (not visible in the DOM) are permanently lost until the next full page load.
+
+**Context**: Banner/play condition rules referencing API-only properties (e.g. `hs_lead_status`, `_list_memberships`) would pass on initial load but fail after the HubSpot sidebar triggered a DOM re-scrape via MutationObserver.
+
+**Root cause**: `extractPageData()` starts with `this.properties = {}`, then re-scrapes only DOM-visible properties. The `fetchRecordFromAPI()` and `fetchListMemberships()` calls only run during initial `loadData()`, not on re-scrape. So API data is wiped and never restored.
+
+**Timeline of the bug**:
+1. Page loads -> `loadData()` calls `extractPageData()` (DOM props) then `fetchRecordFromAPI()` (API props merged in)
+2. User edits a property in HubSpot sidebar -> MutationObserver fires
+3. `extractPageData()` runs -> `this.properties = {}` wipes everything, DOM re-scrape recovers only visible props
+4. `render()` evaluates conditions against incomplete properties -> conditions fail
+
+**Solution - Track API keys, selective clear**:
+```javascript
+// In constructor
+this.apiPropertyKeys = new Set();
+
+// In fetchRecordFromAPI() - mark keys as API-sourced
+this.properties[key] = value;
+this.apiPropertyKeys.add(key);
+
+// In extractPageData() - only clear DOM-scraped keys
+for (const key of Object.keys(this.properties)) {
+  if (!this.apiPropertyKeys.has(key)) {
+    delete this.properties[key];
+  }
+}
+```
+
+**Why this is better than a cache + re-merge**: A `Set` of key names is lighter than duplicating all API values. No re-merge loop needed after every scrape. Single point of change in `extractPageData()`.
+
+**Key insight**: This bug existed since the first commit but was masked because most condition rules used DOM-visible properties. It only surfaced when rules targeted API-only properties like `hs_lead_status`.
+
+**Files affected**: `content/content.js` - constructor, `fetchRecordFromAPI()`, `fetchListMemberships()`, `extractPageData()`
+
+---
+
+*Last updated: March 2026*

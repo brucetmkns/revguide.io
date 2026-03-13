@@ -4,7 +4,7 @@ This document outlines the product roadmap for RevGuide, from current Chrome ext
 
 ---
 
-## Current State: v2.0.5.1 (Index Tags Sorting & Layout Fix)
+## Current State: v2.0.5.4 (Fix Banner/Play Conditions After DOM Re-scrape)
 
 A fully functional SaaS web application with Chrome extension, featuring direct HubSpot OAuth integration, Google and Microsoft SSO for passwordless authentication, shareable invite links for team onboarding, **index page tags for banner visibility on record lists and board views**, team management with role-based access control, user settings management, proper database security, reliable data persistence, a dedicated Partner Account system for agencies/freelancers managing multiple client portals, **partner-created content libraries that can be deployed across client organizations**, **Stripe billing integration with per-seat and tiered partner pricing**, **ERP icon integration for linking HubSpot records to external systems like Q360**, **grouped conditions for complex rule building with nested AND/OR logic**, **content recommendations with tag-based matching for contextual content delivery in the sidepanel**, **slide-in detail panels for viewing play content**, and **user-level HubSpot OAuth for personal attribution tracking**.
 
@@ -1058,6 +1058,11 @@ Would you like me to suggest values?"
 - [ ] **Hybrid workflow** - Start from template, then use AI to fill/refine content
 - [ ] **AI section suggestions** - AI recommends additional sections based on play type
 - [ ] **Content refinement** - AI helps improve existing play content (rewrite, expand, summarize)
+
+### Condition Builder Improvements
+- [ ] **Pipeline-aware deal stage dropdown** - `dealstage` property returns empty options from HubSpot's properties API because stages are pipeline-dependent. Fetch pipelines via `/crm/v3/pipelines/deals` and inject stages as dropdown options when `dealstage` is selected. Same applies to `hs_pipeline` and ticket pipeline/stage properties.
+- [ ] **Fallback for empty enumeration options** - Some HubSpot properties are typed as `enumeration` but return empty `options[]`. Show a helpful placeholder or hint in the text input (e.g., "Enter internal value") so users know what's expected.
+- [ ] **Pipeline selector for stage conditions** - When a user selects `dealstage` as a condition property, optionally let them pick a pipeline first, then show only that pipeline's stages in the values dropdown.
 
 ### Admin Panel Improvements
 - [ ] **Duplicate trigger word validation** - Warn when saving a wiki entry with a trigger word that already exists

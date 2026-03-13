@@ -2,6 +2,102 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.5.4] - 2026-03-13 - Fix Banner/Play Conditions After DOM Re-scrape
+
+### Fixed
+- **Banner/play conditions failing after sidebar changes**: API-fetched properties (e.g. `hs_lead_status`, list memberships) were wiped when the MutationObserver triggered `extractPageData()`, which destructively reset `this.properties = {}`
+  - Root cause: DOM re-scrape can only recover properties visible in the HubSpot sidebar, not API-only properties
+  - Solution: Track API-sourced property keys in a `Set` (`apiPropertyKeys`) and only clear DOM-scraped keys during re-scrape
+  - Affects all condition rules that reference API-only properties
+  - File: `content/content.js`
+
+## [2.0.5.3] - 2026-03-03 - Condition Builder Dropdown Fix
+
+### Fixed
+- **Condition builder dropdown clipped**: The "Select Property" searchable dropdown in banner and play condition rules was hidden/cropped by parent container
+  - Removed `overflow: hidden` from `.condition-group-card` that was clipping absolutely-positioned dropdowns
+  - Moved `border-radius` to `.condition-group-header` to preserve rounded top corners
+  - Affects both Banners and Plays condition editors
+
+## [2.0.5.2] - 2025-01-29 - Interval & Listener Cleanup
+
+### Fixed
+- **content.js: Prevent duplicate watcher setup** - Navigation watchers now only initialize once
+  - Added `watchersInitialized` flag to prevent duplicate History API patches on SPA navigation
+  - Added `document.hidden` check to skip polling when tab is inactive
+  - Stored `navigationInterval` ID (previously anonymous, could never be cleared)
+  - Fixes potential memory leak from accumulating event listeners and intervals
+- **sidepanel.js: Prevent chrome.tabs listener accumulation** - Tab listeners now only add once
+  - Added `listenersInitialized` flag to prevent duplicate `chrome.tabs.onUpdated/onActivated` listeners
+  - Each sidepanel open/close cycle was previously adding duplicate listeners
+  - Added `document.hidden` check to `checkPendingPlayFocus` polling to reduce CPU usage
+- **index-tags.js: Disconnect observer before reassignment** - Prevents orphaned MutationObservers
+  - Added `this.observer.disconnect()` before creating new observer in `setupBoardObserver()`
+  - Previously, switching between board/table views could leave orphaned observers running
+
+### Technical Details
+These fixes address resource leaks identified during Chrome crash analysis. The patterns that caused issues:
+
+1. **Unguarded setInterval**: Intervals created without storing their IDs can never be cleared
+2. **Listeners in init()**: Adding listeners inside initialization functions that can run multiple times
+3. **Observer reassignment**: Assigning new MutationObserver to `this.observer` without disconnecting first
+
+All fixes preserve existing functionality while preventing resource accumulation during extended sessions.
+
+## [2.0.5.1] - 2025-01-29 - Index Tags Sorting & Layout Fix
+
+### Fixed
+- **Index tags not appearing after sorting**: Clicking column headers to sort now properly re-renders all tags
+  - Added detection for major table changes (tbody replacement, multiple rows added/removed)
+  - Added direct click listener on column headers for immediate sort detection
+  - Reset row tracking when sort detected to ensure all rows get reprocessed
+  - `recheckVisibleRows()` now fetches properties for rows missing from cache
+- **Index tags wrapping on row hover**: Tags no longer expand row height when hovering in table view
+  - Changed `.hshelper-index-tags` from `flex-wrap: wrap` to `flex-wrap: nowrap`
+  - Added `overflow: hidden` to clip overflow instead of wrapping
+  - Added `flex-shrink: 0` to individual tags to prevent compression
+  - Added `margin-bottom: 4px` for consistent spacing
+
+## [2.0.5] - 2025-01-29 - Fix Chrome Freezing/Crashing
+
+### Fixed
+- **Performance: Remove aggressive content.js MutationObserver** - Root cause of freezing
+  - Removed content.js MutationObserver on `document.body` with `subtree: true` (fired on every DOM change)
+  - Replaced with History API hooks (`pushState`/`replaceState`) plus 1s polling fallback
+  - Added `detectViewType()` to catch board/table view switches (URL doesn't change)
+  - Navigation detection now tracks both URL changes AND view type changes
+- **Wiki tooltips: Disabled on board view cards** - Avoids virtual scrolling complexity
+  - Tooltips still show on filters and column headers (deal stages) in board view
+  - Tooltips still show on filters and column headers (properties) in table view
+  - Skips `cdb-column-item`, `cdb-card`, `board-card-section`, `.card-wrapper-container`
+  - Simplified scroll listener (no longer needs to watch individual board columns)
+- **Wiki observer: Kept document.body fallback** (per LEARNINGS.md)
+  - Required for lazy-loaded content; safe due to throttling + re-entrancy protection
+- **Performance: Property observer no longer tracks characterData**
+  - Removed `characterData: true` flag which triggered on every text change
+  - Previously, if specific containers weren't found, wiki module would observe entire `document.body`
+  - Now skips observation if containers not found, preventing "mutation storms"
+  - Added table containers to observer targets for better index page coverage
+- **Performance: Property observer no longer tracks characterData**
+  - Removed `characterData: true` flag which triggered callbacks on every text change
+  - Structural changes (`childList: true`) are sufficient for detecting property updates
+- **Performance: Index tags interval improvements**
+  - Increased board check interval from 2s to 5s to reduce CPU overhead
+  - Added `document.hidden` check to skip processing when tab is inactive
+  - Replaced expensive `:has()` CSS selector with JS-based filtering
+  - Added auto-cleanup when board is no longer in DOM
+  - Added visibility change listener to pause observers when tab is hidden
+
+### Technical Details
+The combination of multiple overlapping MutationObservers on `document.body` created a feedback loop:
+1. HubSpot makes a DOM change (constantly, as a React SPA)
+2. Multiple observers fire simultaneously
+3. Observers trigger DOM queries and writes (adding icons, tags)
+4. Those writes trigger more observer callbacks
+5. CPU spikes, Chrome freezes
+
+This release eliminates the root cause by using more targeted, efficient observation strategies.
+
 ## [2.0.4] - 2025-01-23 - Fix Wiki Icon Flickering on List Pages
 
 ### Fixed

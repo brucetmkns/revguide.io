@@ -284,6 +284,12 @@ class WikiModule {
             return NodeFilter.FILTER_REJECT;
           }
 
+          // Skip board view cards (only show tooltips on filters and column headers)
+          // This avoids virtual scrolling complexity where cards are removed/re-added
+          if (parent.closest('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"], [data-test-id="board-card-section"], .card-wrapper-container')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
           return NodeFilter.FILTER_ACCEPT;
         }
       }
@@ -862,7 +868,7 @@ class WikiModule {
    */
   setupObserver() {
     this.lastApplyTime = 0;
-    const MIN_INTERVAL = 2000;
+    const MIN_INTERVAL = 1000; // 1 second between applies (board cards excluded, so less urgent)
 
     this.wikiObserver = new MutationObserver((mutations) => {
       if (this.isApplyingWikiHighlights) return;
@@ -921,31 +927,44 @@ class WikiModule {
 
   /**
    * Attach observer to containers
+   * Per LEARNINGS.md: "When targeting lazy-loaded content, attach observer to
+   * document.body unless you're certain about the render location"
+   * The wiki observer has proper throttling (MIN_INTERVAL + re-entrancy protection).
    */
   attachObserver() {
     if (!this.wikiObserver) return;
 
+    // Try specific containers first for efficiency
     const containers = [
       document.querySelector('[data-test-id="left-sidebar"]'),
       document.querySelector('[data-test-id="middle-pane"]'),
       document.querySelector('[data-test-id="right-sidebar"]'),
       document.querySelector('main'),
-      document.querySelector('[role="main"]')
+      document.querySelector('[role="main"]'),
+      // Table containers for index pages
+      document.querySelector('[data-test-id="framework-data-table"]'),
+      document.querySelector('[data-test-id="crm-object-table"]'),
+      document.querySelector('table[role="grid"]'),
+      // Board view containers
+      document.querySelector('[class*="BoardView"]'),
+      document.querySelector('[class*="PipelineBoard"]')
     ].filter(Boolean);
 
     if (containers.length === 0) {
-      if (!document.body._hshelperObserved) {
+      // Fall back to document.body - required for lazy-loaded content (per LEARNINGS.md)
+      // Safe due to throttling + re-entrancy protection in setupObserver()
+      if (!document.body._hshelperWikiObserved) {
         this.wikiObserver.observe(document.body, { childList: true, subtree: true });
-        document.body._hshelperObserved = true;
-        this.log('Observer attached to body (fallback)');
+        document.body._hshelperWikiObserved = true;
+        this.log('Observer attached to body (fallback for lazy content)');
       }
       return;
     }
 
     for (const c of containers) {
-      if (!c._hshelperObserved) {
+      if (!c._hshelperWikiObserved) {
         this.wikiObserver.observe(c, { childList: true, subtree: true });
-        c._hshelperObserved = true;
+        c._hshelperWikiObserved = true;
       }
     }
     this.log('Observer attached to', containers.length, 'containers');
@@ -957,17 +976,23 @@ class WikiModule {
   reconnectObserver() {
     if (!this.wikiObserver) return;
 
+    // Reset all potential containers including body
     const containers = [
       document.querySelector('[data-test-id="left-sidebar"]'),
       document.querySelector('[data-test-id="middle-pane"]'),
       document.querySelector('[data-test-id="right-sidebar"]'),
       document.querySelector('main'),
       document.querySelector('[role="main"]'),
+      document.querySelector('[data-test-id="framework-data-table"]'),
+      document.querySelector('[data-test-id="crm-object-table"]'),
+      document.querySelector('table[role="grid"]'),
+      document.querySelector('[class*="BoardView"]'),
+      document.querySelector('[class*="PipelineBoard"]'),
       document.body
     ].filter(Boolean);
 
     for (const c of containers) {
-      c._hshelperObserved = false;
+      c._hshelperWikiObserved = false;
     }
 
     this.attachObserver();
@@ -975,6 +1000,7 @@ class WikiModule {
 
   /**
    * Set up scroll listener for index pages
+   * Only needed for table views (board card tooltips are disabled)
    */
   setupScrollListener() {
     let timeout = null;
@@ -988,14 +1014,14 @@ class WikiModule {
           this.log('Scroll detected, applying');
           this.apply();
         }
-      }, 1000);
+      }, 500);
     };
 
-    const container = document.querySelector('[data-test-id="index-page"]') ||
-                      document.querySelector('main') ||
-                      window;
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
+    // Main container only - board card tooltips are disabled so no need for column listeners
+    const mainContainer = document.querySelector('[data-test-id="index-page"]') ||
+                          document.querySelector('main') ||
+                          window;
+    mainContainer.addEventListener('scroll', handleScroll, { passive: true });
     this.log('Scroll listener attached');
   }
 

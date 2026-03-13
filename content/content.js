@@ -339,18 +339,11 @@
           console.log('[RevGuide] No branding data received from background');
         }
       } else {
-        // Fall back to local storage directly
-        log('Content loaded from: local storage fallback');
-        const fallbackData = await new Promise((resolve) => {
-          chrome.storage.local.get({
-            rules: [],
-            battleCards: [],
-            wikiEntries: []
-          }, resolve);
-        });
-        this.rules = fallbackData.rules;
-        this.battleCards = fallbackData.battleCards;
-        this.wikiEntries = fallbackData.wikiEntries;
+        // No content from background - use empty arrays
+        log('No content from background, using empty defaults');
+        this.rules = [];
+        this.battleCards = [];
+        this.wikiEntries = [];
       }
 
       // Always use local data for presentations and settings
@@ -956,9 +949,15 @@
      * Main render function - coordinates all module rendering
      */
     render() {
-      log('render() called - settings.enabled:', this.settings.enabled);
+      log('render() called - settings.enabled:', this.settings.enabled, 'isAuthenticated:', this.settings.isAuthenticated);
       if (!this.settings.enabled) {
         log('Extension disabled, skipping render');
+        return;
+      }
+
+      // Don't render any content if user is not authenticated
+      if (!this.settings.isAuthenticated) {
+        log('User not authenticated, skipping render');
         return;
       }
 
@@ -1372,6 +1371,28 @@
             properties: this.properties,
             context: this.context
           });
+        }
+        if (message.action === 'authStateChanged') {
+          log('Auth state changed, isAuthenticated:', message.isAuthenticated);
+          if (!message.isAuthenticated) {
+            // User logged out - remove all content immediately
+            this.rules = [];
+            this.battleCards = [];
+            this.wikiEntries = [];
+            this.presentations = [];
+            this.tagRules = [];
+            this.contentTags = [];
+            this.recommendedContent = [];
+            this.settings.isAuthenticated = false;
+            this.settings.canEditContent = false;
+            this.cleanup(true);
+          } else {
+            // User logged in - reload content
+            this.cleanup(true);
+            this.loadData(true).then(() => {
+              this.init();
+            });
+          }
         }
         if (message.action === 'refresh') {
           log('Refresh requested, reloading data...');

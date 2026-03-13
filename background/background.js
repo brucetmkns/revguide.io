@@ -3,8 +3,6 @@
  * Handles messaging between sidepanel and content scripts
  */
 
-importScripts('../lib/wiki-cache.js');
-
 console.log('[RevGuide] Service worker starting...');
 
 // ============ AUTH STATE MANAGEMENT ============
@@ -105,7 +103,24 @@ async function handleAuthStateChange(payload) {
 async function handleLogout() {
   console.log('[RevGuide] User logged out');
 
-  await chrome.storage.local.remove('authState');
+  // Clear auth state and all cached content so nothing shows when logged out
+  await chrome.storage.local.remove([
+    'authState',
+    'cloudContent',
+    'cloudContentLastFetch',
+    'rules',
+    'battleCards',
+    'wikiEntries'
+  ]);
+
+  // Also clear any org-specific content caches
+  const allKeys = await chrome.storage.local.get(null);
+  const orgCacheKeys = Object.keys(allKeys).filter(k =>
+    k.startsWith('cloudContent_') || k.startsWith('cloudContentLastFetch_')
+  );
+  if (orgCacheKeys.length > 0) {
+    await chrome.storage.local.remove(orgCacheKeys);
+  }
 
   // Notify all extension contexts
   chrome.runtime.sendMessage({ action: 'authStateChanged', isAuthenticated: false });
@@ -746,6 +761,8 @@ function mapBannerFromSupabase(data) {
     objectType: data.object_type,
     conditions: data.conditions,
     logic: data.logic,
+    conditionGroups: data.condition_groups,
+    groupLogic: data.group_logic,
     displayOnAll: data.display_on_all,
     tabVisibility: data.tab_visibility,
     relatedPlayId: data.related_play_id,
@@ -824,7 +841,7 @@ async function fetchCloudContent(targetOrgId = null) {
     console.log('[RevGuide] Cannot fetch cloud content: not authenticated or no org');
     return null;
   }
-  console.log('[RevGuide] Fetching cloud content for org:', orgId);
+  console.log('[RevGuide] Fetching cloud content for org:', orgId, '- will fetch branding via RPC');
 
   try {
     // Fetch all content types in parallel (including org settings for erp_config and branding)
@@ -860,10 +877,23 @@ async function fetchCloudContent(targetOrgId = null) {
         order: 'display_order.asc'
       }),
       // Fetch branding using RPC (handles partner cascade)
-      supabaseRpc('get_organization_branding', { org_id: orgId }).catch(err => {
-        console.log('[RevGuide] Branding fetch failed (may not exist yet):', err.message);
-        return null;
-      })
+      // RPC returns array (TABLE), so we take first element
+      supabaseRpc('get_organization_branding', { p_org_id: orgId })
+        .then(result => {
+          console.log('[RevGuide] Branding RPC raw result:', JSON.stringify(result));
+          // Result is an array - take first element if exists
+          const branding = Array.isArray(result) && result.length > 0 ? result[0] : null;
+          console.log('[RevGuide] Branding extracted:', branding ? {
+            displayName: branding.display_name,
+            attribution: branding.tooltip_attribution,
+            primaryColor: branding.primary_color
+          } : 'none');
+          return branding;
+        })
+        .catch(err => {
+          console.log('[RevGuide] Branding fetch failed:', err.message);
+          return null;
+        })
     ]);
 
     console.log('[RevGuide] Cloud content fetched:', {
@@ -911,9 +941,11 @@ async function fetchCloudContent(targetOrgId = null) {
       branding: branding || null
     };
 
-    if (branding) {
-      console.log('[RevGuide] Branding loaded:', branding.display_name || 'default');
-    }
+    console.log('[RevGuide] Branding in content:', branding ? {
+      displayName: branding.display_name,
+      attribution: branding.tooltip_attribution,
+      primaryColor: branding.primary_color
+    } : 'none');
 
     // Log transformed banner for debugging
     if (content.rules?.length > 0) {
@@ -983,6 +1015,7 @@ async function getContent(options = {}) {
 
     // Use cache if fresh and not forcing refresh
     if (!forceRefresh && cachedContent && cacheAge < CLOUD_CONTENT_TTL_MS) {
+      console.log('[RevGuide] Using cached content, branding:', cachedContent.branding ? cachedContent.branding.display_name : 'none');
       return {
         source: 'cloud-cached',
         content: cachedContent,
@@ -990,6 +1023,7 @@ async function getContent(options = {}) {
         usingFallback: portalId && !matchedOrg
       };
     }
+    console.log('[RevGuide] Cache stale or forceRefresh, fetching fresh content for org:', orgId);
 
     // Fetch fresh content for the org
     const cloudContent = await fetchCloudContent(orgId);
@@ -1021,13 +1055,12 @@ async function getContent(options = {}) {
     }
   }
 
-  // Fall back to local content
-  const local = await chrome.storage.local.get(['rules', 'battleCards', 'wikiEntries']);
+  // Not authenticated - return empty content (don't show cached/sample data)
   return {
-    source: 'local',
-    content: local,
+    source: 'none',
+    content: { rules: [], battleCards: [], wikiEntries: [] },
     matchedOrg: null,
-    usingFallback: !!portalId
+    usingFallback: false
   };
 }
 
@@ -1041,7 +1074,17 @@ function isHubSpotUrl(url) {
 // Listen for installation
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    initializeSampleData();
+    // Initialize default settings only - content comes from cloud after login
+    chrome.storage.local.set({
+      settings: {
+        enabled: true,
+        showBanners: true,
+        showBattleCards: true,
+        showWiki: true,
+        bannerPosition: 'top'
+      }
+    });
+    console.log('[RevGuide] Extension installed, default settings initialized');
   }
 });
 
@@ -1058,237 +1101,6 @@ chrome.action.onClicked.addListener((tab) => {
     .catch(err => console.error('[RevGuide] Error opening side panel:', err));
 });
 
-// Initialize sample rules and plays
-async function initializeSampleData() {
-  const sampleRules = [
-    {
-      id: 'rule_test_always',
-      name: 'Test Banner (Always Shows)',
-      title: 'RevGuide is Working!',
-      message: 'This test banner confirms the extension is running. You can delete this banner in the admin panel.',
-      type: 'success',
-      enabled: true,
-      priority: 100,
-      objectTypes: [], // Empty = all object types
-      conditions: [], // Empty = always matches
-      logic: 'AND',
-      createdAt: Date.now()
-    },
-    {
-      id: 'rule_sample_1',
-      name: 'Missing Next Steps',
-      title: 'Action Required: Add Next Steps',
-      message: 'This deal is missing next steps. Adding clear next steps improves close rates by 30%.',
-      type: 'warning',
-      enabled: true,
-      priority: 10,
-      objectTypes: ['deal'],
-      conditions: [
-        { property: 'next_step', operator: 'is_empty', value: '' }
-      ],
-      logic: 'AND',
-      createdAt: Date.now()
-    },
-    {
-      id: 'rule_sample_2',
-      name: 'High Value Deal Alert',
-      title: 'High Value Opportunity',
-      message: 'This is a high-value deal. Consider involving a senior AE or solution engineer.',
-      type: 'info',
-      enabled: true,
-      priority: 20,
-      objectTypes: ['deal'],
-      conditions: [
-        { property: 'amount', operator: 'greater_than', value: '50000' }
-      ],
-      logic: 'AND',
-      createdAt: Date.now()
-    },
-    {
-      id: 'rule_sample_3',
-      name: 'Competitor Mentioned',
-      title: 'Competitor Play Available',
-      message: 'A competitor was mentioned. Check the plays for talking points.',
-      type: 'battle-card',
-      enabled: true,
-      priority: 15,
-      conditions: [
-        { property: 'competitor', operator: 'is_not_empty', value: '' }
-      ],
-      logic: 'AND',
-      actions: [
-        { type: 'card', label: 'View Play' }
-      ],
-      createdAt: Date.now()
-    }
-  ];
-
-  const sampleBattleCards = [
-    {
-      id: 'card_competitor_1',
-      name: 'vs. Competitor A',
-      subtitle: 'Enterprise CRM competitor',
-      cardType: 'competitor',
-      conditions: [
-        { property: 'competitor', operator: 'contains', value: 'competitor a' }
-      ],
-      sections: [
-        {
-          title: 'Their Strengths',
-          content: '- Strong brand recognition\n- Large partner ecosystem\n- Extensive customization options'
-        },
-        {
-          title: 'Their Weaknesses',
-          content: '- Complex implementation (6-12 months avg)\n- High total cost of ownership\n- Requires dedicated admin'
-        },
-        {
-          title: 'Our Differentiators',
-          content: '- Faster time to value (weeks, not months)\n- More intuitive user experience\n- Better pricing transparency\n- Superior customer support'
-        },
-        {
-          title: 'Winning Questions',
-          content: '- "What\'s your timeline for seeing ROI?"\n- "Who will manage the system day-to-day?"\n- "What\'s your budget for ongoing customization?"'
-        }
-      ],
-      createdAt: Date.now()
-    },
-    {
-      id: 'card_objection_1',
-      name: 'Price Objection Handler',
-      subtitle: 'Common objection response',
-      cardType: 'objection',
-      conditions: [],
-      sections: [
-        {
-          title: 'When They Say',
-          content: '"Your solution is too expensive" or "We can\'t afford this right now"'
-        },
-        {
-          title: 'Understand First',
-          content: '- "Help me understand - too expensive compared to what?"\n- "What budget range were you working with?"\n- "What would make this investment worthwhile?"'
-        },
-        {
-          title: 'Reframe Value',
-          content: '- Focus on ROI, not cost\n- Calculate cost of inaction\n- Break down to per-user/per-month\n- Highlight hidden costs of alternatives'
-        },
-        {
-          title: 'Proof Points',
-          content: '- Average customer sees 3x ROI in first year\n- 40% reduction in manual tasks\n- Reference: Acme Corp saved $200k/year'
-        }
-      ],
-      createdAt: Date.now()
-    },
-    {
-      id: 'card_process_1',
-      name: 'Demo Best Practices',
-      subtitle: 'Run effective demos',
-      cardType: 'tip',
-      objectType: 'deal',
-      conditions: [
-        { property: 'dealstage', operator: 'contains', value: 'demo' }
-      ],
-      sections: [
-        {
-          title: 'Before the Demo',
-          content: '- Review the prospect\'s website and LinkedIn\n- Check previous notes and emails\n- Prepare 3 custom talking points\n- Test your demo environment'
-        },
-        {
-          title: 'During the Demo',
-          content: '- Start with discovery (5 min)\n- Show, don\'t tell (keep it interactive)\n- Focus on their use case, not features\n- Leave time for Q&A'
-        },
-        {
-          title: 'After the Demo',
-          content: '- Send summary email within 2 hours\n- Include recording link\n- Propose clear next steps\n- Set follow-up reminder'
-        }
-      ],
-      createdAt: Date.now()
-    }
-  ];
-
-  const sampleWikiEntries = [
-    {
-      id: 'wiki_mql',
-      term: 'MQL',
-      aliases: ['Marketing Qualified Lead', 'marketing qualified lead'],
-      category: 'marketing',
-      definition: '<p><strong>Marketing Qualified Lead (MQL)</strong></p><p>A lead that has been identified as more likely to become a customer compared to other leads, based on marketing engagement.</p><ul><li>Has engaged with marketing content</li><li>Meets basic demographic criteria</li><li>Shows intent signals but hasn\'t been qualified by sales</li></ul>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    },
-    {
-      id: 'wiki_sql',
-      term: 'SQL',
-      aliases: ['Sales Qualified Lead', 'sales qualified lead'],
-      category: 'sales',
-      definition: '<p><strong>Sales Qualified Lead (SQL)</strong></p><p>A lead that has been qualified by the sales team as having genuine potential to become a customer.</p><ul><li>Has budget and authority</li><li>Has a clear need and timeline</li><li>Has been vetted through discovery</li></ul>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    },
-    {
-      id: 'wiki_acv',
-      term: 'ACV',
-      aliases: ['Annual Contract Value', 'annual contract value'],
-      category: 'sales',
-      definition: '<p><strong>Annual Contract Value (ACV)</strong></p><p>The total annual revenue from a customer contract, normalized to a yearly basis.</p><p>Formula: Total Contract Value / Contract Term in Years</p><p>Example: A 3-year, $90,000 deal has an ACV of $30,000.</p>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    },
-    {
-      id: 'wiki_arr',
-      term: 'ARR',
-      aliases: ['Annual Recurring Revenue', 'annual recurring revenue'],
-      category: 'sales',
-      definition: '<p><strong>Annual Recurring Revenue (ARR)</strong></p><p>The value of recurring revenue normalized to a one-year period. This is a key metric for subscription-based businesses.</p><p>ARR = MRR x 12</p>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    },
-    {
-      id: 'wiki_pipeline',
-      term: 'Pipeline',
-      aliases: ['Sales Pipeline', 'sales pipeline', 'deal pipeline'],
-      category: 'sales',
-      definition: '<p><strong>Sales Pipeline</strong></p><p>A visual representation of where prospects are in the sales process. The pipeline shows deals at each stage from initial contact to closed won.</p><p>Key stages typically include:</p><ul><li>Prospecting</li><li>Qualification</li><li>Demo/Proposal</li><li>Negotiation</li><li>Closed Won/Lost</li></ul>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    },
-    {
-      id: 'wiki_discovery',
-      term: 'Discovery',
-      aliases: ['Discovery Call', 'discovery call', 'Discovery Meeting'],
-      category: 'process',
-      definition: '<p><strong>Discovery Call</strong></p><p>An initial sales conversation focused on understanding the prospect\'s needs, challenges, and goals.</p><p>Key elements:</p><ul><li>Understand their current situation</li><li>Identify pain points and challenges</li><li>Determine budget and timeline</li><li>Identify decision makers</li></ul>',
-      link: '',
-      enabled: true,
-      createdAt: Date.now()
-    }
-  ];
-
-  // Build pre-computed wiki term map cache for faster tooltip loading
-  const wikiCacheData = RevGuideWikiCache.buildWikiTermMapCache(sampleWikiEntries);
-
-  await chrome.storage.local.set({
-    rules: sampleRules,
-    battleCards: sampleBattleCards,
-    wikiEntries: sampleWikiEntries,
-    wikiTermMapCache: wikiCacheData.termMap,
-    wikiEntriesById: wikiCacheData.entriesById,
-    wikiCacheVersion: Date.now(),
-    settings: {
-      enabled: true,
-      showBanners: true,
-      showBattleCards: true,
-      showWiki: true,
-      bannerPosition: 'top'
-    }
-  });
-
-  console.log('[RevGuide] Sample data initialized with wiki cache');
-}
 
 // Message handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -1318,7 +1130,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       forceRefresh: !!request.forceRefresh,
       portalId: request.portalId || null,
       crmType: request.crmType || 'hubspot'
-    }).then(sendResponse);
+    }).then(result => {
+      console.log('[RevGuide BG] getContent response:', {
+        source: result?.source,
+        hasBranding: !!result?.content?.branding,
+        brandingName: result?.content?.branding?.display_name
+      });
+      sendResponse(result);
+    });
     return true;
   }
 
@@ -1339,6 +1158,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       } else {
         sendResponse(null);
       }
+    });
+    return true;
+  }
+
+  if (request.action === 'clearBrandingCache') {
+    // Clear all cloud content caches to force branding refresh
+    console.log('[RevGuide BG] Clearing all content caches');
+    chrome.storage.local.get(null, (items) => {
+      const keysToRemove = Object.keys(items).filter(k =>
+        k.startsWith('cloudContent') || k.startsWith('cloudContentLastFetch')
+      );
+      console.log('[RevGuide BG] Removing cache keys:', keysToRemove);
+      chrome.storage.local.remove(keysToRemove);
+      sendResponse({ success: true, clearedKeys: keysToRemove });
     });
     return true;
   }
@@ -1797,17 +1630,27 @@ async function updateHubSpotRecord(objectType, recordId, properties, orgId = nul
   const endpoint = `/crm/v3/objects/${apiObjectType}/${recordId}`;
   console.log('[RevGuide BG] PATCH request to:', endpoint, 'using', auth.type, 'auth');
 
-  // Add user attribution property if using user-oauth
-  const propsToUpdate = { ...properties };
-  if (auth.type === 'user-oauth' && auth.hubspotEmail) {
-    propsToUpdate.revguide_last_modified_by = auth.hubspotEmail;
-    console.log('[RevGuide BG] Adding attribution:', auth.hubspotEmail);
-  }
-
   let data;
   if (auth.type === 'user-oauth') {
     // Use user's OAuth proxy - updates attributed to the specific user
-    data = await userHubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties: propsToUpdate });
+    // Try with attribution property first, fall back without it if property doesn't exist
+    const propsWithAttribution = { ...properties };
+    if (auth.hubspotEmail) {
+      propsWithAttribution.revguide_last_modified_by = auth.hubspotEmail;
+      console.log('[RevGuide BG] Attempting attribution:', auth.hubspotEmail);
+    }
+
+    try {
+      data = await userHubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties: propsWithAttribution });
+    } catch (err) {
+      // If the attribution property doesn't exist, retry without it
+      if (err.message && err.message.includes('revguide_last_modified_by') && err.message.includes('PROPERTY_DOESNT_EXIST')) {
+        console.log('[RevGuide BG] Attribution property not found, retrying without it');
+        data = await userHubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties });
+      } else {
+        throw err;
+      }
+    }
   } else if (auth.type === 'oauth') {
     // Use org-level OAuth proxy - updates attributed to "RevGuide" app
     data = await hubspotProxyRequest(auth.connectionId, endpoint, 'PATCH', { properties });

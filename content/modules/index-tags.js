@@ -62,6 +62,26 @@ class IndexTagsModule {
   async init() {
     console.log('[RevGuide IndexTags] init() called, URL:', window.location.href);
 
+    // Add visibility change listener to pause processing when tab is hidden
+    if (!this.visibilityHandler) {
+      this.visibilityHandler = () => {
+        if (document.hidden) {
+          // Pause observers when tab is hidden
+          if (this.observer) {
+            this.observer.disconnect();
+          }
+        } else {
+          // Reconnect observer when tab becomes visible again
+          if (this.observer && this.viewType === 'board') {
+            this.setupBoardObserver();
+          } else if (this.observer) {
+            this.setupObserver();
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
     // Extract context from URL
     const urlInfo = this.parseIndexUrl();
     if (!urlInfo) {
@@ -72,16 +92,23 @@ class IndexTagsModule {
     this.objectTypeId = urlInfo.objectTypeId;
     this.objectType = urlInfo.objectType;
     this.portalId = urlInfo.portalId;
+    this.isWorkspace = urlInfo.isWorkspace || false;
 
-    console.log('[RevGuide IndexTags] Initializing for', this.objectType, 'index page');
+    console.log('[RevGuide IndexTags] Initializing for', this.objectType, this.isWorkspace ? 'workspace' : 'index', 'page');
     console.log('[RevGuide IndexTags] Total rules from helper:', this.helper.rules?.length || 0);
 
     // Filter to banners that have showOnIndex enabled and match object type
     this.eligibleBanners = this.getEligibleBanners();
     console.log('[RevGuide IndexTags] Found', this.eligibleBanners.length, 'eligible banners for', this.objectType);
 
-    if (this.eligibleBanners.length === 0) {
-      console.log('[RevGuide IndexTags] No eligible banners, skipping');
+    // Check if ERP module is enabled for this object type
+    const erpEnabled = this.helper.erpModule?.isEnabled() &&
+                       this.helper.erpModule.getConfigForObjectType(this.objectType);
+    console.log('[RevGuide IndexTags] ERP enabled for', this.objectType + ':', !!erpEnabled);
+
+    // Continue if we have eligible banners OR ERP is enabled
+    if (this.eligibleBanners.length === 0 && !erpEnabled) {
+      console.log('[RevGuide IndexTags] No eligible banners and ERP not enabled, skipping');
       return;
     }
 
@@ -192,17 +219,11 @@ class IndexTagsModule {
 
   /**
    * Parse the index page URL to extract context
-   * @returns {Object|null} { objectTypeId, objectType, portalId } or null
+   * Supports standard index pages and Sales Workspace
+   * @returns {Object|null} { objectTypeId, objectType, portalId, isWorkspace } or null
    */
   parseIndexUrl() {
     const url = window.location.href;
-
-    // Pattern: /contacts/{portalId}/objects/{objectTypeId}/...
-    const match = url.match(/\/contacts\/(\d+)\/objects\/(\d+-\d+)/);
-    if (!match) return null;
-
-    const portalId = match[1];
-    const objectTypeId = match[2];
 
     // Map object type IDs to names
     const objectTypeMap = {
@@ -212,10 +233,50 @@ class IndexTagsModule {
       '0-5': 'ticket'
     };
 
-    const objectType = objectTypeMap[objectTypeId];
-    if (!objectType) return null;
+    // Pattern 1: Standard index pages /contacts/{portalId}/objects/{objectTypeId}/...
+    const standardMatch = url.match(/\/contacts\/(\d+)\/objects\/(\d+-\d+)/);
+    if (standardMatch) {
+      const portalId = standardMatch[1];
+      const objectTypeId = standardMatch[2];
+      const objectType = objectTypeMap[objectTypeId];
+      if (!objectType) return null;
+      return { objectTypeId, objectType, portalId, isWorkspace: false };
+    }
 
-    return { objectTypeId, objectType, portalId };
+    // Pattern 2: Sales Workspace /prospecting/{portalId}/deals/...
+    const workspaceMatch = url.match(/\/prospecting\/(\d+)\/(deals|contacts|companies|tickets)/);
+    if (workspaceMatch) {
+      const portalId = workspaceMatch[1];
+      const objectTypePlural = workspaceMatch[2];
+
+      // Map plural workspace paths to singular object types
+      const workspaceTypeMap = {
+        'deals': 'deal',
+        'contacts': 'contact',
+        'companies': 'company',
+        'tickets': 'ticket'
+      };
+
+      const objectType = workspaceTypeMap[objectTypePlural];
+      if (!objectType) return null;
+
+      // Reverse map to get objectTypeId
+      const reverseTypeMap = {
+        'contact': '0-1',
+        'company': '0-2',
+        'deal': '0-3',
+        'ticket': '0-5'
+      };
+
+      return {
+        objectTypeId: reverseTypeMap[objectType],
+        objectType,
+        portalId,
+        isWorkspace: true
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -296,44 +357,105 @@ class IndexTagsModule {
 
   /**
    * Process all visible table rows
+   * Handles both standard index pages and Sales Workspace
    */
   processVisibleRows() {
     if (this.isProcessing) return;
 
-    const rows = document.querySelectorAll('tr[data-test-id^="row-"]');
+    // Select rows based on page type
+    // Standard index: tr[data-test-id^="row-"]
+    // Sales Workspace: tr[data-test-id="crm-table-row"]
+    const standardRows = document.querySelectorAll('tr[data-test-id^="row-"]');
+    const workspaceRows = document.querySelectorAll('tr[data-test-id="crm-table-row"]');
+
     const recordIds = [];
 
-    rows.forEach(row => {
+    // Process standard index rows
+    standardRows.forEach(row => {
       const testId = row.getAttribute('data-test-id');
       const match = testId.match(/row-(\d+)/);
       if (!match) return;
 
       const recordId = match[1];
+      this.processRowForTags(row, recordId, recordIds, 'standard');
+    });
 
-      // Check if tags already exist in this row (skip if so)
-      const nameCell = row.querySelector('td[data-column-index="0"]');
-      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
-      if (mediaBody?.querySelector('.hshelper-index-tags')) {
-        // Tags already exist, mark as processed and skip
-        this.processedRows.add(row);
-        return;
-      }
+    // Process Sales Workspace rows
+    workspaceRows.forEach(row => {
+      const recordId = row.getAttribute('data-test-object-id');
+      if (!recordId) return;
 
-      // Check if we have cached properties
-      const cached = this.propertiesCache.get(recordId);
-      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-        // Use cached properties - render immediately
-        this.renderTagsForRecord(row, recordId, cached.properties);
-      } else {
-        // Need to fetch properties
-        recordIds.push(recordId);
-      }
-      this.processedRows.add(row);
+      this.processRowForTags(row, recordId, recordIds, 'workspace');
     });
 
     if (recordIds.length > 0) {
       this.scheduleBatchFetch(recordIds);
     }
+  }
+
+  /**
+   * Process a single row for tags
+   * @param {HTMLElement} row - The table row element
+   * @param {string} recordId - The record ID
+   * @param {Array} recordIds - Array to collect IDs for batch fetch
+   * @param {string} pageType - 'standard' or 'workspace'
+   */
+  processRowForTags(row, recordId, recordIds, pageType) {
+    // Find the name cell based on page type
+    let nameCell;
+    if (pageType === 'workspace') {
+      // Sales Workspace: use data-test-property-name for the object name property
+      const propertyName = this.getNamePropertyForObjectType();
+      nameCell = row.querySelector(`td[data-test-property-name="${propertyName}"]`);
+    } else {
+      // Standard index: first column
+      nameCell = row.querySelector('td[data-column-index="0"]');
+    }
+
+    if (!nameCell) return;
+
+    // Find the container to append tags to
+    // Try MediaBody first (standard), then look for button container (workspace)
+    let tagContainer = nameCell.querySelector('[class*="MediaBody"]');
+    if (!tagContainer) {
+      // For workspace, look for the Flex container after the button
+      tagContainer = nameCell.querySelector('[class*="Flex__StyledFlex"]');
+    }
+    if (!tagContainer) {
+      // Fallback: use the cell itself
+      tagContainer = nameCell;
+    }
+
+    // Check if tags already exist (skip if so)
+    if (tagContainer.querySelector('.hshelper-index-tags')) {
+      this.processedRows.add(row);
+      return;
+    }
+
+    // Check if we have cached properties
+    const cached = this.propertiesCache.get(recordId);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      // Use cached properties - render immediately
+      this.renderTagsForRecord(row, recordId, cached.properties);
+    } else {
+      // Need to fetch properties
+      recordIds.push(recordId);
+    }
+    this.processedRows.add(row);
+  }
+
+  /**
+   * Get the property name for the object's name field
+   * @returns {string} The property name (e.g., 'dealname', 'name', 'firstname')
+   */
+  getNamePropertyForObjectType() {
+    const namePropertyMap = {
+      'deal': 'dealname',
+      'company': 'name',
+      'contact': 'firstname', // Could also be 'name' depending on HubSpot config
+      'ticket': 'subject'
+    };
+    return namePropertyMap[this.objectType] || 'name';
   }
 
   /**
@@ -385,8 +507,9 @@ class IndexTagsModule {
       for (const [recordId, properties] of Object.entries(response)) {
         this.propertiesCache.set(recordId, { properties, timestamp: now });
 
-        // Find the row and render tags
-        const row = document.querySelector(`tr[data-test-id="row-${recordId}"]`);
+        // Find the row (try both standard and workspace selectors)
+        const row = document.querySelector(`tr[data-test-id="row-${recordId}"]`) ||
+                    document.querySelector(`tr[data-test-object-id="${recordId}"]`);
         if (row) {
           this.renderTagsForRecord(row, recordId, properties);
         }
@@ -400,21 +523,50 @@ class IndexTagsModule {
 
   /**
    * Render tags for a specific record
+   * Handles both standard index pages and Sales Workspace
    * @param {HTMLElement} row - The table row element
    * @param {string} recordId - The record ID
    * @param {Object} properties - Record properties
    */
   renderTagsForRecord(row, recordId, properties) {
-    // Find the name cell
-    const nameCell = row.querySelector('td[data-column-index="0"]');
+    // Determine page type based on row structure
+    const isWorkspaceRow = row.getAttribute('data-test-id') === 'crm-table-row';
+
+    // Find the name cell based on page type
+    let nameCell;
+    if (isWorkspaceRow) {
+      const propertyName = this.getNamePropertyForObjectType();
+      nameCell = row.querySelector(`td[data-test-property-name="${propertyName}"]`);
+    } else {
+      nameCell = row.querySelector('td[data-column-index="0"]');
+    }
     if (!nameCell) return;
 
-    // Find the MediaBody container to append tags to
-    const mediaBody = nameCell.querySelector('[class*="MediaBody"]');
-    if (!mediaBody) return;
+    // Find the container to append tags to
+    // For standard index: MediaBody
+    // For workspace: Flex container after button, or create one
+    let tagContainer = nameCell.querySelector('[class*="MediaBody"]');
+    if (!tagContainer && isWorkspaceRow) {
+      // For workspace, look for the Flex container (usually exists for badges)
+      tagContainer = nameCell.querySelector('div[class*="Flex__StyledFlex"]');
+      if (!tagContainer) {
+        // Create a container if none exists
+        tagContainer = document.createElement('div');
+        tagContainer.className = 'hshelper-workspace-tag-container';
+        tagContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;';
+        // Insert after the button element
+        const button = nameCell.querySelector('button');
+        if (button) {
+          button.parentNode.insertBefore(tagContainer, button.nextSibling);
+        } else {
+          nameCell.appendChild(tagContainer);
+        }
+      }
+    }
+    if (!tagContainer) return;
 
-    // Check if tags already exist in THIS row
-    const existingInRow = mediaBody.querySelector('.hshelper-index-tags');
+    // Check if tags already exist in THIS container
+    const existingInRow = tagContainer.querySelector('.hshelper-index-tags');
     if (existingInRow) {
       return;
     }
@@ -465,12 +617,12 @@ class IndexTagsModule {
       tagsContainer.appendChild(tag);
     });
 
-    // Append to MediaBody (pushes cell height nicely)
-    mediaBody.appendChild(tagsContainer);
+    // Append to container (pushes cell height nicely)
+    tagContainer.appendChild(tagsContainer);
     this.taggedRecords.set(recordId, tagsContainer);
 
     // Watch this specific container for our tags being removed
-    this.watchForTagRemoval(mediaBody, recordId, properties);
+    this.watchForTagRemoval(tagContainer, recordId, properties);
   }
 
   /**
@@ -741,9 +893,11 @@ class IndexTagsModule {
 
   /**
    * Setup MutationObserver for virtual scrolling and table re-renders
+   * Handles both standard index pages and Sales Workspace
    */
   setupObserver() {
     const table = document.querySelector('[data-test-id="framework-data-table"]') ||
+                  document.querySelector('[data-test-id="crm-object-table"]') ||
                   document.querySelector('table[role="grid"]') ||
                   document.querySelector('table');
 
@@ -752,20 +906,31 @@ class IndexTagsModule {
     this.observer = new MutationObserver((mutations) => {
       let hasNewRows = false;
       let hasCellChanges = false;
+      let hasMajorChange = false;
 
       mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check if it's a row or contains rows
-            if (node.matches?.('tr[data-test-id^="row-"]')) {
+            // Check if it's a row or contains rows (both standard and workspace)
+            if (node.matches?.('tr[data-test-id^="row-"]') ||
+                node.matches?.('tr[data-test-id="crm-table-row"]')) {
               hasNewRows = true;
             } else if (node.querySelectorAll) {
-              const rows = node.querySelectorAll('tr[data-test-id^="row-"]');
-              if (rows.length > 0) hasNewRows = true;
+              const standardRows = node.querySelectorAll('tr[data-test-id^="row-"]');
+              const workspaceRows = node.querySelectorAll('tr[data-test-id="crm-table-row"]');
+              if (standardRows.length > 0 || workspaceRows.length > 0) hasNewRows = true;
+              // Detect major table re-render (tbody replacement, many rows at once)
+              if (standardRows.length > 3 || workspaceRows.length > 3) {
+                hasMajorChange = true;
+              }
             }
             // Check if cell content changed (e.g., column resize causes re-render)
             if (node.matches?.('td') || node.closest?.('td')) {
               hasCellChanges = true;
+            }
+            // Detect tbody replacement (sorting often replaces the entire tbody)
+            if (node.matches?.('tbody') || node.tagName === 'TBODY') {
+              hasMajorChange = true;
             }
           }
         });
@@ -777,24 +942,38 @@ class IndexTagsModule {
                 node.querySelector?.('.hshelper-index-tags')) {
               hasCellChanges = true;
             }
+            // Detect tbody removal (sorting)
+            if (node.matches?.('tbody') || node.tagName === 'TBODY') {
+              hasMajorChange = true;
+            }
+            // If multiple rows removed at once, likely a sort/filter
+            if (node.matches?.('tr[data-test-id^="row-"]') ||
+                node.matches?.('tr[data-test-id="crm-table-row"]')) {
+              hasMajorChange = true;
+            }
           }
         });
       });
 
-      if (hasNewRows || hasCellChanges) {
+      if (hasNewRows || hasCellChanges || hasMajorChange) {
         // Debounce processing - wait for HubSpot to finish DOM updates
         clearTimeout(this.processTimeout);
         this.processTimeout = setTimeout(() => {
           // Use requestAnimationFrame to ensure DOM is stable
           requestAnimationFrame(() => {
-            // For cell changes, we need to recheck all rows
-            if (hasCellChanges) {
+            // For major changes (sort, filter), reset tracking and reprocess all
+            if (hasMajorChange) {
+              console.log('[RevGuide IndexTags] Major table change detected (sort/filter), reprocessing all rows');
+              this.processedRows = new WeakSet();
+              this.recheckVisibleRows();
+            } else if (hasCellChanges) {
+              // For cell changes, recheck all rows
               this.recheckVisibleRows();
             } else {
               this.processVisibleRows();
             }
           });
-        }, 150);
+        }, 200); // Slightly longer debounce for sorting to complete
       }
     });
 
@@ -810,36 +989,100 @@ class IndexTagsModule {
         this.processVisibleRows();
       }, 200);
     }, { passive: true });
+
+    // Listen for column header clicks (sorting) - direct detection
+    const headerRow = table.querySelector('thead tr');
+    if (headerRow) {
+      headerRow.addEventListener('click', () => {
+        // When a header is clicked, HubSpot will sort - wait and reprocess
+        clearTimeout(this.sortTimeout);
+        this.sortTimeout = setTimeout(() => {
+          console.log('[RevGuide IndexTags] Column header clicked, reprocessing rows');
+          this.processedRows = new WeakSet();
+          this.recheckVisibleRows();
+        }, 500);
+      });
+    }
   }
 
   /**
-   * Recheck visible rows for missing tags (used after column resize, etc.)
+   * Recheck visible rows for missing tags (used after column resize, sort, etc.)
+   * Handles both standard index pages and Sales Workspace
    */
   recheckVisibleRows() {
-    const rows = document.querySelectorAll('tr[data-test-id^="row-"]');
+    const recordsToFetch = [];
 
-    rows.forEach(row => {
+    // Check standard index rows
+    const standardRows = document.querySelectorAll('tr[data-test-id^="row-"]');
+    standardRows.forEach(row => {
       const testId = row.getAttribute('data-test-id');
       const match = testId.match(/row-(\d+)/);
       if (!match) return;
 
       const recordId = match[1];
-      const nameCell = row.querySelector('td[data-column-index="0"]');
-      const mediaBody = nameCell?.querySelector('[class*="MediaBody"]');
-
-      // If row exists but has no tags, and we have cached properties, re-render
-      if (mediaBody && !mediaBody.querySelector('.hshelper-index-tags')) {
-        const cached = this.propertiesCache.get(recordId);
-        if (cached) {
-          // Disconnect old observer if it exists (mediaBody was likely replaced)
-          if (this.tagObservers?.has(recordId)) {
-            this.tagObservers.get(recordId).disconnect();
-            this.tagObservers.delete(recordId);
-          }
-          this.renderTagsForRecord(row, recordId, cached.properties);
-        }
-      }
+      const needsFetch = this.recheckRowForTags(row, recordId, false);
+      if (needsFetch) recordsToFetch.push(recordId);
     });
+
+    // Check workspace rows
+    const workspaceRows = document.querySelectorAll('tr[data-test-id="crm-table-row"]');
+    workspaceRows.forEach(row => {
+      const recordId = row.getAttribute('data-test-object-id');
+      if (!recordId) return;
+
+      const needsFetch = this.recheckRowForTags(row, recordId, true);
+      if (needsFetch) recordsToFetch.push(recordId);
+    });
+
+    // Fetch properties for any rows missing cached data
+    if (recordsToFetch.length > 0) {
+      console.log('[RevGuide IndexTags] Fetching properties for', recordsToFetch.length, 'rows after recheck');
+      this.scheduleBatchFetch(recordsToFetch);
+    }
+  }
+
+  /**
+   * Recheck a single row for missing tags
+   * @param {HTMLElement} row - The row element
+   * @param {string} recordId - The record ID
+   * @param {boolean} isWorkspace - Whether this is a workspace row
+   * @returns {boolean} True if this row needs properties fetched
+   */
+  recheckRowForTags(row, recordId, isWorkspace) {
+    // Find the name cell
+    let nameCell;
+    if (isWorkspace) {
+      const propertyName = this.getNamePropertyForObjectType();
+      nameCell = row.querySelector(`td[data-test-property-name="${propertyName}"]`);
+    } else {
+      nameCell = row.querySelector('td[data-column-index="0"]');
+    }
+    if (!nameCell) return false;
+
+    // Find the container
+    let tagContainer = nameCell.querySelector('[class*="MediaBody"]');
+    if (!tagContainer && isWorkspace) {
+      tagContainer = nameCell.querySelector('div[class*="Flex__StyledFlex"]');
+    }
+    if (!tagContainer) return false;
+
+    // If row exists but has no tags
+    if (!tagContainer.querySelector('.hshelper-index-tags')) {
+      const cached = this.propertiesCache.get(recordId);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        // Disconnect old observer if it exists (container was likely replaced)
+        if (this.tagObservers?.has(recordId)) {
+          this.tagObservers.get(recordId).disconnect();
+          this.tagObservers.delete(recordId);
+        }
+        this.renderTagsForRecord(row, recordId, cached.properties);
+        return false;
+      } else {
+        // No cached data or cache expired - need to fetch
+        return true;
+      }
+    }
+    return false;
   }
 
   // ============ BOARD VIEW METHODS ============
@@ -1087,6 +1330,11 @@ class IndexTagsModule {
       }, 150);
     };
 
+    // Disconnect existing observer before creating new one (prevents orphaned observers)
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+
     // MutationObserver for DOM changes
     this.observer = new MutationObserver((mutations) => {
       let shouldProcess = false;
@@ -1134,15 +1382,34 @@ class IndexTagsModule {
     board.addEventListener('scroll', debouncedProcess, { passive: true });
 
     // Fallback: check for untagged cards periodically when board is visible
+    // Use longer interval (5s) and visibility check to reduce CPU usage
     this.boardCheckInterval = setInterval(() => {
-      const untaggedCards = document.querySelectorAll(
-        '[data-test-id="cdb-column-item"]:not(:has(.hshelper-index-tags))'
-      );
-      if (untaggedCards.length > 0) {
-        console.log('[RevGuide IndexTags] Found', untaggedCards.length, 'untagged cards, processing...');
+      // Skip if document is hidden (tab not active)
+      if (document.hidden) return;
+
+      // Skip if board is no longer in DOM (user navigated away)
+      const boardExists = document.querySelector('[data-test-id="cdb-column-item"]');
+      if (!boardExists) {
+        console.log('[RevGuide IndexTags] Board no longer visible, clearing interval');
+        clearInterval(this.boardCheckInterval);
+        this.boardCheckInterval = null;
+        return;
+      }
+
+      // Use simpler selector - find all cards and filter in JS (avoids expensive :has())
+      const allCards = document.querySelectorAll('[data-test-id="cdb-column-item"]');
+      let untaggedCount = 0;
+      allCards.forEach(card => {
+        if (!card.querySelector('.hshelper-index-tags')) {
+          untaggedCount++;
+        }
+      });
+
+      if (untaggedCount > 0) {
+        console.log('[RevGuide IndexTags] Found', untaggedCount, 'untagged cards, processing...');
         this.processBoardCards();
       }
-    }, 2000);
+    }, 5000); // Increased to 5 seconds to reduce CPU overhead
 
     console.log('[RevGuide IndexTags] Board observer and scroll listeners attached');
   }
@@ -1157,11 +1424,21 @@ class IndexTagsModule {
       this.observer = null;
     }
 
+    // Remove visibility handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+
     // Clear timeouts and intervals
     clearTimeout(this.batchTimeout);
     clearTimeout(this.processTimeout);
     clearTimeout(this.scrollTimeout);
-    clearInterval(this.boardCheckInterval);
+    clearTimeout(this.sortTimeout);
+    if (this.boardCheckInterval) {
+      clearInterval(this.boardCheckInterval);
+      this.boardCheckInterval = null;
+    }
 
     // Remove all tag containers
     this.taggedRecords.forEach((container) => {
@@ -1180,6 +1457,12 @@ class IndexTagsModule {
     this.pendingRecordIds.clear();
     this.processedRows = new WeakSet();
     this.renderCooldown.clear();
+
+    // Reset view state so next init() properly detects view type
+    this.viewType = null;
+    this.objectType = null;
+    this.objectTypeId = null;
+    this.eligibleBanners = [];
 
     console.log('[RevGuide IndexTags] Cleanup complete');
   }

@@ -8,6 +8,14 @@
    spacing, colors) for seamless integration.
    ============================================ */
 
+/* Branding CSS Variables - can be overridden via JS for white-labeling */
+:root {
+  --rg-primary: #b2ef63;
+  --rg-primary-hover: #9ed654;
+  --rg-primary-dark: #1a2e05;
+  --rg-primary-rgb: 178, 239, 99;
+}
+
 /* Container for all helper UI - inherits HubSpot's font */
 .hshelper-container {
   font-family: "Lexend Deca", Helvetica, Arial, sans-serif;
@@ -220,12 +228,12 @@
 }
 
 .hshelper-banner-btn.primary {
-  background-color: #b2ef63;
-  color: #1a2e05;
+  background-color: var(--rg-primary);
+  color: var(--rg-primary-dark);
 }
 
 .hshelper-banner-btn.primary:hover {
-  background-color: #9ed654;
+  background-color: var(--rg-primary-hover);
 }
 
 .hshelper-banner-btn.secondary {
@@ -272,8 +280,8 @@
   gap: 6px;
   margin-top: 10px;
   padding: 6px 12px;
-  background-color: #b2ef63;
-  color: #1a2e05;
+  background-color: var(--rg-primary);
+  color: var(--rg-primary-dark);
   border: none;
   border-radius: 3px;
   font-size: 13px;
@@ -284,7 +292,7 @@
 }
 
 .hshelper-banner-play-btn:hover {
-  background-color: #9ed654;
+  background-color: var(--rg-primary-hover);
 }
 
 .hshelper-banner-play-btn svg {
@@ -337,8 +345,8 @@
 
 .hshelper-banner-field-input:focus {
   outline: none;
-  border-color: #b2ef63;
-  box-shadow: 0 0 0 2px rgba(178, 239, 99, 0.2);
+  border-color: var(--rg-primary);
+  box-shadow: 0 0 0 2px rgba(var(--rg-primary-rgb), 0.2);
 }
 
 .hshelper-banner-field-input.hshelper-field-error {
@@ -401,8 +409,8 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #b2ef63;
-  color: #1a2e05;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   border: none;
   border-radius: 4px;
   font-size: 13px;
@@ -413,7 +421,7 @@
 }
 
 .hshelper-banner-save-btn:hover {
-  background: #9ed654;
+  background: var(--rg-primary-hover);
 }
 
 .hshelper-banner-save-btn:disabled {
@@ -679,8 +687,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #b2ef63;
-  color: #1a2e05;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   text-decoration: none;
   border-radius: 3px;
   font-size: 14px;
@@ -689,7 +697,7 @@
 }
 
 .hshelper-card-link a:hover {
-  background: #9ed654;
+  background: var(--rg-primary-hover);
 }
 
 .hshelper-card-link a svg {
@@ -770,8 +778,8 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #b2ef63;
-  color: #1a2e05;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   text-decoration: none;
   border-radius: 3px;
   font-size: 12px;
@@ -780,7 +788,7 @@
 }
 
 .hshelper-presentation-link:hover {
-  background: #9ed654;
+  background: var(--rg-primary-hover);
 }
 
 .hshelper-presentation-link svg {
@@ -869,8 +877,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #b2ef63;
-  color: #1a2e05;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   text-decoration: none;
   border-radius: 3px;
   font-size: 14px;
@@ -878,7 +886,7 @@
 }
 
 .hshelper-presentation-fallback a:hover {
-  background: #9ed654;
+  background: var(--rg-primary-hover);
 }
 
 
@@ -893,8 +901,8 @@
   width: 48px;
   height: 56px;
   border-radius: 8px 0 0 8px;
-  background: #b2ef63;
-  color: #1a2e05;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   border: none;
   cursor: pointer;
   box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
@@ -942,14 +950,14 @@
 
 .hshelper-fab:hover {
   box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.2);
-  background: #9ed654;
+  background: var(--rg-primary-hover);
   width: 52px;
 }
 
 .hshelper-fab.dragging {
   cursor: grabbing;
   box-shadow: -4px 4px 20px rgba(0, 0, 0, 0.25);
-  background: #9ed654;
+  background: var(--rg-primary-hover);
   transition: none;
 }
 
@@ -966,7 +974,7 @@
     box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
   }
   50% {
-    box-shadow: -4px 4px 16px rgba(178, 239, 99, 0.5), 0 0 0 8px rgba(178, 239, 99, 0.1);
+    box-shadow: -4px 4px 16px rgba(var(--rg-primary-rgb), 0.5), 0 0 0 8px rgba(var(--rg-primary-rgb), 0.1);
   }
 }
 
@@ -1189,7 +1197,7 @@
 }
 
 .hshelper-wiki-term:hover .hshelper-wiki-icon-inline {
-  color: #558b2f;
+  color: var(--rg-primary-hover);
 }
 
 /* Wiki icon wrapper (for prepended icons) */
@@ -1232,7 +1240,7 @@
 }
 
 .hshelper-wiki-icon:hover svg {
-  fill: #558b2f !important;
+  fill: var(--rg-primary-hover) !important;
   transform: scale(1.15);
 }
 
@@ -1486,11 +1494,14 @@
    Index Page Tags
    ---------------------------------------- */
 .hshelper-index-tags {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
+  flex-wrap: nowrap;
   gap: 4px;
   margin-top: 4px;
+  margin-bottom: 4px;
   max-width: 100%;
+  overflow: hidden;
+  vertical-align: middle;
 }
 
 .hshelper-index-tag {
@@ -1508,6 +1519,7 @@
   white-space: nowrap;
   font-family: "Lexend Deca", "Avenir Next", Helvetica, Arial, sans-serif;
   line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .hshelper-index-tag:hover {
@@ -1700,8 +1712,8 @@
 }
 
 .hshelper-banner-popup__action-btn {
-  background: #b2ef63;
-  color: #1a1a1a;
+  background: var(--rg-primary);
+  color: var(--rg-primary-dark);
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -1715,7 +1727,7 @@
 }
 
 .hshelper-banner-popup__action-btn:hover {
-  background: #9ed654;
+  background: var(--rg-primary-hover);
 }
 
 .hshelper-banner-popup__action-btn svg {
@@ -1780,10 +1792,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 6px;
-  background: #f5f8fa;
-  border: 1px solid #cbd6e2;
-  border-radius: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   font-size: 10px;
   font-weight: 500;
   color: #516f90;
@@ -1793,15 +1805,16 @@
 }
 
 .hshelper-erp-tag:hover {
-  background: #eaf0f6;
-  border-color: #00a4bd;
+  background: transparent;
+  border-color: transparent;
   color: #00a4bd;
+  transform: scale(1.05);
 }
 
 .hshelper-erp-tag-icon {
-  height: 14px;
+  height: 18px;
   width: auto;
-  max-width: 40px;
+  max-width: 50px;
   border-radius: 2px;
 }
 
