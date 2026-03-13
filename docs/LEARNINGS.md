@@ -4,6 +4,23 @@ A living document capturing lessons learned during development. Reference this w
 
 ---
 
+## Authentication & Content Gating
+
+### Never Fall Back to Local Storage for Unauthenticated Users
+**Lesson**: When a user is logged out, content loading must return empty data - never fall back to cached or seeded local storage content.
+
+**Context**: `initializeSampleData()` seeded sample banners, plays, and wiki entries into `chrome.storage.local` on first install. When unauthenticated, `getContent()` fell back to local storage, serving this stale data. Additionally, `render()` had no auth gate, so it displayed whatever was loaded.
+
+**Pattern**: Gate content at multiple levels:
+1. `getContent()` returns empty arrays when not authenticated
+2. `render()` checks `isAuthenticated` before any rendering
+3. Content script listens for `authStateChanged` to clean up immediately on logout
+4. `handleLogout()` clears all cached content, not just auth state
+
+**Symptom**: Banners and wiki tooltips appearing on HubSpot pages even when user is logged out of RevGuide.
+
+---
+
 ## Code Architecture
 
 ### Field Naming Migrations

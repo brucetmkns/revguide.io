@@ -2,6 +2,23 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.5.5] - 2026-03-13 - Fix Content Showing When Logged Out
+
+### Fixed
+- **Content visible when logged out**: Banners, wiki tooltips, and plays were rendering on HubSpot even when the user was not authenticated
+  - Root cause: Sample data seeded into `chrome.storage.local` on install was never cleared, and `getContent()` fell back to local storage when unauthenticated
+  - `render()` now checks `isAuthenticated` before displaying any content
+  - `getContent()` returns empty content when not authenticated instead of falling back to cached/sample data
+  - Content script now listens for `authStateChanged` messages to immediately clean up UI on logout
+  - `handleLogout()` now clears all cached content (cloud cache, local rules/wiki/battleCards, org-specific caches)
+
+### Removed
+- **Sample data removed**: Deleted `initializeSampleData()` and all hardcoded sample banners, plays, and wiki entries (~230 lines)
+  - Sample data was written to `chrome.storage.local` on first install and persisted indefinitely
+  - All content now comes exclusively from the cloud after authentication
+  - On install, only default settings (enabled flags, banner position) are initialized
+  - Removed unused `wiki-cache.js` import from background service worker
+
 ## [2.0.5.4] - 2026-03-13 - Fix Banner/Play Conditions After DOM Re-scrape
 
 ### Fixed
