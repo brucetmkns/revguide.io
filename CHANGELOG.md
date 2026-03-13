@@ -2,6 +2,15 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.5.7] - 2026-03-13 - Add Google Tag Manager
+
+### Added
+- **Google Tag Manager** on both web properties with separate containers:
+  - `revguide.io` (marketing site): `GTM-KB8MXLBC`
+  - `app.revguide.io` (admin app): `GTM-N6M8QWPW`
+- GTM loads via existing `analytics.js` files alongside Microsoft Clarity
+- Automatically skipped in Chrome extension context (no tracking in-extension)
+
 ## [2.0.5.6] - 2026-03-13 - Suppress Content on Unconnected Portals
 
 ### Fixed
