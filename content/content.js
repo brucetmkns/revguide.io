@@ -304,7 +304,7 @@
         log('Content loaded for matched org:', contentResult.matchedOrg.name);
         this.matchedOrgId = contentResult.matchedOrg.id;
       } else if (contentResult?.usingFallback) {
-        log('No org matched portal, using default org');
+        log('Portal not connected to any RevGuide account - content suppressed');
       }
 
       // Use content from background script if available

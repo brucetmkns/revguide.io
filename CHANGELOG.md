@@ -2,6 +2,15 @@
 
 All notable changes to RevGuide will be documented in this file.
 
+## [2.0.5.6] - 2026-03-13 - Suppress Content on Unconnected Portals
+
+### Fixed
+- **Content leaking to unconnected HubSpot portals**: When a single-account user viewed a HubSpot portal not connected to their RevGuide account, banners, wiki tooltips, and plays from their default org were incorrectly displayed
+  - Root cause: `getContent()` fell back to the user's default organization when no portal match was found, loading all content regardless
+  - Now returns empty content (`rules: []`, `battleCards: []`, `wikiEntries: []`) when the active HubSpot portal has no matching RevGuide organization
+  - Partner accounts with multiple connected portals are unaffected - each portal still matches its own org correctly
+  - Files: `background/background.js`, `content/content.js`
+
 ## [2.0.5.5] - 2026-03-13 - Fix Content Showing When Logged Out
 
 ### Fixed

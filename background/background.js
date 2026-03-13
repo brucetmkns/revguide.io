@@ -993,7 +993,14 @@ async function getContent(options = {}) {
         orgId = matchedOrg.id; // Use matched org's content
         console.log('[RevGuide] Using matched org:', matchedOrg.name, 'for portal:', portalId);
       } else {
-        console.log('[RevGuide] No match for portal:', portalId, '- using default org');
+        // No RevGuide account connected to this portal - suppress all content
+        console.log('[RevGuide] No match for portal:', portalId, '- suppressing content');
+        return {
+          source: 'none',
+          content: { rules: [], battleCards: [], wikiEntries: [] },
+          matchedOrg: null,
+          usingFallback: true
+        };
       }
     }
 

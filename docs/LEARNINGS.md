@@ -515,6 +515,15 @@ const portalId = match ? match[1] : null;
 3. Does org have `hubspot_portal_id` set? (check Supabase)
 4. Does RLS allow querying org? (test with auth token)
 
+### Unconnected Portal Suppression
+**Lesson**: When a portal ID is detected but has no matching RevGuide organization, return empty content immediately instead of falling back to the user's default org.
+
+**Context**: Single-account users who view multiple HubSpot portals (e.g., demo portals, client portals) saw their RevGuide content on every portal because `getContent()` fell back to loading the default org's content library.
+
+**Pattern**: In `getContent()`, when `getOrgByCrmPortalId()` returns null, return early with empty arrays and `usingFallback: true` instead of continuing with the default `orgId`. This ensures content only renders on portals explicitly connected to a RevGuide account.
+
+**Files affected**: `background/background.js` - `getContent()`, `content/content.js` - fallback logging
+
 **Pattern**:
 ```javascript
 apply() {
