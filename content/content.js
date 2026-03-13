@@ -63,6 +63,7 @@
       // Page state
       this.currentUrl = window.location.href;
       this.properties = {};
+      this.apiPropertyKeys = new Set(); // Track which keys came from API (survive DOM re-scrapes)
       this.context = {};
       this.matchedOrgId = null; // Organization ID for OAuth API calls
 
@@ -90,6 +91,10 @@
 
       // Timeout references
       this.propertyUpdateTimeout = null;
+
+      // Navigation watcher state (prevent duplicate setup)
+      this.watchersInitialized = false;
+      this.navigationInterval = null;
 
       this.init();
     }
@@ -229,7 +234,11 @@
       // HubSpot portal detection
       if (url.includes('hubspot.com')) {
         crmType = 'hubspot';
-        const portalMatch = url.match(/\/contacts\/(\d+)\//);
+        // Try multiple URL patterns for portal ID
+        // Pattern 1: /contacts/{portalId}/... (standard pages)
+        // Pattern 2: /prospecting/{portalId}/... (Sales Workspace)
+        const portalMatch = url.match(/\/contacts\/(\d+)\//) ||
+                           url.match(/\/prospecting\/(\d+)\//);
         log('URL portal match:', url, '->', portalMatch);
         if (portalMatch) {
           portalId = portalMatch[1];
@@ -318,9 +327,16 @@
           this.erpModule.init(this.erpConfig);
         }
 
-        // Log branding if loaded
+        // Apply branding CSS if loaded
         if (this.branding) {
-          log('Branding loaded:', this.branding.display_name || 'default');
+          console.log('[RevGuide] Branding loaded for wiki/tooltips:', {
+            displayName: this.branding.display_name,
+            attribution: this.branding.tooltip_attribution,
+            primaryColor: this.branding.primary_color
+          });
+          this.applyBrandingCSS(this.branding);
+        } else {
+          console.log('[RevGuide] No branding data received from background');
         }
       } else {
         // Fall back to local storage directly
@@ -346,6 +362,7 @@
       const canEditContent = role === 'owner' || role === 'admin' || role === 'editor';
       this.settings.canEditContent = canEditContent;
       this.settings.isAuthenticated = authState.isAuthenticated;
+      this.settings.organizationId = authState.profile?.organizationId;
 
       // Store pre-built wiki cache for faster tooltip loading
       this.wikiTermMapCache = localData.wikiTermMapCache;
@@ -411,6 +428,7 @@
               for (const [key, value] of Object.entries(apiProps)) {
                 if (value !== null && value !== undefined) {
                   this.properties[key] = value;
+                  this.apiPropertyKeys.add(key);
                 }
               }
               log('API properties merged, total properties:', Object.keys(this.properties).length);
@@ -452,10 +470,12 @@
             if (response?.success && response.listIds?.length > 0) {
               // Inject as comma-separated list IDs for "contains" operator matching
               this.properties['_list_memberships'] = response.listIds.join(',');
+              this.apiPropertyKeys.add('_list_memberships');
               log('List memberships injected:', response.listIds.length, 'lists');
             } else {
               // Set empty value so "is_not_member_of_list" works correctly
               this.properties['_list_memberships'] = '';
+              this.apiPropertyKeys.add('_list_memberships');
               log('No list memberships found');
             }
             resolve();
@@ -479,11 +499,47 @@
     /**
      * Check if current URL is a HubSpot index/list page
      * Index pages: /contacts/{portalId}/objects/{objectTypeId}/...
+     * Sales Workspace: /prospecting/{portalId}/deals/...
      * @returns {boolean}
      */
     isIndexPage() {
       const url = window.location.href;
-      return /\/objects\//.test(url);
+      // Standard index pages
+      if (/\/objects\//.test(url)) return true;
+      // Sales Workspace pages (deals, contacts, etc.)
+      if (/\/prospecting\/\d+\/(deals|contacts|companies|tickets)/.test(url)) return true;
+      return false;
+    }
+
+    /**
+     * Detect the current view type for index pages
+     * Used to detect board/table switching which doesn't change URL
+     * @returns {string} 'board', 'table', or 'record'
+     */
+    detectViewType() {
+      const url = window.location.href;
+
+      // Record pages
+      if (this.isRecordPage()) {
+        return 'record';
+      }
+
+      // Board view detection
+      if (url.includes('/board/')) {
+        return 'board';
+      }
+
+      // DOM-based board detection (for when URL doesn't indicate view type)
+      if (document.querySelector('[data-test-id="cdb-column-item"], [data-test-id="cdb-card"]')) {
+        return 'board';
+      }
+
+      if (document.querySelector('[class*="BoardView"], [class*="PipelineBoard"]')) {
+        return 'board';
+      }
+
+      // Default to table for index pages
+      return 'table';
     }
 
     /**
@@ -622,7 +678,12 @@
      * Uses multiple methods to handle varying DOM structures
      */
     extractPageData() {
-      this.properties = {};
+      // Clear only DOM-scraped properties; preserve API-fetched ones
+      for (const key of Object.keys(this.properties)) {
+        if (!this.apiPropertyKeys.has(key)) {
+          delete this.properties[key];
+        }
+      }
       this.context = this.detectContext();
 
       // Method 1: Property sidebar with data-selenium-test attributes
@@ -780,8 +841,11 @@
       if (url.includes('hubspot.com')) {
         context.crmType = 'hubspot';
 
-        // Extract portal ID: /contacts/{portalId}/...
-        const portalMatch = url.match(/\/contacts\/(\d+)\//);
+        // Extract portal ID from various URL patterns
+        // Pattern 1: /contacts/{portalId}/... (standard pages)
+        // Pattern 2: /prospecting/{portalId}/... (Sales Workspace)
+        const portalMatch = url.match(/\/contacts\/(\d+)\//) ||
+                           url.match(/\/prospecting\/(\d+)\//);
         if (portalMatch) {
           context.portalId = portalMatch[1];
         }
@@ -1153,26 +1217,71 @@
 
     /**
      * Set up watchers for SPA navigation and DOM changes
+     * Only sets up global listeners once to prevent accumulation
      */
     watchForChanges() {
-      // URL change detection (SPA navigation)
-      let lastUrl = window.location.href;
+      // Prevent duplicate setup (this function can be called multiple times via init())
+      if (this.watchersInitialized) {
+        log('Watchers already initialized, skipping setup');
+        return;
+      }
+      this.watchersInitialized = true;
 
-      const handleUrlChange = () => {
-        if (window.location.href !== lastUrl) {
-          log('URL changed from', lastUrl, 'to', window.location.href);
-          lastUrl = window.location.href;
+      // URL and view state tracking
+      let lastUrl = window.location.href;
+      let lastViewType = this.detectViewType();
+      let checkPending = false;
+
+      const handleNavigationChange = () => {
+        // Prevent multiple pending checks
+        if (checkPending) return;
+
+        // Skip if document is hidden (tab not active) - reduces CPU usage
+        if (document.hidden) return;
+
+        const currentUrl = window.location.href;
+        const currentViewType = this.detectViewType();
+        const urlChanged = currentUrl !== lastUrl;
+        const viewChanged = currentViewType !== lastViewType;
+
+        if (urlChanged || viewChanged) {
+          checkPending = true;
+          log('Navigation detected - URL changed:', urlChanged, 'View changed:', viewChanged);
+          log('  From:', lastUrl, lastViewType);
+          log('  To:', currentUrl, currentViewType);
+          lastUrl = currentUrl;
+          lastViewType = currentViewType;
           this.cleanup(true);
-          setTimeout(() => this.init(), 1000);
+          setTimeout(() => {
+            checkPending = false;
+            this.init();
+          }, 500); // Reduced from 1000ms for faster response
         }
       };
 
-      // Method 1: MutationObserver (catches most SPA navigations)
-      const urlObserver = new MutationObserver(handleUrlChange);
-      urlObserver.observe(document.body, { childList: true, subtree: true });
+      // Use History API for SPA navigation detection
+      // This catches pushState/replaceState calls that HubSpot uses for navigation
+      const originalPushState = history.pushState;
+      const originalReplaceState = history.replaceState;
 
-      // Method 2: Polling (catches object type dropdown changes that don't trigger mutations)
-      setInterval(handleUrlChange, 500);
+      history.pushState = function(...args) {
+        originalPushState.apply(this, args);
+        handleNavigationChange();
+      };
+
+      history.replaceState = function(...args) {
+        originalReplaceState.apply(this, args);
+        handleNavigationChange();
+      };
+
+      // Hash change detection (some HubSpot views use hash)
+      window.addEventListener('hashchange', handleNavigationChange);
+
+      // Polling fallback for navigation that doesn't trigger History API
+      // This catches: saved views, tab switches, object type changes, board/table toggles
+      // Using 1s interval for reasonable responsiveness without excessive CPU
+      // Store interval ID for potential cleanup
+      this.navigationInterval = setInterval(handleNavigationChange, 1000);
 
       // Tab click observer
       const middlePane = document.querySelector('[data-test-id="middle-pane"]');
@@ -1205,7 +1314,7 @@
         setTimeout(() => this.init(), 500);
       });
 
-      // Property change observer
+      // Property change observer - only watch for structural changes, not text content
       const propertyObserver = new MutationObserver(() => {
         clearTimeout(this.propertyUpdateTimeout);
         this.propertyUpdateTimeout = setTimeout(() => {
@@ -1219,7 +1328,8 @@
 
       const sidebar = document.querySelector('[data-selenium-test="highlightedPropertySidebar"]');
       if (sidebar) {
-        propertyObserver.observe(sidebar, { childList: true, subtree: true, characterData: true });
+        // Removed characterData: true - it's too expensive and structural changes are sufficient
+        propertyObserver.observe(sidebar, { childList: true, subtree: true });
       }
 
       // Wiki observer for lazy-loaded content (record pages only)
@@ -1305,6 +1415,91 @@
     }
 
     // ============ UTILITIES ============
+
+    /**
+     * Apply branding CSS variables to the page
+     * @param {Object} branding - Branding configuration from database
+     */
+    applyBrandingCSS(branding) {
+      if (!branding?.primary_color) return;
+
+      const root = document.documentElement;
+      const color = branding.primary_color;
+
+      // Set primary color
+      root.style.setProperty('--rg-primary', color);
+
+      // Calculate hover color (10% darker or lighter depending on luminance)
+      const isDark = this.isColorDark(color);
+      const hoverColor = isDark ? this.lightenColor(color, 15) : this.darkenColor(color, 10);
+      root.style.setProperty('--rg-primary-hover', hoverColor);
+
+      // For text on primary background: use white on dark colors, dark on light colors
+      const textColor = isDark ? '#ffffff' : this.darkenColor(color, 70);
+      root.style.setProperty('--rg-primary-dark', textColor);
+
+      // Set RGB values for rgba() usage
+      const rgb = this.hexToRgb(color);
+      if (rgb) {
+        root.style.setProperty('--rg-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+      }
+
+      log('Applied branding CSS:', { color, hoverColor, textColor, isDark });
+    }
+
+    /**
+     * Check if a color is dark (luminance < 0.5)
+     */
+    isColorDark(hex) {
+      const rgb = this.hexToRgb(hex);
+      if (!rgb) return false;
+
+      // Calculate relative luminance using sRGB formula
+      const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+      return luminance < 0.5;
+    }
+
+    /**
+     * Convert hex color to RGB
+     */
+    hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    /**
+     * Darken a hex color by a percentage
+     */
+    darkenColor(hex, percent) {
+      const rgb = this.hexToRgb(hex);
+      if (!rgb) return hex;
+
+      const factor = 1 - (percent / 100);
+      const r = Math.round(rgb.r * factor);
+      const g = Math.round(rgb.g * factor);
+      const b = Math.round(rgb.b * factor);
+
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+
+    /**
+     * Lighten a hex color by a percentage
+     */
+    lightenColor(hex, percent) {
+      const rgb = this.hexToRgb(hex);
+      if (!rgb) return hex;
+
+      const factor = percent / 100;
+      const r = Math.round(rgb.r + (255 - rgb.r) * factor);
+      const g = Math.round(rgb.g + (255 - rgb.g) * factor);
+      const b = Math.round(rgb.b + (255 - rgb.b) * factor);
+
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
 
     /**
      * Escape HTML special characters
